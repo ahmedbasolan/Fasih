@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Fasih",
+    "slug": "fasih",
+    "scheme": "fasih",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#060611"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fasih.app"
+    },
+    "android": {
+      "package": "com.fasih.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#060611",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#060611"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "387c7934-b747-43cc-9113-ff41e6662c66"
+      }
+    },
+    "owner": "lelahmed"
+  }
+}
