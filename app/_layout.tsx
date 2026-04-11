@@ -6,12 +6,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
-  Cairo_400Regular,
-  Cairo_600SemiBold,
-  Cairo_700Bold,
-  Cairo_800ExtraBold,
-  Cairo_900Black,
-} from '@expo-google-fonts/cairo';
+  Tajawal_400Regular,
+  Tajawal_500Medium,
+  Tajawal_700Bold,
+  Tajawal_800ExtraBold,
+  Tajawal_900Black,
+} from '@expo-google-fonts/tajawal';
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -19,37 +19,57 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import {
+  Urbanist_400Regular,
+  Urbanist_500Medium,
+  Urbanist_600SemiBold,
+  Urbanist_700Bold,
+  Urbanist_800ExtraBold,
+} from '@expo-google-fonts/urbanist';
 import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
+import { useTheme } from '../src/hooks/useTheme';
+import { useAppStore } from '../src/store/useAppStore';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const initSubscription = useAppStore((s) => s.initSubscription);
+
   const [loaded, error] = useFonts({
-    Cairo_400Regular,
-    Cairo_600SemiBold,
-    Cairo_700Bold,
-    Cairo_800ExtraBold,
-    Cairo_900Black,
+    Tajawal_400Regular,
+    Tajawal_500Medium,
+    Tajawal_700Bold,
+    Tajawal_800ExtraBold,
+    Tajawal_900Black,
     Inter_300Light,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Urbanist_400Regular,
+    Urbanist_500Medium,
+    Urbanist_600SemiBold,
+    Urbanist_700Bold,
+    Urbanist_800ExtraBold,
   });
 
   useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+      initSubscription(); // configure RevenueCat and sync entitlement status
+    }
   }, [loaded, error]);
 
+  const { C, isDark } = useTheme();
   if (!loaded && !error) return null;
 
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#060611' } }}>
+          <StatusBar style={isDark ? "light" : "dark"} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
             <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />

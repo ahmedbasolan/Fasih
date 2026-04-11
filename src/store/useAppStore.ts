@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { pushProgress, pullProgress } from '../lib/syncService';
+import { configurePurchases, loginPurchasesUser, logoutPurchasesUser, getEntitlementStatus, purchasePlan, restorePurchases as rcRestorePurchases } from '../lib/purchases';
 import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
@@ -159,6 +160,9 @@ interface AppState {
   // Subscription actions
   startTrial: (plan: 'monthly' | 'yearly') => void;
   skipTrial: () => void;
+  purchaseSubscription: (plan: 'monthly' | 'yearly') => Promise<{ cancelled: boolean; error: string | null }>;
+  restorePurchases: () => Promise<{ restored: boolean; error: string | null }>;
+  initSubscription: () => Promise<void>;
   hasFullAccess: () => boolean;
   scenariosCompletedCount: () => number;
 
@@ -270,8 +274,13 @@ export const useAppStore = create<AppState>()(
           if (error) throw error;
           const userId = data.user?.id || null;
           set({ isAuthenticated: true, supabaseUserId: userId });
-          // Restore progress from cloud on every sign-in
-          if (userId) await get().syncFromCloud();
+          if (userId) {
+            await loginPurchasesUser(userId);
+            await get().syncFromCloud();
+            // Sync entitlement status from RevenueCat after restoring data
+            const entitlementStatus = await getEntitlementStatus();
+            if (entitlementStatus === 'subscribed') set({ subscriptionStatus: 'subscribed' });
+          }
           return { success: true };
         } catch (err: any) {
           return { success: false, error: err.message || 'Sign in failed' };
@@ -283,8 +292,10 @@ export const useAppStore = create<AppState>()(
           if (error) throw error;
           const userId = data.user?.id || null;
           set({ isAuthenticated: true, supabaseUserId: userId });
-          // Push local onboarding state to cloud for new users
-          if (userId) await get().syncToCloud();
+          if (userId) {
+            await loginPurchasesUser(userId);
+            await get().syncToCloud();
+          }
           return { success: true };
         } catch (err: any) {
           return { success: false, error: err.message || 'Sign up failed' };
@@ -292,6 +303,7 @@ export const useAppStore = create<AppState>()(
       },
       signOut: async () => {
         await supabase.auth.signOut();
+        await logoutPurchasesUser();
         set({ isAuthenticated: false, supabaseUserId: null });
       },
 
@@ -304,8 +316,37 @@ export const useAppStore = create<AppState>()(
         get().syncToCloud();
       },
       skipTrial: () => set({ subscriptionStatus: 'free', trialStartedAt: null, trialPlan: null }),
+
+      purchaseSubscription: async (plan) => {
+        const result = await purchasePlan(plan);
+        if (result.status === 'subscribed') {
+          set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
+          get().syncToCloud();
+        }
+        return { cancelled: result.cancelled, error: result.error };
+      },
+
+      restorePurchases: async () => {
+        const result = await rcRestorePurchases();
+        if (result.status === 'subscribed') {
+          set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
+          get().syncToCloud();
+          return { restored: true, error: null };
+        }
+        return { restored: false, error: result.error };
+      },
+
+      initSubscription: async () => {
+        configurePurchases();
+        const userId = get().supabaseUserId;
+        if (userId) await loginPurchasesUser(userId);
+        const status = await getEntitlementStatus();
+        if (status === 'subscribed') set({ subscriptionStatus: 'subscribed' });
+      },
+
       hasFullAccess: () => {
         const s = get();
+        if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
           trialEnd.setDate(trialEnd.getDate() + 3);
