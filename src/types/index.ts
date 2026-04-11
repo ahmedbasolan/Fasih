@@ -1,3 +1,6 @@
+// ─── Subscription ────────────────────────────────────────────────────────────
+export type SubscriptionStatus = 'trial' | 'free' | 'subscribed';
+
 // ─── User ────────────────────────────────────────────────────────────────────
 export interface UserProfile {
   name: string;
@@ -77,6 +80,7 @@ export interface Scenario {
   color: string;
   gradientColors: [string, string];
   arabicScene: string;
+  kafIntro: string;
   mode: ScenarioMode;
 }
 
@@ -85,20 +89,35 @@ export type ChoiceOutcome = 'excellent' | 'good' | 'neutral' | 'bad';
 export interface ScenarioChoice {
   id: string;
   text: string;
-  arabic?: string;
-  roman?: string;
+  arabic: string;
+  roman: string;
   impact: { trust: number; respect: number; culture: number };
   note?: string;
   outcome: ChoiceOutcome;
 }
 
-export interface ScenarioScene {
-  id: string;
-  charName: string;
-  setting: string;
+// Branching tone: same scene, NPC warmth adapts to accumulated score
+export interface TonedDialogue {
   arabic: string;
   roman: string;
   english: string;
+}
+
+export interface ScenarioScene {
+  id: string;
+  charName: string;
+  charGender: 'male' | 'female';
+  setting: string;
+  // Legacy single-tone fields (still used by existing scripts for backward compat)
+  arabic: string;
+  roman: string;
+  english: string;
+  // Optional warm / neutral / cold tones (Phase 3 — new scripts use these)
+  charDialogue?: {
+    warm: TonedDialogue;
+    neutral: TonedDialogue;
+    cold: TonedDialogue;
+  };
   choices: ScenarioChoice[];
 }
 
@@ -111,6 +130,8 @@ export interface ScenarioEnding {
   desc: string;
   color: string;
   type: 'exceptional' | 'success' | 'mixed' | 'failed';
+  // 3-4 key cultural moments shown in the cultural journey summary on end screen
+  culturalJourney?: string[];
 }
 
 export interface ScenarioScript {
@@ -118,11 +139,28 @@ export interface ScenarioScript {
   title: string;
   scenes: ScenarioScene[];
   endings: ScenarioEnding[];
+  // IDs of phrases unlocked by completing this scenario (shown as rich cards on end screen)
+  phrasesUnlocked?: string[];
+}
+
+// Community stats (Phase 2 — Community Choice Distribution)
+export interface ScenarioChoiceStats {
+  scenarioId: string;
+  sceneIndex: number;
+  choiceIndex: number;
+  count: number;
+}
+
+export interface ScenarioEndingStats {
+  scenarioId: string;
+  endingType: string;
+  count: number;
 }
 
 // ─── Phrases ─────────────────────────────────────────────────────────────────
 export type PhraseDifficulty = 'basic' | 'intermediate' | 'advanced';
-export type PhraseCategory = 'Greetings' | 'Gratitude' | 'Hospitality' | 'Workplace' | 'Social';
+export type PhraseCategory = 'Greetings' | 'Gratitude' | 'Hospitality' | 'Workplace' | 'Social' | 'Everyday' | 'Food & Drink' | 'Family';
+export type PhraseType = 'vocab' | 'phrase' | 'expression';
 
 export interface Phrase {
   id: string;
@@ -132,6 +170,12 @@ export interface Phrase {
   category: PhraseCategory;
   culturalNote?: string;
   difficulty: PhraseDifficulty;
+  type: PhraseType;
+  pronTip?: string;
+  // Which scenario this phrase was introduced in (for end-screen traceability)
+  scenarioSource?: string;
+  // Pre-split word segments for the Phrase Builder tap-to-place game (Phase 2)
+  wordTiles?: string[];
 }
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
