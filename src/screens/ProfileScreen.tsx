@@ -1,21 +1,28 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Calendar, BookOpen, ChevronRight, Settings, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { C, FONT_LATIN_BOLD, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK } from '../components/design/tokens';
+import { Calendar, BookOpen, ChevronRight, Settings, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard } from 'lucide-react-native';
+import { FONT_LATIN_BOLD, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { useTheme } from '../hooks/useTheme';
 import { useCountUp } from '../components/design/hooks';
 import { StatCard } from '../components/ui/StatCard';
-import { CATEGORY_COLORS } from '../constants/phrases';
-import type { UserProfile, UserStats, LearningMilestone, JournalEntry } from '../types';
+import { getCategoryColors } from '../constants/phrases';
+import { STRINGS } from '../constants/strings';
+import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 
 interface Props {
   user: UserProfile | null;
   stats: UserStats;
   milestones: LearningMilestone[];
   journal: JournalEntry[];
+  subscriptionStatus?: SubscriptionStatus;
   onSignOut?: () => void;
+  onSettings?: () => void;
+  onManageSubscription?: () => void;
+  onUpgrade?: () => void;
+  onRestorePurchases?: () => void;
 }
 
 const roleIcons: Record<string, React.ElementType> = {
@@ -23,94 +30,120 @@ const roleIcons: Record<string, React.ElementType> = {
   office: Briefcase, healthcare: Activity, driver: Car, security: Shield,
 };
 
-const goalLabels: Record<string, string> = {
-  professional: 'Sound Professional', friends: 'Build Friendships', culture: 'Understand Culture',
-  daily: 'Daily Life', career: 'Career Advancement',
-};
-
-export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: Props) {
+export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onSettings, onManageSubscription, onUpgrade, onRestorePurchases }: Props) {
+  const { C, G, themePreference, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const streakCount = useCountUp(stats.currentStreak, 900, 100);
-  const phrasesStudied = useCountUp(stats.phrasesStudied, 900, 200);
   const phrasesMastered = useCountUp(stats.phrasesMastered, 900, 200);
-  const name = user?.name || 'Learner';
+  const name = user?.name || STRINGS.profile.learner;
   const RoleIcon = roleIcons[user?.role || ''] || Briefcase;
+  const CATEGORY_COLORS = getCategoryColors(C);
 
   const reachedMilestones = milestones.filter(m => m.reached);
-  const nextMilestone = milestones.find(m => !m.reached);
   const categories = Object.values(stats.categoryMastery);
+
+  const getGoalLabel = (g: string) => {
+    return (STRINGS.onboarding.goals as any)[g]?.label || g;
+  };
+
+  const getRoleLabel = (r: string) => {
+    return (STRINGS.onboarding.roles as any)[r] || r;
+  };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.BG }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 24, color: C.TEXT }}>Profile</Text>
-        <Pressable style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-          <Settings size={17} color={C.TEXT2} />
+        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT }}>{STRINGS.profile.title}</Text>
+        <Pressable
+          onPress={onSettings}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Settings size={18} color={C.TEXT2} />
         </Pressable>
       </View>
 
       {/* User Identity Card */}
       <MotiView from={{ opacity: 0, translateY: 12 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
-        <LinearGradient colors={['#130A24', '#0A0516', '#190E2E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 24, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(200,145,58,0.2)' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', justifyContent: 'center' }}>
-              <RoleIcon size={24} color={C.GOLD} />
-            </View>
+        <View style={{
+          borderRadius: 24, padding: 24, marginBottom: 20, backgroundColor: C.CATEGORY_LAVENDER,
+          ...Platform.select({
+            ios: { shadowColor: C.PRIMARY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16 },
+            android: { elevation: 4 },
+          }),
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+            <LinearGradient
+              colors={['#8B78FF', '#6D57FC']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <RoleIcon size={26} color="#FFFFFF" />
+            </LinearGradient>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: C.TEXT }}>{name}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textTransform: 'capitalize', marginTop: 2 }}>{user?.role || 'Learner'} · {user?.mode || 'Career'} focus</Text>
+              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.PRIMARY_DARK }}>{name}</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textTransform: 'capitalize', marginTop: 2 }}>{getRoleLabel(user?.role || '') || STRINGS.profile.learner} · {user?.mode || 'Career'} focus</Text>
             </View>
           </View>
 
-          {/* Learning summary inside card */}
-          <View style={{ flexDirection: 'row', gap: 20 }}>
+          {/* Summary stats */}
+          <View style={{ flexDirection: 'row', gap: 16 }}>
             {[
-              { value: stats.daysActive, label: 'days active' },
-              { value: stats.phrasesStudied, label: 'studied' },
-              { value: stats.phrasesMastered, label: 'mastered' },
-              { value: stats.scenariosCompleted.length, label: 'scenarios' },
+              { value: stats.daysActive, label: STRINGS.profile.daysActive },
+              { value: stats.phrasesStudied, label: STRINGS.profile.studied },
+              { value: stats.phrasesMastered, label: STRINGS.profile.mastered },
+              { value: stats.scenariosCompleted.length, label: STRINGS.profile.scenarios },
             ].map(({ value, label }) => (
               <View key={label} style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 18, color: C.TEXT }}>{value}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{label}</Text>
+                <Text style={{ fontFamily: FONT_HEADING, fontSize: 20, color: C.PRIMARY_DARK }}>{value}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT2, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{label}</Text>
               </View>
             ))}
           </View>
-        </LinearGradient>
+        </View>
       </MotiView>
 
-      {/* Gentle streak */}
+      {/* Stats cards */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 100 }}>
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-          <StatCard icon={<Calendar size={18} color={C.GOLD} />} value={streakCount} label={streakCount === 1 ? 'day learning' : 'days learning'} color={C.GOLD} bg={C.GOLD_DIM} />
-          <StatCard icon={<BookOpen size={18} color={C.JADE2} />} value={phrasesMastered} label="mastered" color={C.JADE2} bg={C.JADE_DIM} />
-          <StatCard icon={<MessageCircle size={18} color={C.VIOLET2} />} value={stats.scenariosCompleted.length} label="scenarios" color={C.VIOLET2} bg={C.VIOLET_DIM} />
+          <StatCard icon={<Calendar size={18} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} color={C.PRIMARY} bg={C.CATEGORY_LAVENDER} />
+          <StatCard icon={<BookOpen size={18} color={C.JADE} />} value={phrasesMastered} label={STRINGS.profile.mastered} color={C.JADE} bg={C.CATEGORY_MINT} />
+          <StatCard icon={<MessageCircle size={18} color="#E066A0" />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color="#E066A0" bg={C.CATEGORY_PINK} />
         </View>
       </MotiView>
 
       {/* Category Mastery */}
       {categories.length > 0 && (
         <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 150 }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: C.TEXT, marginBottom: 10 }}>Skill Areas</Text>
-          <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 14, marginBottom: 20 }}>
-            {categories.map((cat, i) => {
-              const color = CATEGORY_COLORS[cat.category] || C.TEXT2;
+          <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.skillAreas}</Text>
+          <View style={{
+            borderRadius: 20, padding: 16, backgroundColor: C.CARD_BG, gap: 14, marginBottom: 20,
+            ...Platform.select({
+              ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
+              android: { elevation: 2 },
+            }),
+          }}>
+            {categories.map((cat: any, i) => {
+              const color = CATEGORY_COLORS[cat.category] || C.PRIMARY;
               const pct = cat.phrasesTotal > 0 ? Math.round((cat.phrasesStudied / cat.phrasesTotal) * 100) : 0;
               return (
                 <View key={cat.category}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>{cat.category}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.TEXT1_5 }}>{cat.category}</Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
-                      {cat.phrasesStudied}/{cat.phrasesTotal} · {cat.accuracy}% accuracy
+                      {cat.phrasesStudied}/{cat.phrasesTotal} · {STRINGS.profile.accuracy(cat.accuracy)}
                     </Text>
                   </View>
-                  <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.06)' }}>
+                  <View style={{ height: 8, borderRadius: 4, backgroundColor: C.SURFACE }}>
                     <MotiView
                       from={{ width: '0%' }}
                       animate={{ width: `${pct}%` }}
                       transition={{ type: 'timing', duration: 1000, delay: 300 + i * 100 }}
-                      style={{ height: 6, borderRadius: 3, backgroundColor: color }}
+                      style={{ height: 8, borderRadius: 4, backgroundColor: color }}
                     />
                   </View>
                 </View>
@@ -123,11 +156,11 @@ export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: P
       {/* Goals */}
       {user?.goals && user.goals.length > 0 && (
         <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 200 }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: C.TEXT, marginBottom: 10 }}>Your Goals</Text>
+          <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.yourGoals}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {user.goals.map(g => (
-              <View key={g} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.JADE2 }}>{goalLabels[g] || g}</Text>
+              <View key={g} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: C.CATEGORY_MINT }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.JADE }}>{getGoalLabel(g)}</Text>
               </View>
             ))}
           </View>
@@ -136,15 +169,24 @@ export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: P
 
       {/* Milestones */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 250 }}>
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: C.TEXT, marginBottom: 10 }}>Learning Milestones</Text>
-        <View style={{ borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, overflow: 'hidden', marginBottom: 20 }}>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.milestones}</Text>
+        <View style={{
+          borderRadius: 20, backgroundColor: C.CARD_BG, overflow: 'hidden', marginBottom: 20,
+          ...Platform.select({
+            ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
+            android: { elevation: 2 },
+          }),
+        }}>
           {milestones.map((m, i) => (
-            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: i < milestones.length - 1 ? 1 : 0, borderBottomColor: C.BORDER, opacity: m.reached ? 1 : 0.4 }}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: m.reached ? C.JADE_DIM : 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: m.reached ? C.JADE_BORDER : C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                {m.reached ? <Check size={13} color={C.JADE2} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.1)' }} />}
+            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: i < milestones.length - 1 ? 1 : 0, borderBottomColor: C.BORDER, opacity: m.reached ? 1 : 0.4, backgroundColor: m.reached ? C.CATEGORY_LAVENDER : 'transparent' }}>
+              {m.reached && (
+                <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.PRIMARY, borderTopLeftRadius: i === 0 ? 20 : 0 }} />
+              )}
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.reached ? C.GOLD_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}>
+                {m.reached ? <Check size={14} color={C.PRIMARY} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.TEXT3 }} />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: m.reached ? C.TEXT : C.TEXT3 }}>{m.label}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 13, color: m.reached ? C.TEXT : C.TEXT3 }}>{m.label}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 1 }}>{m.description}</Text>
               </View>
               {m.dateReached && (
@@ -158,14 +200,20 @@ export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: P
       {/* Cultural Journal */}
       {journal.length > 0 && (
         <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 300 }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: C.TEXT, marginBottom: 10 }}>Cultural Journal</Text>
+          <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.journal}</Text>
           <View style={{ gap: 10, marginBottom: 20 }}>
             {journal.slice(0, 5).map((entry, i) => (
               <MotiView key={entry.id} from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250, delay: 350 + i * 60 }}>
-                <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+                <View style={{
+                  borderRadius: 16, padding: 14, backgroundColor: C.CARD_BG,
+                  ...Platform.select({
+                    ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 6 },
+                    android: { elevation: 2 },
+                  }),
+                }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Feather size={12} color={C.GOLD} />
-                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 16, color: C.GOLD }}>{entry.arabic}</Text>
+                    <Feather size={12} color={C.PRIMARY} />
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 16, color: C.PRIMARY }}>{entry.arabic}</Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginLeft: 'auto' }}>{entry.date}</Text>
                   </View>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, fontStyle: 'italic', marginBottom: 4 }}>{entry.english}</Text>
@@ -177,13 +225,109 @@ export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: P
         </MotiView>
       )}
 
+      {/* Appearance */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 320 }}>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.appearance}</Text>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          {[
+            { id: 'light', label: STRINGS.profile.appearanceModes.light, Icon: Sun },
+            { id: 'dark', label: STRINGS.profile.appearanceModes.dark, Icon: Moon },
+            { id: 'system', label: STRINGS.profile.appearanceModes.system, Icon: Monitor },
+          ].map(({ id, label, Icon }) => {
+            const active = themePreference === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => setTheme(id as any)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  borderWidth: active ? 2 : 1,
+                  borderColor: active ? C.PRIMARY : C.BORDER,
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Icon size={18} color={active ? C.PRIMARY : C.TEXT3} />
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </MotiView>
+
+      {/* Subscription */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 320 }}>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Subscription</Text>
+        {subscriptionStatus === 'subscribed' ? (
+          <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: C.CARD_BG }}>
+            {/* Active badge */}
+            <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}>
+              <LinearGradient colors={['#8B78FF', '#6D57FC']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <Star size={16} color="#FFFFFF" />
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Fasih Pro</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Active subscription</Text>
+              </View>
+            </View>
+            <Pressable onPress={onManageSubscription} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: C.BORDER }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <CreditCard size={16} color={C.TEXT2} />
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Manage Subscription</Text>
+              </View>
+              <ChevronRight size={14} color={C.TEXT3} />
+            </Pressable>
+            <Pressable onPress={onRestorePurchases} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <RotateCcw size={16} color={C.TEXT2} />
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+              </View>
+              <ChevronRight size={14} color={C.TEXT3} />
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: C.CARD_BG }}>
+            <Pressable onPress={onUpgrade} style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}>
+              <LinearGradient colors={['#FBBF24', '#F59E0B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <Star size={16} color="#FFFFFF" />
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Upgrade to Fasih Pro</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Unlock all scenarios & features</Text>
+              </View>
+              <ChevronRight size={14} color={C.TEXT3} />
+            </Pressable>
+            <Pressable onPress={onRestorePurchases} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <RotateCcw size={16} color={C.TEXT2} />
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+              </View>
+              <ChevronRight size={14} color={C.TEXT3} />
+            </Pressable>
+          </View>
+        )}
+      </MotiView>
+
       {/* Account */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 350 }}>
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: C.TEXT, marginBottom: 10 }}>Account</Text>
-        <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: C.BORDER }}>
-          {[['Notifications', 'Enabled'], ['Display Language', 'English'], ['About Fasih', 'v1.0']].map(([label, val], i, arr) => (
-            <Pressable key={label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: C.BORDER }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{label}</Text>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.account}</Text>
+        <View style={{
+          borderRadius: 20, overflow: 'hidden', backgroundColor: C.CARD_BG,
+          ...Platform.select({
+            ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
+            android: { elevation: 2 },
+          }),
+        }}>
+          {[
+            [STRINGS.profile.notifications, STRINGS.profile.enabled],
+            [STRINGS.profile.displayLanguage, 'English'],
+            [STRINGS.profile.aboutFasih, STRINGS.profile.version('1.0')],
+          ].map(([label, val], i, arr) => (
+            <Pressable key={label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: C.BORDER }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{label}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{val}</Text>
                 <ChevronRight size={14} color={C.TEXT3} />
@@ -196,9 +340,9 @@ export function ProfileScreen({ user, stats, milestones, journal, onSignOut }: P
       {/* Sign Out */}
       {onSignOut && (
         <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 400, delay: 400 }}>
-          <Pressable onPress={onSignOut} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, paddingVertical: 16, borderRadius: 16, backgroundColor: 'rgba(232,118,108,0.08)', borderWidth: 1, borderColor: 'rgba(232,118,108,0.2)' }}>
-            <LogOut size={16} color="#E07070" />
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: '#E07070' }}>Sign Out</Text>
+          <Pressable onPress={onSignOut} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24, paddingVertical: 16, borderRadius: 16, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
+            <LogOut size={16} color={C.ERROR} />
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.ERROR }}>{STRINGS.profile.signOut}</Text>
           </Pressable>
         </MotiView>
       )}

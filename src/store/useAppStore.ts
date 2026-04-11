@@ -3,7 +3,18 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { pushProgress, pullProgress } from '../lib/syncService';
-import { configurePurchases, loginPurchasesUser, logoutPurchasesUser, getEntitlementStatus, purchasePlan, restorePurchases as rcRestorePurchases } from '../lib/purchases';
+import {
+  configurePurchases,
+  loginPurchasesUser,
+  logoutPurchasesUser,
+  getEntitlementStatus,
+  purchasePlan,
+  restorePurchases as rcRestorePurchases,
+  presentPaywallIfNeeded as rcPresentPaywallIfNeeded,
+  presentPaywall as rcPresentPaywall,
+  presentCustomerCenter as rcPresentCustomerCenter,
+  addCustomerInfoListener,
+} from '../lib/purchases';
 import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
@@ -160,8 +171,11 @@ interface AppState {
   // Subscription actions
   startTrial: (plan: 'monthly' | 'yearly') => void;
   skipTrial: () => void;
-  purchaseSubscription: (plan: 'monthly' | 'yearly') => Promise<{ cancelled: boolean; error: string | null }>;
+  purchaseSubscription: (plan: 'monthly' | 'yearly' | 'lifetime') => Promise<{ cancelled: boolean; error: string | null }>;
   restorePurchases: () => Promise<{ restored: boolean; error: string | null }>;
+  presentPaywall: () => Promise<{ purchased: boolean }>;
+  presentPaywallIfNeeded: () => Promise<{ purchased: boolean }>;
+  openCustomerCenter: () => Promise<void>;
   initSubscription: () => Promise<void>;
   hasFullAccess: () => boolean;
   scenariosCompletedCount: () => number;
@@ -336,12 +350,47 @@ export const useAppStore = create<AppState>()(
         return { restored: false, error: result.error };
       },
 
+      presentPaywall: async () => {
+        const result = await rcPresentPaywall();
+        if (result.purchased || result.restored) {
+          set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
+          get().syncToCloud();
+          return { purchased: true };
+        }
+        return { purchased: false };
+      },
+
+      presentPaywallIfNeeded: async () => {
+        const result = await rcPresentPaywallIfNeeded();
+        if (result.purchased || result.restored) {
+          set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
+          get().syncToCloud();
+          return { purchased: true };
+        }
+        return { purchased: false };
+      },
+
+      openCustomerCenter: async () => {
+        await rcPresentCustomerCenter();
+      },
+
       initSubscription: async () => {
         configurePurchases();
         const userId = get().supabaseUserId;
         if (userId) await loginPurchasesUser(userId);
+
+        // Check current entitlement status
         const status = await getEntitlementStatus();
         if (status === 'subscribed') set({ subscriptionStatus: 'subscribed' });
+
+        // Set up real-time listener for subscription changes (e.g., renewal, cancellation)
+        addCustomerInfoListener((newStatus) => {
+          const current = get().subscriptionStatus;
+          if (newStatus !== current) {
+            set({ subscriptionStatus: newStatus });
+            get().syncToCloud();
+          }
+        });
       },
 
       hasFullAccess: () => {

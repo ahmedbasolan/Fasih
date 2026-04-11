@@ -38,8 +38,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store",
-      "react-native-purchases"
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
