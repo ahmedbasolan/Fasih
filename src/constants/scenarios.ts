@@ -587,10 +587,41 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 22, title: 'Royal Patron', arabic: 'نعم الخدمة', roman: "ni'am al-khidma", en: 'What excellent service', desc: 'Sheikh Khalid requests you personally for every future visit. You\'ve earned a lifelong patron.', color: C.GOLD, type: 'exceptional' },
-      { min: 14, title: 'Glowing Review', arabic: 'ما شاء الله عليك', roman: "maa shaa' allah 'alayk", en: 'God has blessed you with skill', desc: 'The Sheikh tells management he was deeply impressed. You receive a commendation.', color: C.JADE2, type: 'success' },
-      { min: 4, title: 'Professional Service', arabic: 'مشكور', roman: "mashkuur", en: "Thank you", desc: 'A polite stay, but no personal connection was made. Just another hotel.', color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Formal Complaint', arabic: 'الله يهديك', roman: "allah yahdik", en: "May God guide you", desc: 'Cultural missteps left a poor impression. The Sheikh speaks to your manager.', color: C.ERROR, type: 'failed' },
+      {
+        min: 22, title: 'Royal Patron', arabic: 'نعم الخدمة', roman: "ni'am al-khidma",
+        en: 'What excellent service',
+        desc: 'Sheikh Khalid requests you personally for every future visit. In Dubai\'s hospitality industry, one VIP patron who asks for you by name changes your career trajectory.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: [
+          'You returned السلام عليكم with the full ورحمة الله — showing the Sheikh you know the greeting has three tiers, not one',
+          'You pledged "ضيوفك على الراس" (your guests are on our heads) — the highest form of hospitality commitment in Gulf culture',
+          'You closed with "بيتك بيتنا دايماً" (your house is our house always) — transforming a hotel stay into a personal relationship',
+          'You never cited policy or made him wait — VIP hospitality means anticipating needs, not managing them',
+        ],
+      },
+      {
+        min: 14, title: 'Glowing Review', arabic: 'ما شاء الله عليك', roman: "maa shaa' allah 'alayk",
+        en: 'God has blessed you with skill',
+        desc: 'The Sheikh tells management he was deeply impressed. You receive a commendation letter. In Gulf hospitality, word-of-mouth from a respected guest is worth more than any formal training certificate.',
+        color: C.JADE2, type: 'success',
+        culturalJourney: [
+          'You used Arabic throughout — even imperfect Arabic signals genuine effort to a Gulf guest',
+          'You prioritised his comfort over hotel procedure — the right instinct in Gulf hospitality culture',
+          'A few moments could have been elevated with stronger blessings, but the core respect was there',
+        ],
+      },
+      {
+        min: 4, title: 'Professional Service', arabic: 'مشكور', roman: "mashkuur",
+        en: 'Thank you',
+        desc: 'A polite stay. No complaints, no compliments. Sheikh Khalid will not remember your name — and in the Gulf hospitality industry, invisible service is a missed opportunity.',
+        color: C.VIOLET2, type: 'mixed',
+      },
+      {
+        min: 0, title: 'Formal Complaint', arabic: 'الله يهديك', roman: "allah yahdik",
+        en: 'May God guide you',
+        desc: 'Cultural missteps left a poor impression. The Sheikh speaks to your manager. "الله يهديك" (may God guide you) is not a blessing in this context — it is a polite expression of disappointment.',
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 
@@ -637,10 +668,41 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 22, title: 'Lifelong Friend', arabic: 'صديقتي العزيزة', roman: "sadiigati al-'aziiza", en: 'My dear friend', desc: 'Fatima invites you to her family gathering next weekend. A true friendship is born.', color: C.GOLD, type: 'exceptional' },
-      { min: 14, title: 'Coffee Companion', arabic: 'نتقابل مرة ثانية', roman: "nitgaabal marra thaanya", en: "Let's meet again", desc: 'You exchange numbers and plan to meet at the same café next week.', color: C.JADE2, type: 'success' },
-      { min: 4, title: 'Passing Acquaintance', arabic: 'يلا مع السلامة', roman: "yalla ma'a as-salaama", en: 'Goodbye then', desc: 'A pleasant conversation, but no real connection was formed.', color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Awkward Exit', arabic: 'الله يسهلك', roman: "allah yisahlik", en: 'May God ease your way', desc: 'Fatima politely leaves early. The cultural gap felt too wide to bridge.', color: C.ERROR, type: 'failed' },
+      {
+        min: 22, title: 'Lifelong Friend', arabic: 'صديقتي العزيزة', roman: "sadiigati al-'aziiza",
+        en: 'My dear friend',
+        desc: 'Fatima invites you to her family gathering next weekend. In Emirati social culture, a family invitation after a single café meeting is rare — it means she sees you as someone worth bringing into her inner circle.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: [
+          'You opened with أهلاً وسهلاً — not just "yes" — showing warmth before a stranger even sat down',
+          'You said "أنا جديدة هنا — وأنتي؟" — sharing yourself first, then showing curiosity about her roots',
+          'You closed with "والله فرحانة إني عرفتك — في أمان الله" — a farewell that made the goodbye feel like a beginning',
+          'Fatima asked to stay in touch. You gave her a reason to want to.',
+        ],
+      },
+      {
+        min: 14, title: 'Coffee Companion', arabic: 'نتقابل مرة ثانية', roman: "nitgaabal marra thaanya",
+        en: "Let's meet again",
+        desc: 'You exchange numbers and plan to meet at the same café next week. A second meeting is earned, not assumed — Fatima chose to invite you back.',
+        color: C.JADE2, type: 'success',
+        culturalJourney: [
+          'You used Arabic at the right moments — including her name and a warm farewell phrase',
+          'You showed interest in her background without making it feel like an interview',
+          'The connection was genuine — a real second coffee will happen',
+        ],
+      },
+      {
+        min: 4, title: 'Passing Acquaintance', arabic: 'يلا مع السلامة', roman: "yalla ma'a as-salaama",
+        en: 'Goodbye then',
+        desc: 'A pleasant conversation, but no real connection formed. Fatima was friendly — she always is. But friendly and connected are different things.',
+        color: C.VIOLET2, type: 'mixed',
+      },
+      {
+        min: 0, title: 'Awkward Exit', arabic: 'الله يسهلك', roman: "allah yisahlik",
+        en: "May God ease your way",
+        desc: 'Fatima politely left early. In Emirati culture, cultural distance feels like coldness even when none is intended. The gap felt too wide to bridge over one coffee.',
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 
@@ -687,10 +749,41 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 22, title: 'Adopted Family', arabic: 'أنت ولدنا', roman: "inta waldna", en: 'You are our child', desc: 'Uncle Rashid declares you family. You\'ll never spend another Eid alone.', color: C.GOLD, type: 'exceptional' },
-      { min: 14, title: 'Neighbourhood Welcome', arabic: 'أهلاً فيك دايماً', roman: "ahlan fiik daayiman", en: 'Always welcome', desc: 'Rashid tells the neighbours about you. Doors open wherever you go.', color: C.JADE2, type: 'success' },
-      { min: 4, title: 'Polite Visitor', arabic: 'تفضل وقت ما تبي', roman: "tfaddal wagt ma tabi", en: 'Come whenever you like', desc: 'A nice visit, but it felt more like a courtesy call than a connection.', color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Missed Blessing', arabic: 'الله كريم', roman: "allah kariim", en: 'God is generous', desc: 'Uncle Rashid smiles politely, but the warmth never fully reached you.', color: C.ERROR, type: 'failed' },
+      {
+        min: 22, title: 'Adopted Family', arabic: 'أنت ولدنا', roman: "inta waldna",
+        en: 'You are our child',
+        desc: 'Uncle Rashid declares you family. In Gulf culture, being called "ولدنا" (our child) by an elder is not a figure of speech — it is a formal declaration of belonging. You will never spend another Eid alone.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: [
+          'You returned "عيدكم مبارك" with "وعساكم من عواده" — the traditional follow-up that most non-natives never learn',
+          'You said "بسم الله" before touching the sweets, then asked who made them — showing the food was an act of love, not just a snack',
+          'You closed with "جزاكم الله خير — أنتم أهلي هنا" — telling Rashid his family filled a gap you actually felt',
+          'Eid is the one day that tests everything: greeting, hospitality, farewell. You passed every stage.',
+        ],
+      },
+      {
+        min: 14, title: 'Neighbourhood Welcome', arabic: 'أهلاً فيك دايماً', roman: "ahlan fiik daayiman",
+        en: 'Always welcome',
+        desc: 'Rashid tells the neighbours about you. In close-knit Emirati neighbourhoods, word travels fast — you will find doors opening before you even knock.',
+        color: C.JADE2, type: 'success',
+        culturalJourney: [
+          'You used the Eid-specific greeting correctly — عيدكم مبارك back, not generic "happy holidays"',
+          'You accepted the sweets with warmth — refusing hospitality on Eid is culturally impossible',
+          'A genuine farewell sealed the visit — Rashid will remember you at the next celebration',
+        ],
+      },
+      {
+        min: 4, title: 'Polite Visitor', arabic: 'تفضل وقت ما تبي', roman: "tfaddal wagt ma tabi",
+        en: 'Come whenever you like',
+        desc: 'A nice visit, but it felt more like a courtesy call than a connection. Rashid was generous — he always is — but the warmth did not become a bond.',
+        color: C.VIOLET2, type: 'mixed',
+      },
+      {
+        min: 0, title: 'Missed Blessing', arabic: 'الله كريم', roman: "allah kariim",
+        en: 'God is generous',
+        desc: 'Uncle Rashid smiles politely. "الله كريم" (God is generous) is what Gulf Arabs say when something disappointing happens and they choose grace over complaint. He chose grace.',
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 
@@ -896,10 +989,41 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 14, title: 'The Chai Invitation', arabic: 'تعال على شاي!', roman: "ta'al ala shay!", en: 'Come for tea!', desc: 'In six floors and one hallway, you went from strangers to neighbors. Sami will knock on your door this weekend with Jordanian mint tea.', color: C.GOLD, type: 'exceptional' },
-      { min: 8, title: 'Friendly Neighbor', arabic: 'جار طيب', roman: 'jaar tayyib', en: 'Good neighbor', desc: "You and Sami will say hi every time you pass each other. He'll hold the elevator for you. It's not a friendship yet, but it's the start of one.", color: C.JADE2, type: 'success' },
-      { min: 3, title: 'The Hallway Nod', arabic: 'هزة راس في الممر', roman: 'hazat ras fi al-mamarr', en: 'Hallway nod', desc: "You and Sami will recognize each other. There'll be an awkward nod when you pass. Neither of you will remember the other's name.", color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Invisible Neighbors', arabic: 'جيران ما يعرفون بعض', roman: "jiraan ma ya'rifun ba'ad", en: 'Stranger neighbors', desc: "Two doors, three feet apart, and a wall between you. Sami won't try again. You'll hear his music through the wall and wonder who lives there.", color: C.ERROR, type: 'failed' },
+      {
+        min: 14, title: 'The Chai Invitation', arabic: 'تعال على شاي!', roman: "ta'al ala shay!",
+        en: 'Come for tea!',
+        desc: 'In six floors and one hallway, you went from strangers to neighbours. Sami will knock on your door this weekend with Jordanian mint tea.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: [
+          'You opened with السلام عليكم — the one greeting that works across every Arabic dialect',
+          'You responded to the child\'s greeting with "يا بطل" (champ) — a tiny word that showed warmth and cultural ease',
+          'You noticed Sami had lived there 8 years — "صار دبي بيتك" (Dubai became your home) showed you actually listened',
+          'You invited first — "تعال على شاي يوم" — taking the relationship from corridor to connection',
+        ],
+      },
+      {
+        min: 8, title: 'Friendly Neighbour', arabic: 'جار طيب', roman: 'jaar tayyib',
+        en: 'Good neighbour',
+        desc: "You and Sami will say hi every time you pass each other. He'll hold the elevator for you. It's not a friendship yet — but it's the start of one.",
+        color: C.JADE2, type: 'success',
+        culturalJourney: [
+          'You engaged when it counted — not every moment, but the right moments',
+          'Sami is Jordanian, not Emirati — you navigated a different Arabic dialect naturally',
+          'A foundation was laid. The chai invitation is still possible.',
+        ],
+      },
+      {
+        min: 3, title: 'The Hallway Nod', arabic: 'هزة راس في الممر', roman: 'hazat ras fi al-mamarr',
+        en: 'Hallway nod',
+        desc: "You and Sami will recognise each other. There'll be an awkward nod when you pass. Neither of you will remember the other's name.",
+        color: C.VIOLET2, type: 'mixed',
+      },
+      {
+        min: 0, title: 'Invisible Neighbours', arabic: 'جيران ما يعرفون بعض', roman: "jiraan ma ya'rifun ba'ad",
+        en: 'Stranger neighbours',
+        desc: "Two doors, three feet apart, and a wall between you. Sami won't try again. You'll hear his music through the wall and wonder who lives there.",
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 });
