@@ -276,7 +276,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'يلا نشرب قهوة؟', roman: 'yalla nishrab gahwa?', english: 'Come on, shall we grab some coffee?',
         choices: [
           { id: 'a', text: 'Love to — just let me finish this email', arabic: 'حبيت بس خلني أخلص هالإيميل', roman: 'habait bass khallni akhallas hal-iimail', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'Prioritising tasks over an invitation signals you don\'t value the relationship.', outcome: 'bad' },
-          { id: 'b', text: 'شكراً! إن شاء الله', arabic: 'شكراً! إن شاء الله', roman: 'shukran! in shaa allah', score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'إن شاء الله used sincerely shows cultural fluency and genuine respect. Tone matters — say it with warmth, not hesitation.', outcome: 'good' },
+          { id: 'b', text: 'شكراً! إن شاء الله', arabic: 'شكراً! إن شاء الله', roman: "shukran! in shaa' allah", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'إن شاء الله used sincerely shows cultural fluency and genuine respect. Tone matters — say it with warmth, not hesitation.', outcome: 'good' },
           { id: 'c', text: 'Sure, but I only have 5 minutes', arabic: 'إي بس عندي خمس دقايق بس', roman: "ii bass 'indi khams dagaayig bass", score: -2, impact: { trust: -1, respect: 0, culture: -1 }, note: 'Rushing a coffee invitation is seen as disrespectful. Coffee is a ritual of bonding.', outcome: 'bad' },
           { id: 'd', text: 'يلا! الله يبارك فيك', arabic: 'يلا! الله يبارك فيك', roman: 'yalla! allah ybaarak fiik', score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Enthusiastic Arabic response AND invoking a blessing shows cultural mastery.', outcome: 'excellent' },
         ],
@@ -288,7 +288,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
           { id: 'a', text: "Just water — I'm not really a coffee person", arabic: 'بس ماي — ما أشرب قهوة وايد', roman: "bass maay — maa ashrab gahwa waayid", score: -4, impact: { trust: -1, respect: -2, culture: -1 }, note: 'Refusing a hospitality offer means rejecting the person, not just the drink.', outcome: 'bad' },
           { id: 'b', text: 'Nescafé please', arabic: 'نسكافيه لو سمحت', roman: 'nescafe law samaht', score: 3, impact: { trust: 1, respect: 0, culture: 0 }, note: 'Neutral — you accepted which is good, but no cultural connection was made.', outcome: 'neutral' },
           { id: 'c', text: "Whatever you're having — I'm with you", arabic: 'أنا معاك — نفس اللي تشربه', roman: "ana ma'aak — nafs illi tishrabah", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, note: 'أنا معاك (I\'m with you) shows deference to your host.', outcome: 'good' },
-          { id: 'd', text: 'قهوة عربية — ما شاء الله على ريحتها', arabic: 'قهوة عربية — ما شاء الله', roman: "gahwa 'arabiyya — masha allah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'ما شاء الله on the aroma shows you appreciate the ritual itself.', outcome: 'excellent' },
+          { id: 'd', text: 'قهوة عربية — ما شاء الله على ريحتها', arabic: 'قهوة عربية — ما شاء الله', roman: "gahwa 'arabiyya — maa shaa' allah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'ما شاء الله on the aroma shows you appreciate the ritual itself.', outcome: 'excellent' },
         ],
       },
       {
@@ -304,9 +304,9 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       { min: 22, title: 'Family Partnership', arabic: 'أنت من أهلنا', roman: 'inta min ahlna', en: "You're one of us now", desc: 'Ahmed invites you to meet his family. You\'ve crossed from colleague to friend.', color: C.GOLD, type: 'exceptional' },
-      { min: 14, title: 'Job Referral', arabic: 'إن شاء الله خير', roman: 'in shaa allah khair', en: 'God willing, only good things', desc: 'Ahmed mentions a great opening and says he\'ll personally recommend you.', color: C.JADE2, type: 'success' },
+      { min: 14, title: 'Job Referral', arabic: 'إن شاء الله خير', roman: "in shaa' allah khair", en: 'God willing, only good things', desc: 'Ahmed mentions a great opening and says he\'ll personally recommend you.', color: C.JADE2, type: 'success' },
       { min: 4, title: 'Transactional Colleague', arabic: 'زين، شوف', roman: 'zayn, shuuf', en: "OK, we'll see", desc: 'A pleasant chat but the relationship stays professional.', color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Missed Connection', arabic: 'بكرة إن شاء الله', roman: 'bukra in shaa allah', en: "Tomorrow, God willing", desc: 'Cultural missteps created distance. Ahmed politely closes the conversation.', color: C.ERROR, type: 'failed' },
+      { min: 0, title: 'Missed Connection', arabic: 'بكرة إن شاء الله', roman: "bukra in shaa' allah", en: "Tomorrow, God willing", desc: 'Cultural missteps created distance. Ahmed politely closes the conversation.', color: C.ERROR, type: 'failed' },
     ],
   },
 
@@ -335,7 +335,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         english: "The doctor told me I need to lose weight. I want to drop at least ten kilos",
         choices: [
           { id: 'a', text: 'God willing, we can help you. Ten kilos is doable. What\'s your weight right now?', arabic: 'إن شاء الله نقدر نساعدك. عشر كيلو شي ممكن. كم وزنك الحين؟', roman: "in shaa' allah nigdar nisaa'dak. 'ashar kiilo shay mumkin. kam waznak al-hin?", score: 8, impact: { trust: 2, respect: 3, culture: 3 }, note: 'You validated his goal, used إن شاء الله for cultural humility, and asked a professional follow-up.', outcome: 'excellent' },
-          { id: 'b', text: 'MashaAllah that you came! That\'s the most important thing. Let\'s look at your situation', arabic: 'ما شاء الله إنك جيت! هذا أهم شي. خلنا نشوف وضعك', roman: "ma shaa' allah innak yiit! hadha aham shay. khallina nishuuf wad'ak", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Praising someone for showing up honors his decision. خلنا نشوف is collaborative.', outcome: 'good' },
+          { id: 'b', text: 'MashaAllah that you came! That\'s the most important thing. Let\'s look at your situation', arabic: 'ما شاء الله إنك جيت! هذا أهم شي. خلنا نشوف وضعك', roman: "maa shaa' allah innak yiit! hadha aham shay. khallina nishuuf wad'ak", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Praising someone for showing up honors his decision. خلنا نشوف is collaborative.', outcome: 'good' },
           { id: 'c', text: 'Okay. What\'s your weight? What\'s your height?', arabic: 'أوكي. كم وزنك؟ كم طولك؟', roman: 'okay. kam waznak? kam toolak?', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'Efficient but cold. Firing off measurement questions without acknowledging his feelings turns it into a medical intake form.', outcome: 'neutral' },
           { id: 'd', text: 'Yeah, it\'s obvious you need exercise. Don\'t worry', arabic: 'إي واضح إنك تحتاج تمارين. لا تخاف', roman: 'ii waadih innak tihtaaj tamaariin. la tikhaaf', score: -6, impact: { trust: -2, respect: -2, culture: -2 }, note: 'Never comment on a client\'s body unsolicited. This is humiliating for someone already self-conscious.', outcome: 'bad' },
         ],
@@ -588,7 +588,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       { min: 22, title: 'Royal Patron', arabic: 'نعم الخدمة', roman: "ni'am al-khidma", en: 'What excellent service', desc: 'Sheikh Khalid requests you personally for every future visit. You\'ve earned a lifelong patron.', color: C.GOLD, type: 'exceptional' },
-      { min: 14, title: 'Glowing Review', arabic: 'ما شاء الله عليك', roman: "masha allah 'alayk", en: 'God has blessed you with skill', desc: 'The Sheikh tells management he was deeply impressed. You receive a commendation.', color: C.JADE2, type: 'success' },
+      { min: 14, title: 'Glowing Review', arabic: 'ما شاء الله عليك', roman: "maa shaa' allah 'alayk", en: 'God has blessed you with skill', desc: 'The Sheikh tells management he was deeply impressed. You receive a commendation.', color: C.JADE2, type: 'success' },
       { min: 4, title: 'Professional Service', arabic: 'مشكور', roman: "mashkuur", en: "Thank you", desc: 'A polite stay, but no personal connection was made. Just another hotel.', color: C.VIOLET2, type: 'mixed' },
       { min: 0, title: 'Formal Complaint', arabic: 'الله يهديك', roman: "allah yahdik", en: "May God guide you", desc: 'Cultural missteps left a poor impression. The Sheikh speaks to your manager.', color: C.ERROR, type: 'failed' },
     ],
@@ -619,7 +619,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         choices: [
           { id: 'a', text: 'I\'d rather not say — I like my privacy', arabic: 'أفضل ما أقول — أحب خصوصيتي', roman: "afaddal maa aguul — ahib khususiyyati", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: 'Refusing to share basic information comes across as suspicious, not private.', outcome: 'bad' },
           { id: 'b', text: 'I\'m from [country] — just moved here recently', arabic: 'أنا من [بلد] — توني يايه هني', roman: 'ana min [balad] — tawni yaaya hini', score: 5, note: 'Honest and friendly, but you missed a chance to reciprocate with curiosity about her.', outcome: 'good' },
-          { id: 'c', text: 'أنا من [بلد] — المكان حلو ما شاء الله', arabic: 'المكان حلو ما شاء الله', roman: "ana min [balad] — al-makaan hilw masha allah", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Complimenting the place with ما شاء الله shows you appreciate local culture.', outcome: 'good' },
+          { id: 'c', text: 'أنا من [بلد] — المكان حلو ما شاء الله', arabic: 'المكان حلو ما شاء الله', roman: "ana min [balad] — al-makaan hilw maa shaa' allah", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Complimenting the place with ما شاء الله shows you appreciate local culture.', outcome: 'good' },
           { id: 'd', text: 'أنا جديدة هنا — وأنتي؟ من أهل المنطقة؟', arabic: 'أنا جديدة هنا — وأنتي؟ من أهل المنطقة؟', roman: "ana ydiida hini — wa inti? min ahl al-mintaga?", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Sharing, then asking if she\'s from the area shows reciprocal interest — the foundation of friendship.', outcome: 'excellent' },
         ],
       },
@@ -631,7 +631,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         choices: [
           { id: 'a', text: 'Maybe — I\'m pretty busy these days', arabic: 'يمكن — وايد مشغولة هالأيام', roman: 'yimkin — waayid mashghuula hal-ayyaam', score: -4, note: 'Hedging a sincere offer of friendship is hurtful. In Emirati culture, connection is a gift.', outcome: 'bad' },
           { id: 'b', text: 'Sure! Here\'s my number', arabic: 'أكيد! هذا رقمي', roman: "akiid! haadha ragmi", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Willing but brief. A warmer farewell would seal the connection.', outcome: 'good' },
-          { id: 'c', text: 'إن شاء الله! تشرفنا يا فاطمة', arabic: 'تشرفنا يا فاطمة', roman: "in shaa allah! tsharrafna ya faatima", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: '"We are honored, Fatima" — using her name with this phrase feels genuinely warm.', outcome: 'good' },
+          { id: 'c', text: 'إن شاء الله! تشرفنا يا فاطمة', arabic: 'تشرفنا يا فاطمة', roman: "in shaa' allah! tsharrafna ya faatima", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: '"We are honored, Fatima" — using her name with this phrase feels genuinely warm.', outcome: 'good' },
           { id: 'd', text: 'أكيد! والله فرحانة إني عرفتك — في أمان الله', arabic: 'والله فرحانة إني عرفتك — في أمان الله', roman: "akiid! wallah farhana inni 'araftich — fi amaan allah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: '"Truly happy I met you — in God\'s protection." A heartfelt Arabic farewell that creates lasting bonds.', outcome: 'excellent' },
         ],
       },
@@ -656,7 +656,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         english: 'Blessed Eid to you! Come visit us.',
         choices: [
           { id: 'a', text: 'Thanks! Maybe later — I have plans', arabic: 'مشكور! يمكن بعدين — عندي خطة', roman: "mashkuur! yimkin ba'dayn — 'indi khatta", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, note: 'Declining an Eid invitation is like refusing a family embrace. This day is about togetherness.', outcome: 'bad' },
-          { id: 'b', text: 'عيدكم مبارك! إن شاء الله', arabic: 'عيدكم مبارك! إن شاء الله', roman: "eidkum mubaarak! in shaa allah", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Returning the greeting warmly shows respect for the occasion.', outcome: 'good' },
+          { id: 'b', text: 'عيدكم مبارك! إن شاء الله', arabic: 'عيدكم مبارك! إن شاء الله', roman: "eidkum mubaarak! in shaa' allah", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Returning the greeting warmly shows respect for the occasion.', outcome: 'good' },
           { id: 'c', text: 'Happy holidays to you too!', arabic: 'كل عام وأنتم بخير!', roman: "kul 'aam wa antum b-khayr!", score: -2, impact: { trust: 0, respect: -1, culture: -1 }, note: '"Happy holidays" is generic. Eid has a specific greeting that should be used.', outcome: 'neutral' },
           { id: 'd', text: 'عيدكم مبارك وعساكم من عواده! تشرفنا والله', arabic: 'عيدكم مبارك وعساكم من عواده', roman: "eidkum mubaarak wa 'asaakum min 'uwwaadah! tsharrafna wallah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: '"May you celebrate it again" is the traditional follow-up. Combined with "we\'re honored" — masterful.', outcome: 'excellent' },
         ],
@@ -670,7 +670,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
           { id: 'a', text: 'No thanks, I\'m watching my sugar intake', arabic: 'لا شكراً، أنا محافظ على السكر', roman: "la shukran, ana muhaafit 'ala as-sukkar", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: 'Refusing Eid sweets is like refusing the celebration itself. Always accept hospitality.', outcome: 'bad' },
           { id: 'b', text: 'Thank you! They look delicious', arabic: 'شكراً! شكلها لذيذة', roman: "shukran! shakilha ladhiidha", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, note: 'Accepting is good, but the response is too plain for such a generous moment.', outcome: 'neutral' },
           { id: 'c', text: 'بسم الله — يسلموا إيديك يا عمي', arabic: 'يسلموا إيديك يا عمي', roman: "bismillah — yislamu ideik ya 'ammi", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'بسم الله before eating + "bless your hands, uncle" — pure cultural fluency.', outcome: 'good' },
-          { id: 'd', text: 'بسم الله — ما شاء الله! مين سواها؟ الله يعطيكم العافية', arabic: 'ما شاء الله! مين سواها؟ الله يعطيكم العافية', roman: "bismillah — masha allah! miin sawwaha? allah ya'tiikum al-'aafya", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Saying بسم الله, praising with ما شاء الله, asking who made them, then blessing — this is Eid perfection.', outcome: 'excellent' },
+          { id: 'd', text: 'بسم الله — ما شاء الله! مين سواها؟ الله يعطيكم العافية', arabic: 'ما شاء الله! مين سواها؟ الله يعطيكم العافية', roman: "bismillah — maa shaa' allah! miin sawwaha? allah ya'tiikum al-'aafya", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Saying بسم الله, praising with ما شاء الله, asking who made them, then blessing — this is Eid perfection.', outcome: 'excellent' },
         ],
       },
       {
@@ -722,7 +722,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'قولي يا حبيبي — اسمك إيه وانت منين أصلاً؟',
         roman: "'uli ya habibi — ismak eh w-inta minin aslan?",
         english: "Tell me habibi — what's your name and where are you originally from?",
-        teachingNote: "'منين' (minein) is Egyptian for 'from where.' In Gulf Arabic you'd hear 'من وين' (min wein). Same meaning, different sound.",
+        teachingNote: "'قولي' becomes ''uli' in Egyptian Arabic — the ق (qaf) drops to a glottal stop. In Gulf Arabic you'd say 'gool' (with a hard g). Also: 'منين' (minein) is Egyptian for 'from where'; Gulf Arabic says 'من وين' (min wein). Same words, different sounds.",
         choices: [
           { id: 'a', text: "I'm [name]. I'm from Portugal", arabic: 'أنا [name]. أنا من البرتغال', roman: 'ana [name]. ana min al-burtughal', score: 3, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef nearly swerves the car. He slaps the steering wheel and turns around with wide eyes.", outcome: 'excellent', next: 'c3_ronaldo', teachingHighlight: "البرتغال (al-Burtughal) — Many country names sound different in Arabic. Portugal becomes 'al-Burtughal.'" },
           { id: 'b', text: "I'm [name]. And you're from Egypt?", arabic: 'أنا [name]. وانت من مصر؟', roman: 'ana [name]. w-inta min masr?', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef laughs, pleased you recognized his accent. He taps his chest proudly.", outcome: 'good', next: 'c3_dubai' },
@@ -760,7 +760,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         english: "See this Marina? When I first came to Dubai 8 years ago — there was nothing here!",
         teachingNote: "'من ٨ سنين' (min 8 sineen) means '8 years ago' in Egyptian. Gulf Arabic would say 'من ٨ سنوات' (min 8 sanawaat).",
         choices: [
-          { id: 'a', text: 'MashaAllah! 8 years — Dubai became your home', arabic: 'ما شاء الله! ثمان سنوات — صار دبي بيتك', roman: "masha allah! thaman sanawaat — saar dubbi beitak", score: 3, impact: { trust: 0, respect: 0, culture: 0 }, note: "Something softens in Youssef's face. He wasn't expecting that.", outcome: 'excellent', next: 'c4' },
+          { id: 'a', text: 'MashaAllah! 8 years — Dubai became your home', arabic: 'ما شاء الله! ثمان سنوات — صار دبي بيتك', roman: "maa shaa' allah! thaman sanawaat — saar dubbi beitak", score: 3, impact: { trust: 0, respect: 0, culture: 0 }, note: "Something softens in Youssef's face. He wasn't expecting that.", outcome: 'excellent', next: 'c4' },
           { id: 'b', text: 'Your family here or in Egypt?', arabic: 'عائلتك هنا ولا في مصر؟', roman: "'a'iltak hina walla fi masr?", score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef pulls out his phone at a red light and flashes a photo of two kids in school uniforms.", outcome: 'good', next: 'c4' },
           { id: 'c', text: 'Yeah, Dubai changed a lot', arabic: 'هيه، دبي تغيرت وايد', roman: 'heeh, dubbi taghayarat wayid', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef agrees but your flat tone doesn't give him much to work with. He nods and focuses on driving.", outcome: 'neutral', next: 'c4' },
         ],
@@ -773,7 +773,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         teachingNote: "'شو يابك' (shoo yabak) means 'what brought you.' It's a warm way to ask someone's reason for being somewhere.",
         choices: [
           { id: 'a', text: 'Work. Got any good Dubai stories?', arabic: 'شغل. عندك قصص حلوة من دبي؟', roman: "shughul. 'indak qisas hilwa min dubbi?", score: 3, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef's face lights up like you gave him a gift. Nobody ever asks him for HIS stories.", outcome: 'excellent', next: 'c5' },
-          { id: 'b', text: 'Work. Thank God', arabic: 'شغل. الحمد لله', roman: 'shughul. alhamdulillah', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef nods respectfully. Short answer, but 'Alhamdulillah' is the right closer.", outcome: 'good', next: 'c5' },
+          { id: 'b', text: 'Work. Thank God', arabic: 'شغل. الحمد لله', roman: 'shughul. al-hamdu lillah', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef nods respectfully. Short answer, but 'Alhamdulillah' is the right closer.", outcome: 'good', next: 'c5' },
           { id: 'c', text: 'A bit of tourism', arabic: 'سياحة شوية', roman: 'siyaha shwayya', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef immediately switches to tour-guide mode, pointing at everything.", outcome: 'neutral', next: 'c5' },
           { id: 'd', text: 'Glance at your phone, half-answer', arabic: '—', roman: '(Check your phone, give a vague nod)', score: -2, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef catches the phone check in the mirror. The energy drains from the car. He turns up the radio.", outcome: 'bad', next: 'c5' },
         ],
@@ -815,9 +815,9 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: '...',
         roman: '(Sami glances up from his phone)',
         english: 'The elevator doors are closing. Inside, a guy around your age glances up from his phone.',
-        teachingNote: "السلام عليكم (as-salamu alaykum) is the universal Arabic greeting. The response is وعليكم السلام (wa alaykum as-salam).",
+        teachingNote: "السلام عليكم (as-salaamu 'alaykum) is the universal Arabic greeting. The response is وعليكم السلام (wa 'alaykum as-salaam).",
         choices: [
-          { id: 'a', text: 'Peace be upon you', arabic: 'السلام عليكم', roman: 'as-salamu alaykum', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: 'His face softens immediately. He straightens up and pockets his phone.', outcome: 'excellent', next: 'c2' },
+          { id: 'a', text: 'Peace be upon you', arabic: 'السلام عليكم', roman: "as-salaamu 'alaykum", score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: 'His face softens immediately. He straightens up and pockets his phone.', outcome: 'excellent', next: 'c2' },
           { id: 'b', text: 'Hello', arabic: 'مرحبا', roman: 'marhaba', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'He nods back, a small smile. Friendly enough. He keeps his phone in his hand but lowers it.', outcome: 'good', next: 'c2' },
           { id: 'c', text: 'Enter without acknowledging', arabic: '—', roman: '(Step in, face the doors, say nothing)', score: -1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'He glances at you, then back at his phone. The elevator hums. Neither of you moves.', outcome: 'bad', next: 'c2' },
         ],
@@ -829,8 +829,8 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         english: "Come on sweetheart, say salam",
         teachingNote: "When someone says السلام عليكم, the expected response is وعليكم السلام. Not responding — especially to a child trying their best — is noticed.",
         choices: [
-          { id: 'a', text: 'Peace be upon you, champ!', arabic: 'وعليكم السلام يا بطل!', roman: 'wa alaykum as-salam ya batal!', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "The boy beams. The mother mouths 'thank you.' Sami watches you with a slight grin.", outcome: 'excellent', next: 'c3' },
-          { id: 'b', text: 'And peace be upon you', arabic: 'وعليكم السلام', roman: 'wa alaykum as-salam', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'The boy hides behind his mother\'s leg. Sami gives a neutral nod.', outcome: 'good', next: 'c3' },
+          { id: 'a', text: 'Peace be upon you, champ!', arabic: 'وعليكم السلام يا بطل!', roman: "wa 'alaykum as-salaam ya batal!", score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: "The boy beams. The mother mouths 'thank you.' Sami watches you with a slight grin.", outcome: 'excellent', next: 'c3' },
+          { id: 'b', text: 'And peace be upon you', arabic: 'وعليكم السلام', roman: "wa 'alaykum as-salaam", score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'The boy hides behind his mother\'s leg. Sami gives a neutral nod.', outcome: 'good', next: 'c3' },
           { id: 'c', text: "Don't respond to the child", arabic: '—', roman: '(Smile faintly, look back at the doors)', score: -1, impact: { trust: 0, respect: 0, culture: 0 }, note: "The boy's face drops. Sami's expression flattens — he noticed you left a child hanging.", outcome: 'bad', next: 'c3' },
         ],
       },
