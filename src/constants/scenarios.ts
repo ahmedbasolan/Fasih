@@ -153,6 +153,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'صباح الخير! ويه يديد ما شفته قبل',
         roman: 'sabaah il-khair! wayh ydiid ma shifta gabil',
         english: "Good morning! A new face I haven't seen before",
+        teachingNote: "Faisal says 'ويه يديد' (a new face — masculine). Female learners: he would say 'ويه يديدة' instead. The greeting صباح النور is the same for all.",
         choices: [
           { id: 'a', text: 'Morning of light!', arabic: 'صباح النور!', roman: 'sabaah in-nuur!', score: 9, impact: { trust: 2, respect: 3, culture: 3 }, note: 'You used the correct Arabic response — صباح النور, not صباح الخير back. This small detail tells Faisal you\'ve made an effort to learn. In Gulf culture, correct greetings signal respect.', outcome: 'excellent' },
           { id: 'b', text: 'Good morning!', arabic: 'صباح الخير!', roman: 'sabaah il-khair!', score: 4, impact: { trust: 1, respect: 2, culture: 1 }, note: 'You greeted in Arabic, which Faisal appreciates. But you replied with صباح الخير instead of صباح النور — a common beginner mix-up. Like answering "good morning" with "good morning" instead of "morning!" — it works, but it\'s slightly off.', outcome: 'good' },
@@ -172,6 +173,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         },
         warmThreshold: 10,
         coldThreshold: 0,
+        teachingNote: "Faisal says 'شلونك؟' — addressing a male learner. Female learners: he would say 'شلونج؟' instead. The response 'الحمد لله، بخير' works the same for both.",
         choices: [
           { id: 'a', text: 'Thank God, I\'m well! I\'m new here. Honored to meet you!', arabic: 'الحمد لله، بخير! أنا يديد هني. تشرفنا!', roman: "al-hamdu lillah, b-khayr! ana ydiid hini. tsharrafna!", score: 9, impact: { trust: 2, respect: 3, culture: 3 }, note: 'A complete, warm response. Starting with الحمد لله shows you understand that "how are you" in Gulf culture always begins with gratitude to God. Adding تشرفنا (honored to meet you) elevates a simple introduction into a genuine gesture of respect.', outcome: 'excellent' },
           { id: 'b', text: 'Thank God! Yes, first day', arabic: 'الحمد لله! إي، أول يوم', roman: 'al-hamdu lillah! ii, awwal yoom', score: 5, impact: { trust: 2, respect: 2, culture: 1 }, note: 'Short but culturally correct. You started with الحمد لله and confirmed it\'s your first day. Faisal will appreciate the honesty. Sometimes simple and sincere beats rehearsed and long.', outcome: 'good' },
@@ -635,6 +637,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'هذا الكرسي فاضي؟',
         roman: "hadha al-kursi faadhi?",
         english: 'Is this chair free?',
+        teachingNote: "Notice تفضلي (not تفضل) — the feminine imperative is used when inviting a woman to sit. If the person were male, it would be تفضل. This distinction applies any time you give an invitation or instruction to a specific person.",
         choices: [
           { id: 'a', text: 'Yeah, go ahead', arabic: 'إي تفضلي', roman: 'ii tfaddali', score: 1, note: 'You used the correct feminine form تفضلي — that is noticed and appreciated. But the English "Yeah" before it signals that Arabic is a performance, not a reflex. Fatima interprets this as someone who knows a few words but has not yet committed to the culture. The gap between "yeah, tafaddali" and "ahlan wa sahlan — tafaddali" is the gap between polite and warm.', outcome: 'neutral' },
           { id: 'b', text: 'أهلاً وسهلاً — تفضلي', arabic: 'أهلاً وسهلاً — تفضلي', roman: "ahlan wa sahlan — tfaddali", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: '"Welcome and be at ease — please sit" uses the feminine form correctly and shows warmth.', outcome: 'excellent' },
