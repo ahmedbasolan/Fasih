@@ -68,6 +68,7 @@ export const DEFAULT_USER_STATS: UserStats = {
 // ─── Scenarios ───────────────────────────────────────────────────────────────
 export type ScenarioMode = 'career' | 'social';
 export type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+export type ImpactMetrics = { trust: number; respect: number; culture: number };
 
 export interface Scenario {
   id: string;
@@ -86,7 +87,7 @@ export interface Scenario {
   arabicScene: string;
   kafIntro: string;
   mode: ScenarioMode;
-  impactPreview?: { trust: number; respect: number; culture: number };
+  impactPreview?: ImpactMetrics;
 }
 
 export type ChoiceOutcome = 'excellent' | 'good' | 'neutral' | 'bad';
@@ -101,7 +102,7 @@ export interface ScenarioChoice {
   note?: string;
   outcome: ChoiceOutcome;
   flag?: string;
-  impact?: { trust: number; respect: number; culture: number };
+  impact?: ImpactMetrics;
   next?: string;
   teachingHighlight?: string;
 }
