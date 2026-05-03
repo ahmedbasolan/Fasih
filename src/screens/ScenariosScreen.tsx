@@ -20,7 +20,7 @@ import {
 } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
-import type { UserProfile, Scenario } from '../types';
+import type { UserProfile, Scenario, ImpactMetrics } from '../types';
 
 interface Props {
   user: UserProfile | null;
@@ -107,6 +107,72 @@ function useRandomHeading() {
   return { heading, funFact };
 }
 
+// ─── Impact preview strip ─────────────────────────────────────────────────────
+
+function ImpactPreviewStrip({
+  impactPreview,
+  mode,
+}: {
+  impactPreview: ImpactMetrics;
+  mode: 'career' | 'social';
+}) {
+  const isCareer = mode === 'career';
+
+  const metrics = isCareer
+    ? [
+        { label: 'Trust', value: impactPreview.trust, color: '#4A90D9' },
+        { label: 'Respect', value: impactPreview.respect, color: '#5BA85A' },
+        { label: 'Culture', value: impactPreview.culture, color: '#C07AB8' },
+      ]
+    : [
+        { label: '🔥 Vibe', value: impactPreview.trust, color: '#FF7043' },
+        { label: '🤝 Rapport', value: impactPreview.respect, color: '#EC407A' },
+        { label: '🌙 Culture', value: impactPreview.culture, color: '#7E57C2' },
+      ];
+
+  return (
+    <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 4 }}>
+      {metrics.map(({ label, value, color }) => (
+        <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text
+            style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 9,
+              color: '#6B7280',
+              width: isCareer ? 44 : 68,
+            }}
+          >
+            {label}
+          </Text>
+          <View
+            style={{
+              flex: 1,
+              height: isCareer ? 4 : 6,
+              borderRadius: isCareer ? 2 : 3,
+              backgroundColor: '#E5E7EB',
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                width: `${value}%`,
+                height: '100%',
+                backgroundColor: color,
+                borderRadius: isCareer ? 2 : 3,
+              }}
+            />
+          </View>
+          {isCareer && (
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: '#9CA3AF', width: 26, textAlign: 'right' }}>
+              {value}%
+            </Text>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Card component ───────────────────────────────────────────────────────────
 
 
@@ -121,7 +187,7 @@ function ScenarioCard({
   isLeft: boolean;
   onPress: () => void;
 }) {
-  const { iconName, title, phrases, locked, comingSoon } = scenario;
+  const { iconName, title, phrases, locked, comingSoon, impactPreview, mode } = scenario;
   const Icon = ICON_MAP[iconName] || Coffee;
   const palette = CARD_PALETTES[index % CARD_PALETTES.length];
   const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
@@ -192,10 +258,17 @@ function ScenarioCard({
           </Text>
         </View>
 
-        {/* ── Bottom: large icon centered ── */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 14 }}>
-          <Icon size={56} color={locked ? '#CBD5E1' : palette.accent} strokeWidth={1.5} />
+        {/* ── Bottom: icon + impact strip ── */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked ? 4 : 14 }}>
+          <Icon
+            size={impactPreview && !locked ? 40 : 56}
+            color={locked ? '#CBD5E1' : palette.accent}
+            strokeWidth={1.5}
+          />
         </View>
+        {impactPreview && !locked && !comingSoon && (
+          <ImpactPreviewStrip impactPreview={impactPreview} mode={mode} />
+        )}
         {comingSoon && (
           <View style={{
             position: 'absolute',
