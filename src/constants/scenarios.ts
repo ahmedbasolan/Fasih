@@ -16,6 +16,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Your first Arabic greeting sets the tone for every interaction that follows.',
     mode: 'career',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 75, respect: 60, culture: 80 },
   },
   {
     id: 'coffee-invitation', iconName: 'Coffee',
@@ -26,6 +27,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
     mode: 'career',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 90, respect: 75, culture: 85 },
   },
   {
     id: 'hotel-guest', iconName: 'Building2',
@@ -36,6 +38,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Welcoming a guest in Arabic shows a respect that no translation can fully convey.',
     mode: 'career',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 65, respect: 90, culture: 80 },
   },
   {
     id: 'office-meeting', iconName: 'Briefcase',
@@ -47,6 +50,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     mode: 'career',
     comingSoon: true,
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 70, respect: 85, culture: 75 },
   },
   {
     id: 'ramadan-shift', iconName: 'Moon',
@@ -58,6 +62,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     mode: 'career',
     comingSoon: true,
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 60, respect: 80, culture: 95 },
   },
   {
     id: 'gym-consultation', iconName: 'Dumbbell',
@@ -68,6 +73,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Your first consultation sets the tone. Hospitality before business, always.',
     mode: 'career',
     dialect: 'Saudi Gulf',
+    impactPreview: { trust: 80, respect: 65, culture: 60 },
   },
 ];
 
@@ -81,6 +87,7 @@ export const getMedicalScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'In Gulf healthcare, a caring nurse can transform a patient\'s entire experience at a clinic.',
     mode: 'career',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 85, respect: 70, culture: 65 },
   },
 ];
 
@@ -94,6 +101,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Small talk in Arabic opens doors that formal introductions never could.',
     mode: 'social',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 70, respect: 50, culture: 70 },
   },
   {
     id: 'eid-greeting', iconName: 'Users',
@@ -104,6 +112,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     kafIntro: 'Eid greetings carry centuries of tradition — each phrase is a gift of connection.',
     mode: 'social',
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 60, respect: 75, culture: 95 },
   },
   {
     id: 'weekend-invite', iconName: 'Users',
@@ -115,6 +124,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     mode: 'social',
     comingSoon: true,
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 80, respect: 65, culture: 85 },
   },
   {
     id: 'neighborhood', iconName: 'ShoppingBag',
@@ -126,6 +136,29 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     mode: 'social',
     comingSoon: true,
     dialect: 'Emirati Gulf',
+    impactPreview: { trust: 55, respect: 60, culture: 75 },
+  },
+  {
+    id: 'social_taxi_ride', iconName: 'Zap',
+    title: 'The Taxi Ride', subtitle: 'Airport → Hotel, a late-night conversation',
+    decisions: 6, endings: 4, phrases: '12+', level: 'Beginner', locked: false,
+    color: C.GOLD, gradientColors: ['#1A1208', '#0D0A05'],
+    arabicScene: 'تاكسي',
+    kafIntro: 'You just landed in Dubai. Your driver is warm and chatty. Make conversation!',
+    mode: 'social',
+    dialect: 'Egyptian Gulf',
+    impactPreview: { trust: 80, respect: 55, culture: 70 },
+  },
+  {
+    id: 'social_elevator', iconName: 'Users',
+    title: 'The Elevator', subtitle: 'A brief encounter in your building',
+    decisions: 4, endings: 3, phrases: '8+', level: 'Beginner', locked: false,
+    color: C.VIOLET2, gradientColors: ['#0A0A1A', '#050510'],
+    arabicScene: 'مصعد',
+    kafIntro: 'You meet someone in your building elevator. Short phrases, simple choices.',
+    mode: 'social',
+    dialect: 'Jordanian Gulf',
+    impactPreview: { trust: 65, respect: 60, culture: 75 },
   },
 ];
 
