@@ -146,7 +146,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     arabicScene: 'تاكسي',
     kafIntro: 'You just landed in Dubai. Your driver is warm and chatty. Make conversation!',
     mode: 'social',
-    dialect: 'Egyptian Gulf',
+    dialect: 'Egyptian',
     impactPreview: { trust: 80, respect: 55, culture: 70 },
   },
   {
@@ -157,7 +157,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     arabicScene: 'مصعد',
     kafIntro: 'You meet someone in your building elevator. Short phrases, simple choices.',
     mode: 'social',
-    dialect: 'Jordanian Gulf',
+    dialect: 'Jordanian',
     impactPreview: { trust: 65, respect: 60, culture: 75 },
   },
 ];
