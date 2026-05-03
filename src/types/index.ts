@@ -94,7 +94,7 @@ export interface ScenarioChoice {
   id: string;
   text: string;
   arabic: string;
-  arabicFeminine?: string;
+  arabicFeminine?: string;  // scaffolding: alternate Arabic for female learners — rendering path not yet built; currently surfaced via scene teachingNote
   roman: string;
   score: number;
   note?: string;

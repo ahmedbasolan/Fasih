@@ -1000,7 +1000,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         culturalJourney: [
           'You opened with السلام عليكم — the one greeting that works across every Arabic dialect',
           'You responded to the child\'s greeting with "يا بطل" (champ) — a tiny word that showed warmth and cultural ease',
-          'You noticed Sami had lived there 8 years — "صار دبي بيتك" (Dubai became your home) showed you actually listened',
+          'You asked Sami which floor he was on — a small question that turned an awkward silence into a real conversation',
           'You invited first — "تعال على شاي يوم" — taking the relationship from corridor to connection',
         ],
       },
