@@ -259,9 +259,9 @@ function ScenarioCard({
         </View>
 
         {/* ── Bottom: icon + impact strip ── */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked ? 4 : 14 }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked && !comingSoon ? 4 : 14 }}>
           <Icon
-            size={impactPreview && !locked ? 40 : 56}
+            size={impactPreview && !locked && !comingSoon ? 40 : 56}
             color={locked ? '#CBD5E1' : palette.accent}
             strokeWidth={1.5}
           />
