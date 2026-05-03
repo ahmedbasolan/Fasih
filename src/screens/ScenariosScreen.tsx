@@ -32,7 +32,7 @@ type FilterTab = 'all' | 'saved' | 'recommended';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  Coffee, Building2, Briefcase, Moon, Users, ShoppingBag, Sunrise, Dumbbell, Heart,
+  Coffee, Building2, Briefcase, Moon, Users, ShoppingBag, Sunrise, Dumbbell, Heart, Zap,
 };
 
 // Card palettes — green/cyan themed pastels
@@ -305,12 +305,14 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
+  const userMode = useAppStore((s) => s.user?.mode ?? 'career');
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
 
   const allScenarios: Scenario[] = useMemo(
-    () => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)],
-    [C],
+    () => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
+      .filter((s) => s.mode === userMode),
+    [C, userMode],
   );
 
   const displayScenarios = useMemo(() => {
