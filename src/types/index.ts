@@ -86,6 +86,7 @@ export interface Scenario {
   arabicScene: string;
   kafIntro: string;
   mode: ScenarioMode;
+  impactPreview?: { trust: number; respect: number; culture: number };
 }
 
 export type ChoiceOutcome = 'excellent' | 'good' | 'neutral' | 'bad';
