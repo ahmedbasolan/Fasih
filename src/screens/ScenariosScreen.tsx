@@ -18,6 +18,7 @@ import {
   FONT_HEADING_SEMI,
   FONT_LATIN,
 } from '../components/design/tokens';
+import type { ThemeColors } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
@@ -35,22 +36,20 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Coffee, Building2, Briefcase, Moon, Users, ShoppingBag, Sunrise, Dumbbell, Heart, Zap,
 };
 
-// Card palettes — green/cyan themed pastels
-const CARD_PALETTES = [
-  { bg: '#E0FFF5', accent: '#02B986', iconBg: '#B8FFE0' },
-  { bg: '#E0FAFF', accent: '#00D6FC', iconBg: '#B8F5FF' },
-  { bg: '#E8FFF0', accent: '#00C978', iconBg: '#C8FFD8' },
-  { bg: '#F0FFF8', accent: '#02B986', iconBg: '#D0FFE8' },
-  { bg: '#E0F5FF', accent: '#00B8E0', iconBg: '#B8EBFF' },
-  { bg: '#E8FFFA', accent: '#00D6A0', iconBg: '#C0FFEE' },
-];
+// Card palettes built from theme tokens — avoids hardcoded hex
+function getCardPalettes(C: ThemeColors) {
+  return [
+    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
+    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
+    { bg: C.CATEGORY_CREAM, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
+    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
+    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
+    { bg: C.CATEGORY_PEACH, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
+  ];
+}
 
 // Bento height pattern — alternates for visual interest
 const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
-
-// ─── Green header matching new theme ──────────────────────────────────────────
-
-const HEADER_GRADIENT: [string, string, string] = ['#00D69A', '#00FF95', '#02B986'];
 
 // ─── Random motivational headings ───────────────────────────────────────────
 
@@ -116,18 +115,19 @@ function ImpactPreviewStrip({
   impactPreview: ImpactMetrics;
   mode: 'career' | 'social';
 }) {
+  const { C } = useTheme();
   const isCareer = mode === 'career';
 
   const metrics = isCareer
     ? [
-        { label: 'Trust', value: impactPreview.trust, color: '#4A90D9' },
-        { label: 'Respect', value: impactPreview.respect, color: '#5BA85A' },
-        { label: 'Culture', value: impactPreview.culture, color: '#C07AB8' },
+        { label: 'Trust',   value: impactPreview.trust,   color: C.CULTURAL_GOLD },
+        { label: 'Respect', value: impactPreview.respect, color: C.JADE },
+        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
       ]
     : [
-        { label: '🔥 Vibe', value: impactPreview.trust, color: '#FF7043' },
-        { label: '🤝 Rapport', value: impactPreview.respect, color: '#EC407A' },
-        { label: '🌙 Culture', value: impactPreview.culture, color: '#7E57C2' },
+        { label: '🔥 Vibe',    value: impactPreview.trust,   color: C.ERROR },
+        { label: '🤝 Rapport', value: impactPreview.respect, color: C.JADE },
+        { label: '🌙 Culture', value: impactPreview.culture, color: C.VIOLET },
       ];
 
   return (
@@ -138,7 +138,7 @@ function ImpactPreviewStrip({
             style={{
               fontFamily: FONT_LATIN,
               fontSize: 9,
-              color: '#6B7280',
+              color: C.TEXT2,
               width: isCareer ? 44 : 68,
             }}
           >
@@ -149,7 +149,7 @@ function ImpactPreviewStrip({
               flex: 1,
               height: isCareer ? 4 : 6,
               borderRadius: isCareer ? 2 : 3,
-              backgroundColor: '#E5E7EB',
+              backgroundColor: C.BORDER,
               overflow: 'hidden',
             }}
           >
@@ -163,7 +163,7 @@ function ImpactPreviewStrip({
             />
           </View>
           {isCareer && (
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: '#9CA3AF', width: 26, textAlign: 'right' }}>
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, width: 26, textAlign: 'right' }}>
               {value}%
             </Text>
           )}
@@ -187,9 +187,10 @@ function ScenarioCard({
   isLeft: boolean;
   onPress: () => void;
 }) {
+  const { C } = useTheme();
   const { iconName, title, phrases, locked, comingSoon, impactPreview, mode } = scenario;
   const Icon = ICON_MAP[iconName] || Coffee;
-  const palette = CARD_PALETTES[index % CARD_PALETTES.length];
+  const palette = getCardPalettes(C)[index % 6];
   const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
 
   return (
@@ -238,7 +239,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_HEADING_SEMI,
               fontSize: 15,
-              color: locked ? '#9CA3AF' : '#1F2937',
+              color: locked ? C.TEXT3 : C.TEXT,
               lineHeight: 21,
             }}
             numberOfLines={2}
@@ -250,7 +251,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_LATIN,
               fontSize: 12,
-              color: locked ? '#9CA3AF' : '#6B7280',
+              color: locked ? C.TEXT3 : C.TEXT2,
               marginTop: 3,
             }}
           >
@@ -262,7 +263,7 @@ function ScenarioCard({
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked && !comingSoon ? 4 : 14 }}>
           <Icon
             size={impactPreview && !locked && !comingSoon ? 40 : 56}
-            color={locked ? '#CBD5E1' : palette.accent}
+            color={locked ? C.TEXT3 : palette.accent}
             strokeWidth={1.5}
           />
         </View>
@@ -274,7 +275,7 @@ function ScenarioCard({
             position: 'absolute',
             top: 10,
             right: 10,
-            backgroundColor: '#0D0D0D',
+            backgroundColor: C.NEUTRAL_900,
             borderRadius: 8,
             paddingHorizontal: 8,
             paddingVertical: 3,
@@ -282,7 +283,7 @@ function ScenarioCard({
             <Text style={{
               fontFamily: FONT_LATIN,
               fontSize: 10,
-              color: '#FFFFFF',
+              color: C.WHITE,
               letterSpacing: 0.5,
             }}>
               Coming Soon
@@ -297,6 +298,7 @@ function ScenarioCard({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 function HeaderContent() {
+  const { C } = useTheme();
   const { heading, funFact } = useRandomHeading();
   const HeadingIcon = heading.icon;
 
@@ -314,7 +316,7 @@ function HeaderContent() {
           style={{
             fontFamily: FONT_HEADING_EXTRA,
             fontSize: 28,
-            color: '#FFFFFF',
+            color: C.WHITE,
             lineHeight: 36,
           }}
         >
@@ -416,7 +418,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
       {/* ── Green header matching theme ── */}
       <LinearGradient
-        colors={HEADER_GRADIENT}
+        colors={[C.JADE2, C.GOLD, C.JADE] as [string, string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
