@@ -352,7 +352,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       <View style={{ flex: 1, padding: 24, justifyContent: 'flex-end' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', position: 'absolute', top: 20, left: 20, right: 20 }}>
                           <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                            <Icon size={20} color={selected ? color : "#FFF"} />
+                            <Icon size={20} color={selected ? color : C.WHITE} />
                           </View>
                           <AnimatePresence>
                             {selected && (
@@ -363,7 +363,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                                 transition={{ type: 'spring', damping: 80, stiffness: 100 }}
                               >
                                 <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-                                  <Check size={16} color="#111" />
+                                  <Check size={16} color={C.INVERTED} />
                                 </View>
                               </MotiView>
                             )}
@@ -371,7 +371,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         </View>
                         
                         <MotiView animate={{ translateY: selected ? -4 : 0 }} transition={{ type: 'spring', damping: 80, stiffness: 200 }}>
-                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : '#FFF', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>{title}</Text>
+                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : C.WHITE, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>{title}</Text>
                           <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 8, letterSpacing: 0.5 }}>{sub}</Text>
                           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 20 }}>{desc}</Text>
                         </MotiView>
@@ -531,7 +531,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
-                          <Icon size={bento.dir === 'row' ? 18 : 14} color={selected ? '#FFF' : C.TEXT2} />
+                          <Icon size={bento.dir === 'row' ? 18 : 14} color={selected ? C.WHITE : C.TEXT2} />
                         </View>
 
                         <Text style={{
@@ -554,7 +554,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               style={{ position: 'absolute', top: 10, right: 10 }}
                             >
                               <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.GOLD, alignItems: 'center', justifyContent: 'center' }}>
-                                <Check size={12} color='#FFF' />
+                                <Check size={12} color={C.WHITE} />
                               </View>
                             </MotiView>
                           )}
@@ -668,7 +668,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: 'spring', damping: 12, stiffness: 280 }}
                             >
-                              <Check size={14} color='#FFF' />
+                              <Check size={14} color={C.WHITE} />
                             </MotiView>
                           )}
                         </AnimatePresence>
