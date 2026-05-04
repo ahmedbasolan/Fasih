@@ -51,6 +51,7 @@ export function PhraseLibrary() {
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
   const DIFFICULTY_COLORS = useMemo(() => getDifficultyColors(C), [C]);
+  const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState<string>(STRINGS.phrases.filterAll);
   const [diff, setDiff] = useState<string>(STRINGS.phrases.filterAll);
@@ -259,7 +260,7 @@ export function PhraseLibrary() {
       {/* Bento grid */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP }}>
         {PHRASE_CATEGORIES.map((category, idx) => {
-          const config = getCategoryCardConfig(C)[category] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
+          const config = CATEGORY_CARD_CONFIG[category] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
           return (
             <View key={category} style={{ width: COL_WIDTH }}>
               <CategoryCard
@@ -282,7 +283,7 @@ export function PhraseLibrary() {
   const CategoryFilterBanner = useMemo(() => {
     if (showGrid || cat === STRINGS.phrases.filterAll) return null;
 
-    const config = getCategoryCardConfig(C)[cat] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
+    const config = CATEGORY_CARD_CONFIG[cat] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
     const accent = isDark ? config.darkBg : config.accent;
     const bg = isDark ? `${config.darkBg}18` : config.bg;
 

@@ -127,7 +127,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
           <StatCard icon={<Calendar size={18} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} color={C.PRIMARY} bg={C.CATEGORY_LAVENDER} />
           <StatCard icon={<BookOpen size={18} color={C.JADE} />} value={phrasesMastered} label={STRINGS.profile.mastered} color={C.JADE} bg={C.CATEGORY_MINT} />
-          <StatCard icon={<MessageCircle size={18} color={C.ERROR} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color={C.ERROR} bg={C.CATEGORY_PINK} />
+          <StatCard icon={<MessageCircle size={18} color={C.VIOLET} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color={C.VIOLET} bg={C.CATEGORY_PINK} />
         </View>
       </MotiView>
 
