@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, TextInputProps, ViewStyle } from 'react-native';
-import { C, FONT_LATIN_MEDIUM } from '../design/tokens';
+import { FONT_LATIN_MEDIUM } from '../design/tokens';
+import { useTheme } from '../../hooks/useTheme';
 
 interface Props extends Omit<TextInputProps, 'style'> {
   icon?: React.ReactNode;
@@ -11,18 +12,22 @@ interface Props extends Omit<TextInputProps, 'style'> {
   inputStyle?: TextInputProps['style'];
 }
 
-export function InputField({ icon, rightIcon, focused, focusColor = C.GOLD_BORDER, containerStyle, inputStyle, ...rest }: Props) {
+export function InputField({ icon, rightIcon, focused, focusColor, containerStyle, inputStyle, ...rest }: Props) {
+  const { C } = useTheme();
+  const effectFocusColor = focusColor || C.GOLD_BORDER;
+  
   return (
     <View style={[
       styles.root,
-      focused && { backgroundColor: `${focusColor}08`, borderColor: focusColor },
+      { backgroundColor: C.SURFACE, borderColor: C.BORDER },
+      focused && { backgroundColor: `${effectFocusColor}08`, borderColor: effectFocusColor },
       containerStyle,
     ]}>
       {icon}
       <TextInput
         placeholderTextColor={C.TEXT3}
         {...rest}
-        style={[styles.input, inputStyle]}
+        style={[styles.input, { color: C.TEXT }, inputStyle]}
       />
       {rightIcon}
     </View>
@@ -37,15 +42,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    backgroundColor: C.SURFACE,
-    borderWidth: 1.5,
-    borderColor: C.BORDER,
   },
   input: {
     flex: 1,
     fontFamily: FONT_LATIN_MEDIUM,
     fontSize: 15,
-    color: C.TEXT,
     paddingVertical: 14,
   },
 });

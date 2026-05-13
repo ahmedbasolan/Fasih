@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Check, ChevronLeft, BookOpen, Mic, Globe } from 'lucide-react-native';
+import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
-import { C, FONT_ARABIC_BLACK, FONT_ARABIC_SEMI, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM } from '../src/components/design/tokens';
-import { GOLD_STOPS, JADE_STOPS, ANGLE_135 } from '../src/components/design/gradients';
-import { KafMascot } from '../src/components/KafMascot';
-import { GeoPattern } from '../src/components/design/GeoPattern';
+import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
+import { useTheme } from '../src/hooks/useTheme';
+import { GhostLetters } from '../src/components/ui';
 
 const PASSWORD_RULES = [
   { id: 'length', label: '6+ characters', test: (p: string) => p.length >= 6 },
@@ -18,6 +16,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function SignUpScreen() {
+  const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const signUp = useAppStore((s) => s.signUp);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
@@ -52,70 +51,84 @@ export default function SignUpScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.4 }}>
-        <GeoPattern color={C.JADE2} opacity={0.025} size={28} />
+      <GhostLetters glyphs={['م', 'ر', 'ح']} />
+      {/* Subtle grid background */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.03 }}>
+        <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }} />
       </View>
 
-      {/* Back button */}
+      {/* Back button - simple arrow */}
       <Pressable
         onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + 12, left: 16, zIndex: 30, width: 36, height: 36, borderRadius: 18, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ChevronLeft size={18} color={C.TEXT2} />
+        <ChevronLeft size={28} color={C.TEXT3} />
       </Pressable>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 56, paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
+          {/* Header with shield icon */}
           <MotiView
             from={{ opacity: 0, translateY: -16 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 500 }}
-            style={{ marginBottom: 28 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ alignItems: 'center', marginBottom: 32 }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-              <KafMascot size="sm" animate />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 28, color: C.JADE2, marginBottom: -2 }}>انضم إلينا</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Join the Fasih community</Text>
-              </View>
+            {/* Shield Icon Container */}
+            <View style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: C.GOLD_DIM,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+            }}>
+              <Shield size={32} color={C.GOLD} strokeWidth={2} />
             </View>
 
-            {/* Feature pills */}
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              {[
-                { Icon: BookOpen, label: '4 Live Scenarios', color: C.GOLD },
-                { Icon: Mic, label: 'Listen & Learn', color: C.VIOLET2 },
-                { Icon: Globe, label: 'Cultural Notes', color: C.JADE2 },
-              ].map(({ Icon, label, color }) => (
-                <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: `${color}10`, borderWidth: 1, borderColor: `${color}25` }}>
-                  <Icon size={11} color={color} />
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color }}>{label}</Text>
-                </View>
-              ))}
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
+              Create Account
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>
+                Already have an account?
+              </Text>
+              <Pressable onPress={() => router.back()} hitSlop={8}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
+              </Pressable>
             </View>
           </MotiView>
 
-          {/* Form */}
+          {/* Input Card */}
           <MotiView
-            from={{ opacity: 0, translateY: 16 }}
+            from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 500, delay: 120 }}
-            style={{ gap: 12, marginBottom: 16 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 100 }}
+            style={{
+              backgroundColor: C.SURFACE,
+              borderRadius: 20,
+              padding: 20,
+              gap: 12,
+              borderWidth: 1,
+              borderColor: C.BORDER,
+              marginBottom: 16,
+            }}
           >
             {/* Full Name */}
             <View>
               <View style={{
                 flexDirection: 'row', alignItems: 'center', gap: 12,
-                borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4,
-                backgroundColor: focused === 'name' ? 'rgba(34,181,140,0.06)' : C.SURFACE,
-                borderWidth: 1.5,
-                borderColor: focused === 'name' ? C.JADE_BORDER : C.BORDER,
+                borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
+                backgroundColor: C.BG,
+                borderWidth: 1,
+                borderColor: focused === 'name' ? C.GOLD : C.BORDER2,
               }}>
-                <User size={18} color={focused === 'name' ? C.JADE2 : C.TEXT3} />
+                <User size={18} color={focused === 'name' ? C.GOLD : C.TEXT3} />
                 <TextInput
                   value={fullName}
                   onChangeText={setFullName}
@@ -125,23 +138,18 @@ export default function SignUpScreen() {
                   autoComplete="name"
                   onFocus={() => setFocused('name')}
                   onBlur={() => setFocused(null)}
-                  style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 14 }}
+                  style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
                 />
               </View>
-              {arabicPreview ? (
-                <MotiView from={{ opacity: 0, translateY: -4 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_SEMI, fontSize: 14, color: C.JADE2, marginTop: 6, marginLeft: 4 }}>{arabicPreview} 👋</Text>
-                </MotiView>
-              ) : null}
             </View>
 
             {/* Email */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4,
-              backgroundColor: focused === 'email' ? 'rgba(200,145,58,0.06)' : C.SURFACE,
-              borderWidth: 1.5,
-              borderColor: focused === 'email' ? C.GOLD_BORDER : C.BORDER,
+              borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
+              backgroundColor: C.BG,
+              borderWidth: 1,
+              borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
             }}>
               <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
               <TextInput
@@ -154,19 +162,19 @@ export default function SignUpScreen() {
                 autoComplete="email"
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 14 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
               />
             </View>
 
             {/* Password */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4,
-              backgroundColor: focused === 'password' ? 'rgba(91,70,200,0.06)' : C.SURFACE,
-              borderWidth: 1.5,
-              borderColor: focused === 'password' ? C.VIOLET_BORDER : C.BORDER,
+              borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
+              backgroundColor: C.BG,
+              borderWidth: 1,
+              borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
             }}>
-              <Lock size={18} color={focused === 'password' ? C.VIOLET2 : C.TEXT3} />
+              <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -176,9 +184,14 @@ export default function SignUpScreen() {
                 autoCapitalize="none"
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 14 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
+              <Pressable
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
                 {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
               </Pressable>
             </View>
@@ -186,17 +199,17 @@ export default function SignUpScreen() {
             {/* Password strength indicators */}
             {password.length > 0 && (
               <MotiView
-                from={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                transition={{ type: 'timing', duration: 250 }}
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 4 }}
               >
                 {PASSWORD_RULES.map(rule => {
                   const passed = rule.test(password);
                   return (
                     <View key={rule.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: passed ? C.JADE2 : 'rgba(255,255,255,0.07)', alignItems: 'center', justifyContent: 'center' }}>
-                        {passed && <Check size={8} color="#05050E" />}
+                      <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: passed ? C.JADE2 : C.SURFACE2, alignItems: 'center', justifyContent: 'center' }}>
+                        {passed && <Check size={8} color={C.BG} />}
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: passed ? C.JADE2 : C.TEXT3 }}>{rule.label}</Text>
                     </View>
@@ -207,64 +220,65 @@ export default function SignUpScreen() {
           </MotiView>
 
           {/* Terms checkbox */}
-          <Pressable
-            onPress={() => setAgreed(!agreed)}
-            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 20, paddingVertical: 4 }}
-          >
-            <View style={{
-              width: 22, height: 22, borderRadius: 6, marginTop: 1,
-              backgroundColor: agreed ? C.JADE2 : 'transparent',
-              borderWidth: 2, borderColor: agreed ? C.JADE2 : 'rgba(255,255,255,0.18)',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              {agreed && <Check size={12} color="#05050E" />}
-            </View>
-            <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 }}>
-              I understand this beta stores my learning progress locally on this device.
-            </Text>
-          </Pressable>
-
-          {error ? (
-            <View style={{ borderRadius: 12, padding: 12, backgroundColor: 'rgba(232,118,108,0.1)', borderWidth: 1, borderColor: 'rgba(232,118,108,0.25)', marginBottom: 16 }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: '#E8766C', textAlign: 'center' }}>{error}</Text>
-            </View>
-          ) : null}
-
-          {/* Create Account button */}
           <MotiView
-            from={{ opacity: 0, translateY: 12 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 400, delay: 250 }}
-            style={{ gap: 12, marginBottom: 24 }}
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 200 }}
+            style={{ marginBottom: 24 }}
           >
-            <Pressable onPress={handleSignUp} disabled={!canSubmit || loading} style={{ borderRadius: 16, overflow: 'hidden', opacity: canSubmit && !loading ? 1 : 0.45 }}>
-              <LinearGradient
-                colors={canSubmit && !loading ? JADE_STOPS : ['rgba(26,144,112,0.2)', 'rgba(26,144,112,0.2)']}
-                start={ANGLE_135.start}
-                end={ANGLE_135.end}
-                style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-              >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: canSubmit && !loading ? '#05050E' : C.TEXT3 }}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
-                </Text>
-                {!loading && <ArrowRight size={18} color={canSubmit ? '#05050E' : C.TEXT3} />}
-              </LinearGradient>
+            <Pressable
+              onPress={() => setAgreed(!agreed)}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 4 }}
+            >
+              <View style={{
+                width: 22, height: 22, borderRadius: 6, marginTop: 1,
+                backgroundColor: agreed ? C.GOLD : 'transparent',
+                borderWidth: 2, borderColor: agreed ? C.GOLD : C.BORDER2,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                {agreed && <Check size={12} color={C.BG} />}
+              </View>
+              <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
+                I agree to sync my learning progress across devices
+              </Text>
             </Pressable>
           </MotiView>
 
-          {/* Divider */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.BORDER }} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>beta preview</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.BORDER }} />
-          </View>
+          {/* Error message */}
+          {error ? (
+            <MotiView
+              from={{ opacity: 0, translateY: -10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              style={{ marginBottom: 16 }}
+            >
+              <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+              </View>
+            </MotiView>
+          ) : null}
 
-          {/* Social sign-up buttons */}
-          <View style={{ marginBottom: 24 }}>
-            <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textAlign: 'center' }}>This beta uses local email sign-up. Google and Apple sign-in are coming later.</Text>
-            </View>
-          </View>
+          {/* Create Account Button */}
+          <MotiView
+            from={{ opacity: 0, translateY: 16 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 250 }}
+          >
+            <Pressable
+              onPress={handleSignUp}
+              disabled={!canSubmit || loading}
+              style={{
+                backgroundColor: C.GOLD,
+                borderRadius: 14,
+                paddingVertical: 16,
+                alignItems: 'center',
+                opacity: canSubmit && !loading ? 1 : 0.5,
+              }}
+            >
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Text>
+            </Pressable>
+          </MotiView>
 
           {__DEV__ && (
             <Pressable
@@ -272,23 +286,13 @@ export default function SignUpScreen() {
                 await signUp('dev@example.com', 'Dev123456', 'Dev User');
                 router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
               }}
-              style={{ marginBottom: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed' }}
+              style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
             >
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Skip (dev only)</Text>
             </Pressable>
           )}
 
-          {/* Bottom — Already have account */}
           <View style={{ flex: 1 }} />
-          <View style={{ alignItems: 'center', gap: 6 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Already have an account?</Text>
-              <Pressable onPress={() => router.back()}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
-              </Pressable>
-            </View>
-            <Text style={{ fontFamily: FONT_ARABIC_SEMI, fontSize: 13, color: C.TEXT3 }}>الحساب جاهز؟ سجّل دخولك</Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

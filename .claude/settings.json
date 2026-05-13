@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx eslint *)",
+      "Bash(Find c:\\\\Users\\\\ahmed\\\\OneDrive\\\\Desktop\\\\'Define Success Metrics'\\\\fasih-mobile -name \"*.ts\" -o -name \"*.tsx\" | Select-String -Pattern \"types\" | head -5)"
+    ]
+  }
+}

@@ -204,7 +204,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
           neutral: { arabic: 'أنا فيصل. شلونك؟', roman: 'ana faysal. shloonak?', english: 'I\'m Faisal. How are you?' },
           cold: { arabic: 'أنا فيصل.', roman: 'ana faysal.', english: 'I\'m Faisal.' },
         },
-        warmThreshold: 10,
+        warmThreshold: 8,
         coldThreshold: 0,
         teachingNote: "Faisal says 'شلونك؟' — addressing a male learner. Female learners: he would say 'شلونج؟' instead. The response 'الحمد لله، بخير' works the same for both.",
         choices: [
@@ -224,7 +224,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
           neutral: { arabic: 'تفضل. قهوة؟', roman: 'tfaddal. gahwa?', english: 'Here. Coffee?' },
           cold: { arabic: 'القهوة هناك.', roman: 'al-gahwa hinaak.', english: 'Coffee\'s over there.' },
         },
-        warmThreshold: 15,
+        warmThreshold: 13,
         coldThreshold: 5,
         choices: [
           { id: 'a', text: 'May God give you strength! Thank you', arabic: 'الله يعافيك! شكراً', roman: "allah y'aafiik! shukran", score: 8, impact: { trust: 2, respect: 3, culture: 3 }, note: 'الله يعافيك is one of the most powerful workplace phrases in Gulf culture. It blesses someone\'s effort and energy. Faisal didn\'t just hand you coffee — he welcomed you. Your blessing acknowledges that. This is the kind of phrase that makes colleagues remember you.', outcome: 'excellent' },
@@ -368,6 +368,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'الدكتور قالي لازم أنحف. أبي أنزل عشر كيلو عالأقل',
         roman: "ad-duktoor gaali laazim anhaf. abi anzil 'ashar kiilo 'al-agal",
         english: "The doctor told me I need to lose weight. I want to drop at least ten kilos",
+        charDialogue: {
+          warm: { arabic: 'الدكتور قالي لازم أنحف. والصراحة لقيت الجو هني مريح فأبي أبدأ جدي. عشر كيلو عالأقل', roman: "ad-duktoor gaali laazim anhaf. w-as-saraaha laqayt al-jaw hini muuriih fa-abi abda' jiddi. 'ashar kiilo 'al-agal", english: "The doctor told me I need to lose weight. Honestly I find the atmosphere here comfortable so I want to start seriously. At least ten kilos." },
+          neutral: { arabic: 'الدكتور قالي لازم أنحف. أبي أنزل عشر كيلو عالأقل', roman: "ad-duktoor gaali laazim anhaf. abi anzil 'ashar kiilo 'al-agal", english: "The doctor told me I need to lose weight. I want to drop at least ten kilos." },
+          cold: { arabic: 'الدكتور قالي لازم أنحف. عشر كيلو.', roman: "ad-duktoor gaali laazim anhaf. 'ashar kiilo.", english: "The doctor told me to lose weight. Ten kilos." },
+        },
+        warmThreshold: 7, coldThreshold: 0,
         choices: [
           { id: 'a', text: 'God willing, we can help you. Ten kilos is doable. What\'s your weight right now?', arabic: 'إن شاء الله نقدر نساعدك. عشر كيلو شي ممكن. كم وزنك الحين؟', roman: "in shaa' allah nigdar nisaa'dak. 'ashar kiilo shay mumkin. kam waznak al-hin?", score: 8, impact: { trust: 2, respect: 3, culture: 3 }, note: 'You validated his goal, used إن شاء الله for cultural humility, and asked a professional follow-up.', outcome: 'excellent' },
           { id: 'b', text: 'MashaAllah that you came! That\'s the most important thing. Let\'s look at your situation', arabic: 'ما شاء الله إنك جيت! هذا أهم شي. خلنا نشوف وضعك', roman: "maa shaa' allah innak yiit! hadha aham shay. khallina nishuuf wad'ak", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Praising someone for showing up honors his decision. خلنا نشوف is collaborative.', outcome: 'good' },
@@ -392,6 +398,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'ثلاث مرات بالأسبوع تمام. شو تقترح؟',
         roman: "thlath marraat bil-usbuu' tamaam. shuu tigtrih?",
         english: "Three times a week works. What do you suggest?",
+        charDialogue: {
+          warm: { arabic: 'ثلاث مرات بالأسبوع تمام والله. أثق في رأيك. شو تقترح لي؟', roman: "thlath marraat bil-usbuu' tamaam wallah. athi'g fi ra'yak. shuu tigtrih li?", english: "Three times a week, fine, by God. I trust your judgment. What do you suggest for me?" },
+          neutral: { arabic: 'ثلاث مرات بالأسبوع تمام. شو تقترح؟', roman: "thlath marraat bil-usbuu' tamaam. shuu tigtrih?", english: "Three times a week works. What do you suggest?" },
+          cold: { arabic: 'ثلاث مرات. شو الخطة؟', roman: "thlath marraat. shuu al-khatta?", english: "Three times. What's the plan?" },
+        },
+        warmThreshold: 16, coldThreshold: 4,
         choices: [
           { id: 'a', text: 'I suggest three times per week. One day cardio, two days weights. And we start light', arabic: 'أقترح لك ثلاث مرات بالأسبوع. يوم كارديو، يومين حديد. ونبدا خفيف', roman: "agtarih lak thlath marraat bil-usbuu'. yoom kardyo, yoomayn hadiid. w-nibda khafiif", score: 8, impact: { trust: 2, respect: 3, culture: 3 }, note: 'You used أقترح respectfully, gave clear structure, and immediately added "we start light" for comfort.', outcome: 'excellent' },
           { id: 'b', text: 'Let\'s build a program based on your level. What do you like? Walking, machines, weights?', arabic: 'خلنا نسوي برنامج على حسب مستواك. شو تحب؟ مشي، أجهزة، حديد؟', roman: "khallina nisawwi barnaamij 'ala hasab mustawaak. shuu tihib? mashi, ajhiza, hadiid?", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Giving Sultan choices shows respect. However, a beginner often needs a confident recommendation.', outcome: 'good' },
@@ -404,6 +416,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'حلو. عجبني الكلام. بكم الجلسة؟',
         roman: "hilw. 'ajabni al-kalaam. bikam al-jalsa?",
         english: "Nice. I like what I'm hearing. How much per session?",
+        charDialogue: {
+          warm: { arabic: 'والله عجبني كلامك وأسلوبك. بكم الجلسة؟', roman: "wallah 'ajabni kalaamak w-usluubak. bikam al-jalsa?", english: "By God, I like your words and your approach. How much per session?" },
+          neutral: { arabic: 'حلو. عجبني الكلام. بكم الجلسة؟', roman: "hilw. 'ajabni al-kalaam. bikam al-jalsa?", english: "Nice. I like what I'm hearing. How much per session?" },
+          cold: { arabic: 'بكم الجلسة؟', roman: "bikam al-jalsa?", english: "How much per session?" },
+        },
+        warmThreshold: 22, coldThreshold: 8,
         choices: [
           { id: 'a', text: 'One session is 300 dirhams. But we have better packages. 12 sessions for 3,000 instead of 3,600', arabic: 'الجلسة الوحدة بـ ٣٠٠ درهم. بس عندنا باقات أحسن. ١٢ جلسة بـ ٣٠٠٠ بدال ٣٦٠٠', roman: "al-jalsa al-wahda bi 300 dirham. bas 'indana baagaat ahsan. 12 jalsa bi 3000 badaal 3600", score: 7, impact: { trust: 2, respect: 3, culture: 2 }, flag: 'FLAG_2', note: 'You gave the single-session price first, then introduced the package as a better deal with clear savings. Transparent pricing lets Sultan draft proposals.', outcome: 'excellent' },
           { id: 'b', text: 'We have packages. Best deal is 12 sessions for 3,000 dirhams', arabic: 'عندنا باقات. أحسن شي باقة ١٢ جلسة بـ ٣٠٠٠ درهم', roman: "'indana baagaat. ahsan shay baaga 12 jalsa bi 3000 dirham", score: 4, impact: { trust: 1, respect: 2, culture: 1 }, note: 'You jumped straight to the package without mentioning the single-session price. Missing context for corporate proposals.', outcome: 'good' },
@@ -416,6 +434,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'حلو. بس شو أحسن سعر تقدر تسويه لي؟ ودي أتأكد قبل ما أدفع',
         roman: "hilw. bas shuu ahsan si'r tigdar tisawwiih li? widdi ata'akkad gabl ma adfa'",
         english: "Nice. But what's the best price you can do? I want to be sure before I pay",
+        charDialogue: {
+          warm: { arabic: 'أعجبني كل شي. بس شو أحسن سعر تقدر تسويه لي؟ ودي أتأكد بس قبل ما أوقّع', roman: "a'jabni kil shay. bas shuu ahsan si'r tigdar tisawwiih li? widdi ata'akkad bas gabl ma awaqqiq", english: "I liked everything. But what's your best price? I just want to be sure before I sign." },
+          neutral: { arabic: 'حلو. بس شو أحسن سعر تقدر تسويه لي؟ ودي أتأكد قبل ما أدفع', roman: "hilw. bas shuu ahsan si'r tigdar tisawwiih li? widdi ata'akkad gabl ma adfa'", english: "Nice. But what's the best price you can do? I want to be sure before I pay." },
+          cold: { arabic: 'شو أحسن سعر عندك؟', roman: "shuu ahsan si'r 'indak?", english: "What's your best price?" },
+        },
+        warmThreshold: 30, coldThreshold: 12,
         choices: [
           { id: 'a', text: 'First two days are free. You get to know me and my style. Then you decide', arabic: 'أول يومين مجاناً. تتعرف عليّ وعلى أسلوبي. بعدها تقرر', roman: "awwal yoomayn majjaanan. tit'arraf 'alayya w-'ala usluubi. ba'daha tigarrir", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, flag: 'FLAG_3', note: 'Offering value instead of dropping price. Free trial lets Sultan confidently pitch to his office.', outcome: 'excellent' },
           { id: 'b', text: 'I can do 12 sessions for 2,800. That\'s my best price', arabic: 'أقدر أسوي لك ١٢ جلسة بـ ٢٨٠٠. هذا أحسن سعر عندي', roman: "agdar asawwi lak 12 jalsa bi 2800. hadha ahsan si'r 'indi", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'A fair discount. But you\'re asking him to commit money without trying first.', outcome: 'good' },
@@ -438,7 +462,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       {
         min: 38, title: 'The Corporate Contract', arabic: 'العقد المؤسسي', roman: "al-'agd al-mu'assasi", en: 'The Corporate Contract',
         desc: 'Sultan didn\'t just sign up for personal training — he opened the door to a corporate wellness contract with his government entity. Your professionalism, transparent pricing, and free trial offer gave him everything he needed to pitch this to his HR department. You didn\'t chase the sale. You built the case. SECRET ENDING UNLOCKED — Only 8% of users discover this.',
-        color: C.GOLD, type: 'exceptional', secret: true,
+        color: C.GOLD, type: 'exceptional', secret: true, requiredFlags: ['FLAG_1', 'FLAG_2', 'FLAG_3'],
         culturalJourney: [
           'Positioning: Mentioning you have "many clients" positioned you as someone who runs a real practice, not a side hustle.',
           'Transparency: Providing both per-session and package pricing gave Sultan the data he needed for corporate proposals.',
@@ -502,6 +526,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'هههه، المستشفيات ما أحبها. بس ولدي قالي لازم فحص',
         roman: "hahaha, al-mustashfayaat ma ahibha. bas waladi gaali laazim fahs",
         english: "Haha, I don't like hospitals. But my son told me I need a checkup",
+        charDialogue: {
+          warm: { arabic: 'والله، المستشفيات ما أحبها — بس أنتي خليتيني أحس بارتياح. ولدي قالي لازم فحص وجيت', roman: "wallah, al-mustashfayaat ma ahibha — bas inti khallaitini ahis bi-artiyaah. waladi gaali laazim fahs w-yiit", english: "Honestly, I don't like hospitals — but you made me feel at ease. My son told me I needed a checkup and I came." },
+          neutral: { arabic: 'هههه، المستشفيات ما أحبها. بس ولدي قالي لازم فحص', roman: "hahaha, al-mustashfayaat ma ahibha. bas waladi gaali laazim fahs", english: "Haha, I don't like hospitals. But my son told me I need a checkup." },
+          cold: { arabic: 'ما أحب المستشفيات. ولدي قالي لازم فحص وجيت.', roman: "ma ahibu al-mustashfayaat. waladi gaali laazim fahs w-yiit.", english: "I don't like hospitals. My son told me I needed a checkup so I came." },
+        },
+        warmThreshold: 7, coldThreshold: 1,
         choices: [
           { id: 'a', text: "Don't worry auntie! Simple checkup. First, what's your height? Remove your shoes please", arabic: 'لا تشيلين هم خالتي! فحص بسيط. أول شي كم طولج؟ شيلي صباطج لو سمحتي', roman: "la tishiiliin ham khaalti! fahs basiit. awwal shay kam toolich? shiili sabbaatich law samahti", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, note: 'Reassurance first, then instructions — this sequence is essential for nervous patients. Using the feminine forms (تشيلين، خالتي، طولج) shows you are attentive and careful.', outcome: 'excellent' },
           { id: 'b', text: 'God willing, it\'ll be simple! Remove your shoes and stand here', arabic: 'إن شاء الله بسيط! شيلي صباطج وقفي هني', roman: "in shaa' allah basiit! shiili sabbaatich w-giffi hini", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Good reassurance with إن شاء الله but you gave two instructions at once without pacing. One step at a time helps nervous patients follow along.', outcome: 'good' },
@@ -514,6 +544,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'مرتفع شوية! لا تشيل هم، فحص بسيط بس.',
         roman: "murtafi' shway! la tishiil ham, fahs basiit bass.",
         english: "A little high! Don't worry, just a simple checkup.",
+        charDialogue: {
+          warm: { arabic: 'مرتفع شوية. بس لا تشيلين هم — أنا عارفة إن الفحص بسيط ومعك بخير', roman: "murtafi' shway. bas la tishiiliin ham — ana 'aarfa in al-fahs basiit w-ma'ich b-khayr", english: "A little high. But don't worry — I know the checkup is simple and I'm in good hands with you." },
+          neutral: { arabic: 'مرتفع شوية! لا تشيل هم، فحص بسيط بس.', roman: "murtafi' shway! la tishiil ham, fahs basiit bass.", english: "A little high! Don't worry, just a simple checkup." },
+          cold: { arabic: 'مرتفع. فيه مشكلة؟', roman: "murtafi'. fiih mushkila?", english: "High. Is there a problem?" },
+        },
+        warmThreshold: 12, coldThreshold: 3,
         choices: [
           { id: 'a', text: 'Now let me check your blood pressure. Roll up your sleeve please and relax a little', arabic: 'الحين خليني أقيس ضغطج. شمري كمج لو سمحتي واسترخي شوي', roman: "al-hin khallini agiis daghtech. shammiri kummich law samahti w-istarkhi shway", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'You announced the procedure before contact and asked her to relax. In Gulf culture, announcing before touching a female patient is not just good practice — it is a mark of deep respect.', outcome: 'excellent' },
           { id: 'b', text: 'Let me check your blood pressure. Roll up your sleeve', arabic: 'خليني أقيس ضغطج. شمري كمج', roman: 'khallini agiis daghtech. shammiri kummich', score: 4, impact: { trust: 1, respect: 2, culture: 1 }, note: 'You announced the procedure but skipped "please" and the relaxation instruction. The announcement is the most important part — you got that right.', outcome: 'good' },
@@ -526,6 +562,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'مرتفع شوية، يعني فيه مشكلة؟',
         roman: "murtafi' shway? ya'ni fiih mushkila?",
         english: "A little high — so there's a problem?",
+        charDialogue: {
+          warm: { arabic: 'مرتفع شوية يا عزيزتي — يعني فيه مشكلة؟ قوليلي بصراحة، أنا واثقة فيج', roman: "murtafi' shway ya 'aziizati — ya'ni fiih mushkila? guulilii b-saraaha, ana waasiqa fiich", english: "A little high, dear — is there a problem? Tell me straight, I trust you." },
+          neutral: { arabic: 'مرتفع شوية، يعني فيه مشكلة؟', roman: "murtafi' shway? ya'ni fiih mushkila?", english: "A little high — so there's a problem?" },
+          cold: { arabic: 'مرتفع. يعني فيه شي خطير؟', roman: "murtafi'. ya'ni fiih shay khattiir?", english: "High. Is there something serious?" },
+        },
+        warmThreshold: 18, coldThreshold: 8,
         choices: [
           { id: 'a', text: "Don't worry auntie, the doctor will explain. But let me ask: are you allergic to anything? Taking any medications?", arabic: 'لا تشيلين هم خالتي، الدكتور بيشرح لج. بس خليني أسألج: عندج حساسية من شي؟ تاخذين أي أدوية؟', roman: "la tishiiliin ham khaalti, ad-duktoor biyishrah lich. bas khallini as'alich: 'indich hasaasiyya min shay? taakhidhiin ay adwiya?", score: 9, impact: { trust: 2, respect: 3, culture: 3 }, note: 'Perfect sequence: reassure first, defer to doctor, then ask your required questions. Using the feminine forms throughout shows you see her as a person, not just a chart.', outcome: 'excellent' },
           { id: 'b', text: 'Are you allergic to anything? Taking medications? Don\'t worry, everything is fine', arabic: 'عندج حساسية من شي؟ تاخذين أدوية؟ لا تخافين، كل شي تمام', roman: "'indich hasaasiyya min shay? taakhidhiin adwiya? la tikhaafiin, kul shay tamaam", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'You asked questions then reassured. But reassuring BEFORE asking gets better answers from a worried patient — especially one already anxious about a high reading.', outcome: 'good' },
@@ -601,6 +643,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'الغرفة جاهزة؟ عندي ضيوف يوصلون الحين',
         roman: "al-ghurfa jaahza? 'indi dhuyuuf yuusaluun al-hin",
         english: 'Is the room ready? I have guests arriving soon.',
+        charDialogue: {
+          warm: { arabic: 'ما شاء الله عليك. الغرفة جاهزة؟ عندي ضيوف يوصلون الحين', roman: "maa shaa' allah 'alayk. al-ghurfa jaahza? 'indi dhuyuuf yuusaluun al-hin", english: "MashaAllah. Is the room ready? I have guests arriving soon." },
+          neutral: { arabic: 'الغرفة جاهزة؟ عندي ضيوف يوصلون الحين', roman: "al-ghurfa jaahza? 'indi dhuyuuf yuusaluun al-hin", english: "Is the room ready? I have guests arriving soon." },
+          cold: { arabic: 'الغرفة جاهزة؟ ضيوفي يوصلون.', roman: "al-ghurfa jaahza? dhuyuufi yuusaluun.", english: "Is the room ready? My guests are arriving." },
+        },
+        warmThreshold: 8, coldThreshold: -2,
         choices: [
           { id: 'a', text: 'Let me check the system… one moment', arabic: 'خلني أشيك بالنظام... لحظة', roman: 'khallni ashayyik bin-nidhaam... lahtha', score: -2, impact: { trust: 0, respect: 0, culture: -1 }, note: 'Making a VIP wait while you visibly "check" something tells him he is a problem to be solved, not a guest to be served. In Gulf hospitality culture, the correct sequence is: reassure first ("كل شي جاهز" — everything is ready), then verify privately. His comfort should never depend on your system access.', outcome: 'neutral' },
           { id: 'b', text: 'إن شاء الله — everything is prepared for you', arabic: 'إن شاء الله — كل شي مجهز لك', roman: "in shaa' allah — kul shay mjahaz lak", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'إن شاء الله reassures while maintaining cultural tone. The guest feels prioritized.', outcome: 'good' },
@@ -613,6 +661,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'ما قصرت. شكراً لك',
         roman: "ma gassart. shukran lak",
         english: 'You didn\'t fall short. Thank you.',
+        charDialogue: {
+          warm: { arabic: 'والله ما قصرت يا أخي. شكراً من قلبي — هذي هي الضيافة الحقيقية', roman: "wallah ma gassart ya akhi. shukran min galbi — hadhihi hiya ad-dhiyaafa al-haqiiqiyya", english: "By God, you didn't fall short at all. Thank you from my heart — this is true hospitality." },
+          neutral: { arabic: 'ما قصرت. شكراً لك', roman: "ma gassart. shukran lak", english: "You didn't fall short. Thank you." },
+          cold: { arabic: 'مشكور.', roman: "mashkuur.", english: "Thank you." },
+        },
+        warmThreshold: 16, coldThreshold: 4,
         choices: [
           { id: 'a', text: 'No problem. Have a nice stay!', arabic: 'ما في مشكلة. إقامة سعيدة!', roman: "maa fii mushkila. igaama sa'iida!", score: 2, impact: { trust: 0, respect: 1, culture: 1 }, note: 'Polite but generic. A missed opportunity to deepen the connection.', outcome: 'neutral' },
           { id: 'b', text: 'الله يخليك — it\'s our pleasure', arabic: 'الله يخليك', roman: "allah ykhalllik", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: '"God preserve you" is a warm, culturally resonant reply to gratitude.', outcome: 'good' },
@@ -683,6 +737,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'أنتي من وين؟ أول مرة أشوفك هنا',
         roman: "inti min wayn? awwal marra ashuufich hini",
         english: 'Where are you from? First time I\'ve seen you here.',
+        charDialogue: {
+          warm: { arabic: 'أنتي من وين؟ صراحة نادر يردون بهالأسلوب الحلو. أول مرة أشوفك هنا؟', roman: "inti min wayn? saraaha naadir yiruddun b-hal-usluub al-hilw. awwal marra ashuufich hini?", english: "Where are you from? Honestly it's rare someone responds that warmly. First time I've seen you here?" },
+          neutral: { arabic: 'أنتي من وين؟ أول مرة أشوفك هنا', roman: "inti min wayn? awwal marra ashuufich hini", english: "Where are you from? First time I've seen you here." },
+          cold: { arabic: 'من وين أنتي؟', roman: "min wayn inti?", english: "Where are you from?" },
+        },
+        warmThreshold: 8, coldThreshold: 0,
         choices: [
           { id: 'a', text: 'I\'d rather not say — I like my privacy', arabic: 'أفضل ما أقول — أحب خصوصيتي', roman: "afaddal maa aguul — ahib khususiyyati", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: '"Where are you from?" in Gulf culture is never a privacy invasion — it is the first step in understanding who you are and how to connect with you. Fatima is not asking for your address. She is asking for your story. Refusing it in a casual café setting does not signal privacy awareness; it signals you are not interested in her interest. The conversation closes here.', outcome: 'bad' },
           { id: 'b', text: 'I\'m from [country] — just moved here recently', arabic: 'أنا من [بلد] — توني يايه هني', roman: 'ana min [balad] — tawni yaaya hini', score: 5, note: 'Honest and friendly, but you missed a chance to reciprocate with curiosity about her.', outcome: 'good' },
@@ -695,6 +755,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'كان ودي أكمل سوالف بس لازم أروح. نتواصل؟',
         roman: "kaan widdi akammil saawaalif bas laazim aruuh. nitwaasal?",
         english: 'I\'d love to keep chatting but I have to go. Shall we stay in touch?',
+        charDialogue: {
+          warm: { arabic: 'والله كان ودي أكمل سوالف معك بس لازم أروح. انبسطت وايد. نتواصل؟', roman: "wallah kaan widdi akammil saawaalif ma'ich bas laazim aruuh. inbasatt waayid. nitwaasal?", english: "By God, I really wanted to keep chatting with you but I have to go. I had a great time. Shall we stay in touch?" },
+          neutral: { arabic: 'كان ودي أكمل سوالف بس لازم أروح. نتواصل؟', roman: "kaan widdi akammil saawaalif bas laazim aruuh. nitwaasal?", english: "I'd love to keep chatting but I have to go. Shall we stay in touch?" },
+          cold: { arabic: 'لازم أروح. يلا مع السلامة.', roman: "laazim aruuh. yalla ma'a as-salaama.", english: "I have to go. Take care." },
+        },
+        warmThreshold: 16, coldThreshold: 5,
         choices: [
           { id: 'a', text: 'Maybe — I\'m pretty busy these days', arabic: 'يمكن — وايد مشغولة هالأيام', roman: 'yimkin — waayid mashghuula hal-ayyaam', score: -4, note: 'Fatima took a social risk asking to stay in touch with someone she just met. Hedging her offer with "maybe" signals that her risk was not worth taking. In Emirati culture, genuine connection is treated as a gift — declining it, even gently, lands as rejection. If you truly are busy: "أكيد! بس هالأسبوع مشغولة — رقمك؟" (of course, but this week is busy — your number?) would have preserved the connection.', outcome: 'bad' },
           { id: 'b', text: 'Sure! Here\'s my number', arabic: 'أكيد! هذا رقمي', roman: "akiid! haadha ragmi", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Willing but brief. A warmer farewell would seal the connection.', outcome: 'good' },
@@ -764,6 +830,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'تفضل — هذي حلويات العيد. ذوق',
         roman: "tfaddal — hadhi halawiyyaat al-'eid. dhoog",
         english: 'Please — these are Eid sweets. Try some.',
+        charDialogue: {
+          warm: { arabic: 'يا هلا هلا! تفضل — هذي حلويات العيد. زوجتي سوّتها من أمس. ذوق وقولي رأيك', roman: "ya hala hala! tfaddal — hadhi halawiyyaat al-'eid. zawjati sawwatha min ams. dhoog w-gulli ra'yak", english: "Welcome, welcome! Please — these are Eid sweets. My wife made them yesterday. Try some and tell me what you think." },
+          neutral: { arabic: 'تفضل — هذي حلويات العيد. ذوق', roman: "tfaddal — hadhi halawiyyaat al-'eid. dhoog", english: "Please — these are Eid sweets. Try some." },
+          cold: { arabic: 'تفضل. فيه حلويات.', roman: "tfaddal. fii halawiyyaat.", english: "Please. There are sweets." },
+        },
+        warmThreshold: 8, coldThreshold: -2,
         choices: [
           { id: 'a', text: 'No thanks, I\'m watching my sugar intake', arabic: 'لا شكراً، أنا محافظ على السكر', roman: "la shukran, ana muhaafit 'ala as-sukkar", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: 'Refusing Eid sweets is like refusing the celebration itself. Always accept hospitality.', outcome: 'bad' },
           { id: 'b', text: 'Thank you! They look delicious', arabic: 'شكراً! شكلها لذيذة', roman: "shukran! shakilha ladhiidha", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, note: 'You accepted and you complimented — those are the right instincts. But "شكلها لذيذة" (they look delicious) is a generic food compliment. On Eid, these sweets were made by hand, days in advance, as an act of love. The phrases that honour that: بسم الله before eating, ما شاء الله on the presentation, and "مين سواها؟" (who made them?) — asking who made them tells the maker their effort was seen.', outcome: 'neutral' },
@@ -776,6 +848,12 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         arabic: 'الله يبارك فيك. بيتنا بيتك دايماً',
         roman: "allah ybaarak fiik. baitna baitak daayiman",
         english: 'God bless you. Our home is always your home.',
+        charDialogue: {
+          warm: { arabic: 'الله يبارك فيك يا ولدي. والله انبسطنا بيك اليوم. بيتنا بيتك دايماً — ما هو كلام', roman: "allah ybaarak fiik ya waladi. wallah inbasatna biik al-yoom. baitna baitak daayiman — maa huu kalaam", english: "God bless you, my son. By God, we were so happy to have you today. Our home is always your home — and I mean it." },
+          neutral: { arabic: 'الله يبارك فيك. بيتنا بيتك دايماً', roman: "allah ybaarak fiik. baitna baitak daayiman", english: "God bless you. Our home is always your home." },
+          cold: { arabic: 'الله يسلمك. مع السلامة.', roman: "allah yisallmak. ma'a as-salaama.", english: "God keep you safe. Goodbye." },
+        },
+        warmThreshold: 14, coldThreshold: 3,
         choices: [
           { id: 'a', text: 'Thanks! See you around', arabic: 'مشكور! نشوفك', roman: "mashkuur! nishuufak", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'Uncle Rashid just said "بيتنا بيتك دايماً" — your house is always our house. This is one of the warmest things a Gulf Arab can say to someone outside the family. It means: you belong here. Responding with "مشكور! نشوفك" (thanks, see you) is the social equivalent of someone handing you a gift and you pocketing it without looking at it. The farewell needed to honour the size of what he offered.', outcome: 'bad' },
           { id: 'b', text: 'الله يبارك فيك — شكراً على كرمكم', arabic: 'شكراً على كرمكم', roman: "allah ybaarak fiik — shukran 'ala karamkum", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Thanking their generosity while returning the blessing is respectful.', outcome: 'good' },

@@ -27,10 +27,13 @@ export function useCountUp(target: number, duration = 1200, delay = 0) {
 export function useTypewriter(text: string, speed = 55, startDelay = 0) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
+
   useEffect(() => {
     setDisplayed('');
     setDone(false);
+
     if (!text) return;
+
     let i = 0;
     const timeout = setTimeout(() => {
       const timer = setInterval(() => {
@@ -46,6 +49,7 @@ export function useTypewriter(text: string, speed = 55, startDelay = 0) {
     }, startDelay);
     return () => clearTimeout(timeout);
   }, [text, speed, startDelay]);
+
   return { displayed, done };
 }
 

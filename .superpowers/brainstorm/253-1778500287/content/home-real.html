@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fasih — Real Home Redesign</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #080808;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 40px 24px 80px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 6px; text-align: center; }
+  .page-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; text-align: center; }
+  .page-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 48px; text-align: center; line-height: 1.5; }
+
+  /* ── Phone shell ── */
+  .phone {
+    width: 340px;
+    border-radius: 48px;
+    background: #080E0A;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    box-shadow: 0 60px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06);
+    position: relative;
+  }
+
+  /* Ghost letters — only visible in background */
+  .ghosts {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .g1 {
+    position: absolute;
+    font-size: 320px;
+    font-weight: 900;
+    color: rgba(0,255,149,0.028);
+    line-height: 1;
+    right: -60px; top: -60px;
+    transform: rotate(-6deg);
+    user-select: none;
+  }
+  .g2 {
+    position: absolute;
+    font-size: 200px;
+    font-weight: 900;
+    color: rgba(0,214,252,0.022);
+    line-height: 1;
+    left: -40px; top: 300px;
+    transform: rotate(4deg);
+    user-select: none;
+  }
+  .g3 {
+    position: absolute;
+    font-size: 160px;
+    font-weight: 900;
+    color: rgba(0,255,149,0.018);
+    line-height: 1;
+    right: -20px; bottom: 100px;
+    transform: rotate(-10deg);
+    user-select: none;
+  }
+
+  /* Screen scroll area */
+  .screen {
+    position: relative;
+    z-index: 1;
+    padding: 52px 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .header-left {}
+  .greeting-ar {
+    font-size: 42px;
+    font-weight: 900;
+    color: #FFB800;
+    line-height: 1;
+    direction: rtl;
+  }
+  .greeting-en {
+    font-size: 13px;
+    color: rgba(255,255,255,0.38);
+    margin-top: 4px;
+  }
+  .greeting-en span { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .settings-btn {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    margin-top: 4px;
+  }
+
+  /* ── Souk card base ── */
+  .card {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.038);
+    border: 1px solid rgba(255,255,255,0.075);
+    overflow: hidden;
+    position: relative;
+  }
+  /* shimmer line at top — the souk signature */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,149,0.4), transparent);
+  }
+  /* green left accent */
+  .card-accent {
+    position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: linear-gradient(180deg, #00FF95, rgba(0,255,149,0.2));
+  }
+
+  /* ── XP widget ── */
+  .xp-inner {
+    padding: 14px 16px 12px 20px;
+  }
+  .xp-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .fox {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #FF8C42, #FF6B1A);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .xp-right { flex: 1; }
+  .xp-amount {
+    font-size: 19px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .xp-bar-track {
+    height: 5px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .xp-bar-fill {
+    height: 100%;
+    width: 10%;
+    background: linear-gradient(90deg, #00FF95, #00D6FC);
+    border-radius: 10px;
+  }
+  .xp-days {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 4px;
+  }
+  .xp-days span { color: #00FF95; font-weight: 600; }
+  .week-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .week-day {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    color: rgba(255,255,255,0.25);
+    padding: 6px 2px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  .week-day.done {
+    background: rgba(0,255,149,0.1);
+    border-color: rgba(0,255,149,0.2);
+    color: #00FF95;
+    font-weight: 700;
+  }
+  .week-day.today {
+    background: rgba(0,255,149,0.15);
+    border-color: rgba(0,255,149,0.35);
+    color: #00FF95;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(0,255,149,0.2);
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    padding: 0 2px;
+    margin-top: 4px;
+    margin-bottom: -2px;
+  }
+
+  /* ── Quick Challenge ── */
+  .challenge-inner { padding: 16px 16px 14px 20px; }
+  .challenge-prompt {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  .challenge-arabic {
+    font-size: 30px;
+    font-weight: 900;
+    color: rgba(0,255,149,0.85);
+    text-align: right;
+    direction: rtl;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .challenge-reveal {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00FF95;
+  }
+
+  /* ── Today's Mission ── */
+  .mission-inner { padding: 18px 16px; text-align: center; }
+  .mission-fox { font-size: 32px; margin-bottom: 8px; }
+  .mission-title { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 6px; }
+  .mission-sub { font-size: 11px; color: rgba(255,255,255,0.35); line-height: 1.5; margin-bottom: 12px; }
+  .mission-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #00FF95;
+  }
+
+  /* ── Daily Phrase ── */
+  .phrase-inner { padding: 14px 16px 14px 20px; }
+  .phrase-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .phrase-cat {
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .phrase-new {
+    font-size: 9px;
+    font-weight: 600;
+    color: #00FF95;
+    background: rgba(0,255,149,0.1);
+    border: 1px solid rgba(0,255,149,0.18);
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .phrase-arabic {
+    font-size: 36px;
+    font-weight: 900;
+    color: rgba(0,255,149,0.8);
+    text-align: right;
+    direction: rtl;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .phrase-roman { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
+  .phrase-en { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 14px; }
+  .phrase-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .phrase-action {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.45);
+  }
+  .phrase-action.primary { color: #00FF95; }
+
+  /* ── This Week ── */
+  .week-inner { padding: 18px 16px; text-align: center; }
+  .week-emoji { font-size: 28px; margin-bottom: 8px; }
+  .week-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 4px; }
+  .week-sub { font-size: 11px; color: rgba(255,255,255,0.3); line-height: 1.5; }
+
+  /* ── Community ── */
+  .community-inner {
+    padding: 14px 16px 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatars { display: flex; }
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #080E0A;
+    margin-right: -8px;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #02B986, #00D6FC);
+  }
+  .community-text {
+    flex: 1;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.4;
+  }
+  .community-text strong { color: #00FF95; font-weight: 700; }
+
+  /* ── Annotation ── */
+  .annotation-wrap {
+    margin-top: 40px;
+    max-width: 560px;
+    width: 100%;
+  }
+  .ann-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .ann-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 24px; line-height: 1.5; }
+  .anns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ann {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .ann-head { font-size: 11px; font-weight: 700; color: #00FF95; margin-bottom: 5px; letter-spacing: 0.3px; }
+  .ann-body { font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+</style>
+<script src="../../../../../../../../../../Users/ahmed/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/helper.js"></script>
+</head>
+<body>
+
+<p class="page-label">Fasih · Real Home</p>
+<h1 class="page-title">Your actual home screen, redesigned</h1>
+<p class="page-sub">Every section you have. Ghost letterforms in background. Souk cards.<br>Content unchanged — only the look.</p>
+
+<div class="phone">
+  <div class="ghosts">
+    <div class="g1">م</div>
+    <div class="g2">ح</div>
+    <div class="g3">ب</div>
+  </div>
+
+  <div class="screen">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="greeting-ar">مرحبا</div>
+        <div class="greeting-en">Hello, <span>ahmed</span></div>
+      </div>
+      <div class="settings-btn">⚙️</div>
+    </div>
+
+    <!-- XP Widget -->
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="xp-inner">
+        <div class="xp-top">
+          <div class="fox">🦊</div>
+          <div class="xp-right">
+            <div class="xp-amount">50 / 500 XP</div>
+            <div class="xp-bar-track"><div class="xp-bar-fill"></div></div>
+            <div class="xp-days"><span>0</span> days active</div>
+          </div>
+        </div>
+        <div class="week-row">
+          <div class="week-day">M</div>
+          <div class="week-day done">✓</div>
+          <div class="week-day today">W</div>
+          <div class="week-day">T</div>
+          <div class="week-day">F</div>
+          <div class="week-day">S</div>
+          <div class="week-day">S</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Challenge -->
+    <div class="section-label">Quick Challenge</div>
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="challenge-inner">
+        <div class="challenge-prompt">Someone says this to you — reply:</div>
+        <div class="challenge-arabic">مساء الخير</div>
+        <div class="challenge-reveal">Tap to reveal →</div>
+      </div>
+    </div>
+
+    <!-- Today's Mission -->
+    <div class="section-label">Today's Mission</div>
+    <div class="card">
+      <div class="mission-inner">
+        <div class="mission-fox">🦊</div>
+        <div class="mission-title">No progress yet</div>
+        <div class="mission-sub">Start your first scenario to begin tracking your mastery across categories.</div>
+        <div class="mission-cta">Begin Scenario ›</div>
+      </div>
+    </div>
+
+    <!-- Daily Phrase -->
+    <div class="section-label">Daily Phrase</div>
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="phrase-inner">
+        <div class="phrase-meta">
+          <div class="phrase-cat">Everyday</div>
+          <div class="phrase-new">● New today</div>
+        </div>
+        <div class="phrase-arabic">ليش؟</div>
+        <div class="phrase-roman">laish?</div>
+        <div class="phrase-en">Why?</div>
+        <div class="phrase-actions">
+          <div class="phrase-action primary">▶ Play</div>
+          <div class="phrase-action">Use today</div>
+          <div class="phrase-action">🔖 Save</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- This Week -->
+    <div class="section-label">This Week</div>
+    <div class="card">
+      <div class="week-inner">
+        <div class="week-emoji">📊</div>
+        <div class="week-title">Your weekly stats will appear here</div>
+        <div class="week-sub">Complete a scenario or review phrases to start earning XP</div>
+      </div>
+    </div>
+
+    <!-- Community -->
+    <div class="section-label">Community</div>
+    <div class="card">
+      <div class="community-inner">
+        <div class="avatars">
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+          <div class="avatar">👤</div>
+        </div>
+        <div class="community-text"><strong>47 expats</strong> in Dubai completed a scenario today.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Annotations -->
+<div class="annotation-wrap">
+  <div class="ann-title">What changed vs. your current screen</div>
+  <div class="ann-sub">All your sections, order, and content stay identical. These are the visual deltas.</div>
+  <div class="anns">
+    <div class="ann">
+      <div class="ann-head">Ghost Arabic background</div>
+      <div class="ann-body">م، ح، ب bleed behind everything at ~3% opacity. Rotate slightly per screen. Invisible unless you look — but add soul.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-head">Top shimmer line on cards</div>
+      <div class="ann-body">Each card has a 1px gradient line across the top edge — green fading to transparent. Replaces the heavy left-border-only look.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-head">Left accent stays</div>
+      <div class="ann-body">Your existing left-border accent is kept on content cards — it grounds the card and maintains the visual rhythm you already have.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-head">Section labels refined</div>
+      <div class="ann-body">Uppercase labels get more breathing room and slightly lower opacity — hierarchy without shouting.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-head">XP bar gets a glow</div>
+      <div class="ann-body">Progress bar uses a green→cyan gradient with a soft glow. The week-day dots get the same treatment when active.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-head">Card surfaces</div>
+      <div class="ann-body">Slightly more translucent (3.8% vs your current opaque dark). Lets the ghost letters breathe through without losing readability.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

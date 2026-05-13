@@ -6,7 +6,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
-  Heart, Search, CheckCircle2,
+  Heart, Search, CheckCircle2, Lock,
   Coffee, Building2, Users, Briefcase, ShoppingBag, Moon,
   Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
 } from 'lucide-react-native';
@@ -17,8 +17,10 @@ import {
   FONT_HEADING_EXTRA,
   FONT_HEADING_SEMI,
   FONT_LATIN,
+  SMOOTH,
 } from '../components/design/tokens';
 import type { ThemeColors } from '../components/design/tokens';
+import { GhostLetters } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
@@ -197,12 +199,7 @@ function ScenarioCard({
     <MotiView
       from={{ opacity: 0, translateY: 20, scale: 0.95 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{
-        type: 'spring',
-        stiffness: 400,
-        damping: 30,
-        delay: index * 40,
-      }}
+      transition={{ ...SMOOTH, delay: index * 40 }}
       style={{
         flex: 1,
         paddingRight: isLeft ? 6 : 0,
@@ -221,7 +218,6 @@ function ScenarioCard({
           backgroundColor: palette.bg,
           height: cardHeight,
           overflow: 'hidden',
-          opacity: locked || comingSoon ? 0.72 : 1,
           ...Platform.select({
             ios: {
               shadowColor: palette.accent,
@@ -263,31 +259,60 @@ function ScenarioCard({
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked && !comingSoon ? 4 : 14 }}>
           <Icon
             size={impactPreview && !locked && !comingSoon ? 40 : 56}
-            color={locked ? C.TEXT3 : palette.accent}
+            color={locked || comingSoon ? C.TEXT3 : palette.accent}
             strokeWidth={1.5}
           />
         </View>
         {impactPreview && !locked && !comingSoon && (
           <ImpactPreviewStrip impactPreview={impactPreview} mode={mode} />
         )}
+
+        {/* ── Coming Soon overlay ── */}
         {comingSoon && (
           <View style={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            backgroundColor: C.NEUTRAL_900,
-            borderRadius: 8,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(10,15,12,0.52)',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-            <Text style={{
-              fontFamily: FONT_LATIN,
-              fontSize: 10,
-              color: C.WHITE,
-              letterSpacing: 0.5,
+            <View style={{
+              paddingHorizontal: 12, paddingVertical: 5,
+              borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.18)',
             }}>
-              Coming Soon
-            </Text>
+              <Text style={{
+                fontFamily: FONT_HEADING_SEMI,
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.75)',
+                letterSpacing: 0.8,
+                textTransform: 'uppercase',
+              }}>
+                Coming Soon
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── Locked overlay ── */}
+        {locked && !comingSoon && (
+          <View style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(10,15,12,0.38)',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            padding: 12,
+          }}>
+            <View style={{
+              width: 30, height: 30, borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.10)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.14)',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Lock size={14} color="rgba(255,255,255,0.45)" strokeWidth={2} />
+            </View>
           </View>
         )}
       </Pressable>
@@ -308,7 +333,7 @@ function HeaderContent() {
       <MotiView
         from={{ opacity: 0, translateY: 8 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        transition={{ ...SMOOTH }}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}
       >
         <HeadingIcon size={24} color="rgba(255,255,255,0.9)" />
@@ -328,7 +353,7 @@ function HeaderContent() {
       <MotiView
         from={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 50 }}
+        transition={{ ...SMOOTH, delay: 50 }}
       >
         <Text
           style={{
@@ -347,7 +372,7 @@ function HeaderContent() {
       <MotiView
         from={{ opacity: 0, translateX: -8 }}
         animate={{ opacity: 1, translateX: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 100 }}
+        transition={{ ...SMOOTH, delay: 100 }}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -415,10 +440,11 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
+      <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
-      {/* ── Green header matching theme ── */}
+      {/* ── Deep green header ── */}
       <LinearGradient
-        colors={[C.JADE2, C.GOLD, C.JADE] as [string, string, string]}
+        colors={['#071A10', '#0C2B1A', C.JADE] as [string, string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -524,7 +550,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
             <MotiView
               from={{ opacity: 0, translateY: 12, scale: 0.95 }}
               animate={{ opacity: 1, translateY: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              transition={{ ...SMOOTH }}
               style={{ alignItems: 'center', paddingTop: 56, gap: 10 }}
             >
               <View
@@ -564,13 +590,14 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                   <MotiView
                     from={{ opacity: 0, translateY: 16, scale: 0.95 }}
                     animate={{ opacity: 1, translateY: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30, delay: 200 }}
+                    transition={{ ...SMOOTH, delay: 200 }}
                   >
                     <View
                       style={{
                         borderRadius: 20, padding: 18,
                         flexDirection: 'row', alignItems: 'center', gap: 14,
-                        backgroundColor: C.CATEGORY_LAVENDER,
+                        backgroundColor: C.JADE_SURFACE,
+                        borderWidth: 1, borderColor: C.JADE_BORDER,
                       }}
                     >
                       <LinearGradient
@@ -585,7 +612,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                         <CheckCircle2 size={20} color={C.WHITE} />
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.PRIMARY_DARK }}>
+                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
                           {lockedCount} more scenarios coming soon
                         </Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>
@@ -595,7 +622,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                       <View
                         style={{
                           paddingHorizontal: 14, paddingVertical: 9,
-                          borderRadius: 14, backgroundColor: C.PRIMARY,
+                          borderRadius: 14, backgroundColor: C.JADE,
                         }}
                       >
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.WHITE }}>

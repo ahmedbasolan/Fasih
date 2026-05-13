@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, LayoutChangeEvent } from 'react-native';
 import Svg, { Polygon, Circle } from 'react-native-svg';
+import { useTheme } from '../../hooks/useTheme';
 
 interface GeoPatternProps {
   opacity?: number;
@@ -10,7 +11,9 @@ interface GeoPatternProps {
 
 // Rewritten using react-native-svg with manual tiling
 // (react-native-svg doesn't support SVG <pattern> element)
-export function GeoPattern({ opacity = 0.04, color = '#C8913A', size = 56 }: GeoPatternProps) {
+export function GeoPattern({ opacity = 0.04, color, size = 56 }: GeoPatternProps) {
+  const { C } = useTheme();
+  const patternColor = color || C.GOLD;
   const [dims, setDims] = useState({ width: 0, height: 0 });
   const cx = size / 2;
   const r = size * 0.44;
@@ -52,7 +55,7 @@ export function GeoPattern({ opacity = 0.04, color = '#C8913A', size = 56 }: Geo
                     outerPts.map((p) => ({ x: p.x + col * size, y: p.y + row * size }))
                   )}
                   fill="none"
-                  stroke={color}
+                  stroke={patternColor}
                   strokeWidth={0.4}
                 />
                 <Polygon
@@ -60,14 +63,14 @@ export function GeoPattern({ opacity = 0.04, color = '#C8913A', size = 56 }: Geo
                     innerPts.map((p) => ({ x: p.x + col * size, y: p.y + row * size }))
                   )}
                   fill="none"
-                  stroke={color}
+                  stroke={patternColor}
                   strokeWidth={0.3}
                 />
                 <Circle
                   cx={cx + col * size}
                   cy={cx + row * size}
                   r={size * 0.06}
-                  fill={color}
+                  fill={patternColor}
                   fillOpacity={0.4}
                 />
               </React.Fragment>

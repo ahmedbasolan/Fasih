@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Fingerprint } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
-import { C, FONT_ARABIC_BLACK, FONT_ARABIC_SEMI, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM } from '../src/components/design/tokens';
-import { GOLD_STOPS, JADE_STOPS, ANGLE_135 } from '../src/components/design/gradients';
-import { KafMascot } from '../src/components/KafMascot';
-import { GeoPattern } from '../src/components/design/GeoPattern';
+import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
+import { useTheme } from '../src/hooks/useTheme';
+import { GhostLetters } from '../src/components/ui';
 
 export default function SignInScreen() {
+  const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const signIn = useAppStore((s) => s.signIn);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
@@ -40,46 +39,68 @@ export default function SignInScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.4 }}>
-        <GeoPattern color={C.GOLD} opacity={0.03} size={28} />
-      </View>
+      <GhostLetters glyphs={['م', 'ر', 'ح']} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 60, paddingBottom: insets.bottom + 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header with mascot */}
+          {/* Header with shield icon */}
           <MotiView
-            from={{ opacity: 0, translateY: -20 }}
+            from={{ opacity: 0, translateY: -16 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 600 }}
-            style={{ alignItems: 'center', marginBottom: 32 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ alignItems: 'center', marginBottom: 40 }}
           >
-            <KafMascot size="md" animate />
+            {/* Shield Icon Container */}
+            <View style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: C.GOLD_DIM,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 24,
+            }}>
+              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+            </View>
 
-            <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 38, color: C.GOLD, textAlign: 'center', marginTop: 16, marginBottom: 2 }}>
-              أهلاً من جديد
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
+              Sign in to your Account
             </Text>
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
-              Welcome back to Fasih
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>
+                Don't have an account?
+              </Text>
+              <Pressable onPress={() => router.push('/sign-up')} hitSlop={8}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign Up</Text>
+              </Pressable>
+            </View>
           </MotiView>
 
-          {/* Form */}
+          {/* Input Card */}
           <MotiView
-            from={{ opacity: 0, translateY: 16 }}
+            from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 500, delay: 150 }}
-            style={{ gap: 14, marginBottom: 20 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 100 }}
+            style={{
+              backgroundColor: C.SURFACE,
+              borderRadius: 20,
+              padding: 20,
+              gap: 16,
+              borderWidth: 1,
+              borderColor: C.BORDER,
+              marginBottom: 16,
+            }}
           >
             {/* Email field */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4,
-              backgroundColor: focused === 'email' ? 'rgba(200,145,58,0.06)' : C.SURFACE,
-              borderWidth: 1.5,
-              borderColor: focused === 'email' ? C.GOLD_BORDER : C.BORDER,
+              borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
+              backgroundColor: C.BG,
+              borderWidth: 1,
+              borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
             }}>
               <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
               <TextInput
@@ -92,17 +113,17 @@ export default function SignInScreen() {
                 autoComplete="email"
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 14 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
               />
             </View>
 
             {/* Password field */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
-              borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4,
-              backgroundColor: focused === 'password' ? 'rgba(200,145,58,0.06)' : C.SURFACE,
-              borderWidth: 1.5,
-              borderColor: focused === 'password' ? C.GOLD_BORDER : C.BORDER,
+              borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
+              backgroundColor: C.BG,
+              borderWidth: 1,
+              borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
             }}>
               <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
               <TextInput
@@ -114,94 +135,74 @@ export default function SignInScreen() {
                 autoCapitalize="none"
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 14 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
+              <Pressable
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
                 {showPassword
                   ? <EyeOff size={18} color={C.TEXT3} />
                   : <Eye size={18} color={C.TEXT3} />
                 }
               </Pressable>
             </View>
-
-            {/* Forgot password */}
-            <View style={{ alignSelf: 'flex-end', paddingVertical: 4 }}>
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.TEXT3 }}>Password reset is not part of this beta</Text>
-            </View>
-
-            {error ? (
-              <View style={{ borderRadius: 12, padding: 12, backgroundColor: 'rgba(232,118,108,0.1)', borderWidth: 1, borderColor: 'rgba(232,118,108,0.25)' }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: '#E8766C', textAlign: 'center' }}>{error}</Text>
-              </View>
-            ) : null}
           </MotiView>
 
-          {/* Sign In button */}
+          {/* Forgot password link */}
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 200 }}
+            style={{ alignSelf: 'center', marginBottom: 24 }}
+          >
+            <Pressable
+              onPress={() => router.push('/forgot-password')}
+              accessibilityRole="link"
+              accessibilityLabel="Forgot your password"
+            >
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>
+                Forgot Your Password?
+              </Text>
+            </Pressable>
+          </MotiView>
+
+          {/* Error message */}
+          {error ? (
+            <MotiView
+              from={{ opacity: 0, translateY: -10 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              style={{ marginBottom: 16 }}
+            >
+              <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+              </View>
+            </MotiView>
+          ) : null}
+
+          {/* Sign In Button */}
           <MotiView
             from={{ opacity: 0, translateY: 16 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 500, delay: 300 }}
-            style={{ gap: 12, marginBottom: 24 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 250 }}
           >
-            <Pressable onPress={handleSignIn} disabled={!canSubmit || loading} style={{ borderRadius: 16, overflow: 'hidden', opacity: canSubmit && !loading ? 1 : 0.5 }}>
-              <LinearGradient
-                colors={canSubmit && !loading ? GOLD_STOPS : ['rgba(200,145,58,0.2)', 'rgba(200,145,58,0.2)']}
-                start={ANGLE_135.start}
-                end={ANGLE_135.end}
-                style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-              >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: canSubmit && !loading ? '#05050E' : C.TEXT3 }}>
-                  {loading ? 'Signing In...' : 'Sign In'}
-                </Text>
-                {!loading && <ArrowRight size={18} color={canSubmit ? '#05050E' : C.TEXT3} />}
-              </LinearGradient>
+            <Pressable
+              onPress={handleSignIn}
+              disabled={!canSubmit || loading}
+              style={{
+                backgroundColor: C.GOLD,
+                borderRadius: 14,
+                paddingVertical: 16,
+                alignItems: 'center',
+                opacity: canSubmit && !loading ? 1 : 0.5,
+              }}
+            >
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                {loading ? 'Signing In...' : 'Log In'}
+              </Text>
             </Pressable>
-
-            {/* Biometric option */}
-            <View style={{
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-              borderRadius: 16, paddingVertical: 14,
-              backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-            }}>
-              <Fingerprint size={18} color={C.JADE2} />
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>Biometric sign-in is coming later</Text>
-            </View>
-          </MotiView>
-
-          {/* Divider */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.BORDER }} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>beta preview</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: C.BORDER }} />
-          </View>
-
-          {/* Social sign-in buttons */}
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ type: 'timing', duration: 400, delay: 450 }}
-            style={{ marginBottom: 32 }}
-          >
-            <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textAlign: 'center' }}>Email sign-in works in this beta. Google and Apple sign-in are coming later.</Text>
-            </View>
-          </MotiView>
-
-          {/* Bottom section — Sign up link */}
-          <View style={{ flex: 1 }} />
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ type: 'timing', duration: 400, delay: 550 }}
-            style={{ alignItems: 'center', gap: 6 }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>New to Fasih?</Text>
-              <Pressable onPress={() => router.push('/sign-up')}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Create Account</Text>
-              </Pressable>
-            </View>
-            <Text style={{ fontFamily: FONT_ARABIC_SEMI, fontSize: 13, color: C.TEXT3 }}>ابدأ رحلتك اليوم</Text>
           </MotiView>
 
           {/* Dev skip button */}
@@ -211,11 +212,13 @@ export default function SignInScreen() {
                 await signIn('dev@example.com', 'dev123456');
                 router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
               }}
-              style={{ marginTop: 20, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed' }}
+              style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
             >
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Skip (dev only)</Text>
             </Pressable>
           )}
+
+          <View style={{ flex: 1 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

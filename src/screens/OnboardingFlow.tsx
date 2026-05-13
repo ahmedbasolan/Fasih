@@ -16,7 +16,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
 import { KafMascot } from '../components/features/KafMascot';
 import { STRINGS } from '../constants/strings';
-import { FadeIn, ShimmerButton, SwitchButton } from '../components/ui';
+import { FadeIn, ShimmerButton, SwitchButton, GhostLetters } from '../components/ui';
 import type { UserProfile } from '../types';
 import { useAppStore } from '../store/useAppStore';
 
@@ -1230,6 +1230,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   return (
     <GestureDetector gesture={composedGesture}>
       <View style={{ flex: 1, backgroundColor: C.BG }}>
+        <GhostLetters glyphs={['ب', 'د', 'أ']} />
         {step > 0 && step < 10 && <ProgressBar step={step} total={10} />}
         
         <AnimatePresence>

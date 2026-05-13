@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { X, ChevronRight, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
@@ -16,6 +16,7 @@ import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { KafMascot } from '../components/features/KafMascot';
 import { EmptyState } from '../components/ui/EmptyState';
+import { GhostLetters } from '../components/ui';
 import { getScenarioScript, getScenarioById } from '../constants/scenarios';
 import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
@@ -72,24 +73,33 @@ function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; resp
 }
 
 // ─── Dialogue bubble ──────────────────────────────────────────────────────────
-function DialogueBubble({ scene }: { scene: ScenarioScene }) {
+function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; tone?: 'warm' | 'neutral' | 'cold' }) {
   const { C } = useTheme();
-  // C.JADE (#02B986) reads well on both dark and light backgrounds
   const accentText = C.JADE;
   const [arabicRevealed, setArabicRevealed] = useState(false);
   const [translationRevealed, setTranslationRevealed] = useState(false);
-  const { displayed } = useTypewriter(translationRevealed ? scene.english : '', 28, 50);
+
+  // Resolve the correct dialogue variant — warm/cold only if the scene defines charDialogue
+  const dialogue = (scene.charDialogue && tone !== 'neutral')
+    ? scene.charDialogue[tone]
+    : { arabic: scene.arabic, roman: scene.roman, english: scene.english };
+
+  const { displayed } = useTypewriter(translationRevealed ? dialogue.english : '', 28, 50);
   const { speakAs, isSpeaking: playingAudio } = useArabicTTS();
   const initial = scene.charName.charAt(0).toUpperCase();
+
+  // Butterfly effect indicators
+  const hasToneShift = !!scene.charDialogue && tone !== 'neutral';
+  const toneColor = tone === 'warm' ? C.GOLD : C.TEXT3;
 
   useEffect(() => {
     setArabicRevealed(false);
     setTranslationRevealed(false);
-    speakAs(scene.arabic, scene.charGender);
+    speakAs(dialogue.arabic, scene.charGender);
     const t1 = setTimeout(() => setArabicRevealed(true), 900);
     const t2 = setTimeout(() => setTranslationRevealed(true), 2200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [scene.arabic, scene.charGender, speakAs]);
+  }, [dialogue.arabic, scene.charGender, speakAs]);
 
   return (
     <View style={{ marginBottom: 20 }}>
@@ -97,16 +107,39 @@ function DialogueBubble({ scene }: { scene: ScenarioScene }) {
         flexDirection: 'row', alignItems: 'center', gap: 6,
         paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
         backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-        alignSelf: 'flex-start', marginBottom: 14,
+        alignSelf: 'flex-start', marginBottom: hasToneShift ? 8 : 14,
       }}>
         <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE }} />
         <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{scene.setting}</Text>
       </View>
 
+      {/* Butterfly effect badge — only appears when past choices changed this NPC response */}
+      {hasToneShift && (
+        <MotiView
+          from={{ opacity: 0, translateY: -6 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'spring', damping: 18, stiffness: 180, delay: 350 }}
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            alignSelf: 'flex-start', marginBottom: 12,
+            paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+            backgroundColor: tone === 'warm' ? C.GOLD_DIM : C.SURFACE,
+            borderWidth: 1, borderColor: tone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+          }}
+        >
+          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: toneColor, letterSpacing: 0.5 }}>
+            {tone === 'warm' ? 'Your choices shaped this response' : 'Your choices echo here'}
+          </Text>
+        </MotiView>
+      )}
+
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
         <View style={{
           width: 40, height: 40, borderRadius: 14,
-          backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER,
+          backgroundColor: C.GOLD_DIM,
+          borderWidth: hasToneShift ? 1.5 : 1,
+          borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
           alignItems: 'center', justifyContent: 'center',
         }}>
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.GOLD }}>{initial}</Text>
@@ -117,7 +150,10 @@ function DialogueBubble({ scene }: { scene: ScenarioScene }) {
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
             <View style={{
               borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
-              backgroundColor: C.GOLD_SURFACE, borderWidth: 1, borderColor: C.GOLD_BORDER, minHeight: 72,
+              backgroundColor: tone === 'cold' ? C.SURFACE : C.GOLD_SURFACE,
+              borderWidth: 1,
+              borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
+              minHeight: 72,
             }}>
               {!arabicRevealed ? (
                 <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
@@ -126,11 +162,11 @@ function DialogueBubble({ scene }: { scene: ScenarioScene }) {
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
                   <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentText, textAlign: 'right', lineHeight: 32, marginBottom: translationRevealed ? 3 : 0 }}>
-                    {scene.arabic}
+                    {dialogue.arabic}
                   </Text>
                   {translationRevealed && (
                     <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{scene.roman}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{`"${displayed}"`}</Text>
                     </MotiView>
                   )}
@@ -140,7 +176,7 @@ function DialogueBubble({ scene }: { scene: ScenarioScene }) {
           </Pressable>
 
           <Pressable
-            onPress={() => speakAs(scene.arabic, scene.charGender)}
+            onPress={() => speakAs(dialogue.arabic, scene.charGender)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}
           >
             <WaveBars isPlaying={playingAudio} size="sm" color={playingAudio ? C.JADE2 : C.TEXT3} />
@@ -204,8 +240,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
 
   // TTS timer refs for cleanup
-  const choiceTtsTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const phraseTtsTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const choiceTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phraseTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -224,6 +260,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [completionFired, setCompletionFired] = useState(false);
   const [flags, setFlags] = useState<Record<string, boolean>>({ FLAG_1: false, FLAG_2: false, FLAG_3: false });
   const [nextSceneId, setNextSceneId] = useState<string | null>(null);
+  // Tone history: records the NPC tone at the moment each scene was entered
+  const [toneHistory, setToneHistory] = useState<Array<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }>>([]);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -259,11 +297,30 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (phase === 'result') void fetchCommunityEndingStats(scenarioId);
   }, [phase, scenarioId, fetchCommunityEndingStats]);
 
+  // Record NPC tone the moment each scene is entered (only for scenes with charDialogue)
+  useEffect(() => {
+    if (phase !== 'scene' || !scene?.charDialogue) return;
+    setToneHistory(prev => {
+      if (prev.some(t => t.sceneId === scene.id)) return prev;
+      const entryTone: 'warm' | 'neutral' | 'cold' =
+        score >= (scene.warmThreshold ?? Infinity) ? 'warm'
+        : score < (scene.coldThreshold ?? -Infinity) ? 'cold'
+        : 'neutral';
+      return [...prev, { sceneId: scene.id, tone: entryTone }];
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, phase]);
+
   useEffect(() => {
     if (!scriptData || phase !== 'result' || completionFired) return;
     const _endings = scriptData.endings;
     const _total = impact.trust + impact.respect + impact.culture;
-    const currEnding = _endings.find((e) => _total >= e.min) || _endings[_endings.length - 1];
+    const _secret = _endings.find(e => e.secret);
+    const _flagsMet = !_secret?.requiredFlags ||
+      _secret.requiredFlags.every(f => flags[f] === true);
+    const currEnding = (_secret && _flagsMet && _total >= 20)
+      ? _secret
+      : _endings.find(e => !e.secret && _total >= e.min) ?? _endings[_endings.length - 1];
     setCompletionFired(true);
     const hapticType =
       currEnding.type === 'failed' ? Haptics.NotificationFeedbackType.Error
@@ -272,7 +329,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, score, onComplete, onJournalEntry]);
+  }, [phase, completionFired, scenarioId, scriptData, impact, flags, onComplete, onJournalEntry]);
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = scriptData?.scenes ?? [];
@@ -355,17 +412,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // Default linear progression
     const nextStep = step + 1;
 
-    // Check if we should show bonus scene for secret ending
-    if (nextStep >= scenes.length && scriptData) {
+    // Check if we should show bonus scene for secret ending (only if not already on it)
+    const isOnBonusScene = scenes[step]?.bonus === true;
+    if (!isOnBonusScene && nextStep >= scenes.length && scriptData) {
       const total = impact.trust + impact.respect + impact.culture;
-      const hasSecretEnding = scriptData.endings?.some(e => e.secret);
-      const allFlagsSet = Object.values(flags).every(f => f === true);
       const secretEnding = scriptData.endings?.find(e => e.secret);
-      const requiredFlagsMet = !secretEnding?.requiredFlags || 
+      const requiredFlagsMet = !secretEnding?.requiredFlags ||
         secretEnding.requiredFlags.every(f => flags[f] === true);
 
-      // If secret ending exists, all flags are set, required flags met, and score threshold met, show bonus scene
-      if (hasSecretEnding && allFlagsSet && requiredFlagsMet && total >= 20) {
+      if (secretEnding && requiredFlagsMet && total >= 20) {
         const bonusScene = scenes.find(s => s.bonus === true);
         if (bonusScene) {
           setStep(scenes.indexOf(bonusScene));
@@ -377,7 +432,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
     if (nextStep >= scenes.length) setPhase('result');
     else { setStep(nextStep); setPhase('scene'); }
-  }, [step, scenes.length, score, flags, scriptData, scenes, impact, nextSceneId]);
+  }, [step, scenes.length, flags, scriptData, scenes, impact, nextSceneId]);
+
+  const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
+    const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
+    const message = isSecret
+      ? `I just discovered the secret ending in "${scenarioTitle}" on Fasih 🔑\n\n"${endingArabic}" — ${endingEn}\n\nVery few players ever find this.\n\nFasih — Learn Arabic by Living It`
+      : `I scored ${finalTotal} in "${scenarioTitle}" and unlocked "${endingTitle}"\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`;
+    try {
+      await Share.share({ message });
+    } catch { /* user dismissed share sheet — no-op */ }
+  }, [scriptData?.title]);
 
   const restart = useCallback(() => {
     setPhase('intro');
@@ -389,6 +454,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setCompletionFired(false);
     setFlags({ FLAG_1: false, FLAG_2: false, FLAG_3: false });
     setNextSceneId(null);
+    setToneHistory([]);
   }, []);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
@@ -409,22 +475,21 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // totalScore = sum of all three meters (as per guide)
   const total = impact.trust + impact.respect + impact.culture;
 
-  // Determine ending with flag support for secret endings
-  let ending = endings[endings.length - 1];
-  const hasSecretEnding = endings.some(e => e.secret);
-  const allFlagsSet = Object.values(flags).every(f => f === true);
-  // Check requiredFlags for secret ending if defined
-  const secretEnding = endings.find(e => e.secret);
-  const requiredFlagsMet = !secretEnding?.requiredFlags || 
-    secretEnding.requiredFlags.every(f => flags[f] === true);
+  // Butterfly effect: NPC tone driven by accumulated score (not impact sum — score is
+  // the designer's primary rating; impact is for the T/R/C bars)
+  const sceneTone: 'warm' | 'neutral' | 'cold' = scene?.charDialogue
+    ? score >= (scene.warmThreshold ?? Infinity) ? 'warm'
+      : score < (scene.coldThreshold ?? -Infinity) ? 'cold'
+      : 'neutral'
+    : 'neutral';
 
-  if (hasSecretEnding && allFlagsSet && requiredFlagsMet && total >= 20) {
-    // Show secret ending if conditions are met
-    ending = secretEnding || ending;
-  } else {
-    // Otherwise, find ending by score threshold
-    ending = endings.find(e => total >= e.min) || endings[endings.length - 1];
-  }
+  // Determine ending — secret endings require requiredFlags + score threshold
+  const secretEnding = endings.find(e => e.secret);
+  const requiredFlagsMet = !secretEnding?.requiredFlags ||
+    secretEnding.requiredFlags.every(f => flags[f] === true);
+  const ending = (secretEnding && requiredFlagsMet && total >= 20)
+    ? secretEnding
+    : endings.find(e => !e.secret && total >= e.min) ?? endings[endings.length - 1];
 
   const unlockedPhrases = scriptData.phrasesUnlocked
     ? scriptData.phrasesUnlocked.map(id => PHRASES.find(p => p.id === id)).filter(Boolean) as typeof PHRASES
@@ -432,6 +497,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
+      <GhostLetters glyphs={['ك', 'ل', 'م']} />
       {/* ── Header ── */}
       <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 14, paddingBottom: 10, zIndex: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -504,7 +570,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
               <View style={{ width: '100%', flexDirection: 'row', gap: 10 }}>
                 {[
-                  [`${scenes.length}`, STRINGS.scenarios.decisionLabel(scenes.length)],
+                  [`${scenes.filter(s => !s.bonus).length}`, STRINGS.scenarios.decisionLabel(scenes.filter(s => !s.bonus).length)],
                   [`${endings.length}`, STRINGS.scenarios.outcomeLabel(endings.length)],
                   [unlockedPhrases.length > 0 ? `${unlockedPhrases.length}` : '8+', STRINGS.scenarios.phraseLabel(8)],
                 ].map(([v, l]) => (
@@ -514,6 +580,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                   </View>
                 ))}
               </View>
+
+              {scriptData.endings.some(e => e.secret) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
+                  <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 }} />
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 }}>
+                    {STRINGS.scenarios.secretEndingExists}
+                  </Text>
+                </View>
+              )}
 
               <Pressable onPress={() => setPhase('scene')} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
                 <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
@@ -529,11 +604,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
         {phase === 'scene' && scene && (
           <MotiView
             key={`scene-${step}`}
-            from={{ opacity: 0, translateX: 20 }}
+            from={{ opacity: 0, translateX: sceneTone === 'warm' ? 30 : sceneTone === 'cold' ? 8 : 20 }}
             animate={{ opacity: 1, translateX: 0 }}
-            transition={{ type: 'timing', duration: 260 }}
+            transition={{ type: 'timing', duration: sceneTone === 'warm' ? 380 : sceneTone === 'cold' ? 180 : 260 }}
           >
-            <DialogueBubble scene={scene} />
+            <DialogueBubble scene={scene} tone={sceneTone} />
 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
@@ -681,6 +756,43 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                       );
                     })()}
 
+                    {/* Butterfly effect forward prediction — what tone will the next scene carry */}
+                    {(() => {
+                      // Respect branching: if the choice set a nextSceneId, look that scene up
+                      const nextIdx = nextSceneId
+                        ? scenes.findIndex(s => s.id === nextSceneId)
+                        : step + 1;
+                      const nextScene = nextIdx >= 0 && nextIdx < scenes.length ? scenes[nextIdx] : null;
+                      if (!nextScene?.charDialogue) return null;
+                      const nextTone: 'warm' | 'neutral' | 'cold' =
+                        score >= (nextScene.warmThreshold ?? Infinity) ? 'warm'
+                        : score < (nextScene.coldThreshold ?? -Infinity) ? 'cold'
+                        : 'neutral';
+                      if (nextTone === 'neutral') return null;
+                      const firstName = nextScene.charName.split(' ')[0];
+                      return (
+                        <MotiView
+                          from={{ opacity: 0, translateY: 6 }}
+                          animate={{ opacity: 1, translateY: 0 }}
+                          transition={{ type: 'timing', duration: 300, delay: 420 }}
+                        >
+                          <View style={{
+                            borderRadius: 14, padding: 14,
+                            backgroundColor: nextTone === 'warm' ? C.GOLD_DIM : C.SURFACE,
+                            borderWidth: 1, borderColor: nextTone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+                            flexDirection: 'row', alignItems: 'center', gap: 10,
+                          }}>
+                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: nextTone === 'warm' ? C.GOLD : C.TEXT3, flexShrink: 0 }} />
+                            <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: nextTone === 'warm' ? C.GOLD : C.TEXT3, flex: 1, lineHeight: 18 }}>
+                              {nextTone === 'warm'
+                                ? `${firstName} will be more open with you in the next scene`
+                                : `${firstName} will be more guarded in the next scene`}
+                            </Text>
+                          </View>
+                        </MotiView>
+                      );
+                    })()}
+
                     {/* Continue Action */}
                     <Pressable onPress={next} accessibilityRole="button" accessibilityLabel={step + 1 >= scenes.length ? 'See final result' : 'Continue'} style={{ borderRadius: 20, overflow: 'hidden', marginTop: 10 }}>
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 }}>
@@ -731,12 +843,81 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 </View>
               </View>
 
+              {/* Secret ending teaser — shown only when this ending isn't secret but one exists */}
+              {!ending.secret && endings.some(e => e.secret) && (
+                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
+                  <View style={{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2 }} />
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 }}>
+                      {STRINGS.scenarios.secretEndingTeaser}
+                    </Text>
+                  </View>
+                </MotiView>
+              )}
+
+              {/* Relationship arc — visual timeline of NPC tone across all scenes */}
+              {toneHistory.length > 0 && (
+                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 140 }}>
+                  <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+                    <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 16 }}>
+                      How the relationship evolved
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {toneHistory.map(({ sceneId, tone }, i) => {
+                        const dotColor = tone === 'warm' ? C.GOLD : tone === 'cold' ? C.ERROR : C.TEXT3;
+                        const label = tone === 'warm' ? 'Warm' : tone === 'cold' ? 'Cold' : 'Neutral';
+                        return (
+                          <React.Fragment key={sceneId}>
+                            <View style={{ alignItems: 'center', gap: 6 }}>
+                              <MotiView
+                                from={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', damping: 14, delay: 80 + i * 130 }}
+                                style={{
+                                  width: 28, height: 28, borderRadius: 14,
+                                  backgroundColor: `${dotColor}20`,
+                                  borderWidth: 1.5, borderColor: dotColor,
+                                  alignItems: 'center', justifyContent: 'center',
+                                }}
+                              >
+                                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
+                              </MotiView>
+                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: dotColor }}>{label}</Text>
+                            </View>
+                            {i < toneHistory.length - 1 && (
+                              <View style={{ flex: 1, height: 1.5, backgroundColor: C.BORDER, marginHorizontal: 6, marginBottom: 16 }} />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </View>
+                    {(() => {
+                      const finalTone = toneHistory[toneHistory.length - 1]?.tone;
+                      const hasTurn = toneHistory.some((t, i) => i > 0 && t.tone !== toneHistory[i - 1].tone);
+                      if (finalTone === 'warm') return (
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 12, textAlign: 'center', lineHeight: 17 }}>
+                          {hasTurn ? 'You turned the relationship around. That takes awareness.' : 'Consistent respect kept the connection warm throughout.'}
+                        </Text>
+                      );
+                      if (finalTone === 'cold') return (
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 12, textAlign: 'center', lineHeight: 17 }}>
+                          {hasTurn ? 'The relationship cooled as it went on. One early choice can change everything.' : 'Distance grew from the first scene. Try again — warmth is learnable.'}
+                        </Text>
+                      );
+                      return null;
+                    })()}
+                  </View>
+                </MotiView>
+              )}
+
               {/* Community stat */}
               <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
-                <View style={{ borderRadius: 14, padding: 14, backgroundColor: `${C.GOLD}12`, borderWidth: 1, borderColor: `${C.GOLD}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Users size={18} color={C.GOLD} />
+                <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.GOLD}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.GOLD}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <Users size={18} color={ending.secret ? C.VIOLET2 : C.GOLD} />
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT, flex: 1, lineHeight: 20 }}>
-                    {STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
+                    {ending.secret
+                      ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))
+                      : STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
                   </Text>
                 </View>
               </MotiView>
@@ -835,6 +1016,21 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                   </View>
                 </MotiView>
               )}
+
+              {/* Share result */}
+              <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 460 }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Share your result"
+                  onPress={() => handleShare(ending.title, ending.arabic, ending.en, !!ending.secret, total)}
+                  style={{ borderRadius: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: ending.secret ? `${C.VIOLET}18` : `${C.JADE}14`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}35` : `${C.JADE}30` }}
+                >
+                  <ArrowRight size={14} color={ending.secret ? C.VIOLET2 : C.JADE2} style={{ transform: [{ rotate: '-45deg' }] }} />
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: ending.secret ? C.VIOLET2 : C.JADE2 }}>
+                    {ending.secret ? 'Share this rare discovery' : 'Share your result'}
+                  </Text>
+                </Pressable>
+              </MotiView>
 
               {/* Action buttons */}
               <View style={{ flexDirection: 'row', gap: 10 }}>

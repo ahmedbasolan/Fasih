@@ -6,6 +6,7 @@ import { MotiView } from 'moti';
 import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { GhostLetters } from '../components/ui';
 import type { ThemeColors } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -348,6 +349,7 @@ export function PhraseLibrary() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
+      <GhostLetters glyphs={['ق', 'و', 'ل']} />
       {/* Fixed header — title, search + filters */}
       <View style={{ paddingHorizontal: GRID_PAD, paddingTop: insets.top + 16, paddingBottom: 12 }}>
 

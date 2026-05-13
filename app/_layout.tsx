@@ -13,19 +13,13 @@ import {
   Tajawal_900Black,
 } from '@expo-google-fonts/tajawal';
 import {
-  Inter_300Light,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
-import {
-  Urbanist_400Regular,
-  Urbanist_500Medium,
-  Urbanist_600SemiBold,
-  Urbanist_700Bold,
-  Urbanist_800ExtraBold,
-} from '@expo-google-fonts/urbanist';
+  PlusJakartaSans_300Light,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 import { useTheme } from '../src/hooks/useTheme';
@@ -42,16 +36,12 @@ export default function RootLayout() {
     Tajawal_700Bold,
     Tajawal_800ExtraBold,
     Tajawal_900Black,
-    Inter_300Light,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Urbanist_400Regular,
-    Urbanist_500Medium,
-    Urbanist_600SemiBold,
-    Urbanist_700Bold,
-    Urbanist_800ExtraBold,
+    PlusJakartaSans_300Light,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
   useEffect(() => {
@@ -73,6 +63,7 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
             <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
             <Stack.Screen

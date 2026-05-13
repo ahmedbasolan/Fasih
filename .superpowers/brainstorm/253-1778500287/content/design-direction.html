@@ -1,0 +1,249 @@
+<h2>What visual direction feels right?</h2>
+<p class="subtitle">All three keep your existing green/cyan palette and dark theme. Pick the one that matches the vibe you're going for.</p>
+
+<style>
+  .direction-cards {
+    display: flex;
+    gap: 20px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .dir-card {
+    flex: 1;
+    min-width: 220px;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+    background: #1a1a2e;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .dir-card:hover { transform: translateY(-3px); }
+  .dir-card.selected { border-color: #00FF95 !important; }
+
+  /* ── Direction A: Glassmorphic ── */
+  .glass-screen {
+    background: linear-gradient(145deg, #0A1A10, #0A0F0C);
+    padding: 20px 16px;
+    min-height: 320px;
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-screen::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,149,0.18) 0%, transparent 70%);
+  }
+  .glass-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,255,149,0.12);
+    border: 1px solid rgba(0,255,149,0.25);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: #00FF95;
+    margin-bottom: 10px;
+    backdrop-filter: blur(8px);
+  }
+  .glass-greeting {
+    font-size: 28px;
+    font-weight: 800;
+    color: #FFB800;
+    margin-bottom: 4px;
+  }
+  .glass-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 18px; }
+  .glass-hero {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,149,0.4), transparent);
+  }
+  .glass-hero-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+  .glass-hero-sub { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .glass-row { display: flex; gap: 10px; }
+  .glass-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+    backdrop-filter: blur(8px);
+  }
+  .glass-stat-val { font-size: 20px; font-weight: 700; color: #00FF95; }
+  .glass-stat-lbl { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+  /* ── Direction B: Solid & Bold ── */
+  .bold-screen {
+    background: #0A0F0C;
+    padding: 20px 16px;
+    min-height: 320px;
+  }
+  .bold-tag {
+    display: inline-block;
+    background: #00FF95;
+    color: #0A0F0C;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .bold-greeting { font-size: 30px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 4px; }
+  .bold-greeting span { color: #00FF95; }
+  .bold-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 16px; letter-spacing: 0.5px; }
+  .bold-hero {
+    border-radius: 16px;
+    background: linear-gradient(135deg, #02B986, #016B4E);
+    padding: 18px 16px;
+    margin-bottom: 12px;
+  }
+  .bold-hero-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+  .bold-hero-title { font-size: 17px; font-weight: 700; color: #fff; }
+  .bold-row { display: flex; gap: 8px; }
+  .bold-stat {
+    flex: 1;
+    background: rgba(0,255,149,0.08);
+    border: 1.5px solid rgba(0,255,149,0.2);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .bold-stat-val { font-size: 22px; font-weight: 800; color: #00FF95; }
+  .bold-stat-lbl { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  /* ── Direction C: Soft & Spacious ── */
+  .soft-screen {
+    background: linear-gradient(160deg, #0D1F13 0%, #0A0F0C 100%);
+    padding: 20px 16px;
+    min-height: 320px;
+  }
+  .soft-greeting { font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 2px; }
+  .soft-arabic { font-size: 32px; font-weight: 800; color: #00FF95; margin-bottom: 16px; line-height: 1.2; }
+  .soft-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, rgba(0,255,149,0.15), rgba(0,214,252,0.08));
+    border-radius: 24px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #00FF95;
+    margin-bottom: 18px;
+    border: 1px solid rgba(0,255,149,0.2);
+  }
+  .soft-hero {
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(2,185,134,0.2), rgba(0,214,252,0.08));
+    border: 1px solid rgba(0,255,149,0.15);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .soft-hero-eyebrow { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #00D6FC; margin-bottom: 8px; }
+  .soft-hero-title { font-size: 16px; font-weight: 600; color: #fff; line-height: 1.4; }
+  .soft-row { display: flex; gap: 10px; }
+  .soft-pill {
+    flex: 1;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.05);
+    padding: 14px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .soft-pill-val { font-size: 21px; font-weight: 700; background: linear-gradient(135deg, #00FF95, #00D6FC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .soft-pill-lbl { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 3px; }
+
+  /* label strip under each card */
+  .dir-label { padding: 14px 16px 16px; }
+  .dir-label h3 { margin: 0 0 4px; font-size: 14px; color: #fff; font-weight: 600; }
+  .dir-label p { margin: 0; font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.4; }
+</style>
+
+<div class="direction-cards">
+
+  <!-- A: Glassmorphic -->
+  <div class="dir-card" data-choice="glass" onclick="toggleSelect(this)">
+    <div class="glass-screen">
+      <div class="glass-pill">🔥 3 day streak</div>
+      <div class="glass-greeting">صباح الخير</div>
+      <div class="glass-sub">Good morning, Ahmed</div>
+      <div class="glass-hero">
+        <div class="glass-hero-title">At the Coffee Shop</div>
+        <div class="glass-hero-sub">Featured scenario · Tap to start</div>
+      </div>
+      <div class="glass-row">
+        <div class="glass-stat"><div class="glass-stat-val">3</div><div class="glass-stat-lbl">🔥 Streak</div></div>
+        <div class="glass-stat"><div class="glass-stat-val">42</div><div class="glass-stat-lbl">Phrases</div></div>
+        <div class="glass-stat"><div class="glass-stat-val">7</div><div class="glass-stat-lbl">Scenes</div></div>
+      </div>
+    </div>
+    <div class="dir-label">
+      <h3>A — Glassmorphic</h3>
+      <p>Frosted glass layers, ambient glows, depth through translucency. Premium feel.</p>
+    </div>
+  </div>
+
+  <!-- B: Bold & Solid -->
+  <div class="dir-card" data-choice="bold" onclick="toggleSelect(this)">
+    <div class="bold-screen">
+      <div class="bold-tag">⚡ 3 day streak</div>
+      <div class="bold-greeting">صباح<br><span>الخير</span></div>
+      <div class="bold-sub">Good morning, Ahmed</div>
+      <div class="bold-hero">
+        <div class="bold-hero-label">Featured Scenario</div>
+        <div class="bold-hero-title">At the Coffee Shop ›</div>
+      </div>
+      <div class="bold-row">
+        <div class="bold-stat"><div class="bold-stat-val">3</div><div class="bold-stat-lbl">Streak</div></div>
+        <div class="bold-stat"><div class="bold-stat-val">42</div><div class="bold-stat-lbl">Phrases</div></div>
+        <div class="bold-stat"><div class="bold-stat-val">7</div><div class="bold-stat-lbl">Scenes</div></div>
+      </div>
+    </div>
+    <div class="dir-label">
+      <h3>B — Bold & Solid</h3>
+      <p>High contrast, solid fills, strong typography. Energetic and direct.</p>
+    </div>
+  </div>
+
+  <!-- C: Soft & Spacious -->
+  <div class="dir-card" data-choice="soft" onclick="toggleSelect(this)">
+    <div class="soft-screen">
+      <div class="soft-arabic">صباح الخير</div>
+      <div class="soft-greeting">Good morning, Ahmed</div>
+      <div class="soft-badge">🔥 3 day streak</div>
+      <div class="soft-hero">
+        <div class="soft-hero-eyebrow">Featured for you</div>
+        <div class="soft-hero-title">At the Coffee Shop</div>
+      </div>
+      <div class="soft-row">
+        <div class="soft-pill"><div class="soft-pill-val">3</div><div class="soft-pill-lbl">🔥 Streak</div></div>
+        <div class="soft-pill"><div class="soft-pill-val">42</div><div class="soft-pill-lbl">Phrases</div></div>
+        <div class="soft-pill"><div class="soft-pill-val">7</div><div class="soft-pill-lbl">Scenes</div></div>
+      </div>
+    </div>
+    <div class="dir-label">
+      <h3>C — Soft & Spacious</h3>
+      <p>Generous space, gradient accents, gradient text. Calm and modern.</p>
+    </div>
+  </div>
+
+</div>

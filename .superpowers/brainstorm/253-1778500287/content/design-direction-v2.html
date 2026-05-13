@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fasih — Design Direction</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 40px 24px 60px;
+  }
+
+  .page-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 8px;
+  }
+  .page-heading {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .page-sub {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  .directions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .dir {
+    border-radius: 24px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.08);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .dir:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.2); }
+  .dir.selected { border-color: #00FF95; box-shadow: 0 0 40px rgba(0,255,149,0.2); }
+
+  .phone {
+    height: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ═══════════════════════════════════════
+     DIRECTION 1: CALLIGRAPHY ALIVE
+     Arabic script is the UI. Letters breathe.
+  ════════════════════════════════════════ */
+  .calli {
+    background: #04060A;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+  .calli-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .calli-letter {
+    position: absolute;
+    font-size: 220px;
+    font-weight: 900;
+    color: rgba(0,255,149,0.04);
+    line-height: 1;
+    right: -20px;
+    top: -30px;
+    user-select: none;
+  }
+  .calli-letter2 {
+    position: absolute;
+    font-size: 140px;
+    font-weight: 900;
+    color: rgba(0,214,252,0.05);
+    line-height: 1;
+    left: -10px;
+    bottom: 60px;
+    user-select: none;
+  }
+  .calli-content {
+    position: relative;
+    z-index: 2;
+    padding: 28px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .calli-streak {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .calli-dot { width: 6px; height: 6px; border-radius: 50%; background: #00FF95; }
+  .calli-streak-text { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .calli-streak-num { font-size: 11px; font-weight: 700; color: #00FF95; }
+  .calli-main-ar {
+    font-size: 46px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 4px;
+    text-align: right;
+    direction: rtl;
+  }
+  .calli-main-en {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+  }
+  .calli-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .calli-card-eyebrow {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #00FF95;
+    margin-bottom: 8px;
+  }
+  .calli-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .calli-card-ar {
+    font-size: 22px;
+    font-weight: 700;
+    color: rgba(0,255,149,0.7);
+    text-align: right;
+    direction: rtl;
+    margin-top: 12px;
+  }
+  .calli-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .calli-mini {
+    flex: 1;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 10px;
+    text-align: center;
+  }
+  .calli-mini-val { font-size: 18px; font-weight: 700; color: #00FF95; }
+  .calli-mini-lbl { font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* ═══════════════════════════════════════
+     DIRECTION 2: GEOMETRIC SOUK
+     Islamic geometry meets neon. Pattern-as-surface.
+  ════════════════════════════════════════ */
+  .souk {
+    background: #080C10;
+    position: relative;
+  }
+  .souk-geo {
+    position: absolute;
+    top: 0; right: 0;
+    width: 180px; height: 180px;
+    opacity: 0.07;
+  }
+  .souk-content {
+    position: relative;
+    z-index: 2;
+    padding: 24px 18px 18px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .souk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .souk-greeting-en { font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.5px; margin-bottom: 3px; }
+  .souk-greeting-ar { font-size: 26px; font-weight: 800; color: #fff; }
+  .souk-avatar {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #00FF95, #00D6FC);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #0A0F0C;
+  }
+  .souk-hero {
+    border-radius: 20px;
+    background: linear-gradient(135deg, #001A12 0%, #003322 50%, #001A12 100%);
+    border: 1px solid rgba(0,255,149,0.15);
+    padding: 18px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+  }
+  .souk-hero::before {
+    content: '';
+    position: absolute;
+    bottom: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,149,0.15) 0%, transparent 70%);
+  }
+  .souk-neon-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #00FF95;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .souk-neon-label::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: #00FF95;
+  }
+  .souk-hero-title { font-size: 19px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 8px; }
+  .souk-hero-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .souk-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .souk-chip {
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,214,252,0.25);
+    color: #00D6FC;
+    background: rgba(0,214,252,0.06);
+  }
+  .souk-stats {
+    display: flex;
+    gap: 8px;
+  }
+  .souk-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .souk-stat-top { font-size: 19px; font-weight: 700; color: #00FF95; }
+  .souk-stat-bot { font-size: 9px; color: rgba(255,255,255,0.3); margin-top: 3px; }
+
+  /* ═══════════════════════════════════════
+     DIRECTION 3: EDITORIAL INK
+     Newspaper meets brutalism. Bold type, raw grid.
+  ════════════════════════════════════════ */
+  .ink {
+    background: #F5F0E8;
+    position: relative;
+  }
+  .ink-content {
+    padding: 24px 18px 18px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .ink-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #0A0F0C;
+  }
+  .ink-brand { font-size: 16px; font-weight: 900; color: #0A0F0C; letter-spacing: -0.5px; }
+  .ink-streak {
+    background: #0A0F0C;
+    color: #00FF95;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .ink-greeting-ar {
+    font-size: 52px;
+    font-weight: 900;
+    color: #0A0F0C;
+    line-height: 1;
+    text-align: right;
+    direction: rtl;
+    margin-bottom: 4px;
+  }
+  .ink-greeting-en {
+    font-size: 12px;
+    color: rgba(10,15,12,0.45);
+    letter-spacing: 0.3px;
+    margin-bottom: 20px;
+  }
+  .ink-hero {
+    background: #0A0F0C;
+    border-radius: 14px;
+    padding: 16px;
+    flex: 1;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ink-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: #00FF95;
+  }
+  .ink-hero-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+  .ink-hero-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .ink-hero-ar {
+    font-size: 24px;
+    font-weight: 800;
+    color: #00FF95;
+    text-align: right;
+    direction: rtl;
+    margin-top: 8px;
+  }
+  .ink-row { display: flex; gap: 8px; }
+  .ink-stat {
+    flex: 1;
+    border: 1.5px solid #0A0F0C;
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .ink-stat-val { font-size: 20px; font-weight: 900; color: #0A0F0C; }
+  .ink-stat-lbl { font-size: 9px; color: rgba(10,15,12,0.4); margin-top: 2px; }
+
+  /* ── bottom label ── */
+  .dir-info {
+    background: #111;
+    padding: 16px 18px 18px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .ink .dir-info { background: #E8E3D8; border-top: 1px solid rgba(0,0,0,0.1); }
+  .dir-info-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .ink .dir-info-name { color: #0A0F0C; }
+  .dir-info-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    line-height: 1.5;
+  }
+  .ink .dir-info-desc { color: rgba(10,15,12,0.45); }
+  .dir-tag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #00FF95;
+  }
+
+  /* selected ring */
+  .dir.selected .dir-info-name::after {
+    content: '  ✓ Selected';
+    color: #00FF95;
+    font-size: 11px;
+    font-weight: 400;
+  }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.25);
+  }
+</style>
+<script src="../../../../../../../../../../Users/ahmed/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/helper.js"></script>
+</head>
+<body>
+
+<p class="page-title">Fasih · Design Direction v2</p>
+<h1 class="page-heading">Three creative directions.</h1>
+<p class="page-sub">Each has a distinct identity. None are generic.<br>Click the one that speaks to you — or tell me what's close but off.</p>
+
+<div class="directions">
+
+  <!-- 1: Calligraphy Alive -->
+  <div class="dir" data-choice="calli" onclick="toggleSelect(this)">
+    <div class="phone calli">
+      <div class="calli-bg">
+        <div class="calli-letter">ب</div>
+        <div class="calli-letter2">م</div>
+      </div>
+      <div class="calli-content">
+        <div class="calli-streak">
+          <div class="calli-dot"></div>
+          <div class="calli-streak-text">Streak</div>
+          <div class="calli-streak-num">3 days</div>
+        </div>
+        <div class="calli-main-ar">صباح الخير</div>
+        <div class="calli-main-en">Good morning, Ahmed</div>
+        <div class="calli-card">
+          <div>
+            <div class="calli-card-eyebrow">Today's scene</div>
+            <div class="calli-card-title">At the Coffee Shop</div>
+            <div class="calli-card-ar">في المقهى</div>
+          </div>
+          <div class="calli-row">
+            <div class="calli-mini"><div class="calli-mini-val">3</div><div class="calli-mini-lbl">🔥 days</div></div>
+            <div class="calli-mini"><div class="calli-mini-val">42</div><div class="calli-mini-lbl">phrases</div></div>
+            <div class="calli-mini"><div class="calli-mini-val">7</div><div class="calli-mini-lbl">scenes</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <div class="dir-info-name">Calligraphy Alive</div>
+      <div class="dir-info-desc">Arabic letterforms bleed into the background as giant ghost art. The script itself is the decoration. Dark, intimate, cultured.</div>
+      <div class="dir-tag">Dark · Typographic · Cultural</div>
+    </div>
+  </div>
+
+  <!-- 2: Geometric Souk -->
+  <div class="dir" data-choice="souk" onclick="toggleSelect(this)">
+    <div class="phone souk">
+      <svg class="souk-geo" viewBox="0 0 200 200" fill="none">
+        <g stroke="#00FF95" stroke-width="0.8">
+          <polygon points="100,10 190,55 190,145 100,190 10,145 10,55" fill="none"/>
+          <polygon points="100,30 170,67 170,133 100,170 30,133 30,67" fill="none"/>
+          <polygon points="100,50 150,79 150,121 100,150 50,121 50,79" fill="none"/>
+          <line x1="100" y1="10" x2="100" y2="190"/>
+          <line x1="10" y1="55" x2="190" y2="145"/>
+          <line x1="190" y1="55" x2="10" y2="145"/>
+          <circle cx="100" cy="100" r="30" fill="none"/>
+          <circle cx="100" cy="100" r="50" fill="none"/>
+        </g>
+      </svg>
+      <div class="souk-content">
+        <div class="souk-header">
+          <div>
+            <div class="souk-greeting-en">Good morning</div>
+            <div class="souk-greeting-ar">صباح الخير</div>
+          </div>
+          <div class="souk-avatar">A</div>
+        </div>
+        <div class="souk-hero">
+          <div class="souk-neon-label">Featured Scene</div>
+          <div class="souk-hero-title">At the Coffee Shop</div>
+          <div class="souk-hero-sub">12 phrases · Beginner</div>
+          <div class="souk-chips">
+            <div class="souk-chip">greetings</div>
+            <div class="souk-chip">ordering</div>
+          </div>
+        </div>
+        <div class="souk-stats">
+          <div class="souk-stat"><div class="souk-stat-top">3</div><div class="souk-stat-bot">🔥 streak</div></div>
+          <div class="souk-stat"><div class="souk-stat-top">42</div><div class="souk-stat-bot">phrases</div></div>
+          <div class="souk-stat"><div class="souk-stat-top">7</div><div class="souk-stat-bot">scenes</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <div class="dir-info-name">Geometric Souk</div>
+      <div class="dir-info-desc">Islamic geometric patterns as ghosted backgrounds. Neon accent lines, deep dark base. Modern meets ancient — like Dubai at night.</div>
+      <div class="dir-tag">Dark · Geometric · Neon-accented</div>
+    </div>
+  </div>
+
+  <!-- 3: Editorial Ink -->
+  <div class="dir" data-choice="ink" onclick="toggleSelect(this)">
+    <div class="phone ink">
+      <div class="ink-content">
+        <div class="ink-topbar">
+          <div class="ink-brand">فصيح</div>
+          <div class="ink-streak">🔥 3 DAYS</div>
+        </div>
+        <div class="ink-greeting-ar">صباح<br>الخير</div>
+        <div class="ink-greeting-en">Good morning, Ahmed</div>
+        <div class="ink-hero">
+          <div class="ink-accent"></div>
+          <div class="ink-hero-label">Featured Scenario</div>
+          <div class="ink-hero-title">At the Coffee Shop</div>
+          <div class="ink-hero-ar">في المقهى</div>
+        </div>
+        <div class="ink-row">
+          <div class="ink-stat"><div class="ink-stat-val">3</div><div class="ink-stat-lbl">🔥 Streak</div></div>
+          <div class="ink-stat"><div class="ink-stat-val">42</div><div class="ink-stat-lbl">Phrases</div></div>
+          <div class="ink-stat"><div class="ink-stat-val">7</div><div class="ink-stat-lbl">Scenes</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-info">
+      <div class="dir-info-name">Editorial Ink</div>
+      <div class="dir-info-desc">Light mode, newspaper grid, Arabic text as massive art. Raw, confident, typographic. Stands out completely in the App Store.</div>
+      <div class="dir-tag">Light · Editorial · Bold type</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer-note">Click to select · Or describe what's missing in the chat</p>
+
+</body>
+</html>

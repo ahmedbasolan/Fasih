@@ -3,9 +3,10 @@ import { View, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
 import { supabase } from '../src/lib/supabase';
-import { C } from '../src/components/design/tokens';
+import { useTheme } from '../src/hooks/useTheme';
 
 export default function Index() {
+  const { C } = useTheme();
   const hydrated = useAppStore((s) => s._hydrated);
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
@@ -18,14 +19,25 @@ export default function Index() {
   useEffect(() => {
     if (!hydrated) return;
 
-    if (!isAuthenticated) {
-      router.replace('/sign-in');
-    } else if (!hasOnboarded) {
-      router.replace('/onboarding');
+    if (isAuthenticated) {
+      // Signed in users: onboarding -> home (if completed) or onboarding -> finish
+      if (!hasOnboarded) {
+        router.replace('/onboarding');
+      } else {
+        recordDailyActivity();
+        checkMilestones();
+        router.replace('/(tabs)');
+      }
     } else {
-      recordDailyActivity();
-      checkMilestones();
-      router.replace('/(tabs)');
+      // Not signed in: check if they've onboarded before (returning user)
+      const hasCompletedOnboardingBefore = hasOnboarded;
+      if (hasCompletedOnboardingBefore) {
+        // Returning user who completed onboarding but not signed in
+        router.replace('/sign-in');
+      } else {
+        // New user: start with onboarding, sign up comes at the end
+        router.replace('/onboarding');
+      }
     }
   }, [hydrated, isAuthenticated, hasOnboarded]);
 

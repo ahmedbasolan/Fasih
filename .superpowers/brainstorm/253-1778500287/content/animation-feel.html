@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fasih — Animation Feel</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060808;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 40px 24px 80px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.2); margin-bottom: 6px; text-align: center; }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+  .page-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 48px; text-align: center; line-height: 1.6; max-width: 480px; }
+
+  .cols {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  .col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .col-label {
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+  }
+  .col-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .col-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.38);
+    text-align: center;
+    line-height: 1.55;
+    max-width: 200px;
+  }
+
+  /* ── Shared demo card ── */
+  .demo-box {
+    width: 100%;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+  }
+  .demo-box::before {
+    content: '';
+    position: absolute; top: 0; left: 12%; right: 12%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,149,0.38), transparent);
+  }
+  .demo-inner {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .demo-row { display: flex; align-items: center; gap: 10px; }
+  .demo-icon {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: rgba(0,255,149,0.1); border: 1px solid rgba(0,255,149,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .demo-text { flex: 1; }
+  .demo-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+  .demo-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  .demo-chevron { font-size: 14px; color: rgba(255,255,255,0.2); }
+  .demo-bar-track { height: 4px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+  .demo-bar-fill { height: 100%; width: 35%; background: linear-gradient(90deg, #00FF95, #00D6FC); border-radius: 10px; }
+
+  /* press button */
+  .demo-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(0,255,149,0.08);
+    border: 1px solid rgba(0,255,149,0.15);
+    font-size: 12px; font-weight: 600; color: #00FF95;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tap-hint {
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  /* divider */
+  .col-divider {
+    width: 1px;
+    background: rgba(255,255,255,0.07);
+    align-self: stretch;
+    margin-top: 60px;
+  }
+
+  /* ══════════════════════
+     A — SPRINGY
+     Overshoots, bounces back
+  ══════════════════════ */
+  .spring-card {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .spring-card:active {
+    transform: scale(0.94);
+    box-shadow: 0 0 0 2px rgba(0,255,149,0.2);
+  }
+  .spring-btn {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.2s ease;
+  }
+  .spring-btn:active {
+    transform: scale(0.9);
+    background: rgba(0,255,149,0.18);
+  }
+
+  /* spring entrance — cards pop in with overshoot */
+  @keyframes springIn {
+    0%   { opacity: 0; transform: scale(0.88) translateY(12px); }
+    60%  { opacity: 1; transform: scale(1.03) translateY(-2px); }
+    80%  { transform: scale(0.98) translateY(1px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .spring-entrance { animation: springIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .spring-entrance:nth-child(2) { animation-delay: 0.08s; }
+  .spring-entrance:nth-child(3) { animation-delay: 0.16s; }
+
+  /* spring bar fill */
+  @keyframes springBar {
+    0%   { width: 0%; }
+    70%  { width: 40%; }
+    85%  { width: 32%; }
+    100% { width: 35%; }
+  }
+  .spring-bar { animation: springBar 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both; }
+
+  /* ══════════════════════
+     B — SMOOTH
+     Ease in/out, no overshoot
+  ══════════════════════ */
+  .smooth-card {
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.28s ease;
+  }
+  .smooth-card:active {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(0,255,149,0.18);
+  }
+  .smooth-btn {
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), background 0.18s ease;
+  }
+  .smooth-btn:active { transform: scale(0.94); background: rgba(0,255,149,0.18); }
+
+  @keyframes smoothIn {
+    0%   { opacity: 0; transform: translateY(16px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .smooth-entrance { animation: smoothIn 0.38s cubic-bezier(0.4, 0, 0.2, 1) both; }
+  .smooth-entrance:nth-child(2) { animation-delay: 0.07s; }
+  .smooth-entrance:nth-child(3) { animation-delay: 0.14s; }
+
+  @keyframes smoothBar {
+    0%   { width: 0%; }
+    100% { width: 35%; }
+  }
+  .smooth-bar { animation: smoothBar 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both; }
+
+  /* ══════════════════════
+     C — SNAPPY
+     Almost instant, very slight scale
+  ══════════════════════ */
+  .snappy-card {
+    transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1),
+                box-shadow 0.12s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .snappy-card:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 1.5px rgba(0,255,149,0.25);
+  }
+  .snappy-btn {
+    transition: transform 0.1s cubic-bezier(0.2, 0, 0, 1), background 0.1s ease;
+  }
+  .snappy-btn:active { transform: scale(0.93); background: rgba(0,255,149,0.2); }
+
+  @keyframes snappyIn {
+    0%   { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .snappy-entrance { animation: snappyIn 0.18s cubic-bezier(0.2, 0, 0, 1) both; }
+  .snappy-entrance:nth-child(2) { animation-delay: 0.05s; }
+  .snappy-entrance:nth-child(3) { animation-delay: 0.10s; }
+
+  @keyframes snappyBar {
+    0%   { width: 0%; }
+    100% { width: 35%; }
+  }
+  .snappy-bar { animation: snappyBar 0.35s cubic-bezier(0.2, 0, 0, 1) 0.15s both; }
+
+  /* replay button */
+  .replay-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    cursor: pointer; padding: 6px 10px;
+    border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .replay-btn:hover { color: #00FF95; border-color: rgba(0,255,149,0.2); }
+
+  /* select indicator */
+  .select-wrap {
+    display: flex; gap: 12px; justify-content: center;
+    margin-top: 48px;
+  }
+  .sel-btn {
+    flex: 1; max-width: 200px;
+    padding: 14px 20px; border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5);
+    cursor: pointer; text-align: center;
+    transition: all 0.2s;
+  }
+  .sel-btn:hover { border-color: rgba(0,255,149,0.3); color: #fff; background: rgba(0,255,149,0.06); }
+  .sel-btn.chosen { border-color: #00FF95; color: #00FF95; background: rgba(0,255,149,0.08); box-shadow: 0 0 20px rgba(0,255,149,0.12); }
+  .sel-btn .tag { font-size: 10px; font-weight: 400; color: rgba(255,255,255,0.3); margin-top: 3px; display: block; }
+  .sel-btn.chosen .tag { color: rgba(0,255,149,0.6); }
+</style>
+<script src="../../../../../../../../../../Users/ahmed/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/helper.js"></script>
+</head>
+<body>
+
+<p class="page-label">Fasih · Micro-animations</p>
+<h1 class="page-title">How should things move?</h1>
+<p class="page-sub">Each column shows how cards enter the screen, how they respond to a press, and how the progress bar fills. Tap the cards and buttons to feel the difference.</p>
+
+<div class="cols">
+
+  <!-- A: SPRINGY -->
+  <div class="col">
+    <div>
+      <div class="col-label">Option A</div>
+      <div class="col-name">Springy</div>
+      <div class="col-desc">Cards overshoot slightly when entering. Buttons bounce back. Feels alive and playful.</div>
+    </div>
+
+    <div class="demo-box spring-card spring-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">☕</div>
+          <div class="demo-text">
+            <div class="demo-title">Quick Challenge</div>
+            <div class="demo-sub">Someone says this — reply</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+        <div class="demo-bar-track"><div class="demo-bar-fill spring-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="demo-box spring-card spring-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">📖</div>
+          <div class="demo-text">
+            <div class="demo-title">Daily Phrase</div>
+            <div class="demo-sub">خلاص · khalaas</div>
+          </div>
+        </div>
+        <div class="demo-btn spring-btn" onclick="">🔊 Play</div>
+      </div>
+    </div>
+
+    <div class="demo-box spring-card spring-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">🎯</div>
+          <div class="demo-text">
+            <div class="demo-title">Today's Mission</div>
+            <div class="demo-sub">Begin Scenario</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tap-hint">↑ tap to feel press response</div>
+    <div class="replay-btn" onclick="replayCol('spring')">↺ Replay entrance</div>
+
+    <div class="sel-btn" data-choice="spring" onclick="chooseAnim(this)">
+      A — Springy
+      <span class="tag">Playful · bouncy · alive</span>
+    </div>
+  </div>
+
+  <div class="col-divider"></div>
+
+  <!-- B: SMOOTH -->
+  <div class="col">
+    <div>
+      <div class="col-label">Option B</div>
+      <div class="col-name">Smooth</div>
+      <div class="col-desc">Cards glide in from below. Buttons compress cleanly. Feels premium and polished.</div>
+    </div>
+
+    <div class="demo-box smooth-card smooth-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">☕</div>
+          <div class="demo-text">
+            <div class="demo-title">Quick Challenge</div>
+            <div class="demo-sub">Someone says this — reply</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+        <div class="demo-bar-track"><div class="demo-bar-fill smooth-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="demo-box smooth-card smooth-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">📖</div>
+          <div class="demo-text">
+            <div class="demo-title">Daily Phrase</div>
+            <div class="demo-sub">خلاص · khalaas</div>
+          </div>
+        </div>
+        <div class="demo-btn smooth-btn" onclick="">🔊 Play</div>
+      </div>
+    </div>
+
+    <div class="demo-box smooth-card smooth-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">🎯</div>
+          <div class="demo-text">
+            <div class="demo-title">Today's Mission</div>
+            <div class="demo-sub">Begin Scenario</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tap-hint">↑ tap to feel press response</div>
+    <div class="replay-btn" onclick="replayCol('smooth')">↺ Replay entrance</div>
+
+    <div class="sel-btn" data-choice="smooth" onclick="chooseAnim(this)">
+      B — Smooth
+      <span class="tag">Premium · fluid · calm</span>
+    </div>
+  </div>
+
+  <div class="col-divider"></div>
+
+  <!-- C: SNAPPY -->
+  <div class="col">
+    <div>
+      <div class="col-label">Option C</div>
+      <div class="col-name">Snappy</div>
+      <div class="col-desc">Cards appear near-instantly. Buttons react in milliseconds. Feels fast, direct, responsive.</div>
+    </div>
+
+    <div class="demo-box snappy-card snappy-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">☕</div>
+          <div class="demo-text">
+            <div class="demo-title">Quick Challenge</div>
+            <div class="demo-sub">Someone says this — reply</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+        <div class="demo-bar-track"><div class="demo-bar-fill snappy-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="demo-box snappy-card snappy-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">📖</div>
+          <div class="demo-text">
+            <div class="demo-title">Daily Phrase</div>
+            <div class="demo-sub">خلاص · khalaas</div>
+          </div>
+        </div>
+        <div class="demo-btn snappy-btn" onclick="">🔊 Play</div>
+      </div>
+    </div>
+
+    <div class="demo-box snappy-card snappy-entrance" onclick="">
+      <div class="demo-inner">
+        <div class="demo-row">
+          <div class="demo-icon">🎯</div>
+          <div class="demo-text">
+            <div class="demo-title">Today's Mission</div>
+            <div class="demo-sub">Begin Scenario</div>
+          </div>
+          <div class="demo-chevron">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tap-hint">↑ tap to feel press response</div>
+    <div class="replay-btn" onclick="replayCol('snappy')">↺ Replay entrance</div>
+
+    <div class="sel-btn" data-choice="snappy" onclick="chooseAnim(this)">
+      C — Snappy
+      <span class="tag">Fast · crisp · direct</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function chooseAnim(el) {
+  document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('chosen'));
+  el.classList.add('chosen');
+  if (window.recordChoice) recordChoice(el.dataset.choice, el.textContent.trim());
+}
+
+function replayCol(type) {
+  const classes = {
+    spring: ['spring-entrance', 'spring-bar'],
+    smooth: ['smooth-entrance', 'smooth-bar'],
+    snappy: ['snappy-entrance', 'snappy-bar'],
+  };
+  classes[type].forEach(cls => {
+    document.querySelectorAll('.' + cls).forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight; // reflow
+      el.style.animation = '';
+    });
+  });
+}
+</script>
+
+</body>
+</html>
