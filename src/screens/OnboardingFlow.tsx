@@ -8,7 +8,7 @@ import Svg, { Circle, Path, Rect, Defs, Stop, LinearGradient as SvgLinearGradien
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { Briefcase, Users, Shield, TrendingUp, Globe, ChevronLeft, ArrowRight, Check, Bell, Star, Lock, Mic, BookOpen, Layers, Trophy, Sun, Moon, Zap, Flame, Sparkles } from 'lucide-react-native';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { FONT_ARABIC, FONT_ARABIC_EXTRA, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { GeoPattern } from '../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../components/features/RoleGoalIcons';
@@ -19,6 +19,7 @@ import { STRINGS } from '../constants/strings';
 import { FadeIn, ShimmerButton, SwitchButton, GhostLetters } from '../components/ui';
 import type { UserProfile } from '../types';
 import { useAppStore } from '../store/useAppStore';
+import { useArabicTTS } from '../hooks/useArabicTTS';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -122,6 +123,97 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   );
 }
 
+
+function QuickWinStep({ onNext }: { onNext: () => void }) {
+  const { C } = useTheme();
+  const [revealed, setRevealed] = useState(false);
+  const { speak } = useArabicTTS();
+
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+      <Image
+        source={require('../../assets/images/foxy_male.png')}
+        style={{ width: 80, height: 80, marginBottom: 24 }}
+        resizeMode="contain"
+      />
+
+      <Text style={{
+        fontFamily: FONT_LATIN_SEMI,
+        fontSize: 13,
+        color: C.TEXT2,
+        textAlign: 'center',
+        marginBottom: 8,
+      }}>
+        Your first Gulf Arabic phrase:
+      </Text>
+
+      <Text style={{
+        fontFamily: FONT_ARABIC_EXTRA,
+        fontSize: 42,
+        color: C.PRIMARY,
+        textAlign: 'right',
+        writingDirection: 'rtl',
+        marginBottom: 6,
+      }}>
+        مرحبا
+      </Text>
+
+      <Text style={{
+        fontFamily: FONT_LATIN,
+        fontSize: 14,
+        color: C.TEXT2,
+        marginBottom: 4,
+      }}>
+        mar-haba
+      </Text>
+
+      {!revealed ? (
+        <Pressable
+          onPress={() => {
+            setRevealed(true);
+            speak('مرحبا');
+          }}
+          style={{
+            marginTop: 20,
+            paddingHorizontal: 28,
+            paddingVertical: 14,
+            borderRadius: 16,
+            backgroundColor: C.PRIMARY,
+          }}
+        >
+          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+            Tap to hear it →
+          </Text>
+        </Pressable>
+      ) : (
+        <MotiView
+          from={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          style={{ alignItems: 'center', marginTop: 16 }}
+        >
+          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: 24 }}>
+            Welcome — you just said it.
+          </Text>
+          <Pressable
+            onPress={onNext}
+            style={{
+              paddingHorizontal: 28,
+              paddingVertical: 14,
+              borderRadius: 16,
+              backgroundColor: C.PRIMARY,
+            }}
+          >
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+              Continue →
+            </Text>
+          </Pressable>
+        </MotiView>
+      )}
+    </View>
+  );
+}
+
 export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props) {
   const { C, G, isDark } = useTheme();
   const { setTheme } = useAppStore();
@@ -138,7 +230,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
   
-  const TOTAL = 11; // 0-9 onboarding steps + 10 auth step
+  const TOTAL = 12; // 0-10 onboarding steps + 11 auth step
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
@@ -948,8 +1040,12 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </View>
         );
 
-      // Step 7: Paywall — Unlock full potential
+      // Step 7: Arabic Quick Win
       case 7:
+        return <QuickWinStep onNext={next} />;
+
+      // Step 8: Paywall — Unlock full potential
+      case 8:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1004,8 +1100,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 8: Paywall — features
-      case 8:
+      // Step 9: Paywall — features
+      case 9:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1072,8 +1168,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 9: Paywall — plans
-      case 9:
+      // Step 10: Paywall — plans
+      case 10:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1188,8 +1284,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 10: Auth / Sign Up (Final step for new users)
-      case 10:
+      // Step 11: Auth / Sign Up (Final step for new users)
+      case 11:
         return (
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
@@ -1231,7 +1327,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     <GestureDetector gesture={composedGesture}>
       <View style={{ flex: 1, backgroundColor: C.BG }}>
         <GhostLetters glyphs={['ب', 'د', 'أ']} />
-        {step > 0 && step < 10 && <ProgressBar step={step} total={10} />}
+        {step > 0 && step < 11 && <ProgressBar step={step} total={11} />}
         
         <AnimatePresence>
           {step > 0 && (

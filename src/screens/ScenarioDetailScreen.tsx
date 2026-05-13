@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, Platform, useWindowDimensions, ImageBackground } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, Pressable, useWindowDimensions, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
 import { ChevronLeft, Bookmark, Play, Lock } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
@@ -25,7 +24,43 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const scenario = getScenarioById(scenarioId, C);
   const script = getScenarioScript(scenarioId, C);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
+  const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
   const isCompleted = completedScenarios[scenarioId] !== undefined;
+
+  const styles = useMemo(() => StyleSheet.create({
+    sceneCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.SURFACE,
+      borderRadius: 24,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: C.BORDER,
+    },
+    sceneIconBox: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16,
+    },
+    sceneText: {
+      flex: 1,
+    },
+    sceneTitle: {
+      fontFamily: FONT_HEADING_SEMI,
+      fontSize: 18,
+      color: C.TEXT,
+      marginBottom: 4,
+    },
+    sceneSetting: {
+      fontFamily: FONT_LATIN,
+      fontSize: 14,
+      color: C.TEXT3,
+    },
+  }), [C]);
 
   if (!scenario || !script) return null;
 
@@ -65,7 +100,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               {scenario.title}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              By Ahmed Al-Maktoum
+              By Fasih Team
             </Text>
           </View>
         </View>
@@ -100,30 +135,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
           {/* Scenes List */}
           <View style={{ gap: 16 }}>
             {script.scenes.map((scene, index) => {
-              const isLocked = index > 0 && !isCompleted; // Simple logic: only first scene unlocked if not completed
+              const isLocked = index > scenesUnlocked && !isCompleted;
               return (
                 <Pressable
                   key={scene.id}
                   onPress={() => !isLocked && onSceneSelect(index)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: C.SURFACE,
-                    borderRadius: 24,
-                    padding: 16,
-                    borderWidth: 1,
-                    borderColor: C.BORDER,
-                  }}
+                  style={styles.sceneCard}
                 >
-                  <View style={{ 
-                    width: 56, 
-                    height: 56, 
-                    borderRadius: 16, 
-                    backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : 'rgba(2,185,134,0.12)',
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    marginRight: 16
-                  }}>
+                  <View style={[styles.sceneIconBox, { backgroundColor: isLocked ? C.JADE_SURFACE : C.JADE_DIM }]}>
                     {isLocked ? (
                       <Lock size={20} color={C.TEXT3} />
                     ) : (
@@ -131,16 +150,15 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
                     )}
                   </View>
                   
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
+                  <View style={styles.sceneText}>
+                    <Text style={styles.sceneTitle}>
                       Scene {String(index + 1).padStart(2, '0')}
                     </Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
+                    <Text style={styles.sceneSetting}>
                       {scene.setting}
                     </Text>
                   </View>
 
-                  {isLocked && <Lock size={18} color={C.TEXT3} />}
                 </Pressable>
               );
             })}

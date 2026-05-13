@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
-import { useTheme, FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
+import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -60,10 +60,10 @@ export function StreakWidget({
     ? require('../../../assets/images/foxy_male_waving.png')
     : require('../../../assets/images/foxy_male.png');
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       flexDirection: 'row',
-      height: 90,
+      minHeight: 90,
       marginHorizontal: 24,
       marginTop: 14,
       borderRadius: 20,
@@ -74,7 +74,7 @@ export function StreakWidget({
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 4,
       elevation: 2,
     },
@@ -118,12 +118,26 @@ export function StreakWidget({
       paddingVertical: 10,
       justifyContent: 'space-between',
     },
-    xpRow: {
-      fontFamily: FONT_HEADING_EXTRA,
-      fontSize: 28,
+    streakInfoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    daysTitle: {
+      fontFamily: FONT_LATIN_SEMI,
+      fontSize: 12,
       color: C.TEXT,
-      fontWeight: '800',
-      letterSpacing: -0.5,
+      fontWeight: '600',
+    },
+    bestDays: {
+      fontFamily: FONT_LATIN,
+      fontSize: 11,
+      color: C.TEXT2,
+    },
+    emptyHint: {
+      fontFamily: FONT_LATIN,
+      fontSize: 11,
+      color: C.TEXT3,
     },
     progressBarContainer: {
       height: 7,
@@ -183,7 +197,7 @@ export function StreakWidget({
       color: C.TEXT2,
       lineHeight: 14,
     },
-  });
+  }), [C, mood]);
 
   return (
     <>
@@ -213,10 +227,15 @@ export function StreakWidget({
 
         {/* RIGHT BLOCK */}
         <View style={styles.rightBlock}>
-          {/* XP Row - show encouragement in empty state, XP number otherwise */}
-          <Text style={isEmpty ? styles.emptyTitle : styles.xpRow}>
-            {isEmpty ? 'Start your streak! 🔥' : `${currentXP} / ${goalXP} XP`}
-          </Text>
+          <View style={styles.streakInfoRow}>
+            <Text style={styles.daysTitle}>Learning Days</Text>
+            {!isEmpty && (
+              <Text style={styles.bestDays}>Best: {Math.max(streakDays, 1)}</Text>
+            )}
+            {isEmpty && (
+              <Text style={styles.emptyHint}>Start today</Text>
+            )}
+          </View>
 
           {/* Progress Bar - show empty state with 0% */}
           <View style={styles.progressBarContainer}>

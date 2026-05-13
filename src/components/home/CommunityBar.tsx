@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ export function CommunityBar({
 
   const avatarColors = [C.PRIMARY, C.TERTIARY, C.JADE];
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -31,7 +31,7 @@ export function CommunityBar({
       paddingVertical: 14,
       shadowColor: C.CARD_SHADOW,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 4,
       elevation: 2,
       paddingHorizontal: 16,
@@ -71,7 +71,7 @@ export function CommunityBar({
       fontFamily: FONT_LATIN_SEMI,
       fontWeight: '700',
     },
-  });
+  }), [C]);
 
   return (
     <View style={styles.container}>

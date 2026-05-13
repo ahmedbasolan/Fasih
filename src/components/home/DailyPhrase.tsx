@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -32,7 +32,7 @@ export function DailyPhrase({
   const [saved, setSaved] = useState(false);
   const [playingRipple, setPlayingRipple] = useState(false);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -41,7 +41,7 @@ export function DailyPhrase({
       borderColor: C.BORDER,
       shadowColor: C.CARD_SHADOW,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 4,
       elevation: 2,
       paddingLeft: 0,
@@ -145,7 +145,7 @@ export function DailyPhrase({
     buttonTextActive: {
       color: C.PRIMARY,
     },
-  });
+  }), [C]);
 
   const handlePlay = () => {
     setPlayingRipple(true);
@@ -224,7 +224,7 @@ export function DailyPhrase({
               />
             )}
             <View style={styles.buttonContent}>
-              <Volume2 size={14} color={C.TEXT} />
+              <Volume2 size={14} color={C.PRIMARY} />
               <Text style={styles.buttonText}>Play</Text>
             </View>
           </Pressable>

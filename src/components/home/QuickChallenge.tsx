@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ export function QuickChallenge({
   const { C } = useTheme();
   const [revealed, setRevealed] = useState(false);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -33,7 +33,7 @@ export function QuickChallenge({
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 4,
       elevation: 2,
     },
@@ -99,7 +99,7 @@ export function QuickChallenge({
       textAlign: 'right',
       fontWeight: '800',
     },
-  });
+  }), [C]);
 
   const handleReveal = () => {
     setRevealed(true);
