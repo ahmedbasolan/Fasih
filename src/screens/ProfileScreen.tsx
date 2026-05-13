@@ -5,6 +5,7 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, BookOpen, ChevronRight, Settings, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from 'lucide-react-native';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { GhostLetters } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { useCountUp } from '../components/design/hooks';
@@ -71,7 +72,9 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
   ], []);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.BG }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <GhostLetters glyphs={['أ', 'ن', 'ا']} />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
 
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -423,5 +426,6 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
         </MotiView>
       )}
     </ScrollView>
+    </View>
   );
 }

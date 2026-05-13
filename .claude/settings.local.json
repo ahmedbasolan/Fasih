@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash \"C:/Users/ahmed/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/ahmed/OneDrive/Desktop/Fasih/fasih-mobile\")"
+    ]
+  }
+}

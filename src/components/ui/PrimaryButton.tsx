@@ -1,8 +1,15 @@
-import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
+import React, { useCallback } from 'react';
+import { Pressable, Text, ViewStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { C, FONT_LATIN_SEMI } from '../design/tokens';
-import { GOLD_STOPS, JADE_STOPS, ANGLE_135 } from '../design/gradients';
+import { useTheme } from '../../hooks/useTheme';
+import { FONT_HEADING_SEMI, PRESS_SCALE, PRESS_DURATION_IN, PRESS_DURATION_OUT } from '../design/tokens';
+import { ANGLE_135 } from '../design/gradients';
 
 type Variant = 'gold' | 'jade';
 
@@ -14,35 +21,54 @@ interface Props {
   style?: ViewStyle;
 }
 
-const VARIANT_STOPS: Record<Variant, readonly string[]> = {
-  gold: GOLD_STOPS,
-  jade: JADE_STOPS,
-};
-
-const DISABLED_STOPS: readonly string[] = ['rgba(200,145,58,0.2)', 'rgba(200,145,58,0.2)'];
-
 export function PrimaryButton({ children, onPress, disabled, variant = 'gold', style }: Props) {
-  const stops = disabled ? DISABLED_STOPS : VARIANT_STOPS[variant];
+  const { C, G } = useTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    if (disabled) return;
+    scale.value = withTiming(PRESS_SCALE, {
+      duration: PRESS_DURATION_IN,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [disabled, scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withTiming(1, {
+      duration: PRESS_DURATION_OUT,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [scale]);
+
+  const disabledColors: readonly [string, string] = [C.GOLD_DIM, C.GOLD_DIM];
 
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={[styles.root, { opacity: disabled ? 0.5 : 1 }, style]}>
-      <LinearGradient
-        colors={stops as [string, string, ...string[]]}
-        start={ANGLE_135.start}
-        end={ANGLE_135.end}
-        style={styles.gradient}
+    <Animated.View
+      style={[{ borderRadius: 100, overflow: 'hidden', opacity: disabled ? 0.5 : 1 }, animatedStyle, style]}
+    >
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !!disabled }}
       >
-        {typeof children === 'string' ? (
-          <Text style={[styles.text, disabled && styles.textDisabled]}>{children}</Text>
-        ) : children}
-      </LinearGradient>
-    </Pressable>
+        <LinearGradient
+          colors={disabled ? disabledColors : variant === 'gold' ? G.GOLD_STOPS : G.JADE_STOPS}
+          start={ANGLE_135.start}
+          end={ANGLE_135.end}
+          style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+        >
+          {typeof children === 'string' ? (
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: '#FFFFFF' }}>{children}</Text>
+          ) : children}
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { borderRadius: 16, overflow: 'hidden' },
-  gradient: { paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  text: { fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: '#05050E' },
-  textDisabled: { color: C.TEXT3 },
-});

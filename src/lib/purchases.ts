@@ -18,7 +18,7 @@
  *  npx expo run:ios  |  npx expo run:android
  */
 
-import Purchases, { LOG_LEVEL, PACKAGE_TYPE } from 'react-native-purchases';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { Platform } from 'react-native';
 import type { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
@@ -242,15 +242,14 @@ export async function presentPaywall(): Promise<PaywallResult> {
 export async function presentCustomerCenter(): Promise<void> {
   await RevenueCatUI.presentCustomerCenter({
     callbacks: {
-      onRestoreCompleted: ({ customerInfo }) => {
+      onRestoreCompleted: () => {
         // Handled by the addCustomerInfoUpdateListener registered at startup
-        console.log('[RC] Restore completed', customerInfo.activeSubscriptions);
       },
-      onRestoreFailed: ({ error }) => {
-        console.warn('[RC] Restore failed', error);
+      onRestoreFailed: () => {
+        // Error handling is done via the listener
       },
-      onManagementOptionSelected: ({ option }) => {
-        console.log('[RC] Management option selected', option);
+      onManagementOptionSelected: () => {
+        // Option handling is done via the listener
       },
     },
   });

@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
-import { pushProgress, pullProgress } from '../lib/syncService';
+import {
+  pushProgress,
+  pullProgress,
+  recordChoiceStat as rcRecordChoiceStat,
+  getChoiceStats,
+  recordEndingStat as rcRecordEndingStat,
+  getEndingStats,
+} from '../lib/syncService';
 import {
   configurePurchases,
   loginPurchasesUser,
@@ -22,6 +29,7 @@ import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
 // ─── Debounced cloud sync ─────────────────────────────────────────────────────
 // Batches rapid mutations (e.g., reviewing several phrases) into a single push.
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+let _customerInfoUnsub: (() => void) | null = null;
 function scheduleSync(fn: () => void, delayMs = 1500) {
   if (_syncTimer) clearTimeout(_syncTimer);
   _syncTimer = setTimeout(fn, delayMs);
@@ -141,6 +149,7 @@ interface AppState {
 
   stats: UserStats;
   savedPhrases: string[];
+  favoriteScenarios: string[];
   completedScenarios: Record<string, { endingType: string; date: string }>;
   lastActiveDate: string | null;
   phraseReviews: Record<string, PhraseReviewData>;
@@ -150,20 +159,29 @@ interface AppState {
   // Cloud sync
   isSyncing: boolean;
   lastSyncedAt: string | null;
+  lastSyncError: string | null;
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
+  dismissSyncError: () => void;
+
+  // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
+  communityStatsCache: Record<string, number>;
+  getCommunityChoiceStat: (key: string) => number;
+  getCommunityEndingStat: (key: string) => number;
+  fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
+  fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
+  recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
   // Auth actions
-  // --- Phase 2: Community Stats ---
-  getCommunityChoiceStat: (choiceId: string) => number;
-  getCommunityEndingStat: (endingType: string) => number;
   setUser: (user: UserProfile) => void;
+  setUserMode: (mode: 'career' | 'social') => void;
   setHasOnboarded: (value: boolean) => void;
   setAuthenticated: (value: boolean) => void;
   setSupabaseUserId: (id: string | null) => void;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 
   // UI Actions
   setTheme: (theme: 'system' | 'light' | 'dark') => void;
@@ -178,6 +196,7 @@ interface AppState {
   openCustomerCenter: () => Promise<void>;
   initSubscription: () => Promise<void>;
   hasFullAccess: () => boolean;
+  hasScenarioAccess: (scenarioIndex: number) => boolean;
   scenariosCompletedCount: () => number;
 
   // Learning actions
@@ -192,6 +211,10 @@ interface AppState {
   // Phrase library
   toggleSavedPhrase: (phraseId: string) => void;
   isPhraseSaved: (phraseId: string) => boolean;
+
+  // Scenario favourites
+  toggleFavoriteScenario: (scenarioId: string) => void;
+  isFavoriteScenario: (scenarioId: string) => boolean;
 
   // Computed helpers
   getDueReviews: () => PhraseReviewData[];
@@ -213,6 +236,7 @@ export const useAppStore = create<AppState>()(
       themePreference: 'system',
       stats: { ...DEFAULT_USER_STATS },
       savedPhrases: [],
+      favoriteScenarios: [],
       completedScenarios: {},
       lastActiveDate: null,
       phraseReviews: {},
@@ -222,26 +246,37 @@ export const useAppStore = create<AppState>()(
       // Sync state
       isSyncing: false,
       lastSyncedAt: null,
+      lastSyncError: null,
+
+      dismissSyncError: () => set({ lastSyncError: null }),
 
       // Cloud sync
       syncToCloud: async () => {
         const s = get();
         if (!s.supabaseUserId) return;
         set({ isSyncing: true });
-        await pushProgress(s.supabaseUserId, {
-          user_profile: s.user,
-          stats: s.stats,
-          phrase_reviews: s.phraseReviews,
-          completed_scenarios: s.completedScenarios,
-          saved_phrases: s.savedPhrases,
-          milestones: s.milestones,
-          journal: s.journal,
-          last_active_date: s.lastActiveDate,
-          subscription_status: s.subscriptionStatus,
-          trial_started_at: s.trialStartedAt,
-          trial_plan: s.trialPlan,
-        });
-        set({ isSyncing: false, lastSyncedAt: new Date().toISOString() });
+        try {
+          const { error } = await pushProgress(s.supabaseUserId, {
+            user_profile: s.user,
+            stats: s.stats,
+            phrase_reviews: s.phraseReviews,
+            completed_scenarios: s.completedScenarios,
+            saved_phrases: s.savedPhrases,
+            milestones: s.milestones,
+            journal: s.journal,
+            last_active_date: s.lastActiveDate,
+            subscription_status: s.subscriptionStatus,
+            trial_started_at: s.trialStartedAt,
+            trial_plan: s.trialPlan,
+          });
+          if (error) {
+            set({ isSyncing: false, lastSyncError: error });
+          } else {
+            set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
+          }
+        } catch (e: any) {
+          set({ isSyncing: false, lastSyncError: e?.message ?? 'Sync failed' });
+        }
       },
 
       syncFromCloud: async () => {
@@ -249,8 +284,12 @@ export const useAppStore = create<AppState>()(
         if (!s.supabaseUserId) return;
         set({ isSyncing: true });
         const { data, error } = await pullProgress(s.supabaseUserId);
-        set({ isSyncing: false });
-        if (error || !data) return;
+        if (error) {
+          set({ isSyncing: false, lastSyncError: error });
+          return;
+        }
+        set({ isSyncing: false, lastSyncError: null });
+        if (!data) return;
 
         // Merge strategy: cloud wins for progress data (so reinstalls restore history).
         // Milestones: keep any locally-reached ones the cloud doesn't have yet.
@@ -279,6 +318,7 @@ export const useAppStore = create<AppState>()(
 
       // Auth
       setUser: (user) => set({ user }),
+      setUserMode: (mode) => set((state) => ({ user: state.user ? { ...state.user, mode } : null })),
       setHasOnboarded: (value) => set({ hasOnboarded: value }),
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setSupabaseUserId: (id) => set({ supabaseUserId: id }),
@@ -319,6 +359,15 @@ export const useAppStore = create<AppState>()(
         await supabase.auth.signOut();
         await logoutPurchasesUser();
         set({ isAuthenticated: false, supabaseUserId: null });
+      },
+      resetPassword: async (email) => {
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+          if (error) throw error;
+          return { success: true };
+        } catch (err: any) {
+          return { success: false, error: err.message || 'Password reset failed' };
+        }
       },
 
       // UI
@@ -383,8 +432,10 @@ export const useAppStore = create<AppState>()(
         const status = await getEntitlementStatus();
         if (status === 'subscribed') set({ subscriptionStatus: 'subscribed' });
 
-        // Set up real-time listener for subscription changes (e.g., renewal, cancellation)
-        addCustomerInfoListener((newStatus) => {
+        // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
+        // Deregister any previous listener to prevent accumulation across hot-reloads.
+        if (_customerInfoUnsub) _customerInfoUnsub();
+        _customerInfoUnsub = addCustomerInfoListener((newStatus) => {
           const current = get().subscriptionStatus;
           if (newStatus !== current) {
             set({ subscriptionStatus: newStatus });
@@ -398,11 +449,23 @@ export const useAppStore = create<AppState>()(
         if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + 3);
+          trialEnd.setDate(trialEnd.getDate() + 4);
           if (new Date() < trialEnd) return true;
         }
-        // Free users unlock after completing 3 scenarios
+        // Free users unlock full access after completing 3 scenarios
         return Object.keys(s.completedScenarios).length >= 3;
+      },
+      hasScenarioAccess: (scenarioIndex: number) => {
+        const s = get();
+        // Subscribers and trial users get all scenarios
+        if (s.subscriptionStatus === 'subscribed') return true;
+        if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
+          const trialEnd = new Date(s.trialStartedAt);
+          trialEnd.setDate(trialEnd.getDate() + 4);
+          if (new Date() < trialEnd) return true;
+        }
+        // Free users get first 3 scenarios (index 0, 1, 2)
+        return scenarioIndex < 3;
       },
       scenariosCompletedCount: () => Object.keys(get().completedScenarios).length,
 
@@ -478,33 +541,36 @@ export const useAppStore = create<AppState>()(
           return { completedScenarios: completed, stats: { ...s.stats, scenariosCompleted: Object.keys(completed) } };
         });
         scheduleSync(() => get().syncToCloud());
+        void rcRecordEndingStat(scenarioId, endingType);
       },
 
-      // --- Phase 2: Community Stats Mocks ---
-      getCommunityChoiceStat: (choiceId: string) => {
-        // Seeded data for first-morning choices
-        const MOCKS: Record<string, number> = {
-          // Scene 1
-          'a': 34, 'b': 45, 'c': 15, 'd': 6,
-          // Scene 2
-          'scene2-a': 22, 'scene2-b': 58, 'scene2-c': 15, 'scene2-d': 5,
-          // Scene 3
-          'scene3-a': 42, 'scene3-b': 28, 'scene3-c': 20, 'scene3-d': 10,
-          // Scene 4
-          'scene4-a': 15, 'scene4-b': 65, 'scene4-c': 12, 'scene4-d': 8,
-        };
-        return MOCKS[choiceId] || Math.floor(Math.random() * 30) + 10;
+      // Community stats — Supabase-backed with in-memory cache
+      communityStatsCache: {},
+
+      getCommunityChoiceStat: (key: string) => get().communityStatsCache[key] ?? 0,
+
+      getCommunityEndingStat: (key: string) => get().communityStatsCache[key] ?? 0,
+
+      fetchCommunityStats: async (scenarioId: string, sceneId: string) => {
+        const stats = await getChoiceStats(scenarioId, sceneId);
+        const entries: Record<string, number> = {};
+        for (const [choiceId, pct] of Object.entries(stats)) {
+          entries[`${scenarioId}:${sceneId}:${choiceId}`] = pct;
+        }
+        set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
 
-      getCommunityEndingStat: (endingType: string) => {
-        // Seeded data for endings
-        const MOCKS: Record<string, number> = {
-          'exceptional': 12,
-          'good': 48,
-          'neutral': 28,
-          'bad': 12,
-        };
-        return MOCKS[endingType] || 25;
+      fetchCommunityEndingStats: async (scenarioId: string) => {
+        const stats = await getEndingStats(scenarioId);
+        const entries: Record<string, number> = {};
+        for (const [endingType, pct] of Object.entries(stats)) {
+          entries[`${scenarioId}:${endingType}`] = pct;
+        }
+        set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
+      },
+
+      recordChoiceStat: async (scenarioId: string, sceneId: string, choiceId: string) => {
+        await rcRecordChoiceStat(scenarioId, sceneId, choiceId);
       },
 
       addJournalEntry: (entry) => set((s) => ({
@@ -537,6 +603,14 @@ export const useAppStore = create<AppState>()(
 
       isPhraseSaved: (phraseId) => get().savedPhrases.includes(phraseId),
 
+      toggleFavoriteScenario: (scenarioId) => {
+        set((s) => {
+          const exists = s.favoriteScenarios.includes(scenarioId);
+          return { favoriteScenarios: exists ? s.favoriteScenarios.filter((id) => id !== scenarioId) : [...s.favoriteScenarios, scenarioId] };
+        });
+      },
+      isFavoriteScenario: (scenarioId) => get().favoriteScenarios.includes(scenarioId),
+
       getDueReviews: () => {
         const today = todayISO();
         return Object.values(get().phraseReviews).filter(r => r.nextReview <= today);
@@ -559,6 +633,7 @@ export const useAppStore = create<AppState>()(
         themePreference: state.themePreference,
         stats: state.stats,
         savedPhrases: state.savedPhrases,
+        favoriteScenarios: state.favoriteScenarios,
         completedScenarios: state.completedScenarios,
         lastActiveDate: state.lastActiveDate,
         phraseReviews: state.phraseReviews,
