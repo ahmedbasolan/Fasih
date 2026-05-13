@@ -81,7 +81,7 @@ export default function ForgotPasswordScreen() {
               Forgot Password?
             </Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
-              No worries, we'll help you reset it
+              No worries, we&apos;ll help you reset it
             </Text>
           </MotiView>
 
@@ -153,7 +153,7 @@ export default function ForgotPasswordScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginBottom: 16 }}>
-                  Enter your email and we'll send you a reset link
+                  Enter your email and we&apos;ll send you a reset link
                 </Text>
 
                 <View style={{

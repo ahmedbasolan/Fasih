@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN } from '../../theme';
 import { Settings } from 'lucide-react-native';
@@ -27,7 +27,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
   const { C } = useTheme();
   const greeting = getTimeGreeting();
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -59,10 +59,12 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
       height: 40,
       borderRadius: 12,
       backgroundColor: C.CARD_BG,
+      borderWidth: 1,
+      borderColor: C.BORDER,
       alignItems: 'center',
       justifyContent: 'center',
     },
-  });
+  }), [C]);
 
   return (
     <View style={styles.container}>

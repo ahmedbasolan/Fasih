@@ -151,6 +151,7 @@ interface AppState {
   savedPhrases: string[];
   favoriteScenarios: string[];
   completedScenarios: Record<string, { endingType: string; date: string }>;
+  sceneProgress: Record<string, number>;
   lastActiveDate: string | null;
   phraseReviews: Record<string, PhraseReviewData>;
   journal: JournalEntry[];
@@ -205,6 +206,7 @@ interface AppState {
   // 3-tier flashcard rating — maps directly to SRS intervals (1 / 3 / 7 days)
   recordPhraseRating: (phraseId: string, rating: 'new' | 'learning' | 'knew') => void;
   completeScenario: (scenarioId: string, endingType: string) => void;
+  recordSceneProgress: (scenarioId: string, sceneIndex: number) => void;
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date'>) => void;
   checkMilestones: () => void;
 
@@ -238,6 +240,7 @@ export const useAppStore = create<AppState>()(
       savedPhrases: [],
       favoriteScenarios: [],
       completedScenarios: {},
+      sceneProgress: {},
       lastActiveDate: null,
       phraseReviews: {},
       journal: [],
@@ -538,10 +541,23 @@ export const useAppStore = create<AppState>()(
       completeScenario: (scenarioId, endingType) => {
         set((s) => {
           const completed = { ...s.completedScenarios, [scenarioId]: { endingType, date: new Date().toISOString() } };
-          return { completedScenarios: completed, stats: { ...s.stats, scenariosCompleted: Object.keys(completed) } };
+          return {
+            completedScenarios: completed,
+            sceneProgress: { ...s.sceneProgress, [scenarioId]: Math.max(s.sceneProgress[scenarioId] ?? 0, 999) },
+            stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
+          };
         });
         scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, endingType);
+      },
+
+      recordSceneProgress: (scenarioId, sceneIndex) => {
+        set((s) => {
+          const current = s.sceneProgress[scenarioId] ?? 0;
+          if (sceneIndex + 1 <= current) return {};
+          return { sceneProgress: { ...s.sceneProgress, [scenarioId]: sceneIndex + 1 } };
+        });
+        scheduleSync(() => get().syncToCloud());
       },
 
       // Community stats — Supabase-backed with in-memory cache
@@ -635,6 +651,7 @@ export const useAppStore = create<AppState>()(
         savedPhrases: state.savedPhrases,
         favoriteScenarios: state.favoriteScenarios,
         completedScenarios: state.completedScenarios,
+        sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
         phraseReviews: state.phraseReviews,
         journal: state.journal,

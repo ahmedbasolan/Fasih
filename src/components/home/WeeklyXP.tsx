@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ export function WeeklyXP({
   const { C } = useTheme();
   const maxValue = Math.max(...days.map((d) => d.value), 1);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -41,7 +41,7 @@ export function WeeklyXP({
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.08,
       shadowRadius: 4,
       elevation: 2,
       minHeight: 180,
@@ -157,7 +157,7 @@ export function WeeklyXP({
       color: C.TEXT,
       fontWeight: '700',
     },
-  });
+  }), [C]);
 
   const hasData = days && days.length > 0;
 

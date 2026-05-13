@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { X, ChevronRight, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
+import { X, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
@@ -235,6 +235,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
+  const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
   const user = useAppStore((s) => s.user);
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
@@ -261,7 +262,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [flags, setFlags] = useState<Record<string, boolean>>({ FLAG_1: false, FLAG_2: false, FLAG_3: false });
   const [nextSceneId, setNextSceneId] = useState<string | null>(null);
   // Tone history: records the NPC tone at the moment each scene was entered
-  const [toneHistory, setToneHistory] = useState<Array<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }>>([]);
+  const [toneHistory, setToneHistory] = useState<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[]>([]);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -396,6 +397,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [selectedChoiceId, recordChoiceStatAction, scenarioId, scenes, step]);
 
   const next = useCallback(() => {
+    recordSceneProgress(scenarioId, step);
     setSelectedChoiceId(null);
     setNextSceneId(null);
     
@@ -432,7 +434,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
     if (nextStep >= scenes.length) setPhase('result');
     else { setStep(nextStep); setPhase('scene'); }
-  }, [step, scenes.length, flags, scriptData, scenes, impact, nextSceneId]);
+  }, [step, scenes.length, flags, scriptData, scenes, impact, nextSceneId, recordSceneProgress, scenarioId]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
     const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';

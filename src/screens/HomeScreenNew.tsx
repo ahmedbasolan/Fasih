@@ -16,7 +16,7 @@ import {
   QuickChallenge,
   MissionCard,
   DailyPhrase,
-  WeeklyXP,
+  SituationalConfidence,
   CommunityBar,
 } from '../components/home';
 import { useAppStore } from '../store/useAppStore';
@@ -30,6 +30,7 @@ interface HomeScreenNewProps {
   userName: string;
   onSettingsPress?: () => void;
   onMissionPress?: (missionId: string) => void;
+  onSeeAll?: () => void;
 }
 
 // Derive week-day status from streak + lastActiveDate
@@ -46,42 +47,6 @@ function getWeekDays(streak: number, lastActiveDate: string | null) {
   });
 }
 
-// Unified XP calculation: 10 XP per correct phrase, 2 XP per incorrect attempt
-function calculateXPFromReviews(
-  phraseReviews: Record<string, { correct: number; incorrect: number; lastReviewed: string }>,
-) {
-  return Object.values(phraseReviews).reduce((total, card) => {
-    return total + card.correct * 10 + card.incorrect * 2;
-  }, 0);
-}
-
-// Deterministic weekly XP from phrase review data
-function getWeeklyXPFromReviews(
-  phraseReviews: Record<string, { correct: number; incorrect: number; lastReviewed: string }>,
-) {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const today = new Date();
-  const jsDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
-
-  // Accumulate XP (correct * 10 + incorrect * 2) per weekday from last 7 days
-  const xpByDay = [0, 0, 0, 0, 0, 0, 0];
-  const now = new Date();
-  for (const card of Object.values(phraseReviews)) {
-    const reviewed = new Date(card.lastReviewed);
-    const diffDays = Math.floor((now.getTime() - reviewed.getTime()) / (86400000));
-    if (diffDays < 7 && diffDays >= 0) {
-      const reviewedJsDay = reviewed.getDay() === 0 ? 6 : reviewed.getDay() - 1;
-      xpByDay[reviewedJsDay] += card.correct * 10 + card.incorrect * 2;
-    }
-  }
-
-  return days.map((label, idx) => ({
-    label,
-    value: xpByDay[idx],
-    isToday: idx === jsDay,
-  }));
-}
-
 // Phrase of the day — deterministic based on date
 function getPhraseOfTheDay() {
   const today = new Date();
@@ -93,6 +58,7 @@ export function HomeScreenNew({
   userName = 'there',
   onSettingsPress,
   onMissionPress,
+  onSeeAll,
 }: HomeScreenNewProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
@@ -100,7 +66,6 @@ export function HomeScreenNew({
   // Real store data
   const stats = useAppStore((s) => s.stats);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
-  const phraseReviews = useAppStore((s) => s.phraseReviews);
   const lastActiveDate = useAppStore((s) => s.lastActiveDate);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
 
@@ -110,13 +75,10 @@ export function HomeScreenNew({
 
   // Derived data
   const streakDays = stats.currentStreak;
-  const totalXP = calculateXPFromReviews(phraseReviews) + stats.scenariosCompleted.length * 50;
-  const goalXP = 500;
+  const learningDayGoal = Math.max(streakDays, 1);
   const isNewUser = stats.daysActive === 0;
 
   const weekDays = useMemo(() => getWeekDays(streakDays, lastActiveDate), [streakDays, lastActiveDate]);
-  const weeklyXPDays = useMemo(() => getWeeklyXPFromReviews(phraseReviews), [phraseReviews]);
-  const weeklyTotal = weeklyXPDays.reduce((sum, d) => sum + d.value, 0);
 
   // Featured scenario (first unlocked, uncompleted one for user's mode)
   const userMode = useAppStore((s) => s.user?.mode) || 'career';
@@ -128,7 +90,8 @@ export function HomeScreenNew({
     return uncompleted ?? modeMatch[0] ?? getFeaturedScenario(C);
   }, [C, userMode, completedScenarios]);
 
-  const scenesCompletedForFeatured = completedScenarios[featured.id] ? featured.decisions : 0;
+  const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 
   // Phrase of the day
   const phraseOfTheDay = getPhraseOfTheDay();
@@ -221,8 +184,8 @@ export function HomeScreenNew({
       <View style={{ marginTop: 6 }}>
         <StreakWidget
           streakDays={streakDays}
-          currentXP={totalXP}
-          goalXP={goalXP}
+          currentXP={learningDayGoal}
+          goalXP={learningDayGoal}
           weekDays={weekDays}
           mood={streakMood}
           onComplete={() => {
@@ -288,29 +251,13 @@ export function HomeScreenNew({
         />
       </View>
 
-      {/* Weekly XP Section */}
-      <Text style={styles.sectionLabel}>This Week</Text>
+      {/* Situational Confidence Section */}
+      <Text style={styles.sectionLabel}>Your Confidence</Text>
       <View style={styles.sectionContent}>
-        {isNewUser ? (
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 400 }}
-          >
-            <View style={styles.emptyCard}>
-              <Text style={{ fontSize: 32 }}>📊</Text>
-              <Text style={styles.emptyTitle}>Your weekly stats will appear here</Text>
-              <Text style={styles.emptySubtitle}>Complete a scenario or review phrases to start earning XP</Text>
-            </View>
-          </MotiView>
-        ) : (
-          <WeeklyXP
-            days={weeklyXPDays}
-            currentXP={weeklyTotal}
-            goalXP={goalXP}
-            xpToReward={Math.max(0, goalXP - weeklyTotal)}
-          />
-        )}
+        <SituationalConfidence
+          limit={5}
+          onSeeAll={onSeeAll}
+        />
       </View>
 
       {/* Community Section */}
