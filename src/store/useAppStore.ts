@@ -654,7 +654,12 @@ export const useAppStore = create<AppState>()(
       },
 
       // ─── Active scenario run ────────────────────────────────────────────────────
-      startScenario: (scenarioId, firstSceneId) =>
+      startScenario: (scenarioId, firstSceneId) => {
+        const current = get().activeScenarioState;
+        // If there is already an active run for a different scenario, abandon it first
+        if (current && current.scenarioId !== scenarioId) {
+          get().abandonScenario();
+        }
         set({
           activeScenarioState: {
             scenarioId,
@@ -666,7 +671,8 @@ export const useAppStore = create<AppState>()(
             scenesVisited: new Set<string>([firstSceneId]),
             startedAt: new Date().toISOString(),
           },
-        }),
+        });
+      },
 
       applyScenarioChoice: (choice, npcId) =>
         set(s => ({
@@ -689,27 +695,25 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
-      finalizeScenario: (ending) =>
-        set(s => {
-          if (!s.activeScenarioState) return {};
-          const { scenarioId } = s.activeScenarioState;
-          return {
-            completedScenarios: {
-              ...s.completedScenarios,
-              [scenarioId]: {
-                endingType: ending.type,
-                date: new Date().toISOString(),
-              },
-            },
-            stats: {
-              ...s.stats,
-              scenariosCompleted: [
-                ...new Set([...s.stats.scenariosCompleted, scenarioId]),
-              ],
-            },
-            activeScenarioState: null,
-          };
-        }),
+      finalizeScenario: (ending) => {
+        const s = get();
+        if (!s.activeScenarioState) return;
+        const { scenarioId } = s.activeScenarioState;
+        const completed = {
+          ...s.completedScenarios,
+          [scenarioId]: {
+            endingType: ending.type,
+            date: new Date().toISOString(),
+          },
+        };
+        set({
+          completedScenarios: completed,
+          stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
+          activeScenarioState: null,
+        });
+        scheduleSync(() => get().syncToCloud());
+        void rcRecordEndingStat(scenarioId, ending.type);
+      },
 
       abandonScenario: () => set({ activeScenarioState: null }),
     }),
