@@ -209,11 +209,7 @@ export type MainTab = 'home' | 'scenarios' | 'library' | 'profile';
 // ─── Scenario State Engine ────────────────────────────────────────────────────
 
 /** Per-NPC running totals for trust, respect, and culture dimensions */
-export interface ImpactDelta {
-  trust: number;    // negative allowed (e.g. -2 to +3 per choice)
-  respect: number;
-  culture: number;
-}
+export type ImpactDelta = ImpactMetrics;
 
 /** NPC dialogue warmth level, derived from accumulated ImpactDelta */
 export type Tone = 'warm' | 'neutral' | 'cold';
