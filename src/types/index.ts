@@ -81,6 +81,7 @@ export interface Scenario {
   level: DifficultyLevel;
   locked: boolean;
   comingSoon?: boolean;
+  isOnboarding?: boolean;
   dialect?: string;
   color: string;
   gradientColors: [string, string];
@@ -204,3 +205,45 @@ export interface Phrase {
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 export type MainTab = 'home' | 'scenarios' | 'library' | 'profile';
+
+// ─── Scenario State Engine ────────────────────────────────────────────────────
+
+/** Per-NPC running totals for trust, respect, and culture dimensions */
+export interface ImpactDelta {
+  trust: number;    // negative allowed (e.g. -2 to +3 per choice)
+  respect: number;
+  culture: number;
+}
+
+/** NPC dialogue warmth level, derived from accumulated ImpactDelta */
+export type Tone = 'warm' | 'neutral' | 'cold';
+
+/**
+ * Complete runtime state for one scenario run.
+ * Lives in Zustand as activeScenarioState — NOT persisted between sessions.
+ * Sets are used internally; the field is excluded from AsyncStorage partialize.
+ */
+export interface ScenarioState {
+  scenarioId: string;
+  currentSceneId: string;
+  /** Flag IDs set by choices so far (e.g. 'GREETED_IN_DIALECT') */
+  flags: Set<string>;
+  /** Per-NPC accumulated impact — keyed by charName (must be unique per scenario) */
+  impactByNpc: Record<string, ImpactDelta>;
+  /**
+   * Sum of choice.score values — this drives warmThreshold / coldThreshold.
+   * Kept separate from impactByNpc because script authors write thresholds
+   * against choice.score, not the T/R/C impact sum.
+   */
+  totalScore: number;
+  /** Ordered history of every choice made in this run */
+  choiceHistory: Array<{
+    sceneId: string;
+    choiceId: string;
+    npcId: string;   // charName of the NPC in that scene
+    timestamp: string; // ISO date-time
+  }>;
+  /** All scene IDs visited so far (for completeness tracking) */
+  scenesVisited: Set<string>;
+  startedAt: string; // ISO date-time
+}
