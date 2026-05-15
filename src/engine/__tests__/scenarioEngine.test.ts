@@ -106,11 +106,13 @@ describe('applyChoice', () => {
   it('appends a record to choiceHistory', () => {
     const state = makeEmptyState();
     const choice = makeChoice({ id: 'choice-99' });
-    const next = applyChoice(state, choice, 'Ahmed');
+    const fixedTimestamp = '2026-01-01T12:00:00.000Z';
+    const next = applyChoice(state, choice, 'Ahmed', fixedTimestamp);
     expect(next.choiceHistory).toHaveLength(1);
     expect(next.choiceHistory[0].choiceId).toBe('choice-99');
     expect(next.choiceHistory[0].npcId).toBe('Ahmed');
     expect(next.choiceHistory[0].sceneId).toBe('scene-1');
+    expect(next.choiceHistory[0].timestamp).toBe(fixedTimestamp);
   });
 
   it('handles a choice with no impact gracefully (impact defaults to 0s)', () => {
