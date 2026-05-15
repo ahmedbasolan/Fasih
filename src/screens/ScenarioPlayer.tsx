@@ -23,7 +23,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getTone, resolveNextScene, evaluateEnding } from '../engine/scenarioEngine';
-import type { UserProfile, ScenarioChoice, ScenarioScene } from '../types';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -273,6 +273,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [toneHistory, setToneHistory] = useState<Array<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }>>([]);
   // lastResolvedNextSceneId holds the branch target from the most recent choice (for next())
   const [lastResolvedNextSceneId, setLastResolvedNextSceneId] = useState<string | null>(null);
+  // finalizedEnding locks the evaluated ending before finalizeScenario() nulls activeScenarioState
+  const [finalizedEnding, setFinalizedEnding] = useState<ScenarioEnding | null>(null);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -322,6 +324,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   useEffect(() => {
     if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
     const currEnding = evaluateEnding(activeScenarioState, scriptData);
+    setFinalizedEnding(currEnding);
     setCompletionFired(true);
     finalizeScenario(currEnding);
     const hapticType =
@@ -382,12 +385,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (selectedChoiceId || !scenes[step] || !activeScenarioState || !scriptData) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    // Apply choice to engine state (updates flags, impact, totalScore, choiceHistory)
-    applyScenarioChoice(choice, scenes[step].charName);
-
-    // Resolve next scene for branching (stored for use in next())
+    // Resolve next scene BEFORE applying choice (pre-choice state is sufficient;
+    // resolveNextScene only reads currentSceneId, which applyChoice does not mutate)
     const resolved = resolveNextScene(activeScenarioState, choice, scriptData);
     setLastResolvedNextSceneId(resolved);
+
+    // Apply choice to engine state (updates flags, impact, totalScore, choiceHistory)
+    applyScenarioChoice(choice, scenes[step].charName);
 
     setSelectedChoiceId(choice.id);
     void recordChoiceStatAction(scenarioId, scenes[step].id, choice.id);
@@ -458,6 +462,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setCompletionFired(false);
     setToneHistory([]);
     setLastResolvedNextSceneId(null);
+    setFinalizedEnding(null);
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
@@ -494,10 +499,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       ? getTone(activeScenarioState, scene.charName, scene)
       : 'neutral';
 
-  // Ending evaluated from engine (used on result screen)
-  const ending = (activeScenarioState && scriptData)
-    ? evaluateEnding(activeScenarioState, scriptData)
-    : endings[endings.length - 1];
+  // Ending evaluated from engine — locked into finalizedEnding so the result screen
+  // stays stable after finalizeScenario() nulls activeScenarioState.
+  const ending = finalizedEnding
+    ?? (activeScenarioState && scriptData
+        ? evaluateEnding(activeScenarioState, scriptData)
+        : endings[endings.length - 1]);
 
   // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
