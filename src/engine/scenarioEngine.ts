@@ -87,7 +87,7 @@ export function resolveNextScene(
   choice: ScenarioChoice,
   script: ScenarioScript,
 ): string | null {
-  if (choice.next) return choice.next;
+  if (choice.next !== undefined) return choice.next;
   const idx = script.scenes.findIndex(s => s.id === state.currentSceneId);
   return script.scenes[idx + 1]?.id ?? null;
 }
@@ -115,6 +115,8 @@ export function evaluateEnding(
   const standard = [...script.endings]
     .filter(e => !e.secret)
     .sort((a, b) => b.min - a.min);
+
+  if (standard.length === 0) throw new Error(`evaluateEnding: script "${script.id}" has no standard endings`);
 
   return standard.find(e => score >= e.min) ?? standard[standard.length - 1];
 }
