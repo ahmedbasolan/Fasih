@@ -21,6 +21,7 @@ export function applyChoice(
   state: ScenarioState,
   choice: ScenarioChoice,
   npcId: string,
+  now: string = new Date().toISOString(),
 ): ScenarioState {
   const prev: ImpactDelta = state.impactByNpc[npcId] ?? { trust: 0, respect: 0, culture: 0 };
   const delta = choice.impact ?? { trust: 0, respect: 0, culture: 0 };
@@ -46,7 +47,7 @@ export function applyChoice(
         sceneId: state.currentSceneId,
         choiceId: choice.id,
         npcId,
-        timestamp: new Date().toISOString(),
+        timestamp: now,
       },
     ],
   };
@@ -65,6 +66,8 @@ export function getTone(
   _npcId: string,
   scene: ScenarioScene,
 ): Tone {
+  // _npcId is accepted for future per-NPC tone support. Currently totalScore is a
+  // global accumulator and drives warmth for all NPCs — not per-NPC.
   if (!scene.charDialogue) return 'neutral';
   const score = state.totalScore;
   if (scene.warmThreshold !== undefined && score >= scene.warmThreshold) return 'warm';
