@@ -22,9 +22,12 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
+import {
+  applyChoice as applyChoiceEngine,
+} from '../engine/scenarioEngine';
 
 // ─── Debounced cloud sync ─────────────────────────────────────────────────────
 // Batches rapid mutations (e.g., reviewing several phrases) into a single push.
@@ -151,10 +154,12 @@ interface AppState {
   savedPhrases: string[];
   favoriteScenarios: string[];
   completedScenarios: Record<string, { endingType: string; date: string }>;
+  sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   phraseReviews: Record<string, PhraseReviewData>;
   journal: JournalEntry[];
   milestones: LearningMilestone[];
+  unlockedPhraseIds: string[]; // phrases unlocked through scenarios
 
   // Cloud sync
   isSyncing: boolean;
@@ -205,12 +210,15 @@ interface AppState {
   // 3-tier flashcard rating — maps directly to SRS intervals (1 / 3 / 7 days)
   recordPhraseRating: (phraseId: string, rating: 'new' | 'learning' | 'knew') => void;
   completeScenario: (scenarioId: string, endingType: string) => void;
+  recordSceneProgress: (scenarioId: string, sceneIndex: number) => void;
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date'>) => void;
   checkMilestones: () => void;
 
   // Phrase library
   toggleSavedPhrase: (phraseId: string) => void;
   isPhraseSaved: (phraseId: string) => boolean;
+  unlockPhrase: (phraseId: string) => void;
+  isPhraseUnlocked: (phraseId: string) => boolean;
 
   // Scenario favourites
   toggleFavoriteScenario: (scenarioId: string) => void;
@@ -218,6 +226,14 @@ interface AppState {
 
   // Computed helpers
   getDueReviews: () => PhraseReviewData[];
+
+  // ─── Active scenario run (not persisted) ─────────────────────────────────────
+  activeScenarioState: ScenarioState | null;
+  startScenario: (scenarioId: string, firstSceneId: string) => void;
+  applyScenarioChoice: (choice: ScenarioChoice, npcId: string) => void;
+  advanceScenarioScene: (nextSceneId: string) => void;
+  finalizeScenario: (ending: ScenarioEnding) => void;
+  abandonScenario: () => void;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -238,10 +254,13 @@ export const useAppStore = create<AppState>()(
       savedPhrases: [],
       favoriteScenarios: [],
       completedScenarios: {},
+      sceneProgress: {},
       lastActiveDate: null,
       phraseReviews: {},
       journal: [],
       milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
+      unlockedPhraseIds: [],
+      activeScenarioState: null,
 
       // Sync state
       isSyncing: false,
@@ -544,6 +563,14 @@ export const useAppStore = create<AppState>()(
         void rcRecordEndingStat(scenarioId, endingType);
       },
 
+      recordSceneProgress: (scenarioId, sceneIndex) => {
+        set((s) => {
+          const current = s.sceneProgress[scenarioId] ?? 0;
+          if (sceneIndex + 1 <= current) return {}; // never go backwards
+          return { sceneProgress: { ...s.sceneProgress, [scenarioId]: sceneIndex + 1 } };
+        });
+      },
+
       // Community stats — Supabase-backed with in-memory cache
       communityStatsCache: {},
 
@@ -603,6 +630,16 @@ export const useAppStore = create<AppState>()(
 
       isPhraseSaved: (phraseId) => get().savedPhrases.includes(phraseId),
 
+      unlockPhrase: (phraseId) => {
+        set((s) => {
+          const exists = s.unlockedPhraseIds.includes(phraseId);
+          return { unlockedPhraseIds: exists ? s.unlockedPhraseIds : [...s.unlockedPhraseIds, phraseId] };
+        });
+        scheduleSync(() => get().syncToCloud());
+      },
+
+      isPhraseUnlocked: (phraseId) => get().unlockedPhraseIds.includes(phraseId),
+
       toggleFavoriteScenario: (scenarioId) => {
         set((s) => {
           const exists = s.favoriteScenarios.includes(scenarioId);
@@ -615,6 +652,66 @@ export const useAppStore = create<AppState>()(
         const today = todayISO();
         return Object.values(get().phraseReviews).filter(r => r.nextReview <= today);
       },
+
+      // ─── Active scenario run ────────────────────────────────────────────────────
+      startScenario: (scenarioId, firstSceneId) =>
+        set({
+          activeScenarioState: {
+            scenarioId,
+            currentSceneId: firstSceneId,
+            flags: new Set<string>(),
+            impactByNpc: {},
+            totalScore: 0,
+            choiceHistory: [],
+            scenesVisited: new Set<string>([firstSceneId]),
+            startedAt: new Date().toISOString(),
+          },
+        }),
+
+      applyScenarioChoice: (choice, npcId) =>
+        set(s => ({
+          activeScenarioState: s.activeScenarioState
+            ? applyChoiceEngine(s.activeScenarioState, choice, npcId)
+            : null,
+        })),
+
+      advanceScenarioScene: (nextSceneId) =>
+        set(s => {
+          if (!s.activeScenarioState) return {};
+          const visited = new Set(s.activeScenarioState.scenesVisited);
+          visited.add(nextSceneId);
+          return {
+            activeScenarioState: {
+              ...s.activeScenarioState,
+              currentSceneId: nextSceneId,
+              scenesVisited: visited,
+            },
+          };
+        }),
+
+      finalizeScenario: (ending) =>
+        set(s => {
+          if (!s.activeScenarioState) return {};
+          const { scenarioId } = s.activeScenarioState;
+          return {
+            completedScenarios: {
+              ...s.completedScenarios,
+              [scenarioId]: {
+                endingType: ending.type,
+                date: new Date().toISOString(),
+              },
+            },
+            stats: {
+              ...s.stats,
+              scenariosCompleted: [
+                ...new Set([...s.stats.scenariosCompleted, scenarioId]),
+              ],
+            },
+            activeScenarioState: null,
+          };
+        }),
+
+      abandonScenario: () => set({ activeScenarioState: null }),
     }),
     {
       name: 'fasih-storage',
@@ -633,8 +730,10 @@ export const useAppStore = create<AppState>()(
         themePreference: state.themePreference,
         stats: state.stats,
         savedPhrases: state.savedPhrases,
+        unlockedPhraseIds: state.unlockedPhraseIds,
         favoriteScenarios: state.favoriteScenarios,
         completedScenarios: state.completedScenarios,
+        sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
         phraseReviews: state.phraseReviews,
         journal: state.journal,
