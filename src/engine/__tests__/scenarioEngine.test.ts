@@ -308,6 +308,20 @@ describe('evaluateEnding', () => {
     const ending = evaluateEnding(state, script);
     expect(ending.secret).not.toBe(true);
   });
+
+  it('throws when script has no standard (non-secret) endings', () => {
+    const state = makeEmptyState();
+    const script = makeScript({
+      endings: [
+        {
+          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          desc: 'Only ending', color: '#8B00FF', type: 'exceptional' as const,
+          secret: true, requiredFlags: [],
+        },
+      ],
+    });
+    expect(() => evaluateEnding(state, script)).toThrow('evaluateEnding: script "test-scenario" has no standard endings');
+  });
 });
 
 // ─── isChoiceVisible ─────────────────────────────────────────────────────────
