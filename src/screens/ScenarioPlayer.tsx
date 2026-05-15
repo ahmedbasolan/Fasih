@@ -22,6 +22,7 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
+import { getTone, resolveNextScene, evaluateEnding } from '../engine/scenarioEngine';
 import type { UserProfile, ScenarioChoice, ScenarioScene } from '../types';
 
 interface Props {
@@ -236,6 +237,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
   const user = useAppStore((s) => s.user);
+  const activeScenarioState = useAppStore((s) => s.activeScenarioState);
+  const startScenario = useAppStore((s) => s.startScenario);
+  const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
+  const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
+  const finalizeScenario = useAppStore((s) => s.finalizeScenario);
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
 
@@ -250,18 +256,23 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       if (phraseTtsTimerRef.current) clearTimeout(phraseTtsTimerRef.current);
     };
   }, []);
+
+  // Bootstrap: initialise the run when the component mounts
+  useEffect(() => {
+    if (scriptData) {
+      startScenario(scenarioId, scriptData.scenes[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [phase, setPhase] = useState<Phase>('intro');
   const [step, setStep] = useState(0);
-  const [score, setScore] = useState(0);
-  const [impact, setImpact] = useState({ trust: 0, respect: 0, culture: 0 });
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
-  const [choiceHistory, setChoiceHistory] = useState<ScenarioChoice[]>([]);
   const [choicesVisible, setChoicesVisible] = useState(false);
   const [completionFired, setCompletionFired] = useState(false);
-  const [flags, setFlags] = useState<Record<string, boolean>>({ FLAG_1: false, FLAG_2: false, FLAG_3: false });
-  const [nextSceneId, setNextSceneId] = useState<string | null>(null);
-  // Tone history: records the NPC tone at the moment each scene was entered
+  // toneHistory is local UI state — records tone at scene entry for the end-screen arc
   const [toneHistory, setToneHistory] = useState<Array<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }>>([]);
+  // lastResolvedNextSceneId holds the branch target from the most recent choice (for next())
+  const [lastResolvedNextSceneId, setLastResolvedNextSceneId] = useState<string | null>(null);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -297,31 +308,22 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (phase === 'result') void fetchCommunityEndingStats(scenarioId);
   }, [phase, scenarioId, fetchCommunityEndingStats]);
 
-  // Record NPC tone the moment each scene is entered (only for scenes with charDialogue)
+  // Record NPC tone the moment each scene is entered (engine-driven)
   useEffect(() => {
-    if (phase !== 'scene' || !scene?.charDialogue) return;
+    if (phase !== 'scene' || !scene?.charDialogue || !activeScenarioState) return;
     setToneHistory(prev => {
       if (prev.some(t => t.sceneId === scene.id)) return prev;
-      const entryTone: 'warm' | 'neutral' | 'cold' =
-        score >= (scene.warmThreshold ?? Infinity) ? 'warm'
-        : score < (scene.coldThreshold ?? -Infinity) ? 'cold'
-        : 'neutral';
+      const entryTone = getTone(activeScenarioState, scene.charName, scene);
       return [...prev, { sceneId: scene.id, tone: entryTone }];
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, phase]);
 
   useEffect(() => {
-    if (!scriptData || phase !== 'result' || completionFired) return;
-    const _endings = scriptData.endings;
-    const _total = impact.trust + impact.respect + impact.culture;
-    const _secret = _endings.find(e => e.secret);
-    const _flagsMet = !_secret?.requiredFlags ||
-      _secret.requiredFlags.every(f => flags[f] === true);
-    const currEnding = (_secret && _flagsMet && _total >= 20)
-      ? _secret
-      : _endings.find(e => !e.secret && _total >= e.min) ?? _endings[_endings.length - 1];
+    if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
+    const currEnding = evaluateEnding(activeScenarioState, scriptData);
     setCompletionFired(true);
+    finalizeScenario(currEnding);
     const hapticType =
       currEnding.type === 'failed' ? Haptics.NotificationFeedbackType.Error
       : currEnding.type === 'mixed' ? Haptics.NotificationFeedbackType.Warning
@@ -329,7 +331,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, impact, flags, onComplete, onJournalEntry]);
+  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario]);
+
+  // Record scene progress as user advances through scenes
+  const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
+  useEffect(() => {
+    if (phase === 'scene' && step < (scriptData?.scenes.length ?? 0)) {
+      recordSceneProgress(scenarioId, step);
+    }
+  }, [step, phase, scenarioId, scriptData?.scenes.length, recordSceneProgress]);
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = scriptData?.scenes ?? [];
@@ -350,10 +360,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     return { trust: Math.max(maxTrust, 3), respect: Math.max(maxRespect, 3), culture: Math.max(maxCulture, 3) };
   }, [scenes]);
 
-  const culturalJourneyNotes = useMemo(() => choiceHistory
-    .map(c => c.note)
-    .filter((note): note is string => Boolean(note))
-    .slice(0, 4), [choiceHistory]);
+  const culturalJourneyNotes = useMemo(() => {
+    if (!activeScenarioState || !scriptData) return [];
+    return activeScenarioState.choiceHistory
+      .map(({ sceneId, choiceId }) => {
+        const sc = scriptData.scenes.find(s => s.id === sceneId);
+        const ch = sc?.choices.find(c => c.id === choiceId);
+        return ch?.note;
+      })
+      .filter((note): note is string => Boolean(note))
+      .slice(0, 4);
+  }, [activeScenarioState, scriptData]);
 
   // Helper to replace [name] placeholder with user's name
   const replaceName = useCallback((text: string): string => {
@@ -362,67 +379,49 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [user?.name]);
 
   const handleChoice = useCallback((choice: ScenarioChoice) => {
-    if (selectedChoiceId || !scenes[step]) return;
+    if (selectedChoiceId || !scenes[step] || !activeScenarioState || !scriptData) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setScore(prev => prev + choice.score);
-    if (choice.impact) {
-      setImpact(prev => ({
-        trust: prev.trust + choice.impact!.trust,
-        respect: prev.respect + choice.impact!.respect,
-        culture: prev.culture + choice.impact!.culture,
-      }));
-    }
 
-    // Set flag if choice has one
-    if ('flag' in choice && choice.flag) {
-      setFlags(prev => ({ ...prev, [choice.flag as string]: true }));
-    }
+    // Apply choice to engine state (updates flags, impact, totalScore, choiceHistory)
+    applyScenarioChoice(choice, scenes[step].charName);
 
-    // Store next scene ID for branching (social mode scenarios)
-    if (choice.next) {
-      setNextSceneId(choice.next);
-    } else {
-      setNextSceneId(null);
-    }
+    // Resolve next scene for branching (stored for use in next())
+    const resolved = resolveNextScene(activeScenarioState, choice, scriptData);
+    setLastResolvedNextSceneId(resolved);
 
-    setChoiceHistory(prev => [...prev, choice]);
     setSelectedChoiceId(choice.id);
     void recordChoiceStatAction(scenarioId, scenes[step].id, choice.id);
-
-    // Transition to choice-result phase after a short delay
-    setTimeout(() => {
-      setPhase('choice-result');
-    }, 600);
-  }, [selectedChoiceId, recordChoiceStatAction, scenarioId, scenes, step]);
+    setTimeout(() => setPhase('choice-result'), 600);
+  }, [selectedChoiceId, activeScenarioState, scriptData, applyScenarioChoice, recordChoiceStatAction, scenarioId, scenes, step]);
 
   const next = useCallback(() => {
     setSelectedChoiceId(null);
-    setNextSceneId(null);
-    
-    // Handle branching: if choice specified a next scene ID, navigate to it
-    if (nextSceneId) {
-      const targetIndex = scenes.findIndex(s => s.id === nextSceneId);
+
+    // Handle explicit branch from most recent choice
+    if (lastResolvedNextSceneId) {
+      const targetIndex = scenes.findIndex(s => s.id === lastResolvedNextSceneId);
       if (targetIndex !== -1) {
+        advanceScenarioScene(lastResolvedNextSceneId);
         setStep(targetIndex);
+        setLastResolvedNextSceneId(null);
         setPhase('scene');
         return;
       }
     }
-    
-    // Default linear progression
+
+    setLastResolvedNextSceneId(null);
     const nextStep = step + 1;
 
-    // Check if we should show bonus scene for secret ending (only if not already on it)
+    // Check bonus scene eligibility for secret ending
     const isOnBonusScene = scenes[step]?.bonus === true;
-    if (!isOnBonusScene && nextStep >= scenes.length && scriptData) {
-      const total = impact.trust + impact.respect + impact.culture;
+    if (!isOnBonusScene && nextStep >= scenes.length && scriptData && activeScenarioState) {
       const secretEnding = scriptData.endings?.find(e => e.secret);
       const requiredFlagsMet = !secretEnding?.requiredFlags ||
-        secretEnding.requiredFlags.every(f => flags[f] === true);
-
-      if (secretEnding && requiredFlagsMet && total >= 20) {
+        secretEnding.requiredFlags.every(f => activeScenarioState.flags.has(f));
+      if (secretEnding && requiredFlagsMet && activeScenarioState.totalScore >= secretEnding.min) {
         const bonusScene = scenes.find(s => s.bonus === true);
         if (bonusScene) {
+          advanceScenarioScene(bonusScene.id);
           setStep(scenes.indexOf(bonusScene));
           setPhase('scene');
           return;
@@ -430,9 +429,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       }
     }
 
-    if (nextStep >= scenes.length) setPhase('result');
-    else { setStep(nextStep); setPhase('scene'); }
-  }, [step, scenes.length, flags, scriptData, scenes, impact, nextSceneId]);
+    if (nextStep >= scenes.length) {
+      setPhase('result');
+    } else {
+      const nextScene = scenes[nextStep];
+      if (nextScene) advanceScenarioScene(nextScene.id);
+      setStep(nextStep);
+      setPhase('scene');
+    }
+  }, [step, scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
     const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
@@ -445,17 +450,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [scriptData?.title]);
 
   const restart = useCallback(() => {
+    if (scriptData) startScenario(scenarioId, scriptData.scenes[0].id);
     setPhase('intro');
     setStep(0);
-    setScore(0);
-    setImpact({ trust: 0, respect: 0, culture: 0 });
     setSelectedChoiceId(null);
-    setChoiceHistory([]);
+    setChoicesVisible(false);
     setCompletionFired(false);
-    setFlags({ FLAG_1: false, FLAG_2: false, FLAG_3: false });
-    setNextSceneId(null);
     setToneHistory([]);
-  }, []);
+    setLastResolvedNextSceneId(null);
+  }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
   if (!scriptData) {
@@ -472,24 +475,32 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }
 
   const scene = scenes[step];
-  // totalScore = sum of all three meters (as per guide)
+
+  // Derive total T/R/C for ImpactBar by summing all NPCs
+  const impact = activeScenarioState
+    ? Object.values(activeScenarioState.impactByNpc).reduce(
+        (acc, d) => ({
+          trust:   acc.trust   + d.trust,
+          respect: acc.respect + d.respect,
+          culture: acc.culture + d.culture,
+        }),
+        { trust: 0, respect: 0, culture: 0 }
+      )
+    : { trust: 0, respect: 0, culture: 0 };
+
+  // Butterfly effect: NPC tone from engine (uses totalScore to match script thresholds)
+  const sceneTone: 'warm' | 'neutral' | 'cold' =
+    activeScenarioState && scene
+      ? getTone(activeScenarioState, scene.charName, scene)
+      : 'neutral';
+
+  // Ending evaluated from engine (used on result screen)
+  const ending = (activeScenarioState && scriptData)
+    ? evaluateEnding(activeScenarioState, scriptData)
+    : endings[endings.length - 1];
+
+  // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
-
-  // Butterfly effect: NPC tone driven by accumulated score (not impact sum — score is
-  // the designer's primary rating; impact is for the T/R/C bars)
-  const sceneTone: 'warm' | 'neutral' | 'cold' = scene?.charDialogue
-    ? score >= (scene.warmThreshold ?? Infinity) ? 'warm'
-      : score < (scene.coldThreshold ?? -Infinity) ? 'cold'
-      : 'neutral'
-    : 'neutral';
-
-  // Determine ending — secret endings require requiredFlags + score threshold
-  const secretEnding = endings.find(e => e.secret);
-  const requiredFlagsMet = !secretEnding?.requiredFlags ||
-    secretEnding.requiredFlags.every(f => flags[f] === true);
-  const ending = (secretEnding && requiredFlagsMet && total >= 20)
-    ? secretEnding
-    : endings.find(e => !e.secret && total >= e.min) ?? endings[endings.length - 1];
 
   const unlockedPhrases = scriptData.phrasesUnlocked
     ? scriptData.phrasesUnlocked.map(id => PHRASES.find(p => p.id === id)).filter(Boolean) as typeof PHRASES
@@ -759,14 +770,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     {/* Butterfly effect forward prediction — what tone will the next scene carry */}
                     {(() => {
                       // Respect branching: if the choice set a nextSceneId, look that scene up
-                      const nextIdx = nextSceneId
-                        ? scenes.findIndex(s => s.id === nextSceneId)
+                      const nextIdx = lastResolvedNextSceneId
+                        ? scenes.findIndex(s => s.id === lastResolvedNextSceneId)
                         : step + 1;
                       const nextScene = nextIdx >= 0 && nextIdx < scenes.length ? scenes[nextIdx] : null;
                       if (!nextScene?.charDialogue) return null;
-                      const nextTone: 'warm' | 'neutral' | 'cold' =
-                        score >= (nextScene.warmThreshold ?? Infinity) ? 'warm'
-                        : score < (nextScene.coldThreshold ?? -Infinity) ? 'cold'
+                      const nextTone: 'warm' | 'neutral' | 'cold' = activeScenarioState
+                        ? getTone(activeScenarioState, nextScene.charName, nextScene)
                         : 'neutral';
                       if (nextTone === 'neutral') return null;
                       const firstName = nextScene.charName.split(' ')[0];
