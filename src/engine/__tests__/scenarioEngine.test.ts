@@ -1,5 +1,5 @@
-import { applyChoice, getTone } from '../scenarioEngine';
-import type { ScenarioState, ScenarioChoice, ScenarioScene } from '../../types';
+import { applyChoice, getTone, resolveNextScene, evaluateEnding, isChoiceVisible } from '../scenarioEngine';
+import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioEnding } from '../../types';
 
 // ─── Shared test fixtures ─────────────────────────────────────────────────────
 
@@ -172,5 +172,150 @@ describe('getTone', () => {
       },
     });
     expect(getTone(state, 'Ahmed', scene)).toBe('neutral');
+  });
+});
+
+// ─── Shared script fixture ────────────────────────────────────────────────────
+
+function makeScript(overrides: Partial<ScenarioScript> = {}): ScenarioScript {
+  return {
+    id: 'test-scenario',
+    title: 'Test Scenario',
+    scenes: [
+      { ...makeScene(), id: 'scene-1', choices: [makeChoice()] },
+      { ...makeScene(), id: 'scene-2', choices: [makeChoice()] },
+      { ...makeScene(), id: 'scene-3', choices: [makeChoice()] },
+    ],
+    endings: [
+      { min: 20, title: 'Exceptional', arabic: 'ممتاز', roman: 'mumtaz', en: 'Exceptional', desc: 'Excellent outcome', color: '#00FF00', type: 'exceptional' },
+      { min: 10, title: 'Good',        arabic: 'جيد',   roman: 'jayid',  en: 'Good',        desc: 'Good outcome',      color: '#FFFF00', type: 'success'     },
+      { min: 0,  title: 'Mixed',       arabic: 'مقبول', roman: 'maqbul', en: 'Mixed',       desc: 'Mixed outcome',     color: '#FFA500', type: 'mixed'       },
+      { min: -99,title: 'Failed',      arabic: 'فشل',   roman: 'fashal', en: 'Failed',      desc: 'Failed outcome',    color: '#FF0000', type: 'failed'      },
+    ],
+    ...overrides,
+  };
+}
+
+// ─── resolveNextScene ─────────────────────────────────────────────────────────
+
+describe('resolveNextScene', () => {
+  it('returns choice.next when the choice specifies an explicit branch', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'scene-1' };
+    const choice = makeChoice({ next: 'scene-3' });
+    const script = makeScript();
+    expect(resolveNextScene(state, choice, script)).toBe('scene-3');
+  });
+
+  it('returns the next scene in order when choice has no next', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'scene-1' };
+    const choice = makeChoice({ next: undefined });
+    const script = makeScript();
+    expect(resolveNextScene(state, choice, script)).toBe('scene-2');
+  });
+
+  it('returns null when on the last scene and choice has no next', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'scene-3' };
+    const choice = makeChoice({ next: undefined });
+    const script = makeScript();
+    expect(resolveNextScene(state, choice, script)).toBeNull();
+  });
+});
+
+// ─── evaluateEnding ───────────────────────────────────────────────────────────
+
+describe('evaluateEnding', () => {
+  it('returns exceptional ending when totalScore is 20+', () => {
+    const state = { ...makeEmptyState(), totalScore: 22 };
+    const ending = evaluateEnding(state, makeScript());
+    expect(ending.type).toBe('exceptional');
+  });
+
+  it('returns success ending when totalScore is 10-19', () => {
+    const state = { ...makeEmptyState(), totalScore: 12 };
+    const ending = evaluateEnding(state, makeScript());
+    expect(ending.type).toBe('success');
+  });
+
+  it('returns mixed ending when totalScore is 0-9', () => {
+    const state = { ...makeEmptyState(), totalScore: 4 };
+    const ending = evaluateEnding(state, makeScript());
+    expect(ending.type).toBe('mixed');
+  });
+
+  it('falls back to last ending when no standard ending matches', () => {
+    const state = { ...makeEmptyState(), totalScore: -50 };
+    const ending = evaluateEnding(state, makeScript());
+    expect(ending.type).toBe('failed');
+  });
+
+  it('returns secret ending when requiredFlags met AND score >= min', () => {
+    const state = {
+      ...makeEmptyState(),
+      totalScore: 25,
+      flags: new Set(['FLAG_A', 'FLAG_B']),
+    };
+    const script = makeScript({
+      endings: [
+        ...makeScript().endings,
+        {
+          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
+          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
+        },
+      ],
+    });
+    const ending = evaluateEnding(state, script);
+    expect(ending.secret).toBe(true);
+    expect(ending.title).toBe('Secret');
+  });
+
+  it('does NOT return secret ending when requiredFlags not all set', () => {
+    const state = {
+      ...makeEmptyState(),
+      totalScore: 25,
+      flags: new Set(['FLAG_A']),
+    };
+    const script = makeScript({
+      endings: [
+        ...makeScript().endings,
+        {
+          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
+          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
+        },
+      ],
+    });
+    const ending = evaluateEnding(state, script);
+    expect(ending.secret).not.toBe(true);
+  });
+
+  it('does NOT return secret ending when score is below secret min', () => {
+    const state = {
+      ...makeEmptyState(),
+      totalScore: 15,
+      flags: new Set(['FLAG_A', 'FLAG_B']),
+    };
+    const script = makeScript({
+      endings: [
+        ...makeScript().endings,
+        {
+          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
+          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
+        },
+      ],
+    });
+    const ending = evaluateEnding(state, script);
+    expect(ending.secret).not.toBe(true);
+  });
+});
+
+// ─── isChoiceVisible ─────────────────────────────────────────────────────────
+
+describe('isChoiceVisible', () => {
+  it('returns true for any choice (all choices visible in current implementation)', () => {
+    const state = makeEmptyState();
+    const choice = makeChoice();
+    expect(isChoiceVisible(choice, state)).toBe(true);
   });
 });

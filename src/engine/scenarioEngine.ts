@@ -2,6 +2,8 @@ import type {
   ScenarioState,
   ScenarioChoice,
   ScenarioScene,
+  ScenarioScript,
+  ScenarioEnding,
   Tone,
   ImpactDelta,
 } from '../types';
@@ -73,4 +75,59 @@ export function getTone(
   if (scene.warmThreshold !== undefined && score >= scene.warmThreshold) return 'warm';
   if (scene.coldThreshold !== undefined && score < scene.coldThreshold) return 'cold';
   return 'neutral';
+}
+
+// ─── resolveNextScene ─────────────────────────────────────────────────────────
+/**
+ * Returns the ID of the next scene to navigate to.
+ * Priority: choice.next (explicit branch) → next scene in script array → null (end of script).
+ */
+export function resolveNextScene(
+  state: ScenarioState,
+  choice: ScenarioChoice,
+  script: ScenarioScript,
+): string | null {
+  if (choice.next) return choice.next;
+  const idx = script.scenes.findIndex(s => s.id === state.currentSceneId);
+  return script.scenes[idx + 1]?.id ?? null;
+}
+
+// ─── evaluateEnding ───────────────────────────────────────────────────────────
+/**
+ * Determines which ending the player earned.
+ * Secret endings are checked first (most restrictive).
+ * Standard endings are checked in descending min-score order.
+ * Falls back to the last ending in the array if nothing matches.
+ */
+export function evaluateEnding(
+  state: ScenarioState,
+  script: ScenarioScript,
+): ScenarioEnding {
+  const score = state.totalScore;
+
+  // Check secret endings first
+  for (const ending of script.endings.filter(e => e.secret)) {
+    const flagsMet = (ending.requiredFlags ?? []).every(f => state.flags.has(f));
+    if (flagsMet && score >= ending.min) return ending;
+  }
+
+  // Standard endings — highest min wins
+  const standard = [...script.endings]
+    .filter(e => !e.secret)
+    .sort((a, b) => b.min - a.min);
+
+  return standard.find(e => score >= e.min) ?? standard[standard.length - 1];
+}
+
+// ─── isChoiceVisible ─────────────────────────────────────────────────────────
+/**
+ * All choices are visible in the current build.
+ * Butterfly effect is expressed through consequences, not by hiding options.
+ * Reserved for flag-gated choices in a future iteration.
+ */
+export function isChoiceVisible(
+  _choice: ScenarioChoice,
+  _state: ScenarioState,
+): boolean {
+  return true;
 }
