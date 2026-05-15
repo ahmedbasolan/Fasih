@@ -9,12 +9,12 @@ export default function ScenarioRoute() {
   const [showPlayer, setShowPlayer] = useState(false);
   
   const user = useAppStore((s) => s.user);
-  const completeScenario = useAppStore((s) => s.completeScenario);
   const addJournalEntry = useAppStore((s) => s.addJournalEntry);
   const checkMilestones = useAppStore((s) => s.checkMilestones);
 
-  const handleComplete = (scenarioId: string, endingType: string) => {
-    completeScenario(scenarioId, endingType);
+  const handleComplete = (_scenarioId: string, _endingType: string) => {
+    // finalizeScenario (called inside ScenarioPlayer) already wrote completedScenarios.
+    // We only need to check milestones and dismiss the player here.
     checkMilestones();
     setShowPlayer(false);
   };

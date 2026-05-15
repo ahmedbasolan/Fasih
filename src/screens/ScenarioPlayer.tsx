@@ -249,11 +249,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const choiceTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phraseTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup timers on unmount
+  // Cleanup timers and active run on unmount
   useEffect(() => {
     return () => {
       if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
       if (phraseTtsTimerRef.current) clearTimeout(phraseTtsTimerRef.current);
+      // Clear any in-progress run so the store doesn't carry stale state
+      useAppStore.getState().abandonScenario();
     };
   }, []);
 
