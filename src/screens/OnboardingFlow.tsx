@@ -14,11 +14,14 @@ import { GeoPattern } from '../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../components/features/RoleGoalIcons';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
+import { useArabicTTS } from '../hooks/useArabicTTS';
 import { KafMascot } from '../components/features/KafMascot';
 import { STRINGS } from '../constants/strings';
 import { FadeIn, ShimmerButton, SwitchButton, GhostLetters } from '../components/ui';
 import type { UserProfile } from '../types';
 import { useAppStore } from '../store/useAppStore';
+import { OnboardingScenarioPlayer } from '../components/onboarding/OnboardingScenarioPlayer';
+import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -124,7 +127,8 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 
 export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props) {
   const { C, G, isDark } = useTheme();
-  const { setTheme } = useAppStore();
+  const { setTheme, unlockPhrase, user } = useAppStore();
+  const { speak } = useArabicTTS();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -135,10 +139,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdComplete, setHoldComplete] = useState(false);
+  const [phraseRevealed, setPhraseRevealed] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
   
-  const TOTAL = 11; // 0-9 onboarding steps + 10 auth step
+  const TOTAL = 12; // 0-9 onboarding steps + 10 scenario step + 11 paywall step
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
@@ -196,6 +201,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
   }, [step, name, holdComplete, next]);
+
+  useEffect(() => {
+    setPhraseRevealed(false);
+  }, [step]);
 
   // -- Swipe Gesture Logic (Memoized) --
   const composedGesture = useMemo(() => {
@@ -1004,8 +1013,95 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 8: Paywall — features
+      // Step 8: Your first Arabic phrase quick win
       case 8:
+        return (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
+            {/* Mascot at top */}
+            <Image
+              source={require('../../assets/images/foxy_male.png')}
+              style={{ width: 80, height: 80, marginBottom: 24 }}
+              resizeMode="contain"
+            />
+
+            <Text style={{
+              fontFamily: FONT_LATIN_SEMI,
+              fontSize: 13,
+              color: C.TEXT2,
+              textAlign: 'center',
+              marginBottom: 8,
+            }}>
+              Your first Gulf Arabic phrase:
+            </Text>
+
+            <Text style={{
+              fontFamily: FONT_ARABIC,
+              fontSize: 42,
+              color: C.PRIMARY,
+              textAlign: 'center',
+              direction: 'rtl',
+              marginBottom: 6,
+            }}>
+              مرحبا
+            </Text>
+
+            <Text style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 14,
+              color: C.TEXT2,
+              marginBottom: 4,
+            }}>
+              mar-haba
+            </Text>
+
+            {!phraseRevealed ? (
+              <Pressable
+                onPress={() => {
+                  setPhraseRevealed(true);
+                  speak('مرحبا');
+                }}
+                style={{
+                  marginTop: 20,
+                  paddingHorizontal: 28,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: C.PRIMARY,
+                }}
+              >
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+                  Tap to hear it 🔊
+                </Text>
+              </Pressable>
+            ) : (
+              <MotiView
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                style={{ alignItems: 'center', marginTop: 16 }}
+              >
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: 24 }}>
+                  Welcome – you just said it. ✨
+                </Text>
+                <Pressable
+                  onPress={next}
+                  style={{
+                    paddingHorizontal: 28,
+                    paddingVertical: 14,
+                    borderRadius: 16,
+                    backgroundColor: C.PRIMARY,
+                  }}
+                >
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+                    Continue →
+                  </Text>
+                </Pressable>
+              </MotiView>
+            )}
+          </View>
+        );
+
+      // Step 9: Everything included — features
+      case 9:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1072,8 +1168,32 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 9: Paywall — plans
-      case 9:
+      // Step 10: Onboarding Scenario — Café
+      case 10: {
+        const onboardingScenario = getOnboardingScenario(C);
+        // Use the local mode state — user hasn't been saved to the store yet at this step
+        const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
+
+        if (!script) {
+          return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>;
+        }
+
+        return (
+          <OnboardingScenarioPlayer
+            script={script}
+            onComplete={(unlockedPhraseIds) => {
+              // Store unlocked phrases in app store
+              unlockedPhraseIds.forEach((phraseId) => {
+                unlockPhrase(phraseId);
+              });
+              next();
+            }}
+          />
+        );
+      }
+
+      // Step 11: Paywall — plans
+      case 11:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1188,40 +1308,6 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 10: Auth / Sign Up (Final step for new users)
-      case 10:
-        return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
-              <FadeIn delay={100}>
-                <KafMascot size="lg" animate mood="happy" />
-              </FadeIn>
-
-              <FadeIn delay={200}>
-                <View style={{ alignItems: 'center', gap: 8 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 26, color: C.TEXT, textAlign: 'center' }}>Create your account</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>Save your progress and sync across devices</Text>
-                </View>
-              </FadeIn>
-
-              <FadeIn delay={300} style={{ width: '100%', gap: 12 }}>
-                <ShimmerButton onPress={() => router.push('/sign-up')} Icon={ArrowRight}>
-                  Sign Up
-                </ShimmerButton>
-                <Pressable onPress={() => router.push('/sign-in')} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Already have an account? <Text style={{ color: C.PRIMARY }}>Sign In</Text></Text>
-                </Pressable>
-              </FadeIn>
-            </View>
-
-            <FadeIn delay={400}>
-              <Pressable onPress={finish} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3 }}>Continue as guest</Text>
-              </Pressable>
-            </FadeIn>
-          </View>
-        );
-
       default:
         return null;
     }
@@ -1231,7 +1317,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     <GestureDetector gesture={composedGesture}>
       <View style={{ flex: 1, backgroundColor: C.BG }}>
         <GhostLetters glyphs={['ب', 'د', 'أ']} />
-        {step > 0 && step < 10 && <ProgressBar step={step} total={10} />}
+        {step > 0 && step < 11 && <ProgressBar step={step} total={11} />}
         
         <AnimatePresence>
           {step > 0 && (

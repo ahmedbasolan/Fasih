@@ -162,6 +162,21 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   },
 ];
 
+export const getOnboardingScenarios = (C: ThemeColors): Scenario[] => [
+  {
+    id: 'onboarding-cafe', iconName: 'Coffee',
+    title: 'Welcome to the Café', subtitle: 'Your first interaction in Gulf Arabic',
+    decisions: 4, endings: 2, phrases: '5+', level: 'Beginner', locked: false,
+    color: C.GOLD, gradientColors: ['#1A1408', '#0D0A05'],
+    arabicScene: 'مقهى',
+    kafIntro: 'Your first Arabic moment. Simple, welcoming, and full of cultural warmth.',
+    mode: 'social',
+    isOnboarding: true,
+    dialect: 'Emirati Gulf',
+    impactPreview: { trust: 75, respect: 65, culture: 80 },
+  },
+];
+
 export const getAllScenarios = (C: ThemeColors) => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)];
 
 export function getScenarioById(id: string, C: ThemeColors): Scenario | undefined {
@@ -170,6 +185,10 @@ export function getScenarioById(id: string, C: ThemeColors): Scenario | undefine
 
 export function getFeaturedScenario(C: ThemeColors): Scenario {
   return getCareerScenarios(C)[0];
+}
+
+export function getOnboardingScenario(C: ThemeColors): Scenario | undefined {
+  return getOnboardingScenarios(C)[0];
 }
 
 // ─── Scenario scripts (dialogue trees) ───────────────────────────────────────
@@ -1140,8 +1159,135 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
   },
+
+  // ── ONBOARDING: CAFÉ (Career Mode) ────────────────────────────────────────
+  'onboarding-cafe-career': {
+    id: 'onboarding-cafe-career',
+    title: 'Welcome to the Café',
+    subtitle: 'Your first interaction in Gulf Arabic',
+    kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
+    iconName: 'coffee',
+    difficulty: 'Beginner',
+    estimatedMinutes: 5,
+    phrasesUnlocked: ['e_new1'],
+    scenes: [
+      {
+        id: 'c1', charName: 'Layla', charGender: 'female', setting: 'Small café — morning',
+        arabic: 'صباح الخير! شنو تاخذ؟',
+        roman: 'sabaah il-khair! shnu taakhidh?',
+        english: 'Good morning! What can I get you?',
+        teachingNote: 'Layla uses "شنو" (shnu) — the Khaleeji way to ask "what". Standard Arabic uses "ماذا" (matha).',
+        choices: [
+          { id: 'a', text: 'Good morning! Coffee, please', arabic: 'صباح الخير! قهوة من فضلك', roman: 'sabaah il-khair! gahwa min fadlich', score: 8, impact: { trust: 2, respect: 2, culture: 3 }, note: 'Layla smiles warmly. You used "min fadlich" — the feminine form of "please" when speaking to a woman. She starts making your coffee with care.', outcome: 'excellent', next: 'c2' },
+          { id: 'b', text: 'Good morning! Just coffee', arabic: 'صباح الخير! قهوة بس', roman: 'sabaah il-khair! gahwa bass', score: 5, impact: { trust: 1, respect: 1, culture: 1 }, note: 'Layla nods and starts preparing your coffee. You used Arabic, which she appreciates.', outcome: 'good', next: 'c2' },
+          { id: 'c', text: 'Coffee, please', arabic: 'قهوة من فضلك', roman: 'gahwa min fadlich', score: 6, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Direct and polite. "min fadlich" — the feminine form — shows Layla you paid attention.', outcome: 'good', next: 'c2' },
+          { id: 'd', text: 'One coffee', arabic: 'قهوة', roman: 'gahwa', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: 'Brief. Layla makes your coffee without much reaction.', outcome: 'neutral', next: 'c2' },
+        ],
+      },
+      {
+        id: 'c2', charName: 'Layla', charGender: 'female', setting: 'Café counter',
+        arabic: 'هاك، صحتين وعافية! إن شاء الله تستمتع',
+        roman: 'haak, sahtain w-\'aafya! in shaa\' allaah tastamti\'',
+        english: 'Here you go, double health and wellness! God willing, enjoy it',
+        teachingNote: '"صحتين وعافية" is the Arabic way to say "bon appétit" — literally "double health and wellness". It is always said.',
+        choices: [
+          { id: 'a', text: 'Thank you so much!', arabic: 'مشكورة يا ليلى!', roman: 'mashkura ya layla!', score: 7, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Layla\'s face lights up. You used "مشكورة" (the female form) — the Khaleeji thank you — and called her by her name. You\'ve made a real human connection.', outcome: 'excellent' },
+          { id: 'b', text: 'Thank you!', arabic: 'شكراً!', roman: 'shukran!', score: 4, impact: { trust: 1, respect: 1, culture: 1 }, note: 'A simple thank you. Layla gives a friendly smile.', outcome: 'good' },
+          { id: 'c', text: '(Nod and take the coffee)', arabic: '—', roman: '(Silent nod)', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'Layla hands you the coffee with a polite smile, but the moment of connection passes.', outcome: 'neutral' },
+        ],
+      },
+    ],
+    endings: [
+      {
+        min: 12, title: 'You\'ve Got a Café Friend', arabic: 'صارت لك جارة مقهى', roman: 'sarat lak jarat miqha',
+        en: 'You\'ve got a café friend',
+        desc: 'Layla will remember you. Every time you come in, she\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: ['You opened with a proper greeting', 'You used "min fadlich" — the feminine form of "please" for a female barista', 'You used "mashkura" — the feminine form of thanks because Layla is female'],
+      },
+      {
+        min: 6, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawwalif hilwa',
+        en: 'Nice conversation',
+        desc: 'You ordered in Arabic, Layla appreciated the effort. Next time you come in, she\'ll say hello and might chat for a moment.',
+        color: C.JADE2, type: 'success',
+        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
+      },
+      {
+        min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
+        en: 'All done',
+        desc: 'You got your coffee. Layla was professional. Next time you come in, it will be a similar interaction.',
+        color: C.VIOLET2, type: 'mixed',
+        culturalJourney: ['You communicated what you needed'],
+      },
+    ],
+  },
+
+  // ── ONBOARDING: CAFÉ (Social Mode) ────────────────────────────────────────
+  'onboarding-cafe-social': {
+    id: 'onboarding-cafe-social',
+    title: 'Welcome to the Café',
+    subtitle: 'Your first interaction in Gulf Arabic',
+    kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
+    iconName: 'coffee',
+    difficulty: 'Beginner',
+    estimatedMinutes: 5,
+    phrasesUnlocked: ['e_new1'],
+    scenes: [
+      {
+        id: 'c1', charName: 'Omar', charGender: 'male', setting: 'Small café — morning',
+        arabic: 'صباح الخير! شنو تاخذ؟',
+        roman: 'sabaah il-khair! shnu taakhidh?',
+        english: 'Good morning! What can I get you?',
+        teachingNote: 'Omar uses "شنو" (shnu) — the Khaleeji way to ask "what". Standard Arabic uses "ماذا" (matha).',
+        choices: [
+          { id: 'a', text: 'Good morning! Coffee, please', arabic: 'صباح الخير! قهوة من فضلك', roman: 'sabaah il-khair! gahwa min fadlak', score: 8, impact: { trust: 2, respect: 2, culture: 3 }, note: 'Omar smiles warmly. You used the perfect phrase — "min fadlak" is the respectful Khaleeji way to ask. He starts making your coffee with care.', outcome: 'excellent', next: 'c2' },
+          { id: 'b', text: 'Good morning! Just coffee', arabic: 'صباح الخير! قهوة بس', roman: 'sabaah il-khair! gahwa bass', score: 5, impact: { trust: 1, respect: 1, culture: 1 }, note: 'Omar nods and starts preparing your coffee. You used Arabic, which he appreciates.', outcome: 'good', next: 'c2' },
+          { id: 'c', text: 'Coffee, please', arabic: 'قهوة من فضلك', roman: 'gahwa min fadlak', score: 6, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Direct and polite. Omar knows exactly what you want.', outcome: 'good', next: 'c2' },
+          { id: 'd', text: 'One coffee', arabic: 'قهوة', roman: 'gahwa', score: 2, impact: { trust: 0, respect: 0, culture: 0 }, note: 'Brief. Omar makes your coffee without much reaction.', outcome: 'neutral', next: 'c2' },
+        ],
+      },
+      {
+        id: 'c2', charName: 'Omar', charGender: 'male', setting: 'Café counter',
+        arabic: 'هاك، صحتين وعافية! إن شاء الله تستمتع',
+        roman: 'haak, sahtain w-\'aafya! in shaa\' allaah tastamti\'',
+        english: 'Here you go, double health and wellness! God willing, enjoy it',
+        teachingNote: '"صحتين وعافية" is the Arabic way to say "bon appétit" — literally "double health and wellness". It is always said.',
+        choices: [
+          { id: 'a', text: 'Thank you so much!', arabic: 'مشكور يا عمر!', roman: 'mashkur ya omar!', score: 7, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Omar\'s face lights up. You used "مشكور" (the male form) — the Khaleeji thank you — and called him by his name. You\'ve made a real human connection.', outcome: 'excellent' },
+          { id: 'b', text: 'Thank you!', arabic: 'شكراً!', roman: 'shukran!', score: 4, impact: { trust: 1, respect: 1, culture: 1 }, note: 'A simple thank you. Omar gives a friendly smile.', outcome: 'good' },
+          { id: 'c', text: '(Nod and take the coffee)', arabic: '—', roman: '(Silent nod)', score: 1, impact: { trust: 0, respect: 0, culture: 0 }, note: 'Omar hands you the coffee with a polite smile, but the moment of connection passes.', outcome: 'neutral' },
+        ],
+      },
+    ],
+    endings: [
+      {
+        min: 12, title: 'You\'ve Got a Café Friend', arabic: 'صارت لك جار مقهى', roman: 'sarat lak jar miqha',
+        en: 'You\'ve got a café friend',
+        desc: 'Omar will remember you. Every time you come in, he\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
+        color: C.GOLD, type: 'exceptional',
+        culturalJourney: ['You opened with a proper greeting', 'You used "min fadlak" — the respectful Khaleeji phrase', 'You used the masculine form of thanks because Omar is male'],
+      },
+      {
+        min: 6, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawwalif hilwa',
+        en: 'Nice conversation',
+        desc: 'You ordered in Arabic, Omar appreciated the effort. Next time you come in, he\'ll say hello and might chat for a moment.',
+        color: C.JADE2, type: 'success',
+        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
+      },
+      {
+        min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
+        en: 'All done',
+        desc: 'You got your coffee. Omar was professional. Next time you come in, it will be a similar interaction.',
+        color: C.VIOLET2, type: 'mixed',
+        culturalJourney: ['You communicated what you needed'],
+      },
+    ],
+  },
 });
 
-export function getScenarioScript(id: string, C: ThemeColors): ScenarioScript | undefined {
+export function getScenarioScript(id: string, C: ThemeColors, mode?: 'career' | 'social'): ScenarioScript | undefined {
+  if (id === 'onboarding-cafe' && mode) {
+    return getScenarioScripts(C)[`${id}-${mode}`];
+  }
   return getScenarioScripts(C)[id];
 }
