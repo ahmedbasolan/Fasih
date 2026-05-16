@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ export function CommunityBar({
 
   const avatarColors = [C.PRIMARY, C.TERTIARY, C.JADE];
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -71,7 +71,7 @@ export function CommunityBar({
       fontFamily: FONT_LATIN_SEMI,
       fontWeight: '700',
     },
-  });
+  }), [C, avatarColors]);
 
   return (
     <View style={styles.container}>

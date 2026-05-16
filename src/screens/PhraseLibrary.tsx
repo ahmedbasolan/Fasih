@@ -50,6 +50,7 @@ export function PhraseLibrary() {
   const insets = useSafeAreaInsets();
   const savedPhrases = useAppStore((s) => s.savedPhrases);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
+  const isPhraseUnlocked = useAppStore((s) => s.isPhraseUnlocked);
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
   const DIFFICULTY_COLORS = useMemo(() => getDifficultyColors(C), [C]);
   const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
@@ -118,6 +119,7 @@ export function PhraseLibrary() {
     const isExpanded = expanded === p.id;
     const isPlaying = playingId === p.id;
     const isSaved = savedPhrases.includes(p.id);
+    const isUnlocked = isPhraseUnlocked(p.id);
     const color = CATEGORY_COLORS[p.category] || C.PRIMARY;
 
     return (
@@ -181,6 +183,13 @@ export function PhraseLibrary() {
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.playSlowly}</Text>
             </Pressable>
 
+            {isUnlocked && (
+              <View style={{ borderRadius: 12, padding: 10, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={14} color={C.PRIMARY} />
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>From your first scenario</Text>
+              </View>
+            )}
+
             {p.pronTip && (
               <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.CATEGORY_LAVENDER, marginBottom: 8 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.PRIMARY, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{STRINGS.phrases.pronunciation}</Text>
@@ -213,7 +222,7 @@ export function PhraseLibrary() {
         )}
       </Pressable>
     );
-  }, [expanded, playingId, savedPhrases, CATEGORY_COLORS, DIFFICULTY_COLORS, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
+  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, CATEGORY_COLORS, DIFFICULTY_COLORS, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
 
   // ── Category grid header component ──
   const CategoryGridHeader = useMemo(() => (

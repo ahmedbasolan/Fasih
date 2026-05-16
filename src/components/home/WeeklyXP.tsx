@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ export function WeeklyXP({
   const { C } = useTheme();
   const maxValue = Math.max(...days.map((d) => d.value), 1);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -157,7 +157,7 @@ export function WeeklyXP({
       color: C.TEXT,
       fontWeight: '700',
     },
-  });
+  }), [C]);
 
   const hasData = days && days.length > 0;
 
