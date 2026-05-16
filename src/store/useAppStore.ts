@@ -29,6 +29,12 @@ import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
 
+// ─── Journal ID counter ───────────────────────────────────────────────────────
+// Guards against ID collisions when addJournalEntry is called multiple times
+// within the same millisecond (e.g., scenario completion fires several callbacks).
+let _journalIdCounter = 0;
+const nextJournalId = () => `j-${Date.now()}-${++_journalIdCounter}`;
+
 // ─── Debounced cloud sync ─────────────────────────────────────────────────────
 // Batches rapid mutations (e.g., reviewing several phrases) into a single push.
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -40,7 +46,12 @@ function scheduleSync(fn: () => void, delayMs = 1500) {
 
 // ─── Spaced repetition helpers ───────────────────────────────────────────────
 function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  // Use local date components so streak matches the user's clock, not UTC
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function addDays(iso: string, days: number): string {
@@ -209,6 +220,11 @@ interface AppState {
   recordPhraseReview: (phraseId: string, correct: boolean) => void;
   // 3-tier flashcard rating — maps directly to SRS intervals (1 / 3 / 7 days)
   recordPhraseRating: (phraseId: string, rating: 'new' | 'learning' | 'knew') => void;
+  /**
+   * @deprecated Use finalizeScenario() instead. This action is superseded by
+   * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
+   * Will be removed in a future cleanup.
+   */
   completeScenario: (scenarioId: string, endingType: string) => void;
   recordSceneProgress: (scenarioId: string, sceneIndex: number) => void;
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date'>) => void;
@@ -554,6 +570,11 @@ export const useAppStore = create<AppState>()(
         scheduleSync(() => get().syncToCloud());
       },
 
+      /**
+       * @deprecated Use finalizeScenario() instead. This action is superseded by
+       * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
+       * Will be removed in a future cleanup.
+       */
       completeScenario: (scenarioId, endingType) => {
         set((s) => {
           const completed = { ...s.completedScenarios, [scenarioId]: { endingType, date: new Date().toISOString() } };
@@ -602,7 +623,7 @@ export const useAppStore = create<AppState>()(
 
       addJournalEntry: (entry) => set((s) => ({
         journal: [
-          { ...entry, id: `j-${Date.now()}`, date: todayISO() },
+          { ...entry, id: nextJournalId(), date: todayISO() },
           ...s.journal,
         ].slice(0, 100), // keep last 100
       })),
