@@ -7,6 +7,7 @@ import {
   Image,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
+import { IMAGES } from '../../constants/images';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from 'lucide-react-native';
@@ -209,7 +210,7 @@ export function MissionCard({
         <View style={styles.contentArea}>
           {/* Mascot Image */}
           <Image
-            source={require('../../../assets/images/foxy_male.png')}
+            source={IMAGES.foxyMale}
             style={styles.foxImage}
             resizeMode="contain"
           />
