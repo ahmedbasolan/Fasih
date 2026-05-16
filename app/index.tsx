@@ -17,28 +17,39 @@ export default function Index() {
   const setSupabaseUserId = useAppStore((s) => s.setSupabaseUserId);
 
   useEffect(() => {
-    if (!hydrated) return;
+    void (async () => {
+      if (!hydrated) return;
 
-    if (isAuthenticated) {
-      // Signed in users: onboarding -> home (if completed) or onboarding -> finish
-      if (!hasOnboarded) {
-        router.replace('/onboarding');
+      if (isAuthenticated) {
+        // Signed in users: onboarding -> home (if completed) or onboarding -> finish
+        if (!hasOnboarded) {
+          router.replace('/onboarding');
+        } else {
+          // Verify the stored session is still valid before routing to protected tabs.
+          // If it's expired, reset auth and send to sign-in instead of tabs.
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            setAuthenticated(false);
+            setSupabaseUserId(null);
+            router.replace('/sign-in');
+            return;
+          }
+          recordDailyActivity();
+          checkMilestones();
+          router.replace('/(tabs)');
+        }
       } else {
-        recordDailyActivity();
-        checkMilestones();
-        router.replace('/(tabs)');
+        // Not signed in: check if they've onboarded before (returning user)
+        const hasCompletedOnboardingBefore = hasOnboarded;
+        if (hasCompletedOnboardingBefore) {
+          // Returning user who completed onboarding but not signed in
+          router.replace('/sign-in');
+        } else {
+          // New user: start with onboarding, sign up comes at the end
+          router.replace('/onboarding');
+        }
       }
-    } else {
-      // Not signed in: check if they've onboarded before (returning user)
-      const hasCompletedOnboardingBefore = hasOnboarded;
-      if (hasCompletedOnboardingBefore) {
-        // Returning user who completed onboarding but not signed in
-        router.replace('/sign-in');
-      } else {
-        // New user: start with onboarding, sign up comes at the end
-        router.replace('/onboarding');
-      }
-    }
+    })();
   }, [hydrated, isAuthenticated, hasOnboarded]);
 
   useEffect(() => {
