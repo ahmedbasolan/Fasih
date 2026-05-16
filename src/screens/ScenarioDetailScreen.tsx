@@ -10,6 +10,7 @@ import { GhostLetters } from '../components/ui';
 import { HeroSceneBg } from '../components/features/SceneIllustrations';
 import { getScenarioById, getScenarioScript } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Props {
   scenarioId: string;
@@ -25,7 +26,9 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const scenario = getScenarioById(scenarioId, C);
   const script = getScenarioScript(scenarioId, C);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
+  const sceneProgress = useAppStore((s) => s.sceneProgress);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
+  const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
 
   if (!scenario || !script) return null;
 
@@ -65,7 +68,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               {scenario.title}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              By Ahmed Al-Maktoum
+              By Fasih Team
             </Text>
           </View>
         </View>
@@ -99,51 +102,58 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
 
           {/* Scenes List */}
           <View style={{ gap: 16 }}>
-            {script.scenes.map((scene, index) => {
-              const isLocked = index > 0 && !isCompleted; // Simple logic: only first scene unlocked if not completed
-              return (
-                <Pressable
-                  key={scene.id}
-                  onPress={() => !isLocked && onSceneSelect(index)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: C.SURFACE,
-                    borderRadius: 24,
-                    padding: 16,
-                    borderWidth: 1,
-                    borderColor: C.BORDER,
-                  }}
-                >
-                  <View style={{ 
-                    width: 56, 
-                    height: 56, 
-                    borderRadius: 16, 
-                    backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : 'rgba(2,185,134,0.12)',
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    marginRight: 16
-                  }}>
-                    {isLocked ? (
-                      <Lock size={20} color={C.TEXT3} />
-                    ) : (
-                      <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
-                    )}
-                  </View>
-                  
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
-                      Scene {String(index + 1).padStart(2, '0')}
-                    </Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
-                      {scene.setting}
-                    </Text>
-                  </View>
+            {script.scenes.length === 0 ? (
+              <EmptyState
+                arabic="لا يوجد"
+                title="No scenes available"
+                subtitle="This scenario doesn't have any content yet"
+              />
+            ) : (
+              script.scenes.map((scene, index) => {
+                const isLocked = index > scenesUnlocked && !isCompleted;
+                return (
+                  <Pressable
+                    key={scene.id}
+                    onPress={() => !isLocked && onSceneSelect(index)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: C.SURFACE,
+                      borderRadius: 24,
+                      padding: 16,
+                      borderWidth: 1,
+                      borderColor: C.BORDER,
+                    }}
+                  >
+                    <View style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 16,
+                      backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : 'rgba(2,185,134,0.12)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 16
+                    }}>
+                      {isLocked ? (
+                        <Lock size={20} color={C.TEXT3} />
+                      ) : (
+                        <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
+                      )}
+                    </View>
 
-                  {isLocked && <Lock size={18} color={C.TEXT3} />}
-                </Pressable>
-              );
-            })}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
+                        Scene {String(index + 1).padStart(2, '0')}
+                      </Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
+                        {scene.setting}
+                      </Text>
+                    </View>
+
+                  </Pressable>
+                );
+              })
+            )}
           </View>
         </View>
       </ScrollView>
