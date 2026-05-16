@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
@@ -29,7 +30,7 @@ export function MissionCard({
 
   const progressPercent = (scenesCurrent / scenesTotal) * 100;
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     container: {
       borderRadius: 20,
       overflow: 'hidden',
@@ -71,9 +72,10 @@ export function MissionCard({
     contentArea: {
       padding: 14,
     },
-    foxEmoji: {
-      fontSize: 40,
-      textAlign: 'center',
+    foxImage: {
+      width: 48,
+      height: 48,
+      alignSelf: 'center',
       marginBottom: 8,
     },
     tagRow: {
@@ -149,7 +151,7 @@ export function MissionCard({
       color: C.BG,
       fontWeight: '700',
     },
-  });
+  }), [C]);
 
   return (
     <MotiView
@@ -205,13 +207,21 @@ export function MissionCard({
 
         {/* Content Area */}
         <View style={styles.contentArea}>
-          {/* Fox Emoji */}
-          <Text style={styles.foxEmoji}>🦊</Text>
+          {/* Mascot Image */}
+          <Image
+            source={require('../../../assets/images/foxy_male.png')}
+            style={styles.foxImage}
+            resizeMode="contain"
+          />
 
           {/* Tag + Timer Row */}
           <View style={styles.tagRow}>
             <View style={styles.sceneTag}>
-              <Text style={styles.sceneTagText}>Scenario</Text>
+              <Text style={styles.sceneTagText}>
+                {scenesCurrent > 0
+                  ? `Scene ${scenesCurrent} of ${scenesTotal}`
+                  : `${scenesTotal} scenes`}
+              </Text>
             </View>
             <Text style={styles.timerLabel}>⏱ ~5 min</Text>
           </View>

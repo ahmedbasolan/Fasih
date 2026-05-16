@@ -56,12 +56,12 @@ const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
 // ─── Random motivational headings ───────────────────────────────────────────
 
 const MOTIVATIONAL_HEADINGS = [
-  { text: 'Ready To Learn?', sub: 'Choose your subject.', icon: Sparkles },
-  { text: 'Level Up Today!', sub: 'New phrases await.', icon: Zap },
-  { text: 'Your Next Adventure', sub: 'Pick a scenario.', icon: Rocket },
-  { text: 'Master Gulf Arabic', sub: 'One phrase at a time.', icon: Target },
-  { text: 'Time to Shine', sub: 'Practice makes perfect.', icon: Sparkles },
-  { text: 'Unlock New Skills', sub: 'Dive into scenarios.', icon: Zap },
+  { text: 'Gulf Arabic', sub: 'Choose a real situation.', icon: Sparkles },
+  { text: 'Build Confidence', sub: 'One scenario at a time.', icon: Target },
+  { text: 'Your Next Situation', sub: 'Practice Gulf Arabic.', icon: Rocket },
+  { text: 'Real Conversations', sub: 'Cultural fluency awaits.', icon: Zap },
+  { text: 'Master the Dialect', sub: 'Start where you are.', icon: Sparkles },
+  { text: 'Practice Today', sub: 'A few minutes is enough.', icon: Target },
 ];
 
 // Fun facts about Arabic/Gulf culture - all under 15 words
