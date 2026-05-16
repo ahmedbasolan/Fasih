@@ -13,6 +13,7 @@ import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { PhraseBuilder } from '../components/features/PhraseBuilder';
 import { GhostLetters } from '../components/ui';
+import { EmptyState } from '../components/ui/EmptyState';
 import type { Phrase } from '../types';
 
 
@@ -413,6 +414,18 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;
+
+  if (mode !== 'menu' && (!deck || deck.length === 0)) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.BG, justifyContent: 'center' }}>
+        <EmptyState
+          arabic="لا يوجد"
+          title="No phrases to practice"
+          subtitle="Add phrases to your library first"
+        />
+      </View>
+    );
+  }
 
   // Dynamic header title
   const headerTitle =
