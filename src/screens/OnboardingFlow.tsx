@@ -22,6 +22,7 @@ import type { UserProfile } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios';
+import { IMAGES } from '../constants/images';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -282,10 +283,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 </FadeIn>
 
                 <FadeIn delay={200}>
-                  <Image source={require('../../assets/images/foxy_male.png')} style={{ width: 130, height: 130 }} resizeMode="contain" />
+                  <Image source={IMAGES.foxyMale} style={{ width: 130, height: 130 }} resizeMode="contain" />
                 </FadeIn>
                 <FadeIn delay={280}>
-                  <Image source={require('../../assets/images/foxy_girl.png')} style={{ width: 130, height: 130 }} resizeMode="contain" />
+                  <Image source={IMAGES.foxyFemale} style={{ width: 130, height: 130 }} resizeMode="contain" />
                 </FadeIn>
               </View>
             </LinearGradient>
@@ -342,8 +343,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
             <View style={{ flex: 1, paddingHorizontal: 24, gap: 16 }}>
               {[
-                { id: 'career' as const, image: require('../../assets/images/career_mode.png'), Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.GOLD },
-                { id: 'social' as const, image: require('../../assets/images/social_mode.png'), Icon: Users, title: STRINGS.onboarding.socialMode, sub: STRINGS.onboarding.socialSub, desc: STRINGS.onboarding.socialDesc, color: C.VIOLET2 },
+                { id: 'career' as const, image: IMAGES.careerMode, Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.GOLD },
+                { id: 'social' as const, image: IMAGES.socialMode, Icon: Users, title: STRINGS.onboarding.socialMode, sub: STRINGS.onboarding.socialSub, desc: STRINGS.onboarding.socialDesc, color: C.VIOLET2 },
               ].map(({ id, image, Icon, title, sub, desc, color }, idx) => {
                 const selected = mode === id;
                 return (
@@ -1019,7 +1020,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
             <Image
-              source={require('../../assets/images/foxy_male.png')}
+              source={IMAGES.foxyMale}
               style={{ width: 80, height: 80, marginBottom: 24 }}
               resizeMode="contain"
             />

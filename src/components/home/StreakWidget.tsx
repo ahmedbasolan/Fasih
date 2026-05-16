@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
+import { IMAGES } from '../../constants/images';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -56,9 +57,7 @@ export function StreakWidget({
     }
   }, [mood, screenW, confetti.length]);
 
-  const mascotSource = mood === 'excited'
-    ? require('../../../assets/images/foxy_male_waving.png')
-    : require('../../../assets/images/foxy_male.png');
+  const mascotSource = mood === 'excited' ? IMAGES.foxyMaleWaving : IMAGES.foxyMale;
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
