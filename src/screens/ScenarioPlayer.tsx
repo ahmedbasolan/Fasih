@@ -249,13 +249,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const choiceTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phraseTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup timers and active run on unmount
+  // Cleanup timers on unmount (abandonScenario is NOT called here — the OS can
+  // unmount/remount this component during background/foreground cycles, which
+  // would silently destroy mid-game progress. Call it explicitly in onExit instead.)
   useEffect(() => {
     return () => {
       if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
       if (phraseTtsTimerRef.current) clearTimeout(phraseTtsTimerRef.current);
-      // Clear any in-progress run so the store doesn't carry stale state
-      useAppStore.getState().abandonScenario();
     };
   }, []);
 
@@ -405,17 +405,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
     // Handle explicit branch from most recent choice
     if (lastResolvedNextSceneId) {
-      const targetIndex = scenes.findIndex(s => s.id === lastResolvedNextSceneId);
+      const branchId = lastResolvedNextSceneId;
+      const targetIndex = scenes.findIndex(s => s.id === branchId);
+      setLastResolvedNextSceneId(null); // always clear, whether branch found or not
       if (targetIndex !== -1) {
-        advanceScenarioScene(lastResolvedNextSceneId);
+        advanceScenarioScene(branchId);
         setStep(targetIndex);
-        setLastResolvedNextSceneId(null);
         setPhase('scene');
         return;
       }
+      // targetIndex === -1: bad script data, fall through to linear progression
     }
-
-    setLastResolvedNextSceneId(null);
     const nextStep = step + 1;
 
     // Check bonus scene eligibility for secret ending
@@ -538,7 +538,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             </View>
           </View>
           <Pressable
-            onPress={onExit}
+            onPress={() => {
+              useAppStore.getState().abandonScenario();
+              onExit();
+            }}
             accessibilityRole="button"
             accessibilityLabel="Exit scenario"
             style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
@@ -718,7 +721,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           >
             <View style={{ gap: 20, paddingTop: 10 }}>
               {(() => {
-                const choice = scene.choices.find(c => c.id === selectedChoiceId)!;
+                const choice = scene.choices.find(c => c.id === selectedChoiceId);
+                if (!choice) return null;
                 const color = outcomeColor[choice.outcome];
                 return (
                   <>
