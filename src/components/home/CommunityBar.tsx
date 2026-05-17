@@ -71,7 +71,7 @@ export function CommunityBar({
       fontFamily: FONT_LATIN_SEMI,
       fontWeight: '700',
     },
-  }), [C, avatarColors]);
+  }), [C]);
 
   return (
     <View style={styles.container}>

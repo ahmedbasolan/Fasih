@@ -68,6 +68,8 @@ export function ShimmerButton({
       false,
     );
     return () => cancelAnimation(tx);
+    // tx is a stable Reanimated shared value — intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dims.w, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
