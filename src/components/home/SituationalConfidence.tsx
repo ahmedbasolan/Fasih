@@ -111,7 +111,6 @@ export function SituationalConfidence({
 }: SituationalConfidenceProps) {
   const { C } = useTheme();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
-  const phraseReviews      = useAppStore((s) => s.phraseReviews);
   const stats              = useAppStore((s) => s.stats);
 
   const situations = useMemo<SituationResult[]>(() => {
@@ -158,7 +157,7 @@ export function SituationalConfidence({
         scenariosCompleted,
       };
     });
-  }, [completedScenarios, phraseReviews, stats.categoryMastery]);
+  }, [completedScenarios, stats.categoryMastery]);
 
   const sorted = useMemo(() => {
     return [...situations].sort((a, b) => {

@@ -410,7 +410,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       if (mode === 'reverse-quiz') generateReverseQuizOptions(deck, next);
       else generateQuizOptions(deck, next);
     }
-  }, [current, deck.length, mode, onSessionComplete]);
+  }, [current, deck, mode, onSessionComplete]);
 
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;

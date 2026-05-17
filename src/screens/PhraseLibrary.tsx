@@ -287,6 +287,8 @@ export function PhraseLibrary() {
         })}
       </View>
     </View>
+  // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [C, isDark, categoryCounts, handleCategorySelect]);
 
   // ── When a category is selected, show a back-to-grid banner ──
@@ -354,6 +356,8 @@ export function PhraseLibrary() {
         </View>
       </MotiView>
     );
+  // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showGrid, cat, C, isDark, categoryCounts, handleShowAll]);
 
   return (

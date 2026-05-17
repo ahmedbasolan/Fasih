@@ -347,7 +347,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [step, phase, scenarioId, scriptData?.scenes.length, recordSceneProgress]);
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
-  const scenes = scriptData?.scenes ?? [];
+  const scenes = useMemo(() => scriptData?.scenes ?? [], [scriptData?.scenes]);
   const endings = scriptData?.endings ?? [];
 
   // Calculate max possible meter values for this scenario (for bar scaling)

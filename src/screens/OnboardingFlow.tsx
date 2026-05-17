@@ -152,11 +152,14 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // Character-by-character typewriter effect for Arabic
   const { displayed: typedGreeting } = useTypewriter(arabicGreeting, 80, 0);
 
-  const next = () => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial();
-  const back = () => step > 0 && setStep(s => s - 1);
-  const finish = () => onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan });
-  const finishWithTrial = () => { onStartTrial(plan); finish(); };
-  const skip = () => { onSkipTrial(); finish(); };
+  const finish = useCallback(() =>
+    onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan }),
+    [onComplete, name, mode, role, profession, selectedGoals, plan]
+  );
+  const finishWithTrial = useCallback(() => { onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
+  const next = useCallback(() => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial(), [step, finishWithTrial]);
+  const back = useCallback(() => { if (step > 0) setStep(s => s - 1); }, [step]);
+  const skip = useCallback(() => { onSkipTrial(); finish(); }, [onSkipTrial, finish]);
 
   const toggleGoal = (id: string) => {
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
@@ -228,6 +231,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       });
 
     return Gesture.Exclusive(leftFling, rightFling);
+    // Gesture object created once — back/next accessed via stable refs (nextRef/backRef)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only create once
 
   const renderStep = () => {

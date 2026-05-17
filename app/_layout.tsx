@@ -49,6 +49,8 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
       initSubscription(); // configure RevenueCat and sync entitlement status
     }
+    // initSubscription is a stable Zustand action — intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, error]);
 
   const { C, isDark } = useTheme();

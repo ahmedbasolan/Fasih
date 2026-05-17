@@ -50,6 +50,9 @@ export default function Index() {
         }
       }
     })();
+    // Zustand actions (setAuthenticated, setSupabaseUserId, checkMilestones, recordDailyActivity)
+    // are stable references — intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, isAuthenticated, hasOnboarded]);
 
   useEffect(() => {
@@ -64,6 +67,8 @@ export default function Index() {
     });
 
     return () => subscription.unsubscribe();
+    // setAuthenticated / setSupabaseUserId are stable Zustand actions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
