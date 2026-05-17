@@ -229,9 +229,9 @@ export function PhraseLibrary() {
     <View style={{ marginBottom: 20 }}>
       {/* Hero section title */}
       <MotiView
-        from={{ opacity: 0, translateY: 10 }}
+        from={{ opacity: 0, translateY: 6 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 400, delay: 100 }}
+        transition={{ type: 'timing', duration: 480 }}
       >
         <View style={{
           flexDirection: 'row',
@@ -279,7 +279,7 @@ export function PhraseLibrary() {
                 variant={getCategoryVariant(idx)}
                 bgColor={isDark ? config.darkBg : config.bg}
                 accentColor={isDark ? config.darkBg : config.accent}
-                delay={150 + idx * 60}
+                delay={0}
                 onPress={() => handleCategorySelect(category)}
               />
             </View>
@@ -301,9 +301,9 @@ export function PhraseLibrary() {
 
     return (
       <MotiView
-        from={{ opacity: 0, translateY: -8 }}
+        from={{ opacity: 0, translateY: -4 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 300 }}
+        transition={{ type: 'timing', duration: 400 }}
       >
         <View style={{
           flexDirection: 'row',
@@ -368,9 +368,9 @@ export function PhraseLibrary() {
 
         {/* Title row with stats */}
         <MotiView
-          from={{ opacity: 0, translateY: 8 }}
+          from={{ opacity: 0, translateY: 6 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 360, delay: 50 }}
+          transition={{ type: 'timing', duration: 480 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 26, color: C.TEXT }}>
@@ -398,7 +398,7 @@ export function PhraseLibrary() {
         <MotiView
           from={{ opacity: 0, translateY: 6 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 360, delay: 120 }}
+          transition={{ type: 'timing', duration: 480 }}
         >
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -436,9 +436,9 @@ export function PhraseLibrary() {
         {/* Category pills (only when NOT on grid view) */}
         {!showGrid && (
           <MotiView
-            from={{ opacity: 0, translateY: 4 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 280 }}
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', duration: 400 }}
           >
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
               {[STRINGS.phrases.filterAll, ...PHRASE_CATEGORIES].map(c => {
@@ -495,9 +495,9 @@ export function PhraseLibrary() {
 
           {/* Quick stats banner */}
           <MotiView
-            from={{ opacity: 0, translateY: 10 }}
+            from={{ opacity: 0, translateY: 6 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 400, delay: 650 }}
+            transition={{ type: 'timing', duration: 480 }}
           >
             <Pressable
               onPress={() => { setCat(STRINGS.phrases.filterAll); setShowGrid(false); }}

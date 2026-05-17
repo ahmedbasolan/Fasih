@@ -58,10 +58,10 @@ function FlashCard({
   return (
     <MotiView
       key={phrase.id}
-      from={{ opacity: 0, translateX: 40 }}
+      from={{ opacity: 0, translateX: 16 }}
       animate={{ opacity: 1, translateX: 0 }}
-      exit={{ opacity: 0, translateX: -40 }}
-      transition={{ type: 'timing', duration: 280 }}
+      exit={{ opacity: 0, translateX: -16 }}
+      transition={{ type: 'timing', duration: 420 }}
     >
       <Pressable
         onPress={onFlip}
@@ -233,9 +233,9 @@ function QuizOption({
 
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 8 }}
+      from={{ opacity: 0, translateY: 6 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 220, delay }}
+      transition={{ type: 'timing', duration: 380, delay }}
     >
       <Pressable
         onPress={onPress}
@@ -522,9 +522,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {/* ─── MODE SELECT ─── */}
         {mode === 'menu' && (
           <MotiView
-            from={{ opacity: 0, translateY: 16 }}
+            from={{ opacity: 0, translateY: 10 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 350 }}
+            transition={{ type: 'timing', duration: 450 }}
           >
             <View style={{ gap: 14, paddingTop: 20 }}>
               <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 40, color: C.GOLD, textAlign: 'center', opacity: 0.15 }}>
@@ -609,9 +609,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {flipped && (
               <MotiView
-                from={{ opacity: 0, translateY: 10 }}
+                from={{ opacity: 0, translateY: 6 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 250 }}
+                transition={{ type: 'timing', duration: 400 }}
               >
                 <Text
                   style={{
@@ -669,9 +669,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {/* Question: Arabic phrase with audio */}
             <MotiView
               key={`quiz-${current}`}
-              from={{ opacity: 0, translateX: 30 }}
+              from={{ opacity: 0, translateX: 14 }}
               animate={{ opacity: 1, translateX: 0 }}
-              transition={{ type: 'timing', duration: 260 }}
+              transition={{ type: 'timing', duration: 420 }}
             >
               <View style={{ borderRadius: 24, padding: 28, backgroundColor: C.GOLD_SURFACE, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -712,7 +712,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {/* Show Arabic + meaning after answer */}
             {quizAnswer && (
-              <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
+              <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
                 <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 4 }}>
                   <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 20, color: C.GOLD }}>{phrase.arabic}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
@@ -723,7 +723,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {/* Cultural note after answer */}
             {quizAnswer && phrase.culturalNote && (
-              <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250, delay: 100 }}>
+              <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
                 <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.VIOLET_DIM, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
                     {STRINGS.phrases.culturalContext}
@@ -735,7 +735,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {/* Next button */}
             {quizAnswer && (
-              <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 200, delay: 300 }}>
+              <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 380 }}>
                 <Pressable onPress={nextQuizQuestion} accessibilityRole="button" style={{ borderRadius: 16, overflow: 'hidden' }}>
                   <LinearGradient
                     colors={[...G.GOLD_STOPS]}
@@ -760,9 +760,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {/* Question: English meaning */}
             <MotiView
               key={`reverse-${current}`}
-              from={{ opacity: 0, translateX: 30 }}
+              from={{ opacity: 0, translateX: 14 }}
               animate={{ opacity: 1, translateX: 0 }}
-              transition={{ type: 'timing', duration: 260 }}
+              transition={{ type: 'timing', duration: 420 }}
             >
               <View style={{ borderRadius: 24, padding: 28, backgroundColor: C.VIOLET_DIM, borderWidth: 1.5, borderColor: C.VIOLET_BORDER, alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -802,7 +802,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {/* Show romanization of correct answer after answering */}
             {quizAnswer && (
-              <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
+              <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
                 <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_SURFACE, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.GOLD }}>{phrase.arabic}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
@@ -819,7 +819,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
             {/* Next button */}
             {quizAnswer && (
-              <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 200, delay: 300 }}>
+              <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 380 }}>
                 <Pressable onPress={nextQuizQuestion} accessibilityRole="button" style={{ borderRadius: 16, overflow: 'hidden' }}>
                   <LinearGradient
                     colors={[...G.GOLD_STOPS]}
@@ -879,9 +879,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {/* ─── RESULTS ─── */}
         {mode === 'result' && (
           <MotiView
-            from={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'timing', duration: 350 }}
+            from={{ opacity: 0, translateY: 10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 450 }}
           >
             <View style={{ gap: 16, paddingTop: 16 }}>
               {/* Score card */}

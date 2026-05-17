@@ -36,9 +36,9 @@ export function CategoryCard({ category, phraseCount, variant, bgColor, accentCo
 
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 16, scale: 0.96 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{ type: 'spring', damping: 22, stiffness: 160, delay }}
+      from={{ opacity: 0, translateY: 10 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 420, delay }}
     >
       <Pressable
         onPress={onPress}
