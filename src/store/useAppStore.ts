@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
 import {
   pushProgress,
   pullProgress,
@@ -146,7 +145,7 @@ const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
 interface AppState {
   // Auth & onboarding
   user: UserProfile | null;
-  supabaseUserId: string | null;
+  clerkUserId: string | null;
   hasOnboarded: boolean;
   isAuthenticated: boolean;
   _hydrated: boolean;
@@ -193,11 +192,8 @@ interface AppState {
   setUserMode: (mode: 'career' | 'social') => void;
   setHasOnboarded: (value: boolean) => void;
   setAuthenticated: (value: boolean) => void;
-  setSupabaseUserId: (id: string | null) => void;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
+  setClerkUserId: (id: string | null) => void;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 
   // UI Actions
   setTheme: (theme: 'system' | 'light' | 'dark') => void;
@@ -258,7 +254,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       // Defaults
       user: null,
-      supabaseUserId: null,
+      clerkUserId: null,
       hasOnboarded: false,
       isAuthenticated: false,
       _hydrated: false,
@@ -288,10 +284,10 @@ export const useAppStore = create<AppState>()(
       // Cloud sync
       syncToCloud: async () => {
         const s = get();
-        if (!s.supabaseUserId) return;
+        if (!s.clerkUserId) return;
         set({ isSyncing: true });
         try {
-          const { error } = await pushProgress(s.supabaseUserId, {
+          const { error } = await pushProgress(s.clerkUserId, {
             user_profile: s.user,
             stats: s.stats,
             phrase_reviews: s.phraseReviews,
@@ -316,9 +312,9 @@ export const useAppStore = create<AppState>()(
 
       syncFromCloud: async () => {
         const s = get();
-        if (!s.supabaseUserId) return;
+        if (!s.clerkUserId) return;
         set({ isSyncing: true });
-        const { data, error } = await pullProgress(s.supabaseUserId);
+        const { data, error } = await pullProgress(s.clerkUserId);
         if (error) {
           set({ isSyncing: false, lastSyncError: error });
           return;
@@ -356,53 +352,10 @@ export const useAppStore = create<AppState>()(
       setUserMode: (mode) => set((state) => ({ user: state.user ? { ...state.user, mode } : null })),
       setHasOnboarded: (value) => set({ hasOnboarded: value }),
       setAuthenticated: (value) => set({ isAuthenticated: value }),
-      setSupabaseUserId: (id) => set({ supabaseUserId: id }),
-      signIn: async (email, password) => {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          const userId = data.user?.id || null;
-          set({ isAuthenticated: true, supabaseUserId: userId });
-          if (userId) {
-            await loginPurchasesUser(userId);
-            await get().syncFromCloud();
-            // Sync entitlement status from RevenueCat after restoring data
-            const entitlementStatus = await getEntitlementStatus();
-            if (entitlementStatus === 'subscribed') set({ subscriptionStatus: 'subscribed' });
-          }
-          return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err.message || 'Sign in failed' };
-        }
-      },
-      signUp: async (email, password, fullName) => {
-        try {
-          const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
-          if (error) throw error;
-          const userId = data.user?.id || null;
-          set({ isAuthenticated: true, supabaseUserId: userId });
-          if (userId) {
-            await loginPurchasesUser(userId);
-            await get().syncToCloud();
-          }
-          return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err.message || 'Sign up failed' };
-        }
-      },
+      setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
-        await supabase.auth.signOut();
         await logoutPurchasesUser();
-        set({ isAuthenticated: false, supabaseUserId: null });
-      },
-      resetPassword: async (email) => {
-        try {
-          const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-          if (error) throw error;
-          return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err.message || 'Password reset failed' };
-        }
+        set({ isAuthenticated: false, clerkUserId: null });
       },
 
       // UI
@@ -460,7 +413,7 @@ export const useAppStore = create<AppState>()(
 
       initSubscription: async () => {
         configurePurchases();
-        const userId = get().supabaseUserId;
+        const userId = get().clerkUserId;
         if (userId) await loginPurchasesUser(userId);
 
         // Check current entitlement status
@@ -746,7 +699,7 @@ export const useAppStore = create<AppState>()(
       },
       partialize: (state) => ({
         user: state.user,
-        supabaseUserId: state.supabaseUserId,
+        clerkUserId: state.clerkUserId,
         hasOnboarded: state.hasOnboarded,
         isAuthenticated: state.isAuthenticated,
         subscriptionStatus: state.subscriptionStatus,

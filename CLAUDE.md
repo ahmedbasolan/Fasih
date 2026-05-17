@@ -32,7 +32,8 @@ This is a production app, not a teaching project. Build for real users.
 | Animations | Moti + expo-linear-gradient | ^0.30.0 |
 | State | Zustand | ^5.0.12 |
 | Persistence | AsyncStorage via Zustand persist | — |
-| Backend / DB | Supabase (PostgreSQL + Auth) | ^2.100.1 |
+| Auth | Clerk (`@clerk/expo`) | ^3.2.12 |
+| Backend / DB | Supabase (PostgreSQL only — no Supabase Auth) | ^2.100.1 |
 | Subscriptions | RevenueCat | ^9.15.2 |
 | Icons | Lucide React Native | ^1.7.0 |
 | Arabic TTS | expo-speech | — |
@@ -167,11 +168,19 @@ const styles = useMemo(() => StyleSheet.create({
 }), [C]);
 ```
 
-**Do NOT use NativeWind `className` props.** NativeWind is installed but is incompatible with the runtime color system — `C.TOKEN` values are resolved at runtime and cannot be expressed as static Tailwind classes.
+**Use NativeWind `className` for structural/layout props only.** Keep all color tokens in `style` props via `C`. The two coexist cleanly:
 
-### Why Not NativeWind
+```tsx
+// ✅ Correct — NativeWind for layout, style prop for colors
+<View className="flex-1 items-center justify-center" style={{ backgroundColor: C.BG }}>
 
-NativeWind requires compile-time class resolution. Fasih's colors are runtime values from a theme store (e.g. `C.PRIMARY = '#00FF95'` in dark, `'#00CC78'` in light). You cannot write `className="bg-primary"` and have it respect the live theme. StyleSheet.create with useMemo IS the correct approach here.
+// ❌ Wrong — NativeWind cannot express runtime theme colors
+<View className="flex-1 bg-surface" />
+```
+
+NativeWind classes that are safe: `flex-1`, `flex-row`, `items-center`, `justify-center`, `justify-between`, `gap-*`, `w-full`, `h-full`, `overflow-hidden`, `absolute`, `relative`, `z-*`, `rounded-*` (only when not using a `C.BORDER` token).
+
+Always keep `backgroundColor`, `color`, `borderColor`, and any other color-bearing styles in the `style` prop using `C.TOKEN`.
 
 ### Color Tokens
 
@@ -319,11 +328,27 @@ Never add React imports, side effects, or Zustand calls to the engine. Test it w
 
 ## Authentication Rules
 
-Use Supabase Auth. Do not build custom auth.
+Use **Clerk** (`@clerk/expo` v3.x) for all authentication. Supabase is used for the database only — no Supabase Auth.
 
-The auth flow: `app/index.tsx` checks `supabase.auth.getSession()` before routing. Signed-in + onboarded → `/(tabs)`. Signed-in but not onboarded → `/onboarding`. Signed-out + previously onboarded → `/sign-in`. New user → `/onboarding`.
+**Clerk v3 API (signals-based):**
+- `useSignIn()` returns `{ signIn: SignInFutureResource, errors, fetchStatus }` — NOT `{ signIn, setActive, isLoaded }`
+- `useSignUp()` returns `{ signUp: SignUpFutureResource, errors, fetchStatus }`
+- `useClerk()` provides `setActive` and `signOut`
+- `useAuth()` provides `{ isLoaded, isSignedIn, userId }` for auth gate
+- All resource methods return `{ error: ClerkAPIError | null }` — check `error`, not a status return value
+- `signIn.status` and `signUp.status` are reactive properties on the resource object
 
-Never expose the Supabase service role key in the client.
+**Sign-in flow:** `signIn.create()` → `signIn.password()` → check `signIn.status === 'complete'` → `signIn.finalize()` → `setActive({ session: signIn.createdSessionId })`
+
+**Sign-up flow:** `signUp.create()` → `signUp.verifications.sendEmailCode()` → `signUp.verifications.verifyEmailCode()` → check `signUp.status === 'complete'` → `signUp.finalize()` → `setActive({ session: signUp.createdSessionId })`
+
+**Password reset:** `signIn.create()` → `signIn.resetPasswordEmailCode.sendCode()` → `signIn.resetPasswordEmailCode.verifyCode()` → `signIn.resetPasswordEmailCode.submitPassword()` → `signIn.finalize()` → `setActive()`
+
+**Auth gate** (`app/index.tsx`): uses `useAuth()` from Clerk. Signed-in + onboarded → `/(tabs)`. Signed-in but not onboarded → `/onboarding`. Signed-out + previously onboarded → `/sign-in`. New user → `/onboarding`.
+
+**Supabase DB queries** use `clerkUserId` (from `useAppStore`) as the user identifier — this replaces the old `supabaseUserId`.
+
+Never expose the Supabase service role key in the client. Never expose `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in server-side privileged operations.
 
 ---
 

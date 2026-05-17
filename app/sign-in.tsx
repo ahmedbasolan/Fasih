@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useSignIn, useClerk } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
@@ -12,7 +13,8 @@ import { GhostLetters } from '../src/components/ui';
 export default function SignInScreen() {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const signIn = useAppStore((s) => s.signIn);
+  const { signIn } = useSignIn();
+  const { setActive } = useClerk();
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
 
   const [email, setEmail] = useState('');
@@ -28,44 +30,50 @@ export default function SignInScreen() {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
-    const result = await signIn(email, password);
-    setLoading(false);
-    if (result.success) {
-      router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
-    } else {
-      setError(result.error || 'Sign in failed');
+    try {
+      const { error: createErr } = await signIn.create({ identifier: email.trim() });
+      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+
+      const { error: pwErr } = await signIn.password({ password });
+      if (pwErr) { setError(pwErr.longMessage ?? pwErr.message); return; }
+
+      if (signIn.status === 'complete') {
+        const { error: finalErr } = await signIn.finalize();
+        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        await setActive({ session: signIn.createdSessionId! });
+        router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
+      }
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Sign in failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View className="flex-1" style={{ backgroundColor: C.BG }}>
       <GhostLetters glyphs={['م', 'ر', 'ح']} />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 60, paddingBottom: insets.bottom + 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header with shield icon */}
+          {/* Header */}
           <MotiView
             from={{ opacity: 0, translateY: -16 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{ alignItems: 'center', marginBottom: 40 }}
           >
-            {/* Shield Icon Container */}
             <View style={{
-              width: 64,
-              height: 64,
-              borderRadius: 20,
+              width: 64, height: 64, borderRadius: 20,
               backgroundColor: C.GOLD_DIM,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
+              alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
               <Shield size={32} color={C.GOLD} strokeWidth={2} />
             </View>
-
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
               Sign in to your Account
             </Text>
@@ -85,21 +93,14 @@ export default function SignInScreen() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 100 }}
             style={{
-              backgroundColor: C.SURFACE,
-              borderRadius: 20,
-              padding: 20,
-              gap: 16,
-              borderWidth: 1,
-              borderColor: C.BORDER,
-              marginBottom: 16,
+              backgroundColor: C.SURFACE, borderRadius: 20, padding: 20,
+              gap: 16, borderWidth: 1, borderColor: C.BORDER, marginBottom: 16,
             }}
           >
-            {/* Email field */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
               borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
-              backgroundColor: C.BG,
-              borderWidth: 1,
+              backgroundColor: C.BG, borderWidth: 1,
               borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
             }}>
               <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
@@ -117,12 +118,10 @@ export default function SignInScreen() {
               />
             </View>
 
-            {/* Password field */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', gap: 12,
               borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
-              backgroundColor: C.BG,
-              borderWidth: 1,
+              backgroundColor: C.BG, borderWidth: 1,
               borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
             }}>
               <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
@@ -143,15 +142,12 @@ export default function SignInScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword
-                  ? <EyeOff size={18} color={C.TEXT3} />
-                  : <Eye size={18} color={C.TEXT3} />
-                }
+                {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
               </Pressable>
             </View>
           </MotiView>
 
-          {/* Forgot password link */}
+          {/* Forgot password */}
           <MotiView
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -161,7 +157,6 @@ export default function SignInScreen() {
             <Pressable
               onPress={() => router.push('/forgot-password')}
               accessibilityRole="link"
-              accessibilityLabel="Forgot your password"
             >
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>
                 Forgot Your Password?
@@ -169,7 +164,7 @@ export default function SignInScreen() {
             </Pressable>
           </MotiView>
 
-          {/* Error message */}
+          {/* Error */}
           {error ? (
             <MotiView
               from={{ opacity: 0, translateY: -10 }}
@@ -192,11 +187,8 @@ export default function SignInScreen() {
               onPress={handleSignIn}
               disabled={!canSubmit || loading}
               style={{
-                backgroundColor: C.GOLD,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                opacity: canSubmit && !loading ? 1 : 0.5,
+                backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                alignItems: 'center', opacity: canSubmit && !loading ? 1 : 0.5,
               }}
             >
               <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
@@ -205,13 +197,9 @@ export default function SignInScreen() {
             </Pressable>
           </MotiView>
 
-          {/* Dev skip button */}
           {__DEV__ && (
             <Pressable
-              onPress={async () => {
-                await signIn('dev@example.com', 'dev123456');
-                router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
-              }}
+              onPress={() => router.replace(hasOnboarded ? '/(tabs)' : '/onboarding')}
               style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
             >
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Skip (dev only)</Text>

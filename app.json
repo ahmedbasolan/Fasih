@@ -42,7 +42,9 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      "@clerk/expo",
+      "expo-web-browser"
     ],
     "updates": {
       "url": "https://u.expo.dev/387c7934-b747-43cc-9113-ff41e6662c66"
