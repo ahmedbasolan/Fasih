@@ -1,5 +1,5 @@
 import { applyChoice, getTone, resolveNextScene, evaluateEnding, isChoiceVisible } from '../scenarioEngine';
-import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioEnding } from '../../types';
+import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript } from '../../types';
 
 // ─── Shared test fixtures ─────────────────────────────────────────────────────
 

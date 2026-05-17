@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import { MotiView, AnimatePresence } from 'moti';
 import Svg, { Circle, Path, Rect, Defs, Stop, LinearGradient as SvgLinearGradient, G as SvgG } from 'react-native-svg';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
@@ -128,7 +127,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 
 export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props) {
   const { C, G, isDark } = useTheme();
-  const { setTheme, unlockPhrase, user } = useAppStore();
+  const { setTheme, unlockPhrase } = useAppStore();
   const { speak } = useArabicTTS();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);

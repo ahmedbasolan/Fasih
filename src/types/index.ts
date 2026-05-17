@@ -237,12 +237,12 @@ export interface ScenarioState {
    */
   totalScore: number;
   /** Ordered history of every choice made in this run */
-  choiceHistory: Array<{
+  choiceHistory: {
     sceneId: string;
     choiceId: string;
     npcId: string;   // charName of the NPC in that scene
     timestamp: string; // ISO date-time
-  }>;
+  }[];
   /** All scene IDs visited so far (for completeness tracking) */
   scenesVisited: Set<string>;
   startedAt: string; // ISO date-time

@@ -10,7 +10,7 @@ import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 
 export default function SignInScreen() {
-  const { C, G } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const signIn = useAppStore((s) => s.signIn);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
@@ -71,7 +71,7 @@ export default function SignInScreen() {
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>
-                Don't have an account?
+                Don&apos;t have an account?
               </Text>
               <Pressable onPress={() => router.push('/sign-up')} hitSlop={8}>
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign Up</Text>

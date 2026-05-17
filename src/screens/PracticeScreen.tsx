@@ -415,6 +415,14 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;
 
+  // Memoize result stats to prevent recreation on every render
+  // Must be before any early return to satisfy Rules of Hooks
+  const resultStats = useMemo(() => [
+    { label: STRINGS.practice.correctCount(score.correct).split(' ')[1], value: score.correct, color: C.JADE2 },
+    { label: STRINGS.practice.learning, value: score.skipped, color: C.GOLD },
+    { label: STRINGS.practice.missed, value: score.wrong, color: C.ERROR },
+  ], [score, C]);
+
   if (mode !== 'menu' && (!deck || deck.length === 0)) {
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, justifyContent: 'center' }}>
@@ -434,13 +442,6 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     : mode === 'quiz' ? STRINGS.practice.quiz
     : mode === 'reverse-quiz' ? STRINGS.practice.reverseQuiz
     : STRINGS.practice.results;
-
-  // Memoize result stats to prevent recreation on every render
-  const resultStats = useMemo(() => [
-    { label: STRINGS.practice.correctCount(score.correct).split(' ')[1], value: score.correct, color: C.JADE2 },
-    { label: STRINGS.practice.learning, value: score.skipped, color: C.GOLD },
-    { label: STRINGS.practice.missed, value: score.wrong, color: C.ERROR },
-  ], [score, C]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>

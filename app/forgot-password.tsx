@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Mail, ArrowLeft, CheckCircle, Shield, ChevronLeft } from 'lucide-react-native';
+import { Mail, CheckCircle, Shield, ChevronLeft } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
@@ -10,7 +10,7 @@ import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 
 export default function ForgotPasswordScreen() {
-  const { C, G } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const resetPassword = useAppStore((s) => s.resetPassword);
 
@@ -81,7 +81,7 @@ export default function ForgotPasswordScreen() {
               Forgot Password?
             </Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
-              No worries, we'll help you reset it
+              No worries, we&apos;ll help you reset it
             </Text>
           </MotiView>
 
@@ -153,7 +153,7 @@ export default function ForgotPasswordScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginBottom: 16 }}>
-                  Enter your email and we'll send you a reset link
+                  Enter your email and we&apos;ll send you a reset link
                 </Text>
 
                 <View style={{
