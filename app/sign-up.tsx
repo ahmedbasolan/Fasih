@@ -5,7 +5,7 @@ import { MotiView } from 'moti';
 import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
-import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
+import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 
@@ -16,7 +16,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function SignUpScreen() {
-  const { C, G } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const signUp = useAppStore((s) => s.signUp);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
@@ -47,7 +47,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const arabicPreview = fullName.length > 2 ? `مرحباً ${fullName.split(' ')[0]}` : '';
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>

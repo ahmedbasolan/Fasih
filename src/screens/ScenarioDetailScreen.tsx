@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, Platform, useWindowDimensions, ImageBackground } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
 import { ChevronLeft, Bookmark, Play, Lock } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';

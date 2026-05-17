@@ -30,7 +30,6 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const tabBg = isDark ? '#0C0A1C' : '#FFFFFF';
-  const activeColor = C.PRIMARY;
 
   // Track tab navigation direction for animations
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);

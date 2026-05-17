@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { X, ChevronRight, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
+import { X, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
@@ -272,7 +272,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [choicesVisible, setChoicesVisible] = useState(false);
   const [completionFired, setCompletionFired] = useState(false);
   // toneHistory is local UI state — records tone at scene entry for the end-screen arc
-  const [toneHistory, setToneHistory] = useState<Array<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }>>([]);
+  const [toneHistory, setToneHistory] = useState<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[]>([]);
   // lastResolvedNextSceneId holds the branch target from the most recent choice (for next())
   const [lastResolvedNextSceneId, setLastResolvedNextSceneId] = useState<string | null>(null);
   // finalizedEnding locks the evaluated ending before finalizeScenario() nulls activeScenarioState

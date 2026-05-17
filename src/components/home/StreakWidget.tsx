@@ -6,7 +6,7 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
-import { useTheme, FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
+import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { IMAGES } from '../../constants/images';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
