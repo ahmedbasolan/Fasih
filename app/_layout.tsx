@@ -5,6 +5,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '../src/lib/analytics';
 import {
   Tajawal_400Regular,
   Tajawal_500Medium,
@@ -57,28 +59,30 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <StatusBar style={isDark ? "light" : "dark"} />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
-            <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen
-              name="scenario/[id]"
-              options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
-            />
-            <Stack.Screen
-              name="practice"
-              options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
-            />
-          </Stack>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </ErrorBoundary>
+    <PostHogProvider client={posthog}>
+      <ErrorBoundary>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <StatusBar style={isDark ? "light" : "dark"} />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+              <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen
+                name="scenario/[id]"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
+              <Stack.Screen
+                name="practice"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
+            </Stack>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ErrorBoundary>
+    </PostHogProvider>
   );
 }

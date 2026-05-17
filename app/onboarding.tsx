@@ -2,6 +2,11 @@ import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
 import { OnboardingFlow } from '../src/screens/OnboardingFlow';
 import type { UserProfile } from '../src/types';
+import {
+  trackOnboardingCompleted,
+  trackTrialStarted,
+  trackOnboardingSkipped,
+} from '../src/lib/analytics';
 
 export default function OnboardingRoute() {
   const setUser = useAppStore((s) => s.setUser);
@@ -14,6 +19,13 @@ export default function OnboardingRoute() {
   const handleComplete = (profile: UserProfile) => {
     setUser(profile);
     setHasOnboarded(true);
+    trackOnboardingCompleted({
+      name: profile.name,
+      mode: profile.mode,
+      role: profile.role,
+      plan: profile.plan ?? 'none',
+      goals: profile.goals,
+    });
     router.replace('/(tabs)');
   };
 
@@ -26,7 +38,10 @@ export default function OnboardingRoute() {
   const handleStartTrial = async (plan: 'monthly' | 'yearly') => {
     // Attempt RevenueCat hosted paywall (shows all plans including lifetime)
     const paywallResult = await presentPaywall();
-    if (paywallResult.purchased) return; // user subscribed via paywall
+    if (paywallResult.purchased) {
+      trackTrialStarted(plan);
+      return;
+    }
 
     // Fallback: direct purchase of the plan the user selected in the UI
     const { cancelled, error } = await purchaseSubscription(plan);
@@ -36,6 +51,7 @@ export default function OnboardingRoute() {
       // Store / RevenueCat unreachable (e.g., simulator) — grant local trial
       startTrial(plan);
     }
+    trackTrialStarted(plan);
     // On success, purchaseSubscription already set status to 'subscribed'
   };
 
