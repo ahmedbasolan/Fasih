@@ -41,9 +41,34 @@ Do not introduce new major libraries unless there is a strong reason. Ask before
 
 ---
 
+## Branch Workflow
+
+**Never commit directly to `main` or `master`.**
+
+```
+main (production — App Store builds)
+ └── dev (integration — all features merge here first)
+      └── feat/<name> (one feature per branch)
+```
+
+For every feature:
+1. Branch off `dev`: `git checkout dev && git checkout -b feat/<feature-name>`
+2. Build the feature with commits
+3. Open a PR from `feat/<name>` → `dev`
+4. CodeRabbit reviews the PR automatically
+5. Merge to `dev` after review passes
+6. When `dev` is stable, open a PR from `dev` → `main` for a release
+
+**Current branches:**
+- `main` — production (App Store / Play Store)
+- `dev` — integration (merge features here)
+- `master` — legacy (do not use for new work)
+
+---
+
 ## Development Philosophy
 
-Build feature by feature.
+Build feature by feature. One feature = one branch = one PR.
 
 For every feature:
 
@@ -54,6 +79,7 @@ For every feature:
 5. Do not rewrite unrelated code.
 6. Refactor only when repetition or complexity demands it.
 7. Fix lint and type errors before finishing.
+8. Open a PR to `dev` when done — never push directly to `main`.
 
 ---
 
