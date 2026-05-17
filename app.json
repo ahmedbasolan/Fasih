@@ -41,8 +41,15 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-localization"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/387c7934-b747-43cc-9113-ff41e6662c66"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "extra": {
       "router": {},
       "eas": {
