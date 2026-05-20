@@ -15,7 +15,8 @@ export default function ScenarioRoute() {
 
   const handleComplete = (scenarioId: string, endingType: string) => {
     // finalizeScenario (called inside ScenarioPlayer) already wrote completedScenarios.
-    // We only need to check milestones and dismiss the player here.
+    // Do NOT dismiss the player here — the outcome screen lives inside ScenarioPlayer.
+    // The user taps "Home" on the outcome screen to exit (onExit → setShowPlayer(false)).
     checkMilestones();
     trackScenarioCompleted({
       scenarioId,
@@ -24,7 +25,6 @@ export default function ScenarioRoute() {
       endingId: endingType,
       sceneCount: 0,
     });
-    setShowPlayer(false);
   };
 
   const handleJournal = (arabic: string, english: string, insight: string) => {

@@ -405,7 +405,7 @@ export function SituationalConfidence({
                   <MotiView
                     from={{ width: '0%' }}
                     animate={{ width: `${sit.score}%` as any }}
-                    transition={{ type: 'spring', stiffness: 150, damping: 20, delay: idx * 80 + 100 }}
+                    transition={{ type: 'timing', duration: 400, delay: idx * 60 + 100 }}
                     style={{ height: '100%' }}
                   >
                     <LinearGradient

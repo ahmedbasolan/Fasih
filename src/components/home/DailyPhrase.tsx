@@ -177,15 +177,7 @@ export function DailyPhrase({
         {/* Top row */}
         <View style={styles.topRow}>
           <Text style={styles.topLabel}>Everyday</Text>
-          <MotiView
-            style={styles.liveDot}
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{
-              type: 'timing',
-              duration: 1500,
-              loop: true,
-            }}
-          />
+          <View style={styles.liveDot} />
           <Text style={styles.newBadge}>New today</Text>
         </View>
 

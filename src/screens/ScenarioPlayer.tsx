@@ -242,6 +242,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
   const finalizeScenario = useAppStore((s) => s.finalizeScenario);
+  const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
 
@@ -329,6 +330,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setFinalizedEnding(currEnding);
     setCompletionFired(true);
     finalizeScenario(currEnding);
+    // Persist phrase unlocks to the store so they appear in the phrase library
+    scriptData.phrasesUnlocked?.forEach(phraseId => unlockPhrase(phraseId));
     const hapticType =
       currEnding.type === 'failed' ? Haptics.NotificationFeedbackType.Error
       : currEnding.type === 'mixed' ? Haptics.NotificationFeedbackType.Warning
@@ -336,7 +339,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario]);
+  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrase]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
@@ -407,42 +410,50 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (lastResolvedNextSceneId) {
       const branchId = lastResolvedNextSceneId;
       const targetIndex = scenes.findIndex(s => s.id === branchId);
-      setLastResolvedNextSceneId(null); // always clear, whether branch found or not
+      setLastResolvedNextSceneId(null);
       if (targetIndex !== -1) {
         advanceScenarioScene(branchId);
         setStep(targetIndex);
         setPhase('scene');
         return;
       }
-      // targetIndex === -1: bad script data, fall through to linear progression
     }
+
+    // After a bonus scene → always go to result
+    if (scenes[step]?.bonus === true) {
+      setPhase('result');
+      return;
+    }
+
     const nextStep = step + 1;
 
-    // Check bonus scene eligibility for secret ending
-    const isOnBonusScene = scenes[step]?.bonus === true;
-    if (!isOnBonusScene && nextStep >= scenes.length && scriptData && activeScenarioState) {
+    // Past the end of all scenes → result
+    if (nextStep >= scenes.length) {
+      setPhase('result');
+      return;
+    }
+
+    const nextScene = scenes[nextStep];
+
+    // If the next scene is bonus, check secret-ending eligibility first
+    if (nextScene?.bonus === true && scriptData && activeScenarioState) {
       const secretEnding = scriptData.endings?.find(e => e.secret);
       const requiredFlagsMet = !secretEnding?.requiredFlags ||
         secretEnding.requiredFlags.every(f => activeScenarioState.flags.has(f));
       if (secretEnding && requiredFlagsMet && activeScenarioState.totalScore >= secretEnding.min) {
-        const bonusScene = scenes.find(s => s.bonus === true);
-        if (bonusScene) {
-          advanceScenarioScene(bonusScene.id);
-          setStep(scenes.indexOf(bonusScene));
-          setPhase('scene');
-          return;
-        }
+        advanceScenarioScene(nextScene.id);
+        setStep(nextStep);
+        setPhase('scene');
+      } else {
+        setPhase('result');
       }
+      return;
     }
 
-    if (nextStep >= scenes.length) {
-      setPhase('result');
-    } else {
-      const nextScene = scenes[nextStep];
-      if (nextScene) advanceScenarioScene(nextScene.id);
-      setStep(nextStep);
-      setPhase('scene');
-    }
+    // Normal linear progression
+    if (nextScene) advanceScenarioScene(nextScene.id);
+    setStep(nextStep);
+    setPhase('scene');
   }, [step, scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
@@ -820,7 +831,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     <Pressable onPress={next} accessibilityRole="button" accessibilityLabel={step + 1 >= scenes.length ? 'See final result' : 'Continue'} style={{ borderRadius: 20, overflow: 'hidden', marginTop: 10 }}>
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 }}>
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.WHITE }}>
-                          {step + 1 >= scenes.length ? 'See Final Result' : 'Continue'}
+                          {(scenes[step]?.bonus || step + 1 >= scenes.length || scenes[step + 1]?.bonus) ? 'See Final Result' : 'Continue'}
                         </Text>
                         <ArrowRight size={20} color={C.WHITE} />
                       </LinearGradient>

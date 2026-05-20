@@ -417,7 +417,7 @@ export function OnboardingScenarioPlayer({
         <MotiView
           from={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 150 }}
+          transition={{ type: 'timing', duration: 250 }}
         >
           <Text style={styles.youSaidLabel}>You said</Text>
           <View style={styles.youSaidCard}>
@@ -487,7 +487,7 @@ export function OnboardingScenarioPlayer({
               key={phrase.id}
               from={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 150, damping: 15, delay: idx * 200 }}
+              transition={{ type: 'timing', duration: 300, delay: idx * 200 }}
             >
               <View style={styles.phraseCard}>
                 <LinearGradient

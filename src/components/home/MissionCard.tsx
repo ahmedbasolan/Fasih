@@ -158,7 +158,7 @@ export function MissionCard({
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+      transition={{ type: 'timing', duration: 300 }}
     >
       <Pressable
         onPress={onPress}
@@ -178,22 +178,16 @@ export function MissionCard({
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Twinkling Stars */}
+          {/* Static Stars */}
           {[
             { top: 16, left: 24 },
             { top: 20, right: 32 },
             { bottom: 28, left: 16 },
             { bottom: 24, right: 20 },
           ].map((pos, idx) => (
-            <MotiView
+            <View
               key={idx}
-              style={[styles.starDot, pos]}
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{
-                type: 'timing',
-                duration: 2000 + idx * 200,
-                loop: true,
-              }}
+              style={[styles.starDot, pos, { opacity: 0.5 }]}
             />
           ))}
 
@@ -240,11 +234,7 @@ export function MissionCard({
                 <MotiView
                   style={{ height: '100%' }}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 150,
-                    damping: 20,
-                  }}
+                  transition={{ type: 'timing', duration: 400 }}
                 >
                   <LinearGradient
                     colors={[C.PRIMARY, C.TERTIARY]}

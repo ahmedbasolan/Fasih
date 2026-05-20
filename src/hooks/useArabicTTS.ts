@@ -19,6 +19,26 @@ const PITCH_MALE = 0.7;
 const PITCH_FEMALE = 1.3;
 const PITCH_DEFAULT = 1.0;
 
+const SUKUN = 'ْ'; // ـْ — tells TTS: no case vowel after this letter
+// Long vowels and ta marbuta that naturally close a syllable — skip sukūn on these
+const SKIP_SUKUN = new Set(['ا', 'و', 'ي', 'ى', 'ة']);
+
+/**
+ * Strips existing harakat then adds sukūn to word-final consonants.
+ * Prevents Arabic TTS engines from appending MSA case vowels (-u/-i/-an)
+ * so the output sounds like spoken Gulf Arabic instead of formal MSA.
+ */
+function toGulfSpeech(text: string): string {
+  // Remove all existing harakat (diacritics) to avoid double-marking
+  const clean = text.replace(/[ً-ٰٟ]/g, '');
+  // Add sukūn after any Arabic consonant that sits immediately before
+  // whitespace, punctuation, or end-of-string
+  return clean.replace(/([ء-ي])(?=[\s!-/:-@،؛؟ـ،؟!]|$)/g, (_, char) => {
+    if (SKIP_SUKUN.has(char)) return char;
+    return char + SUKUN;
+  });
+}
+
 /**
  * Hook for Arabic text-to-speech using expo-speech.
  * Queries device for available Arabic voices and selects actual male/female
@@ -68,6 +88,10 @@ export function useArabicTTS(): UseTTSReturn {
 
     setIsSpeaking(true);
 
+    // Preprocess: add sukūn to word-final consonants so the TTS engine does not
+    // inject MSA case vowels (-u/-i/-an). Gulf Arabic drops all case endings.
+    const gulfText = toGulfSpeech(text);
+
     const opts: Speech.SpeechOptions = {
       language: 'ar-AE',
       rate,
@@ -76,7 +100,7 @@ export function useArabicTTS(): UseTTSReturn {
       onDone: () => setIsSpeaking(false),
       onError: () => {
         // Fallback to generic Arabic if ar-AE is not available
-        Speech.speak(text, {
+        Speech.speak(gulfText, {
           language: 'ar',
           rate,
           pitch,
@@ -88,7 +112,7 @@ export function useArabicTTS(): UseTTSReturn {
       onStopped: () => setIsSpeaking(false),
     };
 
-    Speech.speak(text, opts);
+    Speech.speak(gulfText, opts);
 
     // Safety timeout — reset state after 15s max in case callbacks don't fire
     timeoutRef.current = setTimeout(() => {

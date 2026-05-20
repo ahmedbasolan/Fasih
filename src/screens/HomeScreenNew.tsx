@@ -197,16 +197,8 @@ export function HomeScreenNew({
         />
       </View>
 
-      {/* Quick Challenge Section */}
-      <Text style={styles.sectionLabel}>Quick Challenge</Text>
-      <View style={styles.sectionContent}>
-        <QuickChallenge 
-          onRevealed={() => setStreakMood('excited')} 
-        />
-      </View>
-
       {/* Mission Section */}
-      <Text style={styles.sectionLabel}>Today&apos;s Mission</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.home.todaysMission}</Text>
       <View style={styles.sectionContent}>
         {isNewUser ? (
           <MotiView
@@ -240,8 +232,16 @@ export function HomeScreenNew({
         )}
       </View>
 
+      {/* Quick Challenge Section */}
+      <Text style={styles.sectionLabel}>{STRINGS.home.quickChallenge}</Text>
+      <View style={styles.sectionContent}>
+        <QuickChallenge
+          onRevealed={() => setStreakMood('excited')}
+        />
+      </View>
+
       {/* Daily Phrase Section */}
-      <Text style={styles.sectionLabel}>Daily Phrase</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.home.dailyPhrase}</Text>
       <View style={styles.sectionContent}>
         <DailyPhrase
           arabic={phraseOfTheDay.arabic}
@@ -253,7 +253,7 @@ export function HomeScreenNew({
       </View>
 
       {/* Situational Confidence Section */}
-      <Text style={styles.sectionLabel}>Your Confidence</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.home.yourConfidence}</Text>
       <View style={styles.sectionContent}>
         <SituationalConfidence
           limit={5}
@@ -262,7 +262,7 @@ export function HomeScreenNew({
       </View>
 
       {/* Community Section */}
-      <Text style={styles.sectionLabel}>Community</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.home.community}</Text>
       <View style={styles.sectionContent}>
         {/* TODO: Replace with real count from API */}
         <CommunityBar count={47} location="Dubai" />

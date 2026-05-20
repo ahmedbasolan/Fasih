@@ -10,6 +10,7 @@ import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../..
 import { IMAGES } from '../../constants/images';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
+import { STRINGS } from '../../constants/strings';
 
 interface DayStatus {
   label: string;
@@ -189,9 +190,9 @@ export function StreakWidget({
     <>
       <MotiView
         style={styles.container}
-        from={{ opacity: 0, scale: 0.9 }}
+        from={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+        transition={{ type: 'timing', duration: 300 }}
       >
         {/* LEFT BLOCK - Mascot + Streak */}
         <View style={styles.leftBlock}>
@@ -199,7 +200,7 @@ export function StreakWidget({
             animate={{
               scale: mood === 'celebrating' ? 1.12 : mood === 'excited' ? 1.08 : 1,
             }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            transition={{ type: 'timing', duration: 250 }}
           >
             <Image
               source={mascotSource}
@@ -215,9 +216,9 @@ export function StreakWidget({
         <View style={styles.rightBlock}>
           {/* Streak Info Row */}
           <View style={styles.streakInfoRow}>
-            <Text style={styles.daysTitle}>Learning Days</Text>
+            <Text style={styles.daysTitle}>{STRINGS.home.dayStreak}</Text>
             {!isEmpty && (
-              <Text style={styles.bestDays}>Best: {Math.max(streakDays, 1)}</Text>
+              <Text style={styles.bestDays}>Best: {streakDays > 0 ? streakDays : '—'}</Text>
             )}
             {isEmpty && (
               <Text style={styles.emptyHint}>Start today</Text>
@@ -231,7 +232,7 @@ export function StreakWidget({
               animate={{
                 width: `${isEmpty ? 0 : progressPercent}%`,
               }}
-              transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+              transition={{ type: 'timing', duration: 400 }}
             >
               <LinearGradient
                 colors={[C.PRIMARY, C.TERTIARY]}
@@ -247,13 +248,12 @@ export function StreakWidget({
             {weekDays.map((day, idx) => (
               <MotiView
                 key={day.label}
-                from={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                from={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{
-                  type: 'spring',
-                  stiffness: 250,
-                  damping: 15,
-                  delay: idx * 80,
+                  type: 'timing',
+                  duration: 250,
+                  delay: idx * 50,
                 }}
                 style={{ flex: 1, alignItems: 'center' }}
               >
