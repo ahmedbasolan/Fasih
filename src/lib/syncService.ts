@@ -171,6 +171,8 @@ const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
   'eid-greeting':       { exceptional: 33, success: 38, mixed: 20, failed: 9 },
   'weekend-invite':     { exceptional: 25, success: 38, mixed: 25, failed: 12 },
   'neighborhood':       { exceptional: 29, success: 39, mixed: 22, failed: 10 },
+  'corner-cafe':        { exceptional: 18, success: 37, mixed: 30, failed: 15 },
+  'vip-guest':          { exceptional: 14, success: 33, mixed: 35, failed: 18 },
 };
 
 /** Atomically increment the pick count for one choice (fire-and-forget). */

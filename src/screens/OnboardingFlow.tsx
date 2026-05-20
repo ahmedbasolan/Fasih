@@ -10,7 +10,7 @@ import { Briefcase, Users, Shield, TrendingUp, Globe, ChevronLeft, ArrowRight, C
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { GeoPattern } from '../components/design/GeoPattern';
-import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../components/features/RoleGoalIcons';
+import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon } from '../components/features/RoleGoalIcons';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
 import { useArabicTTS } from '../hooks/useArabicTTS';
@@ -85,7 +85,7 @@ const goals = [
   { id: 'friends', label: STRINGS.onboarding.goals.friends.label, sub: STRINGS.onboarding.goals.friends.sub, Icon: FriendsIcon },
   { id: 'culture', label: STRINGS.onboarding.goals.culture.label, sub: STRINGS.onboarding.goals.culture.sub, Icon: CultureIcon },
   { id: 'daily', label: STRINGS.onboarding.goals.daily.label, sub: STRINGS.onboarding.goals.daily.sub, Icon: DailyLifeIcon },
-  { id: 'career', label: STRINGS.onboarding.goals.career.label, sub: STRINGS.onboarding.goals.career.sub, Icon: CareerIcon },
+  { id: 'confidence', label: STRINGS.onboarding.goals.confidence.label, sub: STRINGS.onboarding.goals.confidence.sub, Icon: Trophy },
 ];
 
 function GhostBtn({ children, onPress }: { children: string; onPress?: () => void }) {
@@ -116,7 +116,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
         <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
           <MotiView
             animate={{ width: i <= step ? segmentWidth : 0 }}
-            transition={{ type: 'spring', damping: 80, stiffness: 120, delay: i * 60 }}
+            transition={{ type: 'timing', duration: 300, delay: i * 60 }}
             style={{ height: 4, borderRadius: 2, backgroundColor: i <= step ? C.PRIMARY : 'transparent' }}
           />
         </View>
@@ -258,34 +258,9 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 />
               </FadeIn>
 
-              {/* Floating decorative particles */}
-              {[
-                { top: '12%', left: '8%', size: 5, color: 'rgba(255,255,255,0.3)', delay: 0, dur: 5000 },
-                { top: '18%', right: '12%', size: 4, color: 'rgba(255,255,255,0.2)', delay: 800, dur: 4200 },
-                { top: '55%', left: '5%', size: 6, color: 'rgba(255,255,255,0.25)', delay: 1600, dur: 6000 },
-                { top: '65%', right: '8%', size: 4, color: 'rgba(255,255,255,0.2)', delay: 2400, dur: 4800 },
-                { top: '38%', right: '6%', size: 5, color: 'rgba(255,255,255,0.3)', delay: 400, dur: 5500 },
-              ].map((p, i) => (
-                <MotiView
-                  key={`particle-${i}`}
-                  from={{ opacity: 0, translateY: 0 }}
-                  animate={{ opacity: [0, 0.85, 0], translateY: [-8, 8, -8] }}
-                  transition={{ type: 'timing', duration: p.dur, loop: true, delay: p.delay }}
-                  style={{ position: 'absolute', top: p.top as any, left: (p as any).left, right: (p as any).right, width: p.size, height: p.size, borderRadius: p.size / 2, backgroundColor: p.color }}
-                />
-              ))}
 
               {/* Fox mascots on green gradient */}
               <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row', gap: 12 }}>
-                <FadeIn delay={150} style={{ position: 'absolute' }}>
-                  <MotiView
-                    from={{ opacity: 0.05, scale: 0.95 }}
-                    animate={{ opacity: [0.05, 0.15, 0.05], scale: [0.95, 1.1, 0.95] }}
-                    transition={{ type: 'timing', duration: 3500, loop: true }}
-                    style={{ width: 260, height: 220, borderRadius: 62, backgroundColor: 'rgba(255,255,255,0.1)' }}
-                  />
-                </FadeIn>
-
                 <FadeIn delay={200}>
                   <Image source={IMAGES.foxyMale} style={{ width: 130, height: 130 }} resizeMode="contain" />
                 </FadeIn>
@@ -300,10 +275,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <FadeIn delay={300}>
                 <View style={{ alignItems: 'flex-start', marginBottom: 16 }}>
                   <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, lineHeight: 36 }}>
-                    Let&apos;s Begin{' '}<Text style={{ color: C.PRIMARY }}>Growing</Text>
+                    {STRINGS.onboarding.welcomeTitle}
                   </Text>
-                  <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, lineHeight: 36 }}>
-                    Our Skills.
+                  <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.PRIMARY, lineHeight: 36 }}>
+                    {STRINGS.onboarding.welcomeAccent}
                   </Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginTop: 8, lineHeight: 22 }}>
                     {STRINGS.onboarding.welcomeSubtitle}
@@ -315,7 +290,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <FadeIn delay={400}>
                 <View style={{ gap: 16 }}>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 22 }}>
-                    Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.
+                    {STRINGS.onboarding.welcomeBody}
                   </Text>
                   <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Get Started" style={{ width: '100%' }}>
                     <LinearGradient
@@ -449,7 +424,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       from={{ scale: 0.85, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.85, opacity: 0 }}
-                      transition={{ type: 'spring', damping: 80, stiffness: 100 }}
+                      transition={{ type: 'timing', duration: 280 }}
                       style={{ width: '100%' }}
                     >
                       <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER }}>
@@ -564,7 +539,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               from={{ scale: 0, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
-                              transition={{ type: 'spring', damping: 12, stiffness: 260 }}
+                              transition={{ type: 'timing', duration: 200 }}
                               style={{ position: 'absolute', top: 10, right: 10 }}
                             >
                               <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.GOLD, alignItems: 'center', justifyContent: 'center' }}>
@@ -587,7 +562,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   from={{ opacity: 0, translateY: 10 }}
                   animate={{ opacity: 1, translateY: 0 }}
                   exit={{ opacity: 0, translateY: 10 }}
-                  transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                  transition={{ type: 'timing', duration: 220 }}
                   style={{ marginTop: 12, marginBottom: 4 }}
                 >
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginBottom: 8 }}>
@@ -680,7 +655,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               from={{ scale: 0, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0, opacity: 0 }}
-                              transition={{ type: 'spring', damping: 12, stiffness: 280 }}
+                              transition={{ type: 'timing', duration: 200 }}
                             >
                               <Check size={14} color={C.WHITE} />
                             </MotiView>
@@ -739,13 +714,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
               <FadeIn delay={300} style={{ zIndex: 2 }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  {/* Pulsing hint ring when idle - simplified */}
+                  {/* Static hint ring when idle */}
                   {!holdComplete && holdProgress === 0 && (
-                    <MotiView
-                      from={{ scale: 1, opacity: 0.3 }}
-                      animate={{ scale: 1.15, opacity: 0.1 }}
-                      transition={{ type: 'spring', stiffness: 150, damping: 15, loop: true }}
-                      style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.GOLD }}
+                    <View
+                      style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.GOLD, opacity: 0.2 }}
                     />
                   )}
                   {/* Celebration burst on complete - simplified */}
@@ -753,7 +725,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     <MotiView
                       from={{ scale: 0.8, opacity: 0.6 }}
                       animate={{ scale: 2, opacity: 0 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                      transition={{ type: 'timing', duration: 600 }}
                       style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: C.JADE2 }}
                     />
                   )}
@@ -774,7 +746,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : holdProgress > 0 ? C.GOLD : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
                   >
                     {holdComplete ? (
-                      <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 22, stiffness: 300 }}>
+                      <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
                         <LinearGradient colors={[...G.JADE_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
                           <Check size={34} color={C.WHITE} />
                         </LinearGradient>
@@ -885,45 +857,23 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       </SvgG>
                     </Svg>
                   </View>
-                  {/* Soft background glow */}
-                  <MotiView
-                    from={{ opacity: 0.06 }}
-                    animate={{ opacity: [0.06, 0.18, 0.06] }}
-                    transition={{ type: 'timing', duration: 3000, loop: true }}
-                    style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: C.GOLD }}
-                  />
-                  {/* Expanding rings */}
-                  {[0, 1, 2].map((i) => (
-                    <MotiView
-                      key={`ring-${i}`}
-                      from={{ scale: 0.9, opacity: 0.55 }}
-                      animate={{ scale: 2.4, opacity: 0 }}
-                      transition={{ type: 'timing', duration: 2200, loop: true, delay: i * 730 }}
-                      style={{ position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 1.5, borderColor: C.GOLD }}
-                    />
-                  ))}
-                  {/* Jiggling bell - smaller */}
-                  <MotiView
-                    animate={{ rotate: ['0deg', '-9deg', '9deg', '-6deg', '6deg', '-2deg', '0deg'] }}
-                    transition={{ type: 'timing', duration: 1500, loop: true, delay: 700 }}
+                  {/* Static bell */}
+                  <LinearGradient
+                    colors={[...G.GOLD_STOPS]}
+                    start={ANGLE_135.start}
+                    end={ANGLE_135.end}
+                    style={{ width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <LinearGradient
-                      colors={[...G.GOLD_STOPS]}
-                      start={ANGLE_135.start}
-                      end={ANGLE_135.end}
-                      style={{ width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Bell size={28} color={C.BG} />
-                    </LinearGradient>
-                  </MotiView>
+                    <Bell size={28} color={C.BG} />
+                  </LinearGradient>
                 </View>
               </FadeIn>
 
               {/* Title & subtitle - moved up */}
               <FadeIn delay={200}>
                 <View style={{ alignItems: 'center', gap: 6, marginTop: 10 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, textAlign: 'center' }}>Never miss a day</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>Daily practice builds fluency 3× faster</Text>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, textAlign: 'center' }}>{STRINGS.onboarding.notifTagline}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>{STRINGS.onboarding.notifSub}</Text>
                 </View>
               </FadeIn>
 
@@ -962,8 +912,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </View>
         );
 
-      // Step 7: Paywall — Unlock full potential
-      case 7:
+      // Step 10: Paywall — Unlock full potential
+      case 10:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1018,8 +968,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 8: Your first Arabic phrase quick win
-      case 8:
+      // Step 7: Your first Arabic phrase quick win
+      case 7:
         return (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
@@ -1036,18 +986,18 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               textAlign: 'center',
               marginBottom: 8,
             }}>
-              Your first Gulf Arabic phrase:
+              {STRINGS.onboarding.phraseRevealTitle}
             </Text>
 
             <Text style={{
               fontFamily: FONT_ARABIC,
-              fontSize: 42,
+              fontSize: 54,
               color: C.PRIMARY,
               textAlign: 'center',
               direction: 'rtl',
               marginBottom: 6,
             }}>
-              مرحبا
+              هلا
             </Text>
 
             <Text style={{
@@ -1056,14 +1006,24 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               color: C.TEXT2,
               marginBottom: 4,
             }}>
-              mar-haba
+              ha-la
+            </Text>
+
+            <Text style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 12,
+              color: C.TEXT3,
+              textAlign: 'center',
+              marginBottom: 4,
+            }}>
+              The everyday Gulf greeting — what Emiratis actually say
             </Text>
 
             {!phraseRevealed ? (
               <Pressable
                 onPress={() => {
                   setPhraseRevealed(true);
-                  speak('مرحبا');
+                  speak('هلا');
                 }}
                 style={{
                   marginTop: 20,
@@ -1081,11 +1041,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <MotiView
                 from={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                transition={{ type: 'timing', duration: 280 }}
                 style={{ alignItems: 'center', marginTop: 16 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: 24 }}>
-                  Welcome – you just said it. ✨
+                  {STRINGS.onboarding.phraseRevealConfirmed}
                 </Text>
                 <Pressable
                   onPress={next}
@@ -1105,7 +1065,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </View>
         );
 
-      // Step 9: Everything included — features
+      // Step 9: Everything included — features (shown after scenario)
       case 9:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
@@ -1173,8 +1133,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </ScrollView>
         );
 
-      // Step 10: Onboarding Scenario — Café
-      case 10: {
+      // Step 8: Onboarding Scenario — Café
+      case 8: {
         const onboardingScenario = getOnboardingScenario(C);
         // Use the local mode state — user hasn't been saved to the store yet at this step
         const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
@@ -1219,20 +1179,16 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'yearly' ? C.GOLD_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'yearly' ? `${C.GOLD}70` : C.BORDER }}
                 >
                   <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
-                    <MotiView animate={{ scale: [1, 1.08, 1] }} transition={{ type: 'timing', duration: 2000, loop: true }}>
-                      <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.WHITE }}>{STRINGS.onboarding.savePct(57)}</Text>
-                      </LinearGradient>
-                    </MotiView>
+                    <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.WHITE }}>{STRINGS.onboarding.savePct(57)}</Text>
+                    </LinearGradient>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 80 }}>
-                    <MotiView
-                      animate={{ scale: plan === 'yearly' ? [0.8, 1.2, 1] : 1 }}
-                      transition={{ type: 'spring', damping: 10, stiffness: 200 }}
+                    <View
                       style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: plan === 'yearly' ? C.GOLD : C.BORDER2, alignItems: 'center', justifyContent: 'center' }}
                     >
                       {plan === 'yearly' && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.GOLD }} />}
-                    </MotiView>
+                    </View>
                     <View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <Svg width={18} height={16} viewBox="0 0 24 20">
@@ -1262,13 +1218,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'monthly' ? C.VIOLET_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'monthly' ? `${C.VIOLET}60` : C.BORDER }}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <MotiView
-                      animate={{ scale: plan === 'monthly' ? [0.8, 1.2, 1] : 1 }}
-                      transition={{ type: 'spring', damping: 10, stiffness: 200 }}
+                    <View
                       style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: plan === 'monthly' ? C.VIOLET2 : C.BORDER2, alignItems: 'center', justifyContent: 'center' }}
                     >
                       {plan === 'monthly' && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.VIOLET2 }} />}
-                    </MotiView>
+                    </View>
                     <View>
                       <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.TEXT, marginBottom: 2 }}>{STRINGS.onboarding.monthlyPlan}</Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.monthlyFlex}</Text>

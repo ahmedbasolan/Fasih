@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { MotiView } from 'moti';
 import { ChevronRight } from 'lucide-react-native';
-import { FONT_HEADING, FONT_LATIN_SEMI } from '../design/tokens';
+import { FONT_HEADING, FONT_LATIN_SEMI, FONT_ARABIC_BLACK } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { CATEGORY_ILLUSTRATIONS } from './CategoryIllustrations';
 
@@ -15,6 +15,8 @@ interface CategoryCardProps {
   bgColor: string;
   /** Accent color for text/decorations */
   accentColor: string;
+  /** Arabic word to display as the hero element instead of an illustration */
+  arabicLabel?: string;
   /** Animation delay in ms */
   delay?: number;
   onPress: () => void;
@@ -25,7 +27,7 @@ interface CategoryCardProps {
  * Inspired by modern course platform UI with soft backgrounds,
  * bold typography, and rich SVG illustrations.
  */
-export function CategoryCard({ category, phraseCount, variant, bgColor, accentColor, delay = 0, onPress }: CategoryCardProps) {
+export function CategoryCard({ category, phraseCount, variant, bgColor, accentColor, arabicLabel, delay = 0, onPress }: CategoryCardProps) {
   const { C, isDark } = useTheme();
   const Illustration = CATEGORY_ILLUSTRATIONS[category];
   const isLarge = variant === 'large';
@@ -91,16 +93,32 @@ export function CategoryCard({ category, phraseCount, variant, bgColor, accentCo
             </Text>
           </View>
 
-          {/* Illustration */}
+          {/* Arabic hero word or Illustration */}
           <View style={{
             alignItems: 'center',
             justifyContent: 'center',
             flex: 1,
             marginTop: 4,
           }}>
-            {Illustration && (
+            {arabicLabel ? (
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={{
+                  fontFamily: FONT_ARABIC_BLACK,
+                  fontSize: isLarge ? 54 : 42,
+                  color: accentColor,
+                  opacity: isDark ? 0.45 : 0.30,
+                  textAlign: 'center',
+                  writingDirection: 'rtl',
+                  lineHeight: isLarge ? 68 : 54,
+                }}
+              >
+                {arabicLabel}
+              </Text>
+            ) : Illustration ? (
               <Illustration size={isLarge ? 95 : 75} />
-            )}
+            ) : null}
           </View>
         </View>
 

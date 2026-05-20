@@ -421,10 +421,10 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       if (filterTab === 'recommended') return !s.locked;
       return true;
     });
-    // Determine actual locked status based on subscription
+    // Determine actual locked status: catalog locked:false = always free; locked:true = needs subscription
     const withAccess = filtered.map((s, index) => ({
       ...s,
-      locked: !hasScenarioAccess(index),
+      locked: s.locked && !hasScenarioAccess(index),
     }));
     // unlocked first, locked at the bottom
     return withAccess.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));

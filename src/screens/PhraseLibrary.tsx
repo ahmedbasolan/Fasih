@@ -3,8 +3,9 @@ import { View, Text, ScrollView, Pressable, TextInput, Platform, Dimensions } fr
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2 } from 'lucide-react-native';
+import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Zap } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
 import type { ThemeColors } from '../components/design/tokens';
@@ -17,6 +18,17 @@ import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 
 type Phrase = typeof PHRASES[0];
+
+const CATEGORY_ARABIC: Record<string, string> = {
+  'Greetings':    'تحيات',
+  'Gratitude':    'شكر',
+  'Hospitality':  'ضيافة',
+  'Workplace':    'عمل',
+  'Social':       'اجتماع',
+  'Everyday':     'يومي',
+  'Food & Drink': 'أكل',
+  'Family':       'عائلة',
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 12;
@@ -140,13 +152,14 @@ export function PhraseLibrary() {
           }),
         }}
       >
+        {/* ── Collapsed row ── */}
         <View style={{ flexDirection: 'row' }}>
           <View style={{ width: 4, backgroundColor: DIFFICULTY_COLORS[p.difficulty], borderTopLeftRadius: 16, borderBottomLeftRadius: isExpanded ? 0 : 16 }} />
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14 }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 16 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 18, color: C.TEXT, textAlign: 'right', marginBottom: 2 }}>{p.arabic}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.PRIMARY, marginBottom: 2 }}>{p.roman}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>{p.english}</Text>
+              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.TEXT, textAlign: 'right', marginBottom: 5, lineHeight: 28 }}>{p.arabic}</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.PRIMARY, marginBottom: 3 }}>{p.roman}</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{p.english}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 4 }}>
               <Pressable
@@ -154,68 +167,79 @@ export function PhraseLibrary() {
                 accessibilityRole="button"
                 accessibilityLabel={isPlaying ? 'Playing audio' : 'Play audio'}
                 accessibilityState={{ selected: isPlaying }}
-                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isPlaying ? C.BORDER : 'transparent' }}
               >
-                <Volume2 size={14} color={isPlaying ? C.JADE : C.TEXT3} />
+                <Volume2 size={15} color={isPlaying ? C.PRIMARY : C.TEXT3} />
               </Pressable>
               <Pressable
                 onPress={(e) => { e.stopPropagation?.(); toggleSavedPhrase(p.id); }}
                 accessibilityRole="button"
                 accessibilityLabel={isSaved ? 'Remove from saved' : 'Save phrase'}
                 accessibilityState={{ selected: isSaved }}
-                style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: isSaved ? C.JADE_DIM : 'transparent', alignItems: 'center', justifyContent: 'center' }}
               >
-                <BookmarkPlus size={14} color={isSaved ? C.PRIMARY : C.TEXT3} fill={isSaved ? C.PRIMARY : 'none'} />
+                <BookmarkPlus size={15} color={isSaved ? C.PRIMARY : C.TEXT3} fill={isSaved ? C.PRIMARY : 'none'} />
               </Pressable>
             </View>
           </View>
         </View>
 
+        {/* ── Expanded panel ── */}
         {isExpanded && (
-          <View style={{ paddingHorizontal: 14, paddingBottom: 14, backgroundColor: C.SURFACE }}>
-            <Pressable
-              onPress={() => playSlow(p)}
-              accessibilityRole="button"
-              accessibilityLabel="Play slowly"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 10, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, marginBottom: 8 }}
-            >
-              <Snail size={14} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.playSlowly}</Text>
-            </Pressable>
+          <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, backgroundColor: C.CARD_BG, borderTopWidth: 1, borderTopColor: C.BORDER }}>
 
-            {isUnlocked && (
-              <View style={{ borderRadius: 12, padding: 10, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Sparkles size={14} color={C.PRIMARY} />
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>From your first scenario</Text>
-              </View>
-            )}
-
-            {p.pronTip && (
-              <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.CATEGORY_LAVENDER, marginBottom: 8 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.PRIMARY, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{STRINGS.phrases.pronunciation}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>{p.pronTip}</Text>
-              </View>
-            )}
-
-            {p.culturalNote && (
-              <View style={{ borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, backgroundColor: C.CATEGORY_CREAM, marginBottom: 8 }}>
-                <Info size={13} color={C.CULTURAL_GOLD} style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.CULTURAL_GOLD_DARK, marginBottom: 4 }}>{STRINGS.phrases.culturalContext}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>{p.culturalNote}</Text>
+            {/* Action buttons row */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 18 }}>
+              <Pressable
+                onPress={() => playSlow(p)}
+                accessibilityRole="button"
+                accessibilityLabel="Play slowly"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+              >
+                <Snail size={13} color={C.TEXT2} />
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.TEXT2 }}>{STRINGS.phrases.playSlowly}</Text>
+              </Pressable>
+              {isUnlocked && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: C.JADE_DIM }}>
+                  <Sparkles size={13} color={C.PRIMARY} />
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.unlockedBadge}</Text>
                 </View>
+              )}
+            </View>
+
+            {/* Pronunciation */}
+            {p.pronTip && (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 7 }}>
+                  {STRINGS.phrases.pronunciation}
+                </Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 21 }}>{p.pronTip}</Text>
               </View>
             )}
 
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${DIFFICULTY_COLORS[p.difficulty]}18` }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: DIFFICULTY_COLORS[p.difficulty], textTransform: 'capitalize' }}>{p.difficulty}</Text>
+            {/* Cultural note */}
+            {p.culturalNote && (
+              <View style={{ marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                  <Info size={11} color={C.CULTURAL_GOLD} />
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.CULTURAL_GOLD, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    {STRINGS.phrases.culturalContext}
+                  </Text>
+                </View>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 21 }}>{p.culturalNote}</Text>
               </View>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${color}14` }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color }}>{p.category}</Text>
+            )}
+
+            {/* Tag pills */}
+            <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: `${DIFFICULTY_COLORS[p.difficulty]}14`, borderWidth: 1, borderColor: `${DIFFICULTY_COLORS[p.difficulty]}28` }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: DIFFICULTY_COLORS[p.difficulty], textTransform: 'capitalize' }}>{p.difficulty}</Text>
               </View>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: C.SURFACE }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.TEXT3 }}>{TYPE_LABELS[p.type]}</Text>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: `${color}10`, borderWidth: 1, borderColor: `${color}25` }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color }}>{p.category}</Text>
+              </View>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3 }}>{TYPE_LABELS[p.type]}</Text>
               </View>
             </View>
           </View>
@@ -251,7 +275,7 @@ export function PhraseLibrary() {
               <Grid2x2 size={16} color={C.PRIMARY} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT }}>
-              Categories
+              {STRINGS.phrases.categoriesHeader}
             </Text>
           </View>
           <View style={{
@@ -261,7 +285,7 @@ export function PhraseLibrary() {
             backgroundColor: C.SURFACE,
           }}>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.TEXT3 }}>
-              {PHRASE_CATEGORIES.length} topics
+              {STRINGS.phrases.topicsCount(PHRASE_CATEGORIES.length)}
             </Text>
           </View>
         </View>
@@ -279,6 +303,7 @@ export function PhraseLibrary() {
                 variant={getCategoryVariant(idx)}
                 bgColor={isDark ? config.darkBg : config.bg}
                 accentColor={isDark ? config.darkBg : config.accent}
+                arabicLabel={CATEGORY_ARABIC[category]}
                 delay={0}
                 onPress={() => handleCategorySelect(category)}
               />
@@ -372,26 +397,52 @@ export function PhraseLibrary() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 480 }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 26, color: C.TEXT }}>
-              {STRINGS.phrases.title}
-            </Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-              backgroundColor: C.GOLD_DIM,
-            }}>
-              <BookOpen size={13} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{PHRASES.length}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <View>
+              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 26, color: C.TEXT, marginBottom: 4 }}>
+                {STRINGS.phrases.title}
+              </Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>
+                {STRINGS.phrases.subtitle(PHRASES.length)}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <Pressable
+                onPress={() => router.push('/practice')}
+                accessibilityRole="button"
+                accessibilityLabel="Open practice mode"
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 5,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                  borderRadius: 10,
+                  backgroundColor: C.JADE_DIM,
+                  borderWidth: 1,
+                  borderColor: C.BORDER,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Zap size={12} color={C.PRIMARY} fill={C.PRIMARY} />
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>
+                  {STRINGS.phrases.practiceButton}
+                </Text>
+              </Pressable>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: 10,
+                backgroundColor: C.GOLD_DIM,
+              }}>
+                <BookOpen size={12} color={C.PRIMARY} />
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{PHRASES.length}</Text>
+              </View>
             </View>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, marginBottom: 14 }}>
-            {STRINGS.phrases.subtitle(PHRASES.length)}
-          </Text>
         </MotiView>
 
         {/* Search */}
@@ -535,10 +586,10 @@ export function PhraseLibrary() {
                   </View>
                   <View>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT, marginBottom: 2 }}>
-                      Browse All Phrases
+                      {STRINGS.phrases.browseAll}
                     </Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>
-                      {PHRASES.length} expressions across {PHRASE_CATEGORIES.length} categories
+                      {STRINGS.phrases.browseAllSub(PHRASES.length, PHRASE_CATEGORIES.length)}
                     </Text>
                   </View>
                 </View>

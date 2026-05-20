@@ -33,11 +33,7 @@ export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor
         animate={{
           translateX: value ? 26 : 0,
         }}
-        transition={{
-          type: 'spring',
-          damping: 18,
-          stiffness: 220,
-        }}
+        transition={{ type: 'timing', duration: 200 }}
         style={{
           width: 24,
           height: 24,
