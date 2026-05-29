@@ -27,6 +27,13 @@ import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  scheduleReEngagementIfNeeded,
+  cancelAllNotifications,
+  derivePreferredHour,
+} from '../lib/notifications';
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
 // Guards against ID collisions when addJournalEntry is called multiple times
@@ -187,6 +194,16 @@ interface AppState {
   fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
+  // Notifications
+  /** Rolling last-7 session hours (0–23, local time). Used for smart notification timing. */
+  recentSessionHours: number[];
+  /** Whether the user has granted push notification permission. */
+  notificationsEnabled: boolean;
+  /** Record the current hour and (re)schedule notifications with updated smart timing. */
+  recordSessionHour: () => Promise<void>;
+  /** Request permission and schedule initial notifications. Call after sign-in. */
+  initNotifications: () => Promise<void>;
+
   // Auth actions
   setUser: (user: UserProfile) => void;
   setUserMode: (mode: 'career' | 'social') => void;
@@ -274,6 +291,10 @@ export const useAppStore = create<AppState>()(
       unlockedPhraseIds: [],
       activeScenarioState: null,
 
+      // Notifications
+      recentSessionHours: [],
+      notificationsEnabled: false,
+
       // Sync state
       isSyncing: false,
       lastSyncedAt: null,
@@ -331,6 +352,17 @@ export const useAppStore = create<AppState>()(
           },
         );
 
+        // Merge journal: union by id so entries made offline on another device
+        // are not lost when cloud data arrives. Newest entries first, capped at 100.
+        const cloudJournal: JournalEntry[] = data.journal ?? [];
+        const localIds = new Set(s.journal.map((e: JournalEntry) => e.id));
+        const mergedJournal = [
+          ...s.journal,
+          ...cloudJournal.filter((e: JournalEntry) => !localIds.has(e.id)),
+        ]
+          .sort((a: JournalEntry, b: JournalEntry) => b.date.localeCompare(a.date))
+          .slice(0, 100);
+
         set({
           user: data.user_profile ?? s.user,
           stats: data.stats ?? s.stats,
@@ -338,7 +370,7 @@ export const useAppStore = create<AppState>()(
           completedScenarios: data.completed_scenarios ?? s.completedScenarios,
           savedPhrases: data.saved_phrases ?? s.savedPhrases,
           milestones: mergedMilestones,
-          journal: data.journal ?? s.journal,
+          journal: mergedJournal,
           lastActiveDate: data.last_active_date ?? s.lastActiveDate,
           subscriptionStatus: data.subscription_status ?? s.subscriptionStatus,
           trialStartedAt: data.trial_started_at ?? s.trialStartedAt,
@@ -355,7 +387,33 @@ export const useAppStore = create<AppState>()(
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
         await logoutPurchasesUser();
+        await cancelAllNotifications();
         set({ isAuthenticated: false, clerkUserId: null });
+      },
+
+      // ─── Notifications ──────────────────────────────────────────────────────
+      initNotifications: async () => {
+        const granted = await requestNotificationPermission();
+        if (!granted) return;
+        set({ notificationsEnabled: true });
+        const s = get();
+        const hour = derivePreferredHour(s.recentSessionHours);
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
+        await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
+      },
+
+      recordSessionHour: async () => {
+        const hour = new Date().getHours();
+        set(s => ({
+          recentSessionHours: [...s.recentSessionHours, hour].slice(-7), // keep last 7
+        }));
+        // Re-schedule with updated smart timing (non-blocking)
+        const s = get();
+        if (!s.notificationsEnabled) return;
+        const preferredHour = derivePreferredHour(s.recentSessionHours);
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
       },
 
       // UI
@@ -716,6 +774,8 @@ export const useAppStore = create<AppState>()(
         phraseReviews: state.phraseReviews,
         journal: state.journal,
         milestones: state.milestones,
+        recentSessionHours: state.recentSessionHours,
+        notificationsEnabled: state.notificationsEnabled,
       }),
     }
   )

@@ -40,6 +40,11 @@ import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 import { useTheme } from '../src/hooks/useTheme';
 import { useAppStore } from '../src/store/useAppStore';
+import { setupNotifications } from '../src/lib/notifications';
+
+// Configure notification handler and Android channel at module load time
+// (must happen before any scheduleNotificationAsync calls)
+setupNotifications();
 
 SplashScreen.preventAutoHideAsync();
 
