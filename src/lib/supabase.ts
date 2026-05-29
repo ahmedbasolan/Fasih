@@ -15,11 +15,14 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
+// Fasih uses Clerk for authentication — Supabase is used for the database only.
+// Disable all Supabase Auth features so the client never tries to manage sessions
+// or refresh tokens that do not exist.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: ExpoSecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
+    autoRefreshToken: false,
+    persistSession: false,
     detectSessionInUrl: false,
   },
   global: {
