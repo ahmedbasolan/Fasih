@@ -28,6 +28,10 @@ import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
 
+// ─── Trial duration ───────────────────────────────────────────────────────────
+// Single source of truth — used in hasFullAccess AND hasScenarioAccess.
+const TRIAL_DAYS = 4;
+
 // ─── Journal ID counter ───────────────────────────────────────────────────────
 // Guards against ID collisions when addJournalEntry is called multiple times
 // within the same millisecond (e.g., scenario completion fires several callbacks).
@@ -293,6 +297,7 @@ export const useAppStore = create<AppState>()(
             phrase_reviews: s.phraseReviews,
             completed_scenarios: s.completedScenarios,
             saved_phrases: s.savedPhrases,
+            unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
             journal: s.journal,
             last_active_date: s.lastActiveDate,
@@ -331,12 +336,18 @@ export const useAppStore = create<AppState>()(
           },
         );
 
+        // Merge unlockedPhraseIds: union of cloud + local (never lose locally unlocked phrases)
+        const mergedUnlocked = Array.from(
+          new Set([...(data.unlocked_phrase_ids ?? []), ...s.unlockedPhraseIds])
+        );
+
         set({
           user: data.user_profile ?? s.user,
           stats: data.stats ?? s.stats,
           phraseReviews: data.phrase_reviews ?? s.phraseReviews,
           completedScenarios: data.completed_scenarios ?? s.completedScenarios,
           savedPhrases: data.saved_phrases ?? s.savedPhrases,
+          unlockedPhraseIds: mergedUnlocked,
           milestones: mergedMilestones,
           journal: data.journal ?? s.journal,
           lastActiveDate: data.last_active_date ?? s.lastActiveDate,
@@ -355,7 +366,32 @@ export const useAppStore = create<AppState>()(
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
         await logoutPurchasesUser();
-        set({ isAuthenticated: false, clerkUserId: null });
+        // Clear all user-specific data so the next sign-in starts clean.
+        // hasOnboarded is intentionally preserved — a returning user should land on
+        // sign-in, not the onboarding flow. A brand-new user on this device will
+        // have hasOnboarded === false regardless.
+        set({
+          isAuthenticated: false,
+          clerkUserId: null,
+          user: null,
+          subscriptionStatus: 'free',
+          trialStartedAt: null,
+          trialPlan: null,
+          stats: DEFAULT_USER_STATS,
+          phraseReviews: {},
+          completedScenarios: {},
+          savedPhrases: [],
+          unlockedPhraseIds: [],
+          favoriteScenarios: [],
+          sceneProgress: {},
+          lastActiveDate: null,
+          journal: [],
+          milestones: DEFAULT_MILESTONES,
+          activeScenarioState: null,
+          communityStatsCache: {},
+          lastSyncedAt: null,
+          lastSyncError: null,
+        });
       },
 
       // UI
@@ -437,7 +473,7 @@ export const useAppStore = create<AppState>()(
         if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + 4);
+          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
           if (new Date() < trialEnd) return true;
         }
         // Free users unlock full access after completing 3 scenarios
@@ -449,10 +485,12 @@ export const useAppStore = create<AppState>()(
         if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + 4);
+          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
           if (new Date() < trialEnd) return true;
         }
-        // Free users get first 3 scenarios (index 0, 1, 2)
+        // Free users who completed 3+ scenarios get full access (matches hasFullAccess)
+        if (Object.keys(s.completedScenarios).length >= 3) return true;
+        // Otherwise only first 3 scenarios (index 0, 1, 2) are free
         return scenarioIndex < 3;
       },
       scenariosCompletedCount: () => Object.keys(get().completedScenarios).length,
@@ -685,6 +723,9 @@ export const useAppStore = create<AppState>()(
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
+        // Fire milestone checks immediately so first-scenario and scenarios-3
+        // milestones appear in the same session they are earned (not next app open).
+        get().checkMilestones();
         scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, ending.type);
       },
