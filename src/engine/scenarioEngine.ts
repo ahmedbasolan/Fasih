@@ -35,6 +35,10 @@ export function applyChoice(
     ...state,
     flags: newFlags,
     totalScore: state.totalScore + choice.score,
+    scoreByNpc: {
+      ...state.scoreByNpc,
+      [npcId]: (state.scoreByNpc[npcId] ?? 0) + choice.score,
+    },
     impactByNpc: {
       ...state.impactByNpc,
       [npcId]: {
@@ -65,13 +69,14 @@ export function applyChoice(
  */
 export function getTone(
   state: ScenarioState,
-  _npcId: string,
+  npcId: string,
   scene: ScenarioScene,
 ): Tone {
-  // _npcId is accepted for future per-NPC tone support. Currently totalScore is a
-  // global accumulator and drives warmth for all NPCs — not per-NPC.
   if (!scene.charDialogue) return 'neutral';
-  const score = state.totalScore;
+  // Use per-NPC score when available (multi-NPC scenarios).
+  // Falls back to totalScore for single-NPC scenarios and legacy scripts
+  // where scoreByNpc may not yet be populated.
+  const score = state.scoreByNpc[npcId] ?? state.totalScore;
   if (scene.warmThreshold !== undefined && score >= scene.warmThreshold) return 'warm';
   if (scene.coldThreshold !== undefined && score < scene.coldThreshold) return 'cold';
   return 'neutral';
@@ -123,13 +128,18 @@ export function evaluateEnding(
 
 // ─── isChoiceVisible ─────────────────────────────────────────────────────────
 /**
- * All choices are visible in the current build.
- * Butterfly effect is expressed through consequences, not by hiding options.
- * Reserved for flag-gated choices in a future iteration.
+ * Returns true if this choice should be rendered for the player.
+ *
+ * A choice with requiredFlag is only shown when that flag has already been set
+ * by a previous choice. This enables branching dialogue paths where an option
+ * only appears after a specific cultural action has been taken earlier.
+ *
+ * Choices without a requiredFlag are always visible.
  */
 export function isChoiceVisible(
-  _choice: ScenarioChoice,
-  _state: ScenarioState,
+  choice: ScenarioChoice,
+  state: ScenarioState,
 ): boolean {
-  return true;
+  if (!choice.requiredFlag) return true;
+  return state.flags.has(choice.requiredFlag);
 }

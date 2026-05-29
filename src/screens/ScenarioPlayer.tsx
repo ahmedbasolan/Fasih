@@ -22,7 +22,13 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
-import { getTone, resolveNextScene, evaluateEnding } from '../engine/scenarioEngine';
+import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible } from '../engine/scenarioEngine';
+import {
+  trackScenarioStarted,
+  trackScenarioChoiceMade,
+  trackScenarioCompleted,
+  trackScenarioAbandoned,
+} from '../lib/analytics';
 import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding } from '../types';
 
 interface Props {
@@ -329,6 +335,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setFinalizedEnding(currEnding);
     setCompletionFired(true);
     finalizeScenario(currEnding);
+    trackScenarioCompleted({
+      scenarioId,
+      title: scriptData.title,
+      endingType: currEnding.type,
+      endingId: currEnding.title,
+      sceneCount: activeScenarioState.choiceHistory.length,
+    });
     const hapticType =
       currEnding.type === 'failed' ? Haptics.NotificationFeedbackType.Error
       : currEnding.type === 'mixed' ? Haptics.NotificationFeedbackType.Warning
@@ -383,6 +396,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     return text.replace(/\[name\]/g, userName);
   }, [user?.name]);
 
+  // Returns the correct Arabic phrasing for the user's gender.
+  // Falls back to the default (male-form) arabic when arabicFeminine is not authored.
+  const arabicForUser = useCallback((choice: ScenarioChoice): string => {
+    if (user?.gender === 'female' && choice.arabicFeminine) return choice.arabicFeminine;
+    return choice.arabic;
+  }, [user?.gender]);
+
   const handleChoice = useCallback((choice: ScenarioChoice) => {
     if (selectedChoiceId || !scenes[step] || !activeScenarioState || !scriptData) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -397,6 +417,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
     setSelectedChoiceId(choice.id);
     void recordChoiceStatAction(scenarioId, scenes[step].id, choice.id);
+    trackScenarioChoiceMade({ scenarioId, sceneId: scenes[step].id, choiceText: choice.text, flag: choice.flag });
     setTimeout(() => setPhase('choice-result'), 600);
   }, [selectedChoiceId, activeScenarioState, scriptData, applyScenarioChoice, recordChoiceStatAction, scenarioId, scenes, step]);
 
@@ -539,6 +560,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           </View>
           <Pressable
             onPress={() => {
+              if (phase !== 'result' && scene) {
+                trackScenarioAbandoned({ scenarioId, sceneId: scene.id });
+              }
               useAppStore.getState().abandonScenario();
               onExit();
             }}
@@ -613,7 +637,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 </View>
               )}
 
-              <Pressable onPress={() => setPhase('scene')} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
+              <Pressable onPress={() => {
+                trackScenarioStarted({ scenarioId, title: scriptData.title, category: scenario?.mode });
+                setPhase('scene');
+              }} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
                 <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>{STRINGS.scenarios.begin}</Text>
                   <ArrowRight size={17} color={C.WHITE} />
@@ -642,11 +669,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 )}
 
                 <View style={{ gap: 8 }}>
-                  {scene.choices.map((choice: ScenarioChoice, i: number) => {
+                  {scene.choices
+                    .filter((c: ScenarioChoice) => !activeScenarioState || isChoiceVisible(c, activeScenarioState))
+                    .map((choice: ScenarioChoice, i: number) => {
                     const isSelected = selectedChoiceId === choice.id;
                     const isDimmed = !!selectedChoiceId && !isSelected;
                     const color = outcomeColor[choice.outcome];
                     const isChoicePlaying = playingChoiceId === choice.id;
+                    const choiceArabic = arabicForUser(choice);
 
                     return (
                       <MotiView
@@ -675,7 +705,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
                             <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14 }}>
                               <Text style={{ fontFamily: FONT_ARABIC, fontSize: 17, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
-                                {replaceName(choice.arabic)}
+                                {replaceName(choiceArabic)}
                               </Text>
                               <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentColor}70`, fontStyle: 'italic', marginBottom: 5 }}>
                                 {replaceName(choice.roman)}
@@ -687,7 +717,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               {/* Listen button — only when not yet chosen */}
                               {!selectedChoiceId && (
                                 <Pressable
-                                  onPress={(e) => { e.stopPropagation?.(); playChoice(choice.id, choice.arabic); }}
+                                  onPress={(e) => { e.stopPropagation?.(); playChoice(choice.id, choiceArabic); }}
                                   accessibilityRole="button"
                                   accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}
                                   accessibilityState={{ selected: isChoicePlaying }}
@@ -747,7 +777,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     {/* What you said */}
                     <View style={{ borderRadius: 20, padding: 18, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
                       <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>You Said</Text>
-                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: accentColor, textAlign: 'right', marginBottom: 6, lineHeight: 30 }}>{replaceName(choice.arabic)}</Text>
+                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: accentColor, textAlign: 'right', marginBottom: 6, lineHeight: 30 }}>{replaceName(arabicForUser(choice))}</Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 22 }}>{replaceName(choice.text)}</Text>
                     </View>
 

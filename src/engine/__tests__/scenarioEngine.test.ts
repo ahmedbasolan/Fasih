@@ -10,6 +10,7 @@ function makeEmptyState(scenarioId = 'test-scenario', sceneId = 'scene-1'): Scen
     flags: new Set(),
     impactByNpc: {},
     totalScore: 0,
+    scoreByNpc: {},
     choiceHistory: [],
     scenesVisited: new Set([sceneId]),
     startedAt: '2026-01-01T00:00:00.000Z',
@@ -327,9 +328,75 @@ describe('evaluateEnding', () => {
 // ─── isChoiceVisible ─────────────────────────────────────────────────────────
 
 describe('isChoiceVisible', () => {
-  it('returns true for any choice (all choices visible in current implementation)', () => {
+  it('returns true when choice has no requiredFlag', () => {
     const state = makeEmptyState();
-    const choice = makeChoice();
+    const choice = makeChoice(); // no requiredFlag
     expect(isChoiceVisible(choice, state)).toBe(true);
+  });
+
+  it('returns false when requiredFlag is not in state.flags', () => {
+    const state = makeEmptyState(); // flags = empty Set
+    const choice = makeChoice({ requiredFlag: 'GREETED_IN_DIALECT' });
+    expect(isChoiceVisible(choice, state)).toBe(false);
+  });
+
+  it('returns true when requiredFlag IS in state.flags', () => {
+    const state = { ...makeEmptyState(), flags: new Set(['GREETED_IN_DIALECT']) };
+    const choice = makeChoice({ requiredFlag: 'GREETED_IN_DIALECT' });
+    expect(isChoiceVisible(choice, state)).toBe(true);
+  });
+});
+
+// ─── scoreByNpc ───────────────────────────────────────────────────────────────
+
+describe('applyChoice → scoreByNpc', () => {
+  it('accumulates choice.score per NPC into scoreByNpc', () => {
+    const state = makeEmptyState();
+    const c1 = makeChoice({ id: 'c1', score: 4 });
+    const c2 = makeChoice({ id: 'c2', score: 2 });
+    const after1 = applyChoice(state, c1, 'Amira');
+    const after2 = applyChoice(after1, c2, 'Amira');
+    expect(after2.scoreByNpc['Amira']).toBe(6);
+  });
+
+  it('tracks scores independently per NPC', () => {
+    const state = makeEmptyState();
+    const c1 = makeChoice({ id: 'c1', score: 5 });
+    const c2 = makeChoice({ id: 'c2', score: 3 });
+    const after1 = applyChoice(state, c1, 'Amira');
+    const after2 = applyChoice(after1, c2, 'Tariq');
+    expect(after2.scoreByNpc['Amira']).toBe(5);
+    expect(after2.scoreByNpc['Tariq']).toBe(3);
+  });
+});
+
+// ─── getTone (per-NPC) ────────────────────────────────────────────────────────
+
+describe('getTone per-NPC', () => {
+  const sceneWithDialogue = makeScene({
+    warmThreshold: 8,
+    coldThreshold: 3,
+    charDialogue: {
+      warm: { arabic: 'a', roman: 'a', english: 'a' },
+      neutral: { arabic: 'b', roman: 'b', english: 'b' },
+      cold: { arabic: 'c', roman: 'c', english: 'c' },
+    },
+  });
+
+  it('uses scoreByNpc for the scene NPC when present', () => {
+    // Amira score = 10 (warm), Tariq score = 1 (cold), totalScore = 11
+    // getTone for Amira should be warm, not driven by totalScore
+    const state = { ...makeEmptyState(), totalScore: 11, scoreByNpc: { Amira: 10, Tariq: 1 } };
+    expect(getTone(state, 'Amira', sceneWithDialogue)).toBe('warm');
+  });
+
+  it('uses Tariq scoreByNpc independently from Amira', () => {
+    const state = { ...makeEmptyState(), totalScore: 11, scoreByNpc: { Amira: 10, Tariq: 1 } };
+    expect(getTone(state, 'Tariq', sceneWithDialogue)).toBe('cold');
+  });
+
+  it('falls back to totalScore when npcId not in scoreByNpc', () => {
+    const state = { ...makeEmptyState(), totalScore: 10, scoreByNpc: {} };
+    expect(getTone(state, 'Unknown', sceneWithDialogue)).toBe('warm');
   });
 });
