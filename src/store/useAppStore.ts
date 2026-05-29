@@ -27,6 +27,10 @@ import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
+import {
+  todayISO, addDays,
+  newReviewCard, updateReviewCard, applyRatingToCard, RATING_INTERVALS,
+} from '../engine/srsEngine';
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
 // Guards against ID collisions when addJournalEntry is called multiple times
@@ -41,61 +45,6 @@ let _customerInfoUnsub: (() => void) | null = null;
 function scheduleSync(fn: () => void, delayMs = 1500) {
   if (_syncTimer) clearTimeout(_syncTimer);
   _syncTimer = setTimeout(fn, delayMs);
-}
-
-// ─── Spaced repetition helpers ───────────────────────────────────────────────
-function todayISO(): string {
-  const d = new Date();
-  // Use local date components so streak matches the user's clock, not UTC
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function addDays(iso: string, days: number): string {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-}
-
-function newReviewCard(phraseId: string): PhraseReviewData {
-  const today = todayISO();
-  return { phraseId, lastReviewed: today, nextReview: today, interval: 0, ease: 2.0, correct: 0, incorrect: 0 };
-}
-
-function updateReviewCard(card: PhraseReviewData, correct: boolean): PhraseReviewData {
-  const today = todayISO();
-  if (correct) {
-    const newInterval = Math.max(1, Math.round(card.interval * card.ease));
-    const newEase = Math.min(2.5, card.ease + 0.1);
-    return { ...card, lastReviewed: today, nextReview: addDays(today, newInterval), interval: newInterval, ease: newEase, correct: card.correct + 1 };
-  }
-  return { ...card, lastReviewed: today, nextReview: addDays(today, 1), interval: 1, ease: Math.max(1.3, card.ease - 0.2), incorrect: card.incorrect + 1 };
-}
-
-// 3-tier rating → fixed SRS intervals per guidelines:
-// 'new' = resurfaces in 1 day, 'learning' = 3 days, 'knew' = 7 days
-// Each subsequent 'knew' doubles the interval (handled by updateReviewCard ease multiplier)
-const RATING_INTERVALS: Record<'new' | 'learning' | 'knew', number> = {
-  new: 1,
-  learning: 3,
-  knew: 7,
-};
-
-function applyRatingToCard(card: PhraseReviewData, rating: 'new' | 'learning' | 'knew'): PhraseReviewData {
-  const today = todayISO();
-  if (rating === 'knew') {
-    // On 'knew', use the ease multiplier to progressively double intervals
-    const newInterval = card.interval < 1 ? 7 : Math.round(card.interval * card.ease);
-    const newEase = Math.min(2.5, card.ease + 0.1);
-    return { ...card, lastReviewed: today, nextReview: addDays(today, newInterval), interval: newInterval, ease: newEase, correct: card.correct + 1 };
-  }
-  if (rating === 'new') {
-    return { ...card, lastReviewed: today, nextReview: addDays(today, RATING_INTERVALS.new), interval: RATING_INTERVALS.new, ease: Math.max(1.3, card.ease - 0.2), incorrect: card.incorrect + 1 };
-  }
-  // 'learning'
-  return { ...card, lastReviewed: today, nextReview: addDays(today, RATING_INTERVALS.learning), interval: RATING_INTERVALS.learning, ease: card.ease };
 }
 
 // ─── Milestones ──────────────────────────────────────────────────────────────
