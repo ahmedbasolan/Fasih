@@ -77,6 +77,7 @@ export interface CloudUserData {
   phrase_reviews: Record<string, PhraseReviewData>;
   completed_scenarios: Record<string, { endingType: string; date: string }>;
   saved_phrases: string[];
+  unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
   journal: JournalEntry[];
   last_active_date: string | null;
@@ -102,6 +103,7 @@ export async function pushProgress(
         phrase_reviews: data.phrase_reviews,
         completed_scenarios: data.completed_scenarios,
         saved_phrases: data.saved_phrases,
+        unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
         journal: data.journal,
         last_active_date: data.last_active_date,
@@ -141,6 +143,7 @@ export async function pullProgress(
       phrase_reviews: data.phrase_reviews ?? {},
       completed_scenarios: data.completed_scenarios ?? {},
       saved_phrases: data.saved_phrases ?? [],
+      unlocked_phrase_ids: data.unlocked_phrase_ids ?? [],
       milestones: data.milestones ?? [],
       journal: data.journal ?? [],
       last_active_date: data.last_active_date ?? null,
