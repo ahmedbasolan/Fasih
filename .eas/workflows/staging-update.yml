@@ -1,0 +1,24 @@
+# staging-update.yml
+#
+# Triggered automatically when a feature branch merges into `dev`.
+#
+# Publishes a JavaScript-only OTA update to the `preview` channel so internal
+# testers always have the latest `dev` code without waiting for a new binary build.
+#
+# This is the fast loop: code change → merge to dev → testers see it in < 2 min.
+
+name: Staging OTA Update
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  update:
+    name: Publish to Preview Channel
+    type: update
+    environment: preview
+    params:
+      channel: preview
+      message: "dev @ ${{ github.event.head_commit.message }}"
