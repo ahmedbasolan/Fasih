@@ -400,7 +400,7 @@ function HeaderContent() {
 }
 
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
-  const { C, G } = useTheme();
+  const { C, G, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
@@ -412,7 +412,10 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const allScenarios: Scenario[] = useMemo(
     () => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
       .filter((s) => s.mode === userMode),
-    [C, userMode],
+    // isDark is the stable bool determining C — avoids rebuilding the scenario list
+    // on every render since C is a new object reference each time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDark, userMode],
   );
 
   const displayScenarios = useMemo(() => {

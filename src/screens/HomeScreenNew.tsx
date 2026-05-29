@@ -60,7 +60,7 @@ export function HomeScreenNew({
   onMissionPress,
   onSeeAll,
 }: HomeScreenNewProps) {
-  const { C } = useTheme();
+  const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   // Real store data
@@ -90,7 +90,10 @@ export function HomeScreenNew({
     // Pick first one not yet completed
     const uncompleted = modeMatch.find((s) => !completedScenarios[s.id]);
     return uncompleted ?? modeMatch[0] ?? getFeaturedScenario(C);
-  }, [C, userMode, completedScenarios]);
+  // isDark is the stable bool that determines C — prevents recomputing on every render
+  // since C is a new object reference each render but isDark only changes on theme switch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDark, userMode, completedScenarios]);
 
   const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 

@@ -21,9 +21,9 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
-import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
+import { PHRASES, PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
@@ -119,31 +119,71 @@ type MilestoneChecker = (s: Pick<AppState, 'stats' | 'completedScenarios' | 'phr
 const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'first-scenario': (s) => s.stats.scenariosCompleted.length >= 1,
   'greetings-3': (s) => {
-    const greetings = Object.values(s.phraseReviews).filter(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category === 'Greetings' && r.correct >= 1;
-    });
+    const greetings = Object.values(s.phraseReviews).filter(r =>
+      PHRASE_BY_ID[r.phraseId]?.category === 'Greetings' && r.correct >= 1
+    );
     return greetings.length >= 3;
   },
   'hospitality': (s) => {
-    const hosp = Object.values(s.phraseReviews).filter(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category === 'Hospitality' && r.correct >= 1;
-    });
+    const hosp = Object.values(s.phraseReviews).filter(r =>
+      PHRASE_BY_ID[r.phraseId]?.category === 'Hospitality' && r.correct >= 1
+    );
     return hosp.length >= 2;
   },
   'week-learner': (s) => s.stats.daysActive >= 7,
   'phrases-10': (s) => s.stats.phrasesStudied >= 10,
   'all-categories': (s) => {
-    const cats = new Set(Object.values(s.phraseReviews).map(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category;
-    }).filter(Boolean));
+    const cats = new Set(
+      Object.values(s.phraseReviews)
+        .map(r => PHRASE_BY_ID[r.phraseId]?.category)
+        .filter(Boolean)
+    );
     return cats.size >= 5;
   },
   'scenarios-3': (s) => s.stats.scenariosCompleted.length >= 3,
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
+
+// ─── Mastery computation (extracted to eliminate duplication + O(n²)) ─────────
+/**
+ * Computes phrasesStudied, phrasesMastered, and categoryMastery from the current
+ * review map in a single O(n) pass — replaces the previous O(n × categories × n)
+ * nested-filter approach used in both recordPhraseReview and recordPhraseRating.
+ */
+function computeMastery(reviews: Record<string, PhraseReviewData>): {
+  studied: number;
+  mastered: number;
+  categoryMastery: Record<string, CategoryMastery>;
+} {
+  const allCards = Object.values(reviews);
+  const studied = allCards.length;
+  let mastered = 0;
+
+  // Single pass: bucket cards by category and count mastered
+  const cardsByCategory: Partial<Record<PhraseCategory, PhraseReviewData[]>> = {};
+  for (const card of allCards) {
+    const phrase = PHRASE_BY_ID[card.phraseId];
+    if (!phrase) continue;
+    if (card.correct >= 3 && card.correct / (card.correct + card.incorrect) >= 0.8) mastered++;
+    if (!cardsByCategory[phrase.category]) cardsByCategory[phrase.category] = [];
+    cardsByCategory[phrase.category]!.push(card);
+  }
+
+  const categoryMastery: Record<string, CategoryMastery> = {};
+  for (const cat of PHRASE_CATEGORIES) {
+    const catCards = cardsByCategory[cat] ?? [];
+    const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
+    const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
+    categoryMastery[cat] = {
+      category: cat,
+      phrasesStudied: catCards.length,
+      phrasesTotal: PHRASES_PER_CATEGORY[cat] ?? 0,
+      accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0,
+    };
+  }
+
+  return { studied, mastered, categoryMastery };
+}
 
 // ─── State shape ─────────────────────────────────────────────────────────────
 interface AppState {
@@ -518,20 +558,7 @@ export const useAppStore = create<AppState>()(
           const existing = s.phraseReviews[phraseId];
           const card = updateReviewCard(existing ?? newReviewCard(phraseId), correct);
           const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const allCards = Object.values(newReviews);
-          const studied = allCards.length;
-          const mastered = allCards.filter(c => c.correct >= 3 && c.correct / (c.correct + c.incorrect) >= 0.8).length;
-          const categoryMastery: Record<string, { category: PhraseCategory; phrasesStudied: number; phrasesTotal: number; accuracy: number }> = {};
-          for (const cat of PHRASE_CATEGORIES) {
-            const phrasesInCat = PHRASES.filter(p => p.category === cat);
-            const catCards = allCards.filter(c => {
-              const p = PHRASES.find(ph => ph.id === c.phraseId);
-              return p?.category === cat;
-            });
-            const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
-            const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
-            categoryMastery[cat] = { category: cat, phrasesStudied: catCards.length, phrasesTotal: phrasesInCat.length, accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0 };
-          }
+          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
         scheduleSync(() => get().syncToCloud());
@@ -542,20 +569,7 @@ export const useAppStore = create<AppState>()(
           const existing = s.phraseReviews[phraseId];
           const card = applyRatingToCard(existing ?? newReviewCard(phraseId), rating);
           const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const allCards = Object.values(newReviews);
-          const studied = allCards.length;
-          const mastered = allCards.filter(c => c.correct >= 3 && c.correct / (c.correct + c.incorrect) >= 0.8).length;
-          const categoryMastery: Record<string, { category: PhraseCategory; phrasesStudied: number; phrasesTotal: number; accuracy: number }> = {};
-          for (const cat of PHRASE_CATEGORIES) {
-            const phrasesInCat = PHRASES.filter(p => p.category === cat);
-            const catCards = allCards.filter(c => {
-              const p = PHRASES.find(ph => ph.id === c.phraseId);
-              return p?.category === cat;
-            });
-            const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
-            const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
-            categoryMastery[cat] = { category: cat, phrasesStudied: catCards.length, phrasesTotal: phrasesInCat.length, accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0 };
-          }
+          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
         scheduleSync(() => get().syncToCloud());
