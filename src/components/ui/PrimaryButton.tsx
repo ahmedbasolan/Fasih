@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Pressable, Text, ViewStyle } from 'react-native';
+import { Pressable, Text, ViewStyle, ActivityIndicator } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,25 +17,29 @@ interface Props {
   children: React.ReactNode;
   onPress?: () => void;
   disabled?: boolean;
+  /** Show a spinner and block interaction. Use during async operations to prevent double-submit. */
+  loading?: boolean;
   variant?: Variant;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 }
 
-export function PrimaryButton({ children, onPress, disabled, variant = 'gold', style }: Props) {
+export function PrimaryButton({ children, onPress, disabled, loading, variant = 'gold', style, accessibilityLabel }: Props) {
   const { C, G } = useTheme();
   const scale = useSharedValue(1);
+  const isDisabled = disabled || loading;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const handlePressIn = useCallback(() => {
-    if (disabled) return;
+    if (isDisabled) return;
     scale.value = withTiming(PRESS_SCALE, {
       duration: PRESS_DURATION_IN,
       easing: Easing.out(Easing.cubic),
     });
-  }, [disabled, scale]);
+  }, [isDisabled, scale]);
 
   const handlePressOut = useCallback(() => {
     scale.value = withTiming(1, {
@@ -48,24 +52,27 @@ export function PrimaryButton({ children, onPress, disabled, variant = 'gold', s
 
   return (
     <Animated.View
-      style={[{ borderRadius: 100, overflow: 'hidden', opacity: disabled ? 0.5 : 1 }, animatedStyle, style]}
+      style={[{ borderRadius: 100, overflow: 'hidden', opacity: isDisabled ? 0.5 : 1, minHeight: 52 }, animatedStyle, style]}
     >
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={disabled}
+        disabled={isDisabled}
         accessibilityRole="button"
-        accessibilityState={{ disabled: !!disabled }}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       >
         <LinearGradient
-          colors={disabled ? disabledColors : variant === 'gold' ? G.GOLD_STOPS : G.JADE_STOPS}
+          colors={isDisabled ? disabledColors : variant === 'gold' ? G.GOLD_STOPS : G.JADE_STOPS}
           start={ANGLE_135.start}
           end={ANGLE_135.end}
-          style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+          style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, minHeight: 52 }}
         >
-          {typeof children === 'string' ? (
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: '#FFFFFF' }}>{children}</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={C.WHITE} />
+          ) : typeof children === 'string' ? (
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>{children}</Text>
           ) : children}
         </LinearGradient>
       </Pressable>
