@@ -388,7 +388,33 @@ export const useAppStore = create<AppState>()(
       signOut: async () => {
         await logoutPurchasesUser();
         await cancelAllNotifications();
-        set({ isAuthenticated: false, clerkUserId: null });
+        // Clear all user-specific data so the next sign-in starts clean.
+        // hasOnboarded is intentionally preserved — a returning user should land on
+        // sign-in, not the onboarding flow.
+        set({
+          isAuthenticated: false,
+          clerkUserId: null,
+          user: null,
+          subscriptionStatus: 'free',
+          trialStartedAt: null,
+          trialPlan: null,
+          stats: { ...DEFAULT_USER_STATS },
+          phraseReviews: {},
+          completedScenarios: {},
+          savedPhrases: [],
+          unlockedPhraseIds: [],
+          favoriteScenarios: [],
+          sceneProgress: {},
+          lastActiveDate: null,
+          journal: [],
+          milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
+          activeScenarioState: null,
+          communityStatsCache: {},
+          lastSyncedAt: null,
+          lastSyncError: null,
+          recentSessionHours: [],
+          notificationsEnabled: false,
+        });
       },
 
       // ─── Notifications ──────────────────────────────────────────────────────
