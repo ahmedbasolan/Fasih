@@ -25,11 +25,12 @@ import type { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import type { SubscriptionStatus } from '../types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-// Use the test key as a fallback when env var is not set.
-// IMPORTANT: Replace with your real Apple / Google keys in production.
-const TEST_KEY = 'test_kPwnxlCxpvARBOPvRxegearmcwT';
-const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || TEST_KEY;
-const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || TEST_KEY;
+// RevenueCat API keys must be set via environment variables — never hardcoded.
+// Add to your .env.local (never commit):
+//   EXPO_PUBLIC_REVENUECAT_IOS_KEY=<your_apple_api_key>
+//   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=<your_google_api_key>
+const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
+const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 
 export const ENTITLEMENT_ID = 'Fasih Pro';
 
@@ -155,8 +156,10 @@ export async function purchasePlan(plan: Plan): Promise<PurchaseResult> {
       :                       offerings.monthly;
 
     if (!pkg) {
-      // Simulator / dev fallback when no products are configured yet
-      return { status: 'subscribed', cancelled: false, error: null };
+      // In dev/simulator (no App Store products configured yet), simulate a successful purchase
+      // so the app is usable for testing. In production this is a real error.
+      if (__DEV__) return { status: 'subscribed', cancelled: false, error: null };
+      return { status: 'free', cancelled: false, error: 'Product not available' };
     }
 
     const { customerInfo } = await Purchases.purchasePackage(pkg);

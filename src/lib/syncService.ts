@@ -1,11 +1,20 @@
 /**
  * Supabase progress sync service.
  *
- * Database schema is managed in supabase/migrations/ — run those files in order
- * in your Supabase SQL editor. Do not duplicate schema here.
+ * Schema is managed via SQL migrations in supabase/migrations/.
  *
- * Auth note: This app uses Clerk, NOT Supabase Auth. user_id is the Clerk user
- * ID string (e.g. "user_2abc..."). See migrations/003_rls.sql for RLS options.
+ * ─── Architecture note ──────────────────────────────────────────────────────
+ * Fasih uses Clerk for authentication. Supabase is the database only — no
+ * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
+ *
+ * RLS is currently DISABLED (Option A). All data access is filtered client-side
+ * by user_id. Upgrade path: enable Option B in 003_rls.sql once a Clerk → JWT
+ * integration is configured (see that file for instructions).
+ *
+ * ─── Security posture ───────────────────────────────────────────────────────
+ * The Supabase anon key is public by design. Without RLS, a malicious client
+ * could read or write any row using a crafted user_id. Acceptable for launch;
+ * schedule Option B before significant user growth.
  */
 
 import { supabase } from './supabase';
@@ -18,6 +27,10 @@ import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, Journ
  */
 export const CURRENT_SCHEMA_VERSION = 2;
 
+// ─── Community stats ─────────────────────────────────────────────────────────
+// Schema lives in supabase/migrations/001_initial_schema.sql.
+// These tables use RPC functions for atomic increments (SECURITY DEFINER).
+// RLS is disabled — reads are open, writes go through the RPCs only.
 
 export interface CloudUserData {
   schema_version: number;
