@@ -8,6 +8,7 @@ import {
   getChoiceStats,
   recordEndingStat as rcRecordEndingStat,
   getEndingStats,
+  CURRENT_SCHEMA_VERSION,
 } from '../lib/syncService';
 import {
   configurePurchases,
@@ -288,6 +289,7 @@ export const useAppStore = create<AppState>()(
         set({ isSyncing: true });
         try {
           const { error } = await pushProgress(s.clerkUserId, {
+            schema_version: CURRENT_SCHEMA_VERSION,
             user_profile: s.user,
             stats: s.stats,
             phrase_reviews: s.phraseReviews,
@@ -641,6 +643,7 @@ export const useAppStore = create<AppState>()(
             flags: new Set<string>(),
             impactByNpc: {},
             totalScore: 0,
+            scoreByNpc: {},
             choiceHistory: [],
             scenesVisited: new Set<string>([firstSceneId]),
             startedAt: new Date().toISOString(),
