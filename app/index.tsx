@@ -28,10 +28,16 @@ export default function Index() {
       if (!hasOnboarded) {
         router.replace('/onboarding');
       } else {
-        void loginPurchasesUser(userId).then(() => syncFromCloud());
-        recordDailyActivity();
-        checkMilestones();
+        // Navigate immediately so the user doesn't wait on cloud sync.
+        // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves
+        // to prevent syncFromCloud from overwriting the streak/lastActiveDate they set.
         router.replace('/(tabs)');
+        void loginPurchasesUser(userId)
+          .then(() => syncFromCloud())
+          .then(() => {
+            recordDailyActivity();
+            checkMilestones();
+          });
       }
     } else {
       setAuthenticated(false);

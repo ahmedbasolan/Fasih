@@ -9,6 +9,7 @@ import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_H
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { PHRASES } from '../constants/phrases';
+import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { PhraseBuilder } from '../components/features/PhraseBuilder';
@@ -275,6 +276,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const { speak, speakSlow, isSpeaking } = useArabicTTS();
+  const getDueReviews = useAppStore((s) => s.getDueReviews);
   const [mode, setMode] = useState<PracticeMode>('menu');
   const [deck, setDeck] = useState<Phrase[]>([]);
   const [current, setCurrent] = useState(0);
@@ -286,13 +288,18 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const DECK_SIZE = 8;
 
   const startFlashcards = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    // SRS-aware deck: due cards first, filled up with fresh phrases.
+    // This ensures the spaced-repetition schedule is actually honoured.
+    const dueIds = new Set(getDueReviews().map(r => r.phraseId));
+    const due = shuffle(PHRASES.filter(p => dueIds.has(p.id)));
+    const rest = shuffle(PHRASES.filter(p => !dueIds.has(p.id)));
+    const pool = [...due, ...rest].slice(0, DECK_SIZE);
+    setDeck(pool);
     setCurrent(0);
     setFlipped(false);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('flashcard');
-  }, []);
+  }, [getDueReviews]);
 
   const startQuiz = useCallback(() => {
     const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
