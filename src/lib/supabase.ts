@@ -15,10 +15,10 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
-// Fasih uses Clerk for auth — Supabase is database-only.
-// autoRefreshToken and persistSession are disabled because there is no Supabase
-// Auth session to refresh or persist. SecureStore adapter is kept in case we
-// enable Clerk → Supabase JWT forwarding (see supabase/migrations/003_rls.sql).
+// Fasih uses Clerk for authentication — Supabase is used for the database only.
+// Disable all Supabase Auth features so the client never tries to manage sessions
+// or refresh tokens that do not exist. SecureStore adapter is kept in case we
+// enable Clerk → Supabase JWT forwarding later (see migrations/003_rls.sql).
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: ExpoSecureStoreAdapter,
