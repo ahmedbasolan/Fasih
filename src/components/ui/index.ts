@@ -9,3 +9,5 @@ export { FadeIn } from './FadeIn';
 export { ShimmerButton } from './ShimmerButton';
 export { SwitchButton } from './SwitchButton';
 export { RippleEffect } from './RippleEffect';
+export { ProgressBar } from './ProgressBar';
+export { SyncStatusBanner, SyncSuccessBadge } from './SyncStatusBanner';
