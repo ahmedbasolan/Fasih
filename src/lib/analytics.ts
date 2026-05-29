@@ -140,3 +140,40 @@ export function trackSubscriptionPurchased(plan: string) {
 export function trackScreen(screenName: string, props?: Record<string, unknown>) {
   posthog.capture('$screen', { $screen_name: screenName, ...props });
 }
+
+// ─── Error Tracking ───────────────────────────────────────────────────────────
+
+/**
+ * Capture a JS error in PostHog as an exception event.
+ *
+ * Use in:
+ *   - ErrorBoundary.componentDidCatch
+ *   - catch blocks in lib/ functions (sync, purchases, etc.)
+ *   - Any unhandled promise rejection handler
+ *
+ * PostHog will group these by message/type in the "Exceptions" tab.
+ */
+export function captureException(error: Error, context?: Record<string, unknown>): void {
+  try {
+    posthog.capture('$exception', {
+      $exception_message: error.message,
+      $exception_type: error.name,
+      $exception_stack_trace_raw: error.stack ?? '',
+      ...context,
+    });
+  } catch {
+    // Never throw from error reporting — it would cause infinite loops in ErrorBoundary
+  }
+}
+
+/**
+ * Capture a non-fatal error (e.g. a failed sync) without crashing.
+ * Shows up in PostHog as a regular event, not an exception.
+ */
+export function captureError(message: string, context?: Record<string, unknown>): void {
+  try {
+    posthog.capture('error_occurred', { message, ...context });
+  } catch {
+    // Swallow — same reasoning as captureException
+  }
+}
