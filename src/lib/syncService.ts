@@ -1,28 +1,20 @@
 /**
  * Supabase progress sync service.
  *
- * Required Supabase table (run once in your Supabase SQL editor):
+ * Schema is managed via SQL migrations in supabase/migrations/.
  *
- *   CREATE TABLE user_data (
- *     user_id       UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
- *     user_profile  JSONB NOT NULL DEFAULT '{}',
- *     stats         JSONB NOT NULL DEFAULT '{}',
- *     phrase_reviews        JSONB NOT NULL DEFAULT '{}',
- *     completed_scenarios   JSONB NOT NULL DEFAULT '{}',
- *     saved_phrases         TEXT[] NOT NULL DEFAULT '{}',
- *     milestones    JSONB NOT NULL DEFAULT '[]',
- *     journal       JSONB NOT NULL DEFAULT '[]',
- *     last_active_date      TEXT,
- *     subscription_status   TEXT NOT NULL DEFAULT 'free',
- *     trial_started_at      TEXT,
- *     trial_plan    TEXT,
- *     updated_at    TIMESTAMPTZ DEFAULT NOW()
- *   );
+ * ─── Architecture note ──────────────────────────────────────────────────────
+ * Fasih uses Clerk for authentication. Supabase is the database only — no
+ * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
  *
- *   ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+ * RLS is currently DISABLED (Option A). All data access is filtered client-side
+ * by user_id. Upgrade path: enable Option B in 003_rls.sql once a Clerk → JWT
+ * integration is configured (see that file for instructions).
  *
- *   CREATE POLICY "Users own their data" ON user_data
- *     FOR ALL USING (auth.uid() = user_id);
+ * ─── Security posture ───────────────────────────────────────────────────────
+ * The Supabase anon key is public by design. Without RLS, a malicious client
+ * could read or write any row using a crafted user_id. Acceptable for launch;
+ * schedule Option B before significant user growth.
  */
 
 import { supabase } from './supabase';
@@ -30,46 +22,9 @@ import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, Journ
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 //
-// Required Supabase tables + RPC functions (run once in SQL editor):
-//
-//   CREATE TABLE scenario_choice_stats (
-//     scenario_id TEXT NOT NULL,
-//     scene_id    TEXT NOT NULL,
-//     choice_id   TEXT NOT NULL,
-//     pick_count  BIGINT NOT NULL DEFAULT 1,
-//     PRIMARY KEY (scenario_id, scene_id, choice_id)
-//   );
-//   ALTER TABLE scenario_choice_stats ENABLE ROW LEVEL SECURITY;
-//   CREATE POLICY "Public read" ON scenario_choice_stats FOR SELECT USING (true);
-//   CREATE POLICY "Auth write" ON scenario_choice_stats FOR ALL USING (auth.uid() IS NOT NULL);
-//
-//   CREATE TABLE scenario_ending_stats (
-//     scenario_id TEXT NOT NULL,
-//     ending_type TEXT NOT NULL,
-//     reach_count BIGINT NOT NULL DEFAULT 1,
-//     PRIMARY KEY (scenario_id, ending_type)
-//   );
-//   ALTER TABLE scenario_ending_stats ENABLE ROW LEVEL SECURITY;
-//   CREATE POLICY "Public read" ON scenario_ending_stats FOR SELECT USING (true);
-//   CREATE POLICY "Auth write" ON scenario_ending_stats FOR ALL USING (auth.uid() IS NOT NULL);
-//
-//   CREATE OR REPLACE FUNCTION increment_choice_stat(
-//     p_scenario_id TEXT, p_scene_id TEXT, p_choice_id TEXT
-//   ) RETURNS void LANGUAGE sql AS $$
-//     INSERT INTO scenario_choice_stats(scenario_id, scene_id, choice_id, pick_count)
-//     VALUES (p_scenario_id, p_scene_id, p_choice_id, 1)
-//     ON CONFLICT (scenario_id, scene_id, choice_id)
-//     DO UPDATE SET pick_count = scenario_choice_stats.pick_count + 1;
-//   $$;
-//
-//   CREATE OR REPLACE FUNCTION increment_ending_stat(
-//     p_scenario_id TEXT, p_ending_type TEXT
-//   ) RETURNS void LANGUAGE sql AS $$
-//     INSERT INTO scenario_ending_stats(scenario_id, ending_type, reach_count)
-//     VALUES (p_scenario_id, p_ending_type, 1)
-//     ON CONFLICT (scenario_id, ending_type)
-//     DO UPDATE SET reach_count = scenario_ending_stats.reach_count + 1;
-//   $$;
+// Schema lives in supabase/migrations/001_initial_schema.sql.
+// These tables use RPC functions for atomic increments (SECURITY DEFINER).
+// RLS is disabled — reads are open, writes go through the RPCs only.
 
 export interface CloudUserData {
   user_profile: UserProfile | null;
