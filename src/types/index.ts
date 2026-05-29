@@ -7,6 +7,7 @@ export interface UserProfile {
   mode: 'career' | 'social';
   role: string;
   profession?: string;
+  gender?: 'male' | 'female';
   mascot?: 'maya' | 'max';
   goals: string[];
   plan: 'monthly' | 'yearly' | null;
@@ -97,12 +98,13 @@ export interface ScenarioChoice {
   id: string;
   text: string;
   arabic: string;
-  arabicFeminine?: string;  // scaffolding: alternate Arabic for female learners — rendering path not yet built; currently surfaced via scene teachingNote
+  arabicFeminine?: string;  // Alternate Arabic phrasing for female learners (rendered when user.gender === 'female')
   roman: string;
   score: number;
   note?: string;
   outcome: ChoiceOutcome;
-  flag?: string;
+  flag?: string;            // Flag set in state.flags when this choice is made
+  requiredFlag?: string;    // If set, choice is only shown when this flag is already in state.flags
   impact?: ImpactMetrics;
   next?: string;
   teachingHighlight?: string;
@@ -236,6 +238,12 @@ export interface ScenarioState {
    * against choice.score, not the T/R/C impact sum.
    */
   totalScore: number;
+  /**
+   * Per-NPC sum of choice.score — enables per-character tone calculation in
+   * multi-NPC scenarios. For single-NPC scenarios, scoreByNpc[npcId] === totalScore.
+   * getTone() reads this first; falls back to totalScore when npcId is absent.
+   */
+  scoreByNpc: Record<string, number>;
   /** Ordered history of every choice made in this run */
   choiceHistory: {
     sceneId: string;

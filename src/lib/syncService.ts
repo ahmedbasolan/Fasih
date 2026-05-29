@@ -71,7 +71,21 @@ import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, Journ
 //     DO UPDATE SET reach_count = scenario_ending_stats.reach_count + 1;
 //   $$;
 
+/**
+ * Increment this when CloudUserData shape changes in a breaking way.
+ * pullProgress uses it to detect and migrate stale cloud rows.
+ *
+ * History:
+ *   1 — initial schema (all JSONB columns, no version column)
+ *   2 — added schema_version column; added gender field to user_profile
+ *
+ * SQL to run once in Supabase (bumping 1 → 2):
+ *   ALTER TABLE user_data ADD COLUMN IF NOT EXISTS schema_version INTEGER NOT NULL DEFAULT 1;
+ */
+export const CURRENT_SCHEMA_VERSION = 2;
+
 export interface CloudUserData {
+  schema_version: number;
   user_profile: UserProfile | null;
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
@@ -97,6 +111,7 @@ export async function pushProgress(
     .upsert(
       {
         user_id: userId,
+        schema_version: data.schema_version,
         user_profile: data.user_profile,
         stats: data.stats,
         phrase_reviews: data.phrase_reviews,
@@ -134,8 +149,14 @@ export async function pullProgress(
     return { data: null, error: error.message };
   }
 
+  // Migration guard: rows written before schema_version was introduced will
+  // have schema_version = null (column DEFAULT 1 handles new inserts).
+  // We treat null as version 1 and let the caller decide what to do with it.
+  const cloudVersion: number = (data.schema_version as number | null) ?? 1;
+
   return {
     data: {
+      schema_version: cloudVersion,
       user_profile: data.user_profile ?? null,
       stats: data.stats ?? {},
       phrase_reviews: data.phrase_reviews ?? {},
