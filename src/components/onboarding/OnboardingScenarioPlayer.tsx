@@ -252,7 +252,7 @@ export function OnboardingScenarioPlayer({
         phraseArabic: {
           fontFamily: FONT_ARABIC_EXTRA,
           fontSize: 28,
-          color: '#000',
+          color: C.TEXT,
           textAlign: 'right',
           writingDirection: 'rtl',
           marginBottom: 6,
@@ -261,16 +261,14 @@ export function OnboardingScenarioPlayer({
         phraseRoman: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 14,
-          color: '#000',
-          opacity: 0.8,
+          color: C.TEXT2,
           fontWeight: '600',
           marginBottom: 2,
         },
         phraseEnglish: {
           fontFamily: FONT_LATIN,
           fontSize: 13,
-          color: '#000',
-          opacity: 0.7,
+          color: C.TEXT2,
         },
         phraseUnlockedTag: {
           flexDirection: 'row',
@@ -281,13 +279,12 @@ export function OnboardingScenarioPlayer({
           paddingHorizontal: 8,
           paddingVertical: 4,
           borderRadius: 8,
-          backgroundColor: 'rgba(0,0,0,0.12)',
+          backgroundColor: C.BORDER,
         },
         phraseUnlockedTagText: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 10,
-          color: '#000',
-          opacity: 0.7,
+          color: C.TEXT2,
           fontWeight: '700',
           letterSpacing: 0.3,
         },
