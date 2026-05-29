@@ -10,12 +10,14 @@ interface Props extends Omit<TextInputProps, 'style'> {
   focusColor?: string;
   containerStyle?: ViewStyle;
   inputStyle?: TextInputProps['style'];
+  /** Accessibility label for screen readers. Defaults to placeholder if not set. */
+  accessibilityLabel?: string;
 }
 
-export function InputField({ icon, rightIcon, focused, focusColor, containerStyle, inputStyle, ...rest }: Props) {
+export function InputField({ icon, rightIcon, focused, focusColor, containerStyle, inputStyle, accessibilityLabel, ...rest }: Props) {
   const { C } = useTheme();
   const effectFocusColor = focusColor || C.GOLD_BORDER;
-  
+
   return (
     <View style={[
       styles.root,
@@ -26,6 +28,7 @@ export function InputField({ icon, rightIcon, focused, focusColor, containerStyl
       {icon}
       <TextInput
         placeholderTextColor={C.TEXT3}
+        accessibilityLabel={accessibilityLabel ?? (typeof rest.placeholder === 'string' ? rest.placeholder : undefined)}
         {...rest}
         style={[styles.input, { color: C.TEXT }, inputStyle]}
       />
