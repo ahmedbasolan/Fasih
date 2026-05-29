@@ -2,19 +2,15 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { X, RotateCcw, Home, ArrowRight, Volume2, BookOpen, Compass, Users, CheckCircle } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { X, Volume2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import {
-  FONT_ARABIC, FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD,
-  FONT_LATIN_SEMI, FONT_HEADING_SEMI,
+  FONT_ARABIC, FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI,
 } from '../components/design/tokens';
-import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
 import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
-import { KafMascot } from '../components/features/KafMascot';
 import { EmptyState } from '../components/ui/EmptyState';
 import { GhostLetters } from '../components/ui';
 import { getScenarioScript, getScenarioById } from '../constants/scenarios';
@@ -23,6 +19,9 @@ import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getTone, resolveNextScene, evaluateEnding } from '../engine/scenarioEngine';
+import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
+import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
+import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
 import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding } from '../types';
 
 interface Props {
@@ -563,64 +562,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
         {/* ─── INTRO ─── */}
         {phase === 'intro' && (
-          <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 360 }}>
-            <View style={{ alignItems: 'center', gap: 18, paddingTop: 12 }}>
-              <View style={{ position: 'relative', width: '100%', alignItems: 'center', height: 72, justifyContent: 'center' }}>
-                <Text style={{ fontFamily: FONT_ARABIC, fontSize: 72, color: C.GOLD, opacity: 0.07, position: 'absolute' }}>
-                  {scenario?.arabicScene || ''}
-                </Text>
-                <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 26, color: C.GOLD }}>ك</Text>
-                </View>
-              </View>
-
-              <View style={{ alignItems: 'center', paddingHorizontal: 16 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 8, textAlign: 'center' }}>{scriptData.title}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 22 }}>
-                  {scenario?.subtitle || STRINGS.scenarios.introDesc}
-                </Text>
-              </View>
-
-              <View style={{ width: '100%', borderRadius: 16, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', gap: 12 }}>
-                <KafMascot size="xs" animate={false} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, marginBottom: 3 }}>{STRINGS.scenarios.kafSays}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>
-                    {scenario?.kafIntro || STRINGS.scenarios.kafIntro}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ width: '100%', flexDirection: 'row', gap: 10 }}>
-                {[
-                  [`${scenes.filter(s => !s.bonus).length}`, STRINGS.scenarios.decisionLabel(scenes.filter(s => !s.bonus).length)],
-                  [`${endings.length}`, STRINGS.scenarios.outcomeLabel(endings.length)],
-                  [unlockedPhrases.length > 0 ? `${unlockedPhrases.length}` : '8+', STRINGS.scenarios.phraseLabel(8)],
-                ].map(([v, l]) => (
-                  <View key={l} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                    <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 20, color: C.TEXT }}>{v}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginTop: 2 }}>{l}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {scriptData.endings.some(e => e.secret) && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
-                  <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 }} />
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 }}>
-                    {STRINGS.scenarios.secretEndingExists}
-                  </Text>
-                </View>
-              )}
-
-              <Pressable onPress={() => setPhase('scene')} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
-                <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>{STRINGS.scenarios.begin}</Text>
-                  <ArrowRight size={17} color={C.WHITE} />
-                </LinearGradient>
-              </Pressable>
-            </View>
-          </MotiView>
+          <ScenarioIntroPhase
+            scriptData={scriptData}
+            scenario={scenario}
+            scenes={scenes}
+            endings={endings}
+            unlockedPhrases={unlockedPhrases}
+            onBegin={() => setPhase('scene')}
+          />
         )}
 
         {/* ─── SCENE ─── */}
@@ -712,365 +661,41 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
         )}
 
         {/* ─── CHOICE RESULT ─── */}
-        {phase === 'choice-result' && selectedChoiceId && (
-          <MotiView
-            key={`choice-result-${step}`}
-            from={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'timing', duration: 300 }}
-          >
-            <View style={{ gap: 20, paddingTop: 10 }}>
-              {(() => {
-                const choice = scene.choices.find(c => c.id === selectedChoiceId);
-                if (!choice) return null;
-                const color = outcomeColor[choice.outcome];
-                return (
-                  <>
-                    {/* Result Header */}
-                    <View style={{ alignItems: 'center', gap: 8 }}>
-                      <MotiView
-                        from={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: 'spring', damping: 12 }}
-                        style={{
-                          width: 64, height: 64, borderRadius: 32,
-                          backgroundColor: `${color}15`, alignItems: 'center', justifyContent: 'center'
-                        }}
-                      >
-                         <CheckCircle size={32} color={color} />
-                      </MotiView>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 24, color }}>
-                        {outcomeLabel[choice.outcome]}
-                      </Text>
-                    </View>
-
-                    {/* What you said */}
-                    <View style={{ borderRadius: 20, padding: 18, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>You Said</Text>
-                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: accentColor, textAlign: 'right', marginBottom: 6, lineHeight: 30 }}>{replaceName(choice.arabic)}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 22 }}>{replaceName(choice.text)}</Text>
-                    </View>
-
-                    {/* Kaf's Insight */}
-                    <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, gap: 12 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <KafMascot size="xs" animate={true} />
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: violetColor }}>Cultural Insight</Text>
-                      </View>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, color: C.TEXT2, lineHeight: 24 }}>
-                        {choice.note || "A solid choice in this context. Keep it up!"}
-                      </Text>
-                    </View>
-
-                    {/* Impact - Total of all three meters */}
-                    {(() => {
-                      const totalImpact = (choice.impact?.trust || 0) + (choice.impact?.respect || 0) + (choice.impact?.culture || 0);
-                      return (
-                        <View style={{ alignItems: 'center', paddingVertical: 16, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: totalImpact >= 0 ? C.JADE2 : C.ERROR }}>
-                            {totalImpact > 0 ? `+${totalImpact}` : totalImpact}
-                          </Text>
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.8 }}>Impact</Text>
-                          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-                            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.CULTURAL_GOLD }}>T: {choice.impact?.trust || 0}</Text>
-                            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.JADE2 }}>R: {choice.impact?.respect || 0}</Text>
-                            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET }}>C: {choice.impact?.culture || 0}</Text>
-                          </View>
-                        </View>
-                      );
-                    })()}
-
-                    {/* Butterfly effect forward prediction — what tone will the next scene carry */}
-                    {(() => {
-                      // Respect branching: if the choice set a nextSceneId, look that scene up
-                      const nextIdx = lastResolvedNextSceneId
-                        ? scenes.findIndex(s => s.id === lastResolvedNextSceneId)
-                        : step + 1;
-                      const nextScene = nextIdx >= 0 && nextIdx < scenes.length ? scenes[nextIdx] : null;
-                      if (!nextScene?.charDialogue) return null;
-                      const nextTone: 'warm' | 'neutral' | 'cold' = activeScenarioState
-                        ? getTone(activeScenarioState, nextScene.charName, nextScene)
-                        : 'neutral';
-                      if (nextTone === 'neutral') return null;
-                      const firstName = nextScene.charName.split(' ')[0];
-                      return (
-                        <MotiView
-                          from={{ opacity: 0, translateY: 6 }}
-                          animate={{ opacity: 1, translateY: 0 }}
-                          transition={{ type: 'timing', duration: 300, delay: 420 }}
-                        >
-                          <View style={{
-                            borderRadius: 14, padding: 14,
-                            backgroundColor: nextTone === 'warm' ? C.GOLD_DIM : C.SURFACE,
-                            borderWidth: 1, borderColor: nextTone === 'warm' ? C.GOLD_BORDER : C.BORDER,
-                            flexDirection: 'row', alignItems: 'center', gap: 10,
-                          }}>
-                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: nextTone === 'warm' ? C.GOLD : C.TEXT3, flexShrink: 0 }} />
-                            <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: nextTone === 'warm' ? C.GOLD : C.TEXT3, flex: 1, lineHeight: 18 }}>
-                              {nextTone === 'warm'
-                                ? `${firstName} will be more open with you in the next scene`
-                                : `${firstName} will be more guarded in the next scene`}
-                            </Text>
-                          </View>
-                        </MotiView>
-                      );
-                    })()}
-
-                    {/* Continue Action */}
-                    <Pressable onPress={next} accessibilityRole="button" accessibilityLabel={step + 1 >= scenes.length ? 'See final result' : 'Continue'} style={{ borderRadius: 20, overflow: 'hidden', marginTop: 10 }}>
-                      <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 }}>
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.WHITE }}>
-                          {step + 1 >= scenes.length ? 'See Final Result' : 'Continue'}
-                        </Text>
-                        <ArrowRight size={20} color={C.WHITE} />
-                      </LinearGradient>
-                    </Pressable>
-                  </>
-                );
-              })()}
-            </View>
-          </MotiView>
+        {phase === 'choice-result' && selectedChoiceId && scene && (
+          <ScenarioChoiceResultPhase
+            scene={scene}
+            selectedChoiceId={selectedChoiceId}
+            step={step}
+            scenes={scenes}
+            scriptData={scriptData}
+            activeScenarioState={activeScenarioState}
+            lastResolvedNextSceneId={lastResolvedNextSceneId}
+            outcomeColor={outcomeColor}
+            replaceName={replaceName}
+            onNext={next}
+          />
         )}
 
         {/* ─── RESULT ─── */}
         {phase === 'result' && (
-          <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 360 }}>
-            <View style={{ gap: 14, paddingTop: 8 }}>
-
-              {/* Ending card */}
-              <View style={{ borderRadius: 24, padding: 22, backgroundColor: `${ending.color}18`, borderWidth: 1.5, borderColor: `${ending.color}40` }}>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: ending.color, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>
-                    {ending.type.charAt(0).toUpperCase() + ending.type.slice(1)} Outcome
-                  </Text>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 26, color: C.TEXT, marginBottom: 8, textAlign: 'center' }}>{ending.title}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20, textAlign: 'center', marginBottom: 16 }}>{ending.desc}</Text>
-                  <View style={{ width: '100%', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 14, backgroundColor: `${ending.color}10` }}>
-                    <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: ending.color, textAlign: 'center', marginBottom: 4 }}>{`"${ending.arabic}"`}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${ending.color}85`, textAlign: 'center', fontStyle: 'italic', marginBottom: 4 }}>{ending.roman}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center' }}>{ending.en}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Discovery badge */}
-              <View style={{ borderRadius: 14, paddingVertical: 11, paddingHorizontal: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Compass size={15} color={C.VIOLET2} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT }}>
-                    {STRINGS.scenarios.endingDiscovery(endings.length)}
-                  </Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 1 }}>
-                    {STRINGS.scenarios.tryDifferentChoices}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Secret ending teaser — shown only when this ending isn't secret but one exists */}
-              {!ending.secret && endings.some(e => e.secret) && (
-                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
-                  <View style={{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2 }} />
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 }}>
-                      {STRINGS.scenarios.secretEndingTeaser}
-                    </Text>
-                  </View>
-                </MotiView>
-              )}
-
-              {/* Relationship arc — visual timeline of NPC tone across all scenes */}
-              {toneHistory.length > 0 && (
-                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 140 }}>
-                  <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                    <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 16 }}>
-                      How the relationship evolved
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      {toneHistory.map(({ sceneId, tone }, i) => {
-                        const dotColor = tone === 'warm' ? C.GOLD : tone === 'cold' ? C.ERROR : C.TEXT3;
-                        const label = tone === 'warm' ? 'Warm' : tone === 'cold' ? 'Cold' : 'Neutral';
-                        return (
-                          <React.Fragment key={sceneId}>
-                            <View style={{ alignItems: 'center', gap: 6 }}>
-                              <MotiView
-                                from={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: 'spring', damping: 14, delay: 80 + i * 130 }}
-                                style={{
-                                  width: 28, height: 28, borderRadius: 14,
-                                  backgroundColor: `${dotColor}20`,
-                                  borderWidth: 1.5, borderColor: dotColor,
-                                  alignItems: 'center', justifyContent: 'center',
-                                }}
-                              >
-                                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
-                              </MotiView>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: dotColor }}>{label}</Text>
-                            </View>
-                            {i < toneHistory.length - 1 && (
-                              <View style={{ flex: 1, height: 1.5, backgroundColor: C.BORDER, marginHorizontal: 6, marginBottom: 16 }} />
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </View>
-                    {(() => {
-                      const finalTone = toneHistory[toneHistory.length - 1]?.tone;
-                      const hasTurn = toneHistory.some((t, i) => i > 0 && t.tone !== toneHistory[i - 1].tone);
-                      if (finalTone === 'warm') return (
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 12, textAlign: 'center', lineHeight: 17 }}>
-                          {hasTurn ? 'You turned the relationship around. That takes awareness.' : 'Consistent respect kept the connection warm throughout.'}
-                        </Text>
-                      );
-                      if (finalTone === 'cold') return (
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 12, textAlign: 'center', lineHeight: 17 }}>
-                          {hasTurn ? 'The relationship cooled as it went on. One early choice can change everything.' : 'Distance grew from the first scene. Try again — warmth is learnable.'}
-                        </Text>
-                      );
-                      return null;
-                    })()}
-                  </View>
-                </MotiView>
-              )}
-
-              {/* Community stat */}
-              <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
-                <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.GOLD}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.GOLD}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Users size={18} color={ending.secret ? C.VIOLET2 : C.GOLD} />
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT, flex: 1, lineHeight: 20 }}>
-                    {ending.secret
-                      ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))
-                      : STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
-                  </Text>
-                </View>
-              </MotiView>
-
-              {/* Meter Summary with Divergence Insight */}
-              {(() => {
-                const { trust, respect, culture } = impact;
-                const values = [
-                  { label: 'Trust',   value: trust,   color: C.CULTURAL_GOLD },
-                  { label: 'Respect', value: respect, color: C.JADE2 },
-                  { label: 'Culture', value: culture, color: C.VIOLET },
-                ];
-                const sorted = [...values].sort((a, b) => b.value - a.value);
-                const maxDiff = sorted[0].value - sorted[2].value;
-                const hasDivergence = maxDiff >= 8;
-                
-                return (
-                  <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 12 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                      {values.map(({ label, value, color }) => (
-                        <View key={label} style={{ alignItems: 'center' }}>
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 24, color: value !== 0 ? color : C.TEXT3, marginTop: 4 }}>
-                            {value > 0 ? `+${value}` : value}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                    
-                    {hasDivergence && (
-                      <View style={{ borderRadius: 12, padding: 12, backgroundColor: `${sorted[0].color}15`, borderWidth: 1, borderColor: `${sorted[0].color}30` }}>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, textAlign: 'center', lineHeight: 18 }}>
-                          <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sorted[0].color }}>{sorted[0].label}</Text> is your strongest area (+{sorted[0].value}), 
-                          but <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sorted[2].color }}>{sorted[2].label}</Text> needs work ({sorted[2].value > 0 ? '+' : ''}{sorted[2].value}). 
-                          Try choices that balance all three dimensions.
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                );
-              })()}
-
-              {/* Final Score */}
-              <View style={{ borderRadius: 16, padding: 20, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', gap: 4 }} accessible={true} accessibilityRole="text" accessibilityLabel={`Final score ${total}`}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>Final Score</Text>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 52, color: ending.color }}>{total}</Text>
-              </View>
-
-              {/* Cultural journey */}
-              {culturalJourneyNotes.length > 0 && (
-                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 200 }}>
-                  <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <KafMascot size="xs" animate={false} />
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: violetColor }}>
-                        {STRINGS.scenarios.culturalJourneyTitle}
-                      </Text>
-                    </View>
-                    <View style={{ gap: 8 }}>
-                      {culturalJourneyNotes.map((note, i) => (
-                        <View key={i} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: violetColor, marginTop: 6, flexShrink: 0 }} />
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 19, flex: 1 }}>{note}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                </MotiView>
-              )}
-
-              {/* Phrases unlocked */}
-              {unlockedPhrases.length > 0 && (
-                <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 380 }}>
-                  <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.JADE_SURFACE, borderWidth: 1, borderColor: C.JADE_BORDER }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <BookOpen size={14} color={C.JADE2} />
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE }}>
-                        {STRINGS.scenarios.phrasesUnlocked(unlockedPhrases.length)}
-                      </Text>
-                    </View>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 12 }}>
-                      {STRINGS.scenarios.phrasesUnlockedSub}
-                    </Text>
-                    <View style={{ gap: 8 }}>
-                      {unlockedPhrases.map((p) => (
-                        <PhraseCard
-                          key={p.id}
-                          arabic={p.arabic}
-                          roman={p.roman}
-                          english={p.english}
-                          onSpeak={() => playEndPhrase(p.id, p.arabic)}
-                          isPlaying={playingPhraseId === p.id && isSpeaking}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </MotiView>
-              )}
-
-              {/* Share result */}
-              <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 460 }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Share your result"
-                  onPress={() => handleShare(ending.title, ending.arabic, ending.en, !!ending.secret, total)}
-                  style={{ borderRadius: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: ending.secret ? `${C.VIOLET}18` : `${C.JADE}14`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}35` : `${C.JADE}30` }}
-                >
-                  <ArrowRight size={14} color={ending.secret ? C.VIOLET2 : C.JADE2} style={{ transform: [{ rotate: '-45deg' }] }} />
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: ending.secret ? C.VIOLET2 : C.JADE2 }}>
-                    {ending.secret ? 'Share this rare discovery' : 'Share your result'}
-                  </Text>
-                </Pressable>
-              </MotiView>
-
-              {/* Action buttons */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable onPress={restart} accessibilityRole="button" style={{ flex: 1, paddingVertical: 15, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                  <RotateCcw size={14} color={C.TEXT2} />
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.retry}</Text>
-                </Pressable>
-                <Pressable onPress={onExit} accessibilityRole="button" style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}>
-                  <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Home size={14} color={C.WHITE} />
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.WHITE }}>{STRINGS.scenarios.home}</Text>
-                  </LinearGradient>
-                </Pressable>
-              </View>
-
-            </View>
-          </MotiView>
+          <ScenarioResultPhase
+            ending={ending}
+            endings={endings}
+            impact={impact}
+            total={total}
+            scenarioId={scenarioId}
+            scriptData={scriptData}
+            unlockedPhrases={unlockedPhrases}
+            toneHistory={toneHistory}
+            culturalJourneyNotes={culturalJourneyNotes}
+            getCommunityEndingStat={getCommunityEndingStat}
+            isSpeaking={isSpeaking}
+            playingPhraseId={playingPhraseId}
+            onPlayEndPhrase={playEndPhrase}
+            onRestart={restart}
+            onExit={onExit}
+            onShare={handleShare}
+          />
         )}
 
       </ScrollView>
