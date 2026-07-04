@@ -1,5 +1,6 @@
 export { HomeHeader } from './HomeHeader';
 export { StreakWidget } from './StreakWidget';
+export { StreakRiskBanner } from './StreakRiskBanner';
 export { QuickChallenge } from './QuickChallenge';
 export { MissionCard } from './MissionCard';
 export { DailyPhrase } from './DailyPhrase';
