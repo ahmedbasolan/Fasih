@@ -1,0 +1,27 @@
+# EAS Build ignore file
+# Excludes files/folders that should not be uploaded to EAS Build servers
+
+# Superpowers skill symlinks (cause EPERM errors on EAS upload)
+.agents/
+
+# Dev/editor tooling
+.claude/
+.vscode/
+.idea/
+
+# Local env files (env vars are set via EAS environment variables)
+.env
+.env.local
+.env.development
+.env.test
+
+# Docs and planning files
+docs/
+guidelines/
+
+# Test files
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
