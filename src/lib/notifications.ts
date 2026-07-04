@@ -15,6 +15,9 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { isStreakAtRisk } from '../engine/streakEngine';
+import { todayISO } from '../engine/srsEngine';
+import { STRINGS } from '../constants/strings';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +36,7 @@ export const NOTIFICATION_IDS = {
   dailyStreak: 'fasih-daily-streak',
   reEngagement3d: 'fasih-reengagement-3d',
   reEngagement7d: 'fasih-reengagement-7d',
+  streakRisk: 'fasih-streak-risk',
 } as const;
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
@@ -209,6 +213,42 @@ export async function scheduleReEngagementIfNeeded(
       });
     }
   }
+}
+
+/**
+ * Schedule a one-shot "streak at risk" notification for tonight.
+ * Mirrors scheduleReEngagementIfNeeded's reschedule-on-every-open pattern —
+ * cancelled and recomputed on every app open so it never fires once the
+ * user has already practiced today.
+ */
+export async function scheduleStreakRiskIfNeeded(
+  lastActiveDateISO: string | null,
+  currentStreak: number,
+): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.streakRisk).catch(() => {});
+
+  if (!isStreakAtRisk(currentStreak, lastActiveDateISO, todayISO())) return;
+
+  const now = new Date();
+  const fireDate = new Date(now);
+  fireDate.setHours(20, 0, 0, 0);
+  if (fireDate <= now) {
+    fireDate.setTime(now.getTime() + 30 * 60 * 1000); // already past 8 PM — fire in 30 min
+  }
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: NOTIFICATION_IDS.streakRisk,
+    content: {
+      title: STRINGS.streakRisk.notificationTitle(currentStreak),
+      body: STRINGS.streakRisk.notificationBody,
+      sound: false,
+      data: { type: 'streak_risk' },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: fireDate,
+    },
+  });
 }
 
 /** Cancel all Fasih notifications (e.g. on sign-out). */
