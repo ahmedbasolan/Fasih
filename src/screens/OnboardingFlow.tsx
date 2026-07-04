@@ -150,6 +150,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdComplete, setHoldComplete] = useState(false);
   const [phraseRevealed, setPhraseRevealed] = useState(false);
+  const [phraseEverRevealed, setPhraseEverRevealed] = useState(false);
   const [scenarioCompleted, setScenarioCompleted] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
@@ -165,11 +166,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
   const finish = useCallback(() => {
     const onboardingChecklist = computeOnboardingChecklist({
-      profession, goalsCount: selectedGoals.length, holdComplete, phraseRevealed, scenarioCompleted,
+      profession, goalsCount: selectedGoals.length, holdComplete, phraseRevealed: phraseEverRevealed, scenarioCompleted,
     });
     const dailyGoalXP = computeDailyGoalXP(selectedGoals.length, mode);
     onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
-  }, [onComplete, name, mode, role, profession, selectedGoals, plan, holdComplete, phraseRevealed, scenarioCompleted]);
+  }, [onComplete, name, mode, role, profession, selectedGoals, plan, holdComplete, phraseEverRevealed, scenarioCompleted]);
   const finishWithTrial = useCallback(() => { onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
   const next = useCallback(() => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial(), [step, finishWithTrial]);
   const back = useCallback(() => { if (step > 0) setStep(s => s - 1); }, [step]);
@@ -1096,6 +1097,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <Pressable
                 onPress={() => {
                   setPhraseRevealed(true);
+                  setPhraseEverRevealed(true);
                   speak('مرحبا');
                 }}
                 style={{
