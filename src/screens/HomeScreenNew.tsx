@@ -13,6 +13,7 @@ import { MotiView } from 'moti';
 import {
   HomeHeader,
   StreakWidget,
+  StreakRiskBanner,
   QuickChallenge,
   MissionCard,
   DailyPhrase,
@@ -25,6 +26,8 @@ import { getFeaturedScenario, getAllScenarios } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { ChevronRight } from 'lucide-react-native';
 import { STRINGS } from '../constants/strings';
+import { todayISO } from '../engine/srsEngine';
+import { isStreakAtRisk } from '../engine/streakEngine';
 
 interface HomeScreenNewProps {
   userName: string;
@@ -64,10 +67,13 @@ export function HomeScreenNew({
   const insets = useSafeAreaInsets();
 
   // Real store data
+  const user = useAppStore((s) => s.user);
   const stats = useAppStore((s) => s.stats);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const lastActiveDate = useAppStore((s) => s.lastActiveDate);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
+  const streakFreezes = useAppStore((s) => s.streakFreezes);
+  const spendStreakFreeze = useAppStore((s) => s.spendStreakFreeze);
 
   const { speak } = useArabicTTS();
 
@@ -76,8 +82,11 @@ export function HomeScreenNew({
   // Derived data
   const streakDays = stats.currentStreak;
   const totalXP = stats.scenariosCompleted.length * 50;
-  const goalXP = 500;
+  const goalXP = user?.dailyGoalXP ?? 500;
   const isNewUser = stats.daysActive === 0;
+  const checklistTotal = 5;
+  const checklistCompleted = user?.onboardingChecklist?.length ?? 0;
+  const isStreakRisk = isStreakAtRisk(stats.currentStreak, lastActiveDate, todayISO()) && new Date().getHours() >= 18;
 
   const weekDays = useMemo(() => getWeekDays(streakDays, lastActiveDate), [streakDays, lastActiveDate]);
 
@@ -184,6 +193,16 @@ export function HomeScreenNew({
         <HomeHeader userName={userName} onSettingsPress={onSettingsPress} />
       </View>
 
+      {/* Streak-at-risk banner */}
+      {isStreakRisk && (
+        <StreakRiskBanner
+          streakDays={streakDays}
+          freezesLeft={streakFreezes}
+          onPracticeNow={() => onMissionPress?.(featured.id)}
+          onUseFreeze={() => spendStreakFreeze()}
+        />
+      )}
+
       {/* Streak Widget */}
       <View style={{ marginTop: 6 }}>
         <StreakWidget
@@ -192,6 +211,8 @@ export function HomeScreenNew({
           goalXP={goalXP}
           weekDays={weekDays}
           mood={streakMood}
+          checklistCompleted={isNewUser ? checklistCompleted : undefined}
+          checklistTotal={isNewUser ? checklistTotal : undefined}
           onComplete={() => {
             setStreakMood('celebrating');
             // Reset mood after celebration animation completes
