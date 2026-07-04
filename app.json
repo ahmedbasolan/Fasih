@@ -53,14 +53,14 @@
           "defaultChannel": "fasih-reminders",
           "sounds": []
         }
-      ]
+      ],
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "updates": {
       "url": "https://u.expo.dev/387c7934-b747-43cc-9113-ff41e6662c66"
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "extra": {
       "router": {},
       "eas": {

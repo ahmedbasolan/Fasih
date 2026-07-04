@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView, AnimatePresence } from 'moti';
@@ -22,6 +22,7 @@ import { useAppStore } from '../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios';
 import { IMAGES } from '../constants/images';
+import { useUser } from '@clerk/expo';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -129,9 +130,17 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const { C, G, isDark } = useTheme();
   const { setTheme, unlockPhrase } = useAppStore();
   const { speak } = useArabicTTS();
+  const { user: clerkUser } = useUser();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
+
+  useEffect(() => {
+    if (clerkUser?.firstName && !name) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setName(clerkUser.firstName);
+    }
+  }, [clerkUser, name]);
   const [mode, setMode] = useState<'career' | 'social'>('career');
   const [role, setRole] = useState('');
   const [profession, setProfession] = useState('');
@@ -159,7 +168,26 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const finishWithTrial = useCallback(() => { onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
   const next = useCallback(() => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial(), [step, finishWithTrial]);
   const back = useCallback(() => { if (step > 0) setStep(s => s - 1); }, [step]);
-  const skip = useCallback(() => { onSkipTrial(); finish(); }, [onSkipTrial, finish]);
+  const skip = useCallback(() => {
+    Alert.alert(
+      STRINGS.onboarding.skipWarningTitle,
+      STRINGS.onboarding.skipWarningMessage,
+      [
+        {
+          text: STRINGS.onboarding.skipWarningCancel,
+          style: 'cancel',
+        },
+        {
+          text: STRINGS.onboarding.skipWarningConfirm,
+          style: 'destructive',
+          onPress: () => {
+            onSkipTrial();
+            finish();
+          },
+        },
+      ]
+    );
+  }, [onSkipTrial, finish]);
 
   const toggleGoal = (id: string) => {
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);

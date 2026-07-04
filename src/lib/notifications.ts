@@ -18,8 +18,8 @@ import { Platform } from 'react-native';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-/** Default hour (7 PM local) when no session history is available yet. */
-const DEFAULT_REMINDER_HOUR = 19;
+/** Default hour (9 AM local) when no session history is available yet. */
+const DEFAULT_REMINDER_HOUR = 9;
 
 /** Clamp notification hour to a reasonable range (8 AM – 9 PM). */
 const MIN_HOUR = 8;
