@@ -11,6 +11,7 @@ import {
 export default function OnboardingRoute() {
   const setUser = useAppStore((s) => s.setUser);
   const setHasOnboarded = useAppStore((s) => s.setHasOnboarded);
+  const grantStreakFreeze = useAppStore((s) => s.grantStreakFreeze);
   const purchaseSubscription = useAppStore((s) => s.purchaseSubscription);
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const startTrial = useAppStore((s) => s.startTrial);
@@ -19,6 +20,7 @@ export default function OnboardingRoute() {
   const handleComplete = (profile: UserProfile) => {
     setUser(profile);
     setHasOnboarded(true);
+    grantStreakFreeze(1);
     trackOnboardingCompleted({
       name: profile.name,
       mode: profile.mode,
