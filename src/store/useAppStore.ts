@@ -36,9 +36,11 @@ import {
   requestNotificationPermission,
   scheduleDailyReminder,
   scheduleReEngagementIfNeeded,
+  scheduleStreakRiskIfNeeded,
   cancelAllNotifications,
   derivePreferredHour,
 } from '../lib/notifications';
+import { shouldGrantStreakFreeze, applyStreakFreeze } from '../engine/streakEngine';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
 // Single source of truth — used in hasFullAccess AND hasScenarioAccess.
@@ -167,6 +169,7 @@ interface AppState {
   completedScenarios: Record<string, { endingType: string; date: string }>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
+  streakFreezes: number;
   phraseReviews: Record<string, PhraseReviewData>;
   journal: JournalEntry[];
   milestones: LearningMilestone[];
@@ -201,6 +204,7 @@ interface AppState {
   // Auth actions
   setUser: (user: UserProfile) => void;
   setUserMode: (mode: 'career' | 'social') => void;
+  setDailyGoalXP: (xp: number) => void;
   setHasOnboarded: (value: boolean) => void;
   setAuthenticated: (value: boolean) => void;
   setClerkUserId: (id: string | null) => void;
@@ -224,6 +228,8 @@ interface AppState {
 
   // Learning actions
   recordDailyActivity: () => void;
+  grantStreakFreeze: (count: number) => void;
+  spendStreakFreeze: () => boolean;
   recordPhraseReview: (phraseId: string, correct: boolean) => void;
   // 3-tier flashcard rating — maps directly to SRS intervals (1 / 3 / 7 days)
   recordPhraseRating: (phraseId: string, rating: 'new' | 'learning' | 'knew') => void;
@@ -279,6 +285,7 @@ export const useAppStore = create<AppState>()(
       completedScenarios: {},
       sceneProgress: {},
       lastActiveDate: null,
+      streakFreezes: 0,
       phraseReviews: {},
       journal: [],
       milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
@@ -384,6 +391,7 @@ export const useAppStore = create<AppState>()(
       // Auth
       setUser: (user) => set({ user }),
       setUserMode: (mode) => set((state) => ({ user: state.user ? { ...state.user, mode } : null })),
+      setDailyGoalXP: (xp) => set((state) => ({ user: state.user ? { ...state.user, dailyGoalXP: xp } : null })),
       setHasOnboarded: (value) => set({ hasOnboarded: value }),
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setClerkUserId: (id) => set({ clerkUserId: id }),
@@ -408,6 +416,7 @@ export const useAppStore = create<AppState>()(
           favoriteScenarios: [],
           sceneProgress: {},
           lastActiveDate: null,
+          streakFreezes: 0,
           journal: [],
           milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
           activeScenarioState: null,
@@ -429,6 +438,7 @@ export const useAppStore = create<AppState>()(
         const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
         await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
         await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
+        await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.stats.currentStreak);
       },
 
       recordSessionHour: async () => {
@@ -554,13 +564,27 @@ export const useAppStore = create<AppState>()(
           const yesterday = addDays(today, -1);
           const isConsecutive = s.lastActiveDate === yesterday;
           const newStreak = isConsecutive ? s.stats.currentStreak + 1 : 1;
+          const freezeBonus = shouldGrantStreakFreeze(newStreak) ? 1 : 0;
 
           return {
             lastActiveDate: today,
             stats: { ...s.stats, currentStreak: newStreak, daysActive: s.stats.daysActive + 1 },
+            streakFreezes: s.streakFreezes + freezeBonus,
           };
         });
         scheduleSync(() => get().syncToCloud());
+      },
+
+      grantStreakFreeze: (count) => set((s) => ({ streakFreezes: s.streakFreezes + count })),
+
+      spendStreakFreeze: () => {
+        const s = get();
+        const result = applyStreakFreeze({ streakFreezes: s.streakFreezes, lastActiveDate: s.lastActiveDate }, todayISO());
+        if (result.applied) {
+          set({ streakFreezes: result.streakFreezes, lastActiveDate: result.lastActiveDate });
+          scheduleSync(() => get().syncToCloud());
+        }
+        return result.applied;
       },
 
       recordPhraseReview: (phraseId, correct) => {
@@ -779,6 +803,7 @@ export const useAppStore = create<AppState>()(
         completedScenarios: state.completedScenarios,
         sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
+        streakFreezes: state.streakFreezes,
         phraseReviews: state.phraseReviews,
         journal: state.journal,
         milestones: state.milestones,
