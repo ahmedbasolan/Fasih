@@ -22,6 +22,7 @@ import { useAppStore } from '../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios';
 import { IMAGES } from '../constants/images';
+import { computeOnboardingChecklist, computeDailyGoalXP } from '../engine/onboardingProgress';
 import { useUser } from '@clerk/expo';
 
 interface Props {
@@ -149,6 +150,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdComplete, setHoldComplete] = useState(false);
   const [phraseRevealed, setPhraseRevealed] = useState(false);
+  const [scenarioCompleted, setScenarioCompleted] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
   
@@ -161,10 +163,13 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // Character-by-character typewriter effect for Arabic
   const { displayed: typedGreeting } = useTypewriter(arabicGreeting, 80, 0);
 
-  const finish = useCallback(() =>
-    onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan }),
-    [onComplete, name, mode, role, profession, selectedGoals, plan]
-  );
+  const finish = useCallback(() => {
+    const onboardingChecklist = computeOnboardingChecklist({
+      profession, goalsCount: selectedGoals.length, holdComplete, phraseRevealed, scenarioCompleted,
+    });
+    const dailyGoalXP = computeDailyGoalXP(selectedGoals.length, mode);
+    onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
+  }, [onComplete, name, mode, role, profession, selectedGoals, plan, holdComplete, phraseRevealed, scenarioCompleted]);
   const finishWithTrial = useCallback(() => { onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
   const next = useCallback(() => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial(), [step, finishWithTrial]);
   const back = useCallback(() => { if (step > 0) setStep(s => s - 1); }, [step]);
@@ -1219,6 +1224,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               unlockedPhraseIds.forEach((phraseId) => {
                 unlockPhrase(phraseId);
               });
+              setScenarioCompleted(true);
               next();
             }}
           />
