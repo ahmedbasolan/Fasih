@@ -151,7 +151,7 @@ export const STRINGS = {
   },
   streakRisk: {
     bannerTitle: (days: number) => `Your ${days}-day streak ends tonight`,
-    bannerSub: 'Practice for 2 minutes, or use a Streak Freeze to protect it.',
+    bannerSub: 'Practice for 5 minutes, or use a Streak Freeze to protect it.',
     practiceNow: 'Practice Now',
     useFreeze: (count: number) => `Use Freeze (${count} left)`,
     notificationTitle: (days: number) => `🔥 ${days}-day streak at risk`,
