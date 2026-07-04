@@ -119,6 +119,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
           disabled={freezesLeft <= 0}
           accessibilityRole="button"
           accessibilityLabel={`Use streak freeze, ${freezesLeft} left`}
+          accessibilityState={{ disabled: freezesLeft <= 0 }}
           style={[styles.secondaryButton, freezesLeft <= 0 && styles.secondaryButtonDisabled]}
         >
           <Text style={styles.secondaryButtonText}>{STRINGS.streakRisk.useFreeze(freezesLeft)}</Text>
