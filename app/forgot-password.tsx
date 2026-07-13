@@ -98,10 +98,10 @@ export default function ForgotPasswordScreen() {
           >
             <View style={{
               width: 64, height: 64, borderRadius: 20,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
-              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+              <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
               {step === 'email' ? 'Forgot Password?' : 'Set New Password'}
@@ -132,9 +132,9 @@ export default function ForgotPasswordScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -167,7 +167,7 @@ export default function ForgotPasswordScreen() {
                   onPress={handleRequestCode}
                   disabled={!canSubmitEmail || loading}
                   style={{
-                    backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                    backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                     alignItems: 'center', opacity: canSubmitEmail && !loading ? 1 : 0.5,
                   }}
                 >
@@ -193,9 +193,9 @@ export default function ForgotPasswordScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'code' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'code' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'code' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'code' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={code}
                     onChangeText={setCode}
@@ -213,9 +213,9 @@ export default function ForgotPasswordScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
+                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={newPassword}
                     onChangeText={setNewPassword}
@@ -243,7 +243,7 @@ export default function ForgotPasswordScreen() {
                 onPress={handleReset}
                 disabled={!canSubmitReset || loading}
                 style={{
-                  backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                  backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center', opacity: canSubmitReset && !loading ? 1 : 0.5,
                 }}
               >
@@ -272,7 +272,7 @@ export default function ForgotPasswordScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Remember your password?</Text>
               <Pressable onPress={() => router.back()} accessibilityRole="link">
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>Sign In</Text>
               </Pressable>
             </View>
           </MotiView>

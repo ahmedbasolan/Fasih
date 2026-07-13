@@ -110,10 +110,10 @@ export default function SignUpScreen() {
           >
             <View style={{
               width: 64, height: 64, borderRadius: 20,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
-              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+              <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
               {pendingVerification ? 'Verify Email' : 'Create Account'}
@@ -122,7 +122,7 @@ export default function SignUpScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Already have an account?</Text>
                 <Pressable onPress={() => router.back()} hitSlop={8}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>Sign In</Text>
                 </Pressable>
               </View>
             )}
@@ -169,7 +169,7 @@ export default function SignUpScreen() {
                 onPress={handleVerify}
                 disabled={verificationCode.length < 6 || loading}
                 style={{
-                  backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                  backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center',
                   opacity: verificationCode.length >= 6 && !loading ? 1 : 0.5,
                 }}
@@ -200,9 +200,9 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'name' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <User size={18} color={focused === 'name' ? C.GOLD : C.TEXT3} />
+                  <User size={18} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={fullName}
                     onChangeText={setFullName}
@@ -221,9 +221,9 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -243,9 +243,9 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
+                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
@@ -298,8 +298,8 @@ export default function SignUpScreen() {
                 >
                   <View style={{
                     width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                    backgroundColor: agreed ? C.GOLD : 'transparent',
-                    borderWidth: 2, borderColor: agreed ? C.GOLD : C.BORDER2,
+                    backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                    borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                     alignItems: 'center', justifyContent: 'center',
                   }}>
                     {agreed && <Check size={12} color={C.BG} />}
@@ -333,7 +333,7 @@ export default function SignUpScreen() {
                   onPress={handleSignUp}
                   disabled={!canSubmit || loading}
                   style={{
-                    backgroundColor: C.GOLD, borderRadius: 14,
+                    backgroundColor: C.JADE_ACCENT, borderRadius: 14,
                     paddingVertical: 16, alignItems: 'center',
                     opacity: canSubmit && !loading ? 1 : 0.5,
                   }}

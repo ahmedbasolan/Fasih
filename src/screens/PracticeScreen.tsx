@@ -87,7 +87,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_ARABIC_BLACK,
                   fontSize: 36,
-                  color: C.GOLD,
+                  color: C.JADE_ACCENT,
                   textAlign: 'center',
                   lineHeight: 52,
                 }}
@@ -120,7 +120,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_ARABIC_BLACK,
                   fontSize: 28,
-                  color: C.GOLD,
+                  color: C.JADE_ACCENT,
                   textAlign: 'center',
                   marginBottom: 4,
                 }}
@@ -131,7 +131,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_LATIN,
                   fontSize: 14,
-                  color: `${C.GOLD}90`,
+                  color: `${C.JADE_ACCENT}90`,
                   fontStyle: 'italic',
                 }}
               >
@@ -426,7 +426,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   // Must be before any early return to satisfy Rules of Hooks
   const resultStats = useMemo(() => [
     { label: STRINGS.practice.correctCount(score.correct).split(' ')[1], value: score.correct, color: C.JADE2 },
-    { label: STRINGS.practice.learning, value: score.skipped, color: C.GOLD },
+    { label: STRINGS.practice.learning, value: score.skipped, color: C.JADE_ACCENT },
     { label: STRINGS.practice.missed, value: score.wrong, color: C.ERROR },
   ], [score, C]);
 
@@ -495,7 +495,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
                 {STRINGS.practice.xOfY(current + 1, deck.length)}
               </Text>
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>
                 {STRINGS.practice.correctCount(score.correct)}
               </Text>
             </View>
@@ -534,7 +534,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             transition={{ type: 'timing', duration: 350 }}
           >
             <View style={{ gap: 14, paddingTop: 20 }}>
-              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 40, color: C.GOLD, textAlign: 'center', opacity: 0.15 }}>
+              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 40, color: C.JADE_ACCENT, textAlign: 'center', opacity: 0.15 }}>
                 تدريب
               </Text>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', marginBottom: 8 }}>
@@ -543,13 +543,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
               {/* 1: Flashcards */}
               <Pressable onPress={startFlashcards} accessibilityRole="button" accessibilityLabel="Start flashcard practice">
-                <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, gap: 8 }}>
+                <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.GOLD_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-                    <RotateCcw size={20} color={C.GOLD} />
+                    <RotateCcw size={20} color={C.JADE_ACCENT} />
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.flashcards}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.flashcardDesc}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>{STRINGS.practice.flashcardMeta(DECK_SIZE)}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(DECK_SIZE)}</Text>
                 </View>
               </Pressable>
 
@@ -586,12 +586,12 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               {PHRASES_WITH_TILES.length > 0 ? (
                 <Pressable onPress={startPhraseBuilder} accessibilityRole="button" accessibilityLabel="Start phrase builder">
                   <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.GOLD_SURFACE, borderWidth: 1.5, borderColor: C.GOLD_BORDER, gap: 8 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.GOLD_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                      <Layers size={20} color={C.GOLD} />
+                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
+                      <Layers size={20} color={C.JADE_ACCENT} />
                     </View>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.phraseBuilder}</Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.phraseBuilderDesc}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>
                       {STRINGS.practice.phraseBuilderMeta(Math.min(DECK_SIZE, PHRASES_WITH_TILES.length))}
                     </Text>
                   </View>
@@ -649,10 +649,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     onPress={() => rateCard('learning')}
                     accessibilityRole="button"
                     accessibilityLabel="Learning - schedule review in 3 days"
-                    style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 2 }}
+                    style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 2 }}
                   >
-                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.GOLD }}>{STRINGS.practice.learning}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: `${C.GOLD}80` }}>{STRINGS.practice.learningSub}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.JADE_ACCENT }}>{STRINGS.practice.learning}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: `${C.JADE_ACCENT}80` }}>{STRINGS.practice.learningSub}</Text>
                   </Pressable>
                   {/* Knew it — 7 days */}
                   <Pressable
@@ -684,7 +684,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>
                   {STRINGS.practice.matchPronunciation || 'Match the pronunciation'}
                 </Text>
-                <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 32, color: C.GOLD, textAlign: 'center', lineHeight: 48, marginVertical: 8 }}>
+                <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 32, color: C.JADE_ACCENT, textAlign: 'center', lineHeight: 48, marginVertical: 8 }}>
                   {phrase.arabic}
                 </Text>
                 <Pressable
@@ -720,9 +720,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {/* Show Arabic + meaning after answer */}
             {quizAnswer && (
               <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
-                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 20, color: C.GOLD }}>{phrase.arabic}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
+                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 20, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT2, marginTop: 2 }}>{phrase.english}</Text>
                 </View>
               </MotiView>
@@ -811,8 +811,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {quizAnswer && (
               <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
                 <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_SURFACE, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.GOLD }}>{phrase.arabic}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
+                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Pressable
                     onPress={() => speak(phrase.arabic)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
@@ -855,7 +855,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               
               {/* Progress bar */}
               <View style={{ flex: 1, marginHorizontal: 20, height: 6, borderRadius: 3, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
-                <MotiView from={{ width: '0%' }} animate={{ width: `${(current / deck.length) * 100}%` }} transition={{ type: 'timing', duration: 400 }} style={{ height: '100%', backgroundColor: C.GOLD, borderRadius: 3 }} />
+                <MotiView from={{ width: '0%' }} animate={{ width: `${(current / deck.length) * 100}%` }} transition={{ type: 'timing', duration: 400 }} style={{ height: '100%', backgroundColor: C.JADE_ACCENT, borderRadius: 3 }} />
               </View>
             </View>
 
@@ -918,12 +918,12 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     width: 64,
                     height: 64,
                     borderRadius: 32,
-                    backgroundColor: score.correct >= deck.length * 0.75 ? C.JADE_DIM : C.GOLD_DIM,
+                    backgroundColor: score.correct >= deck.length * 0.75 ? C.JADE_DIM : C.JADE_ACCENT_DIM,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Trophy size={28} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.GOLD} />
+                  <Trophy size={28} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.JADE_ACCENT} />
                 </View>
                 <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT }}>
                   {score.correct}/{deck.length}
@@ -950,13 +950,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               </View>
 
               {/* SRS schedule note */}
-              <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <BookOpen size={16} color={C.GOLD} />
+              <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <BookOpen size={16} color={C.JADE_ACCENT} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.GOLD }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>
                     {STRINGS.practice.phrasesReviewed(deck.length)}
                   </Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${C.GOLD}80`, marginTop: 2 }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE_ACCENT}80`, marginTop: 2 }}>
                     Your ratings schedule the next review — harder phrases come back sooner.
                   </Text>
                 </View>
