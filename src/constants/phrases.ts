@@ -163,11 +163,30 @@ export const TYPE_LABELS: Record<string, string> = {
   expression: 'Expression',
 };
 
+// ─── O(1) lookup maps (computed once at module load) ─────────────────────────
+/**
+ * Keyed by phrase ID. Use instead of PHRASES.find() for O(1) lookups.
+ * Replacing scattered PHRASES.find(ph => ph.id === id) calls with this
+ * eliminates O(n) scans that compound inside loops.
+ */
+export const PHRASE_BY_ID: Readonly<Record<string, Phrase>> = Object.fromEntries(
+  PHRASES.map(p => [p.id, p])
+);
+
+/**
+ * Phrase count per category — computed once, used for mastery percentage display.
+ * Avoids re-filtering PHRASES inside every review update.
+ */
+export const PHRASES_PER_CATEGORY: Readonly<Record<PhraseCategory, number>> = Object.fromEntries(
+  PHRASE_CATEGORIES.map(cat => [cat, PHRASES.filter(p => p.category === cat).length])
+) as Record<PhraseCategory, number>;
+
 // ─── Quick-practice subset for HomeScreen ────────────────────────────────────
 export const QUICK_PRACTICE_PHRASES = PHRASES.filter(p =>
   ['s1', 'gr1', 'w1', 'h1'].includes(p.id)
 );
 
+/** O(1) phrase lookup by ID. */
 export function getPhraseById(id: string): Phrase | undefined {
-  return PHRASES.find(p => p.id === id);
+  return PHRASE_BY_ID[id];
 }

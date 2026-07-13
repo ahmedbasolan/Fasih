@@ -8,6 +8,7 @@ import {
   getChoiceStats,
   recordEndingStat as rcRecordEndingStat,
   getEndingStats,
+  CURRENT_SCHEMA_VERSION,
 } from '../lib/syncService';
 import {
   configurePurchases,
@@ -22,12 +23,27 @@ import {
   addCustomerInfoListener,
 } from '../lib/purchases';
 import type { EntitlementStatus } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
-import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
+import { PHRASES, PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
+import {
+  todayISO, addDays,
+  newReviewCard, updateReviewCard, applyRatingToCard, RATING_INTERVALS,
+} from '../engine/srsEngine';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  scheduleReEngagementIfNeeded,
+  cancelAllNotifications,
+  derivePreferredHour,
+} from '../lib/notifications';
+
+// ─── Trial duration ───────────────────────────────────────────────────────────
+// Single source of truth — used in hasFullAccess AND hasScenarioAccess.
+const TRIAL_DAYS = 4;
 
 // ─── Subscription reconciliation ─────────────────────────────────────────────
 // RevenueCat's CustomerInfo (via getEntitlementStatus/addCustomerInfoListener)
@@ -77,61 +93,6 @@ function scheduleSync(fn: () => void, delayMs = 1500) {
 // it's an implementation detail, not reactive UI state.
 let _supabaseTokenRefresher: (() => Promise<void>) | null = null;
 
-// ─── Spaced repetition helpers ───────────────────────────────────────────────
-function todayISO(): string {
-  const d = new Date();
-  // Use local date components so streak matches the user's clock, not UTC
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function addDays(iso: string, days: number): string {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-}
-
-function newReviewCard(phraseId: string): PhraseReviewData {
-  const today = todayISO();
-  return { phraseId, lastReviewed: today, nextReview: today, interval: 0, ease: 2.0, correct: 0, incorrect: 0 };
-}
-
-function updateReviewCard(card: PhraseReviewData, correct: boolean): PhraseReviewData {
-  const today = todayISO();
-  if (correct) {
-    const newInterval = Math.max(1, Math.round(card.interval * card.ease));
-    const newEase = Math.min(2.5, card.ease + 0.1);
-    return { ...card, lastReviewed: today, nextReview: addDays(today, newInterval), interval: newInterval, ease: newEase, correct: card.correct + 1 };
-  }
-  return { ...card, lastReviewed: today, nextReview: addDays(today, 1), interval: 1, ease: Math.max(1.3, card.ease - 0.2), incorrect: card.incorrect + 1 };
-}
-
-// 3-tier rating → fixed SRS intervals per guidelines:
-// 'new' = resurfaces in 1 day, 'learning' = 3 days, 'knew' = 7 days
-// Each subsequent 'knew' doubles the interval (handled by updateReviewCard ease multiplier)
-const RATING_INTERVALS: Record<'new' | 'learning' | 'knew', number> = {
-  new: 1,
-  learning: 3,
-  knew: 7,
-};
-
-function applyRatingToCard(card: PhraseReviewData, rating: 'new' | 'learning' | 'knew'): PhraseReviewData {
-  const today = todayISO();
-  if (rating === 'knew') {
-    // On 'knew', use the ease multiplier to progressively double intervals
-    const newInterval = card.interval < 1 ? 7 : Math.round(card.interval * card.ease);
-    const newEase = Math.min(2.5, card.ease + 0.1);
-    return { ...card, lastReviewed: today, nextReview: addDays(today, newInterval), interval: newInterval, ease: newEase, correct: card.correct + 1 };
-  }
-  if (rating === 'new') {
-    return { ...card, lastReviewed: today, nextReview: addDays(today, RATING_INTERVALS.new), interval: RATING_INTERVALS.new, ease: Math.max(1.3, card.ease - 0.2), incorrect: card.incorrect + 1 };
-  }
-  // 'learning'
-  return { ...card, lastReviewed: today, nextReview: addDays(today, RATING_INTERVALS.learning), interval: RATING_INTERVALS.learning, ease: card.ease };
-}
-
 // ─── Milestones ──────────────────────────────────────────────────────────────
 const DEFAULT_MILESTONES: LearningMilestone[] = [
   { id: 'first-scenario', label: 'Cultural Explorer', description: 'You completed your first cultural scenario', reached: false },
@@ -149,31 +110,71 @@ type MilestoneChecker = (s: Pick<AppState, 'stats' | 'completedScenarios' | 'phr
 const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'first-scenario': (s) => s.stats.scenariosCompleted.length >= 1,
   'greetings-3': (s) => {
-    const greetings = Object.values(s.phraseReviews).filter(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category === 'Greetings' && r.correct >= 1;
-    });
+    const greetings = Object.values(s.phraseReviews).filter(r =>
+      PHRASE_BY_ID[r.phraseId]?.category === 'Greetings' && r.correct >= 1
+    );
     return greetings.length >= 3;
   },
   'hospitality': (s) => {
-    const hosp = Object.values(s.phraseReviews).filter(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category === 'Hospitality' && r.correct >= 1;
-    });
+    const hosp = Object.values(s.phraseReviews).filter(r =>
+      PHRASE_BY_ID[r.phraseId]?.category === 'Hospitality' && r.correct >= 1
+    );
     return hosp.length >= 2;
   },
   'week-learner': (s) => s.stats.daysActive >= 7,
   'phrases-10': (s) => s.stats.phrasesStudied >= 10,
   'all-categories': (s) => {
-    const cats = new Set(Object.values(s.phraseReviews).map(r => {
-      const p = PHRASES.find(ph => ph.id === r.phraseId);
-      return p?.category;
-    }).filter(Boolean));
+    const cats = new Set(
+      Object.values(s.phraseReviews)
+        .map(r => PHRASE_BY_ID[r.phraseId]?.category)
+        .filter(Boolean)
+    );
     return cats.size >= 5;
   },
   'scenarios-3': (s) => s.stats.scenariosCompleted.length >= 3,
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
+
+// ─── Mastery computation (extracted to eliminate duplication + O(n²)) ─────────
+/**
+ * Computes phrasesStudied, phrasesMastered, and categoryMastery from the current
+ * review map in a single O(n) pass — replaces the previous O(n × categories × n)
+ * nested-filter approach used in both recordPhraseReview and recordPhraseRating.
+ */
+function computeMastery(reviews: Record<string, PhraseReviewData>): {
+  studied: number;
+  mastered: number;
+  categoryMastery: Record<string, CategoryMastery>;
+} {
+  const allCards = Object.values(reviews);
+  const studied = allCards.length;
+  let mastered = 0;
+
+  // Single pass: bucket cards by category and count mastered
+  const cardsByCategory: Partial<Record<PhraseCategory, PhraseReviewData[]>> = {};
+  for (const card of allCards) {
+    const phrase = PHRASE_BY_ID[card.phraseId];
+    if (!phrase) continue;
+    if (card.correct >= 3 && card.correct / (card.correct + card.incorrect) >= 0.8) mastered++;
+    if (!cardsByCategory[phrase.category]) cardsByCategory[phrase.category] = [];
+    cardsByCategory[phrase.category]!.push(card);
+  }
+
+  const categoryMastery: Record<string, CategoryMastery> = {};
+  for (const cat of PHRASE_CATEGORIES) {
+    const catCards = cardsByCategory[cat] ?? [];
+    const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
+    const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
+    categoryMastery[cat] = {
+      category: cat,
+      phrasesStudied: catCards.length,
+      phrasesTotal: PHRASES_PER_CATEGORY[cat] ?? 0,
+      accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0,
+    };
+  }
+
+  return { studied, mastered, categoryMastery };
+}
 
 // ─── State shape ─────────────────────────────────────────────────────────────
 interface AppState {
@@ -223,6 +224,16 @@ interface AppState {
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
   fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
+
+  // Notifications
+  /** Rolling last-7 session hours (0–23, local time). Used for smart notification timing. */
+  recentSessionHours: number[];
+  /** Whether the user has granted push notification permission. */
+  notificationsEnabled: boolean;
+  /** Record the current hour and (re)schedule notifications with updated smart timing. */
+  recordSessionHour: () => Promise<void>;
+  /** Request permission and schedule initial notifications. Call after sign-in. */
+  initNotifications: () => Promise<void>;
 
   // Auth actions
   setUser: (user: UserProfile) => void;
@@ -311,6 +322,10 @@ export const useAppStore = create<AppState>()(
       unlockedPhraseIds: [],
       activeScenarioState: null,
 
+      // Notifications
+      recentSessionHours: [],
+      notificationsEnabled: false,
+
       // Sync state
       isSyncing: false,
       lastSyncedAt: null,
@@ -331,11 +346,13 @@ export const useAppStore = create<AppState>()(
           const { error } = await pushProgress(
             s.clerkUserId,
             {
+              schema_version: CURRENT_SCHEMA_VERSION,
               user_profile: s.user,
               stats: s.stats,
               phrase_reviews: s.phraseReviews,
               completed_scenarios: s.completedScenarios,
               saved_phrases: s.savedPhrases,
+              unlocked_phrase_ids: s.unlockedPhraseIds,
               milestones: s.milestones,
               journal: s.journal,
               last_active_date: s.lastActiveDate,
@@ -376,14 +393,31 @@ export const useAppStore = create<AppState>()(
           },
         );
 
+        // Merge unlockedPhraseIds: union of cloud + local (never lose locally unlocked phrases)
+        const mergedUnlocked = Array.from(
+          new Set([...(data.unlocked_phrase_ids ?? []), ...s.unlockedPhraseIds])
+        );
+
+        // Merge journal: union by id so entries made offline on another device
+        // are not lost when cloud data arrives. Newest entries first, capped at 100.
+        const cloudJournal: JournalEntry[] = data.journal ?? [];
+        const localIds = new Set(s.journal.map((e: JournalEntry) => e.id));
+        const mergedJournal = [
+          ...s.journal,
+          ...cloudJournal.filter((e: JournalEntry) => !localIds.has(e.id)),
+        ]
+          .sort((a: JournalEntry, b: JournalEntry) => b.date.localeCompare(a.date))
+          .slice(0, 100);
+
         set({
           user: data.user_profile ?? s.user,
           stats: data.stats ?? s.stats,
           phraseReviews: data.phrase_reviews ?? s.phraseReviews,
           completedScenarios: data.completed_scenarios ?? s.completedScenarios,
           savedPhrases: data.saved_phrases ?? s.savedPhrases,
+          unlockedPhraseIds: mergedUnlocked,
           milestones: mergedMilestones,
-          journal: data.journal ?? s.journal,
+          journal: mergedJournal,
           lastActiveDate: data.last_active_date ?? s.lastActiveDate,
           subscriptionStatus: data.subscription_status ?? s.subscriptionStatus,
           trialStartedAt: data.trial_started_at ?? s.trialStartedAt,
@@ -400,7 +434,59 @@ export const useAppStore = create<AppState>()(
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
         await logoutPurchasesUser();
-        set({ isAuthenticated: false, clerkUserId: null });
+        await cancelAllNotifications();
+        // Clear all user-specific data so the next sign-in starts clean.
+        // hasOnboarded is intentionally preserved — a returning user lands on
+        // sign-in, not onboarding.
+        set({
+          isAuthenticated: false,
+          clerkUserId: null,
+          user: null,
+          subscriptionStatus: 'free',
+          trialStartedAt: null,
+          trialPlan: null,
+          stats: { ...DEFAULT_USER_STATS },
+          phraseReviews: {},
+          completedScenarios: {},
+          savedPhrases: [],
+          unlockedPhraseIds: [],
+          favoriteScenarios: [],
+          sceneProgress: {},
+          lastActiveDate: null,
+          journal: [],
+          milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
+          activeScenarioState: null,
+          communityStatsCache: {},
+          lastSyncedAt: null,
+          lastSyncError: null,
+          recentSessionHours: [],
+          notificationsEnabled: false,
+        });
+      },
+
+      // ─── Notifications ──────────────────────────────────────────────────────
+      initNotifications: async () => {
+        const granted = await requestNotificationPermission();
+        if (!granted) return;
+        set({ notificationsEnabled: true });
+        const s = get();
+        const hour = derivePreferredHour(s.recentSessionHours);
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
+        await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
+      },
+
+      recordSessionHour: async () => {
+        const hour = new Date().getHours();
+        set(s => ({
+          recentSessionHours: [...s.recentSessionHours, hour].slice(-7), // keep last 7
+        }));
+        // Re-schedule with updated smart timing (non-blocking)
+        const s = get();
+        if (!s.notificationsEnabled) return;
+        const preferredHour = derivePreferredHour(s.recentSessionHours);
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
       },
 
       // UI
@@ -492,7 +578,7 @@ export const useAppStore = create<AppState>()(
         if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + 4);
+          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
           if (new Date() < trialEnd) return true;
         }
         // Free users unlock full access after completing 3 scenarios
@@ -504,10 +590,12 @@ export const useAppStore = create<AppState>()(
         if (s.subscriptionStatus === 'subscribed') return true;
         if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
           const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + 4);
+          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
           if (new Date() < trialEnd) return true;
         }
-        // Free users get first 3 scenarios (index 0, 1, 2)
+        // Free users who completed 3+ scenarios get full access (matches hasFullAccess)
+        if (Object.keys(s.completedScenarios).length >= 3) return true;
+        // Otherwise only first 3 scenarios (index 0, 1, 2) are free
         return scenarioIndex < 3;
       },
       scenariosCompletedCount: () => Object.keys(get().completedScenarios).length,
@@ -535,20 +623,7 @@ export const useAppStore = create<AppState>()(
           const existing = s.phraseReviews[phraseId];
           const card = updateReviewCard(existing ?? newReviewCard(phraseId), correct);
           const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const allCards = Object.values(newReviews);
-          const studied = allCards.length;
-          const mastered = allCards.filter(c => c.correct >= 3 && c.correct / (c.correct + c.incorrect) >= 0.8).length;
-          const categoryMastery: Record<string, { category: PhraseCategory; phrasesStudied: number; phrasesTotal: number; accuracy: number }> = {};
-          for (const cat of PHRASE_CATEGORIES) {
-            const phrasesInCat = PHRASES.filter(p => p.category === cat);
-            const catCards = allCards.filter(c => {
-              const p = PHRASES.find(ph => ph.id === c.phraseId);
-              return p?.category === cat;
-            });
-            const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
-            const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
-            categoryMastery[cat] = { category: cat, phrasesStudied: catCards.length, phrasesTotal: phrasesInCat.length, accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0 };
-          }
+          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
         scheduleSync(() => get().syncToCloud());
@@ -559,20 +634,7 @@ export const useAppStore = create<AppState>()(
           const existing = s.phraseReviews[phraseId];
           const card = applyRatingToCard(existing ?? newReviewCard(phraseId), rating);
           const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const allCards = Object.values(newReviews);
-          const studied = allCards.length;
-          const mastered = allCards.filter(c => c.correct >= 3 && c.correct / (c.correct + c.incorrect) >= 0.8).length;
-          const categoryMastery: Record<string, { category: PhraseCategory; phrasesStudied: number; phrasesTotal: number; accuracy: number }> = {};
-          for (const cat of PHRASE_CATEGORIES) {
-            const phrasesInCat = PHRASES.filter(p => p.category === cat);
-            const catCards = allCards.filter(c => {
-              const p = PHRASES.find(ph => ph.id === c.phraseId);
-              return p?.category === cat;
-            });
-            const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
-            const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
-            categoryMastery[cat] = { category: cat, phrasesStudied: catCards.length, phrasesTotal: phrasesInCat.length, accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0 };
-          }
+          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
         scheduleSync(() => get().syncToCloud());
@@ -696,6 +758,7 @@ export const useAppStore = create<AppState>()(
             flags: new Set<string>(),
             impactByNpc: {},
             totalScore: 0,
+            scoreByNpc: {},
             choiceHistory: [],
             scenesVisited: new Set<string>([firstSceneId]),
             startedAt: new Date().toISOString(),
@@ -740,6 +803,9 @@ export const useAppStore = create<AppState>()(
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
+        // Fire milestone checks immediately so first-scenario and scenarios-3
+        // milestones appear in the same session they are earned (not next app open).
+        get().checkMilestones();
         scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, ending.type);
       },
@@ -771,6 +837,8 @@ export const useAppStore = create<AppState>()(
         phraseReviews: state.phraseReviews,
         journal: state.journal,
         milestones: state.milestones,
+        recentSessionHours: state.recentSessionHours,
+        notificationsEnabled: state.notificationsEnabled,
       }),
     }
   )

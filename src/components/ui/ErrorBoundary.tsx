@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, ThemeColors } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
+import { captureException } from '../../lib/analytics';
 
 interface Props {
   children: React.ReactNode;
@@ -24,10 +25,13 @@ class ErrorBoundaryInner extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Error reporting should go to crash analytics service in production
     if (__DEV__) {
       console.error('[ErrorBoundary]', error, info.componentStack);
     }
+    captureException(error, {
+      componentStack: info.componentStack ?? '',
+      boundary: 'ErrorBoundary',
+    });
   }
 
   handleReset = () => {

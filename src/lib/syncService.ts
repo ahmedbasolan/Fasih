@@ -29,8 +29,14 @@
 import { supabase } from './supabase';
 import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 
+/**
+ * Increment this when CloudUserData shape changes in a breaking way.
+ * pullProgress uses it to detect stale cloud rows.
+ * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids
+ */
+export const CURRENT_SCHEMA_VERSION = 2;
+
 // ─── Community stats ─────────────────────────────────────────────────────────
-//
 // Schema lives in supabase/migrations/001_initial_schema.sql.
 // These tables use RPC functions for atomic increments (SECURITY DEFINER).
 // RLS is enabled (005_enable_rls.sql) with a public-read policy; writes still
@@ -38,11 +44,13 @@ import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, Journ
 // the row policies regardless.
 
 export interface CloudUserData {
+  schema_version: number;
   user_profile: UserProfile | null;
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
   completed_scenarios: Record<string, { endingType: string; date: string }>;
   saved_phrases: string[];
+  unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
   journal: JournalEntry[];
   last_active_date: string | null;
@@ -72,11 +80,13 @@ export async function pushProgress(
     .upsert(
       {
         user_id: userId,
+        schema_version: data.schema_version,
         user_profile: data.user_profile,
         stats: data.stats,
         phrase_reviews: data.phrase_reviews,
         completed_scenarios: data.completed_scenarios,
         saved_phrases: data.saved_phrases,
+        unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
         journal: data.journal,
         last_active_date: data.last_active_date,
@@ -114,13 +124,20 @@ export async function pullProgress(
     return { data: null, error: error.message };
   }
 
+  // Migration guard: rows written before schema_version was introduced will
+  // have schema_version = null (column DEFAULT 1 handles new inserts).
+  // We treat null as version 1 and let the caller decide what to do with it.
+  const cloudVersion: number = (data.schema_version as number | null) ?? 1;
+
   return {
     data: {
+      schema_version: cloudVersion,
       user_profile: data.user_profile ?? null,
       stats: data.stats ?? {},
       phrase_reviews: data.phrase_reviews ?? {},
       completed_scenarios: data.completed_scenarios ?? {},
       saved_phrases: data.saved_phrases ?? [],
+      unlocked_phrase_ids: data.unlocked_phrase_ids ?? [],
       milestones: data.milestones ?? [],
       journal: data.journal ?? [],
       last_active_date: data.last_active_date ?? null,

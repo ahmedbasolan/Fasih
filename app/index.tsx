@@ -15,6 +15,8 @@ export default function Index() {
   const syncFromCloud = useAppStore((s) => s.syncFromCloud);
   const recordDailyActivity = useAppStore((s) => s.recordDailyActivity);
   const checkMilestones = useAppStore((s) => s.checkMilestones);
+  const initNotifications = useAppStore((s) => s.initNotifications);
+  const recordSessionHour = useAppStore((s) => s.recordSessionHour);
 
   const { isLoaded, isSignedIn, userId } = useAuth();
 
@@ -28,10 +30,20 @@ export default function Index() {
       if (!hasOnboarded) {
         router.replace('/onboarding');
       } else {
-        void loginPurchasesUser(userId).then(() => syncFromCloud());
-        recordDailyActivity();
-        checkMilestones();
+        // Navigate immediately; cloud sync + daily tracking run in background.
+        // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves
+        // to prevent syncFromCloud from overwriting the streak/lastActiveDate they set.
         router.replace('/(tabs)');
+        void loginPurchasesUser(userId)
+          .then(() => syncFromCloud())
+          .then(() => {
+            recordDailyActivity();
+            checkMilestones();
+          });
+        // Smart timing: record this session hour, re-schedule daily notification,
+        // and request permission if not yet granted (non-blocking)
+        void recordSessionHour();
+        void initNotifications();
       }
     } else {
       setAuthenticated(false);
