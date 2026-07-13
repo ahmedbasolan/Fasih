@@ -9,6 +9,7 @@ import { useAppStore } from '../src/store/useAppStore';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
+import { STRINGS } from '../src/constants/strings';
 
 export default function SignInScreen() {
   const { C } = useTheme();
@@ -45,7 +46,7 @@ export default function SignInScreen() {
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Sign in failed');
+      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? STRINGS.auth.signIn.signInFailed);
     } finally {
       setLoading(false);
     }
@@ -75,14 +76,14 @@ export default function SignInScreen() {
               <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
-              Sign in to your Account
+              {STRINGS.auth.signIn.title}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>
-                Don&apos;t have an account?
+                {STRINGS.auth.signIn.noAccount}
               </Text>
               <Pressable onPress={() => router.push('/sign-up')} hitSlop={8}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>Sign Up</Text>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.signIn.signUpLink}</Text>
               </Pressable>
             </View>
           </MotiView>
@@ -107,7 +108,7 @@ export default function SignInScreen() {
               <TextInput
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Email address"
+                placeholder={STRINGS.auth.signIn.emailPlaceholder}
                 placeholderTextColor={C.TEXT3}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -128,7 +129,7 @@ export default function SignInScreen() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Password"
+                placeholder={STRINGS.auth.signIn.passwordPlaceholder}
                 placeholderTextColor={C.TEXT3}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -140,7 +141,7 @@ export default function SignInScreen() {
                 onPress={() => setShowPassword(!showPassword)}
                 hitSlop={12}
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
               >
                 {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
               </Pressable>
@@ -159,7 +160,7 @@ export default function SignInScreen() {
               accessibilityRole="link"
             >
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>
-                Forgot Your Password?
+                {STRINGS.auth.signIn.forgotPassword}
               </Text>
             </Pressable>
           </MotiView>
@@ -192,7 +193,7 @@ export default function SignInScreen() {
               }}
             >
               <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
-                {loading ? 'Signing In...' : 'Log In'}
+                {loading ? STRINGS.auth.signIn.signingIn : STRINGS.auth.signIn.logIn}
               </Text>
             </Pressable>
           </MotiView>
@@ -202,7 +203,7 @@ export default function SignInScreen() {
               onPress={() => router.replace(hasOnboarded ? '/(tabs)' : '/onboarding')}
               style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
             >
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Skip (dev only)</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.auth.signIn.skipDevOnly}</Text>
             </Pressable>
           )}
 
