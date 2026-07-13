@@ -1,13 +1,4 @@
--- ============================================================
--- Fasih — Migration 003: Row Level Security
--- Run after 001_initial_schema.sql
---
--- IMPORTANT: This app uses Clerk for auth, NOT Supabase Auth.
--- auth.uid() always returns NULL for Clerk users — any policy that
--- uses auth.uid() will silently block all operations.
---
--- Two options are provided below. Choose ONE and run it.
--- ============================================================
+-- Superseded by 005_enable_rls.sql. Kept for history only.
 
 -- ════════════════════════════════════════════════════════════
 -- OPTION A — Simple: Disable RLS entirely (current default)

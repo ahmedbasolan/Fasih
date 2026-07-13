@@ -7,14 +7,23 @@
  * Fasih uses Clerk for authentication. Supabase is the database only — no
  * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
  *
- * RLS is currently DISABLED (Option A). All data access is filtered client-side
- * by user_id. Upgrade path: enable Option B in 003_rls.sql once a Clerk → JWT
- * integration is configured (see that file for instructions).
+ * RLS is enabled (005_enable_rls.sql) and backed by a Clerk-issued JWT: the
+ * app forwards a `{ template: 'supabase' }` token on every request (see
+ * setClerkSupabaseToken in ./supabase and SupabaseAuthBridge in
+ * app/_layout.tsx), and requesting_user_id() reads the `sub` claim so
+ * policies can check `user_id = requesting_user_id()`. 003_rls.sql's
+ * Option A (RLS disabled) is superseded and kept only for history.
  *
  * ─── Security posture ───────────────────────────────────────────────────────
- * The Supabase anon key is public by design. Without RLS, a malicious client
- * could read or write any row using a crafted user_id. Acceptable for launch;
- * schedule Option B before significant user growth.
+ * The Supabase anon key is still public by design, but RLS now confines every
+ * authenticated request to its own row. subscription_status is additionally
+ * locked server-side by a trigger (prevent_client_subscription_write) — not
+ * even the row's rightful owner can write it directly; only the service-role
+ * RevenueCat webhook can. On the client, RevenueCat's CustomerInfo is the
+ * two-way source of truth for the subscriptionStatus flag: initSubscription
+ * (see src/store/useAppStore.ts) reconciles it in both directions on every
+ * app start, so a lapsed/refunded/forged status is corrected back to 'free'
+ * rather than persisting indefinitely.
  */
 
 import { supabase } from './supabase';
@@ -24,7 +33,9 @@ import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, Journ
 //
 // Schema lives in supabase/migrations/001_initial_schema.sql.
 // These tables use RPC functions for atomic increments (SECURITY DEFINER).
-// RLS is disabled — reads are open, writes go through the RPCs only.
+// RLS is enabled (005_enable_rls.sql) with a public-read policy; writes still
+// only happen through the RPCs, which run as SECURITY DEFINER and so bypass
+// the row policies regardless.
 
 export interface CloudUserData {
   user_profile: UserProfile | null;
