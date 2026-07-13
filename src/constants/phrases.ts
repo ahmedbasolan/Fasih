@@ -142,12 +142,12 @@ export const PHRASE_CATEGORIES: PhraseCategory[] = ['Greetings', 'Gratitude', 'H
 export const getCategoryColors = (C: ThemeColors): Record<string, string> => ({
   All: C.JADE_ACCENT,
   Greetings: C.JADE2,
-  Gratitude: C.GOLD2,
+  Gratitude: C.JADE_ACCENT2,
   Hospitality: C.VIOLET2,
   Workplace: C.JADE3,
   Social: C.ERROR,
   Everyday: C.VIOLET2,
-  'Food & Drink': C.GOLD3,
+  'Food & Drink': C.JADE_ACCENT3,
   Family: C.VIOLET2,
 });
 

@@ -47,7 +47,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
           transition={{ type: 'timing', duration: 400, delay: 200 }}
           style={{ alignItems: 'center', marginBottom: 32 }}
         >
-          <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
             <Lock size={24} color={C.JADE_ACCENT} />
           </View>
 
@@ -71,7 +71,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
                   width: 36, height: 36, borderRadius: 12,
                   backgroundColor: i < scenariosCompleted ? C.JADE_ACCENT_DIM : C.SURFACE,
                   borderWidth: 1.5,
-                  borderColor: i < scenariosCompleted ? C.GOLD_BORDER : C.BORDER,
+                  borderColor: i < scenariosCompleted ? C.JADE_ACCENT_BORDER : C.BORDER,
                   alignItems: 'center', justifyContent: 'center',
                 }}>
                   {i < scenariosCompleted ? (
