@@ -436,9 +436,14 @@ export const useAppStore = create<AppState>()(
         const userId = get().clerkUserId;
         if (userId) await loginPurchasesUser(userId);
 
-        // Check current entitlement status
+        // RevenueCat's CustomerInfo is the two-way source of truth for the
+        // client-side subscription flag: always set subscriptionStatus to
+        // whatever it reports, not just when it confirms 'subscribed'. This
+        // corrects a lapsed/refunded subscription — or a forged
+        // subscription_status written directly to Supabase before RLS
+        // locked that column down — back to 'free' on every app start.
         const status = await getEntitlementStatus();
-        if (status === 'subscribed') set({ subscriptionStatus: 'subscribed' });
+        set({ subscriptionStatus: status });
 
         // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
         // Deregister any previous listener to prevent accumulation across hot-reloads.
