@@ -140,7 +140,7 @@ export const PHRASES: Phrase[] = [
 export const PHRASE_CATEGORIES: PhraseCategory[] = ['Greetings', 'Gratitude', 'Hospitality', 'Workplace', 'Social', 'Everyday', 'Food & Drink', 'Family'];
 
 export const getCategoryColors = (C: ThemeColors): Record<string, string> => ({
-  All: C.GOLD,
+  All: C.JADE_ACCENT,
   Greetings: C.JADE2,
   Gratitude: C.GOLD2,
   Hospitality: C.VIOLET2,
@@ -153,7 +153,7 @@ export const getCategoryColors = (C: ThemeColors): Record<string, string> => ({
 
 export const getDifficultyColors = (C: ThemeColors): Record<string, string> => ({
   basic: C.JADE2,
-  intermediate: C.GOLD,
+  intermediate: C.JADE_ACCENT,
   advanced: C.ERROR,
 });
 

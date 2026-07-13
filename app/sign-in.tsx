@@ -69,10 +69,10 @@ export default function SignInScreen() {
           >
             <View style={{
               width: 64, height: 64, borderRadius: 20,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
-              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+              <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
               Sign in to your Account
@@ -82,7 +82,7 @@ export default function SignInScreen() {
                 Don&apos;t have an account?
               </Text>
               <Pressable onPress={() => router.push('/sign-up')} hitSlop={8}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign Up</Text>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>Sign Up</Text>
               </Pressable>
             </View>
           </MotiView>
@@ -101,9 +101,9 @@ export default function SignInScreen() {
               flexDirection: 'row', alignItems: 'center', gap: 12,
               borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
               backgroundColor: C.BG, borderWidth: 1,
-              borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
+              borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
             }}>
-              <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
+              <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -122,9 +122,9 @@ export default function SignInScreen() {
               flexDirection: 'row', alignItems: 'center', gap: 12,
               borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
               backgroundColor: C.BG, borderWidth: 1,
-              borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
+              borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
             }}>
-              <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
+              <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
               <TextInput
                 value={password}
                 onChangeText={setPassword}
@@ -187,7 +187,7 @@ export default function SignInScreen() {
               onPress={handleSignIn}
               disabled={!canSubmit || loading}
               style={{
-                backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                 alignItems: 'center', opacity: canSubmit && !loading ? 1 : 0.5,
               }}
             >

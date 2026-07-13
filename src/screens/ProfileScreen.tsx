@@ -200,7 +200,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               {m.reached && (
                 <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.PRIMARY, borderTopLeftRadius: i === 0 ? 20 : 0 }} />
               )}
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.reached ? C.GOLD_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center', opacity: m.reached ? 1 : 0.5 }}>
+              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.reached ? C.JADE_ACCENT_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center', opacity: m.reached ? 1 : 0.5 }}>
                 {m.reached ? <Check size={14} color={C.PRIMARY} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.TEXT2 }} />}
               </View>
               <View style={{ flex: 1 }}>

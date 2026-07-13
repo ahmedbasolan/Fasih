@@ -42,7 +42,7 @@ export function EmptyState({
               cy="60"
               r="55"
               fill="none"
-              stroke={C.GOLD}
+              stroke={C.JADE_ACCENT}
               strokeWidth="0.5"
               opacity="0.3"
             />
@@ -57,13 +57,13 @@ export function EmptyState({
             />
             
             {/* Arabic text with artistic flourish */}
-            <Text style={[styles.arabic, { color: C.TEXT3, textShadowColor: `${C.GOLD}20` }]}>{arabic}</Text>
+            <Text style={[styles.arabic, { color: C.TEXT3, textShadowColor: `${C.JADE_ACCENT}20` }]}>{arabic}</Text>
             
             {/* Decorative elements */}
             <Path
               d="M20 60 Q30 50, 40 60 T60 60"
               fill="none"
-              stroke={C.GOLD}
+              stroke={C.JADE_ACCENT}
               strokeWidth="1"
               opacity="0.4"
             />

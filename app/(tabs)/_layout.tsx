@@ -94,7 +94,7 @@ export default function TabsLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <Home size={20} color={color} />
               </View>
             ),
@@ -105,7 +105,7 @@ export default function TabsLayout() {
           options={{
             title: 'Scenarios',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <Layers size={20} color={color} />
               </View>
             ),
@@ -116,7 +116,7 @@ export default function TabsLayout() {
           options={{
             title: 'Phrases',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <BookOpen size={20} color={color} />
               </View>
             ),
@@ -127,7 +127,7 @@ export default function TabsLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <User size={20} color={color} />
               </View>
             ),

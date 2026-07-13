@@ -9,10 +9,10 @@ export type ThemeColors = {
   BORDER2: string;
 
   // Primary green (main accent)
-  GOLD: string;
+  JADE_ACCENT: string;
   GOLD2: string;
   GOLD3: string;
-  GOLD_DIM: string;
+  JADE_ACCENT_DIM: string;
   GOLD_BORDER: string;
   GOLD_SURFACE: string;
 
@@ -82,10 +82,10 @@ export const darkTheme: ThemeColors = {
   BORDER: 'rgba(255,255,255,0.10)',
   BORDER2: 'rgba(255,255,255,0.16)',
 
-  GOLD: '#00FF95',
+  JADE_ACCENT: '#00FF95',
   GOLD2: '#5FFFB8',
   GOLD3: '#B8FFE0',
-  GOLD_DIM: 'rgba(0,255,149,0.18)',
+  JADE_ACCENT_DIM: 'rgba(0,255,149,0.18)',
   GOLD_BORDER: 'rgba(0,255,149,0.35)',
   GOLD_SURFACE: 'rgba(0,255,149,0.06)',
 
@@ -151,10 +151,10 @@ export const lightTheme: ThemeColors = {
   BORDER: 'rgba(0,0,0,0.08)',
   BORDER2: 'rgba(0,0,0,0.12)',
 
-  GOLD: '#00FF95',
+  JADE_ACCENT: '#00FF95',
   GOLD2: '#5FFFB8',
   GOLD3: '#B8FFE0',
-  GOLD_DIM: 'rgba(0,255,149,0.12)',
+  JADE_ACCENT_DIM: 'rgba(0,255,149,0.12)',
   GOLD_BORDER: 'rgba(0,255,149,0.25)',
   GOLD_SURFACE: 'rgba(0,255,149,0.06)',
 
