@@ -130,7 +130,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
             alignSelf: 'flex-start', marginBottom: 12,
             paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
             backgroundColor: tone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
-            borderWidth: 1, borderColor: tone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+            borderWidth: 1, borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
           }}
         >
           <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
@@ -145,7 +145,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           width: 40, height: 40, borderRadius: 14,
           backgroundColor: C.JADE_ACCENT_DIM,
           borderWidth: hasToneShift ? 1.5 : 1,
-          borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
+          borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
           alignItems: 'center', justifyContent: 'center',
         }}>
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>{initial}</Text>
@@ -156,9 +156,9 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
             <View style={{
               borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
-              backgroundColor: tone === 'cold' ? C.SURFACE : C.GOLD_SURFACE,
+              backgroundColor: tone === 'cold' ? C.SURFACE : C.JADE_ACCENT_SURFACE,
               borderWidth: 1,
-              borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
+              borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
               minHeight: 72,
             }}>
               {!arabicRevealed ? (
@@ -637,7 +637,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         <RippleEffect onPress={() => handleChoice(choice)} rippleColor={color} disabled={!!selectedChoiceId}>
                           <View style={{
                             borderRadius: 16,
-                            backgroundColor: isSelected ? `${color}08` : C.GOLD_SURFACE,
+                            backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
                             borderWidth: isSelected ? 1.5 : 1,
                             borderColor: isSelected ? `${color}45` : C.BORDER,
                             overflow: 'hidden',

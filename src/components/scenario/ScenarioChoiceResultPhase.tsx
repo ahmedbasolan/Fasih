@@ -129,7 +129,7 @@ export function ScenarioChoiceResultPhase({
             <View style={{
               borderRadius: 14, padding: 14,
               backgroundColor: nextTone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
-              borderWidth: 1, borderColor: nextTone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+              borderWidth: 1, borderColor: nextTone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
               flexDirection: 'row', alignItems: 'center', gap: 10,
             }}>
               <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: nextTone === 'warm' ? C.JADE_ACCENT : C.TEXT3, flexShrink: 0 }} />

@@ -34,7 +34,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
           <Text style={{ fontFamily: FONT_ARABIC, fontSize: 72, color: C.JADE_ACCENT, opacity: 0.07, position: 'absolute' }}>
             {scenario?.arabicScene || ''}
           </Text>
-          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 26, color: C.JADE_ACCENT }}>ك</Text>
           </View>
         </View>

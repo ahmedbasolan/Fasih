@@ -480,8 +480,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       transition={{ type: 'spring', damping: 80, stiffness: 100 }}
                       style={{ width: '100%' }}
                     >
-                      <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER }}>
-                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 26, color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.GOLD_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
+                      <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER }}>
+                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 26, color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.JADE_ACCENT_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
@@ -549,7 +549,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                           justifyContent: bento.align,
                           paddingHorizontal: bento.px,
                           gap: bento.dir === 'row' ? 16 : 12,
-                          backgroundColor: selected ? C.GOLD_SURFACE : C.SURFACE,
+                          backgroundColor: selected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
                           borderRadius: 24,
                           borderWidth: selected ? 2 : 1,
                           borderColor: selected ? C.JADE_ACCENT : C.BORDER,
@@ -559,7 +559,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         {/* Gold gradient wash on selected */}
                         {selected && (
                           <LinearGradient
-                            colors={[C.GOLD_SURFACE, 'transparent']}
+                            colors={[C.JADE_ACCENT_SURFACE, 'transparent']}
                             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                           />
@@ -636,7 +636,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                             borderRadius: 20,
                             borderWidth: 1.5,
                             borderColor: chipSelected ? C.JADE_ACCENT : C.BORDER,
-                            backgroundColor: chipSelected ? C.GOLD_SURFACE : C.SURFACE,
+                            backgroundColor: chipSelected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
                           }}
                         >
                           <Text style={{
