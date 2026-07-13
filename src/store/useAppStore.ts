@@ -436,14 +436,24 @@ export const useAppStore = create<AppState>()(
         const userId = get().clerkUserId;
         if (userId) await loginPurchasesUser(userId);
 
-        // RevenueCat's CustomerInfo is the two-way source of truth for the
-        // client-side subscription flag: always set subscriptionStatus to
-        // whatever it reports, not just when it confirms 'subscribed'. This
-        // corrects a lapsed/refunded subscription — or a forged
-        // subscription_status written directly to Supabase before RLS
-        // locked that column down — back to 'free' on every app start.
+        // RevenueCat's CustomerInfo is the source of truth for the
+        // 'free'/'subscribed' axis, but it can never report 'trial' — trial
+        // is a purely local, app-managed grace period (see startTrial()) that
+        // has nothing to do with a RevenueCat purchase. So reconciliation
+        // only moves the store along the free/subscribed axis:
+        //  - 'subscribed' always wins, correcting a lapsed/refunded
+        //    subscription — or a forged subscription_status written
+        //    directly to Supabase before RLS locked that column down.
+        //  - 'free' downgrades an existing 'subscribed' back to 'free', but
+        //    must NOT stomp a local 'trial' status back to 'free'; the
+        //    existing 4-day expiry logic in hasFullAccess/hasScenarioAccess
+        //    already handles trial expiration by date.
         const status = await getEntitlementStatus();
-        set({ subscriptionStatus: status });
+        if (status === 'subscribed') {
+          set({ subscriptionStatus: 'subscribed' });
+        } else if (get().subscriptionStatus === 'subscribed') {
+          set({ subscriptionStatus: 'free' });
+        }
 
         // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
         // Deregister any previous listener to prevent accumulation across hot-reloads.

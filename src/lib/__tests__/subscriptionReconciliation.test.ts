@@ -88,4 +88,19 @@ describe('initSubscription — subscription status reconciliation', () => {
 
     expect(useAppStore.getState().subscriptionStatus).toBe('subscribed');
   });
+
+  it('leaves subscriptionStatus as \'trial\' when RevenueCat reports \'free\' (trial is local/app-managed and never reported by RevenueCat)', async () => {
+    // Trial is a purely local, app-managed grace period (see startTrial()),
+    // unrelated to any RevenueCat purchase — getEntitlementStatus() can only
+    // ever resolve to 'subscribed' or 'free'. Since initSubscription() runs
+    // on every app launch, it must not stomp 'trial' back to 'free'; the
+    // existing 4-day expiry logic in hasFullAccess/hasScenarioAccess already
+    // handles trial expiration by date.
+    useAppStore.setState({ subscriptionStatus: 'trial' });
+    mockGetEntitlementStatus.mockResolvedValue('free');
+
+    await useAppStore.getState().initSubscription();
+
+    expect(useAppStore.getState().subscriptionStatus).toBe('trial');
+  });
 });

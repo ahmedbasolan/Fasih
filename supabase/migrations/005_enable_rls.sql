@@ -30,10 +30,6 @@ CREATE POLICY "Users update own data"
   USING (user_id = requesting_user_id())
   WITH CHECK (user_id = requesting_user_id());
 
--- subscription_status must NEVER be client-writable, even by the owning
--- user — it is set only by the service-role webhook (RevenueCat webhook,
--- out of scope here). Enforce with a trigger rather than relying on app
--- code to behave.
 CREATE OR REPLACE FUNCTION prevent_client_subscription_write()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
@@ -50,7 +46,6 @@ CREATE TRIGGER lock_subscription_status
   BEFORE UPDATE ON user_data
   FOR EACH ROW EXECUTE FUNCTION prevent_client_subscription_write();
 
--- Community stats stay open-read, RPC-only write (unchanged from 001).
 ALTER TABLE scenario_choice_stats ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public read choice stats" ON scenario_choice_stats;
 CREATE POLICY "Public read choice stats" ON scenario_choice_stats FOR SELECT USING (true);
