@@ -50,6 +50,7 @@ export type ThemeColors = {
   WHITE: string;
   CARD_BG: string;
   CARD_SHADOW: string;
+  TAB_BG: string;
   PRIMARY: string;
   PRIMARY_LIGHT: string;
   PRIMARY_DARK: string;
@@ -119,6 +120,7 @@ export const darkTheme: ThemeColors = {
   WHITE: '#FFFFFF',
   CARD_BG: 'rgba(255,255,255,0.06)',
   CARD_SHADOW: 'rgba(0,0,0,0.3)',
+  TAB_BG: '#0C0A1C',
   PRIMARY: '#00FF95',
   PRIMARY_LIGHT: '#B8FFE0',
   PRIMARY_DARK: '#02B986',
@@ -188,6 +190,7 @@ export const lightTheme: ThemeColors = {
   WHITE: '#FFFFFF',
   CARD_BG: '#FFFFFF',
   CARD_SHADOW: 'rgba(0,0,0,0.06)',
+  TAB_BG: '#FFFFFF',
   PRIMARY: '#00FF95',
   PRIMARY_LIGHT: '#B8FFE0',
   PRIMARY_DARK: '#02B986',

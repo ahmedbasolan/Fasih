@@ -26,10 +26,10 @@ export function useTabAnimation() {
 }
 
 export default function TabsLayout() {
-  const { C, isDark } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const tabBg = isDark ? '#0C0A1C' : '#FFFFFF';
+  const tabBg = C.TAB_BG;
 
   // Track tab navigation direction for animations
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -80,8 +80,8 @@ export default function TabsLayout() {
               android: { elevation: 8 },
             }),
           },
-          tabBarActiveTintColor: '#00FF95',
-          tabBarInactiveTintColor: '#6B7280',
+          tabBarActiveTintColor: C.JADE_ACCENT,
+          tabBarInactiveTintColor: C.NEUTRAL_500,
           tabBarLabelStyle: {
             fontFamily: FONT_HEADING_SEMI,
             fontSize: 11,
