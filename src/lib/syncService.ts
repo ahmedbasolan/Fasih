@@ -42,11 +42,20 @@ export interface CloudUserData {
 
 /**
  * Push local state to Supabase (upsert). Silent on error — local data is source of truth.
+ *
+ * @param refreshToken Optional callback that refreshes the Clerk→Supabase JWT
+ *   (see setClerkSupabaseToken in ./supabase) immediately before the request.
+ *   Clerk JWTs are short-lived (~60s default), so callers that hold one from
+ *   an earlier point in time (e.g. app mount) should pass this in rather than
+ *   relying on it still being valid. Kept as a generic callback — not a
+ *   direct Clerk import — so this file stays auth-provider-agnostic.
  */
 export async function pushProgress(
   userId: string,
   data: CloudUserData,
+  refreshToken?: () => Promise<void>,
 ): Promise<{ error: string | null }> {
+  if (refreshToken) await refreshToken();
   const { error } = await supabase
     .from('user_data')
     .upsert(
@@ -73,10 +82,15 @@ export async function pushProgress(
 
 /**
  * Pull cloud state for a user. Returns null data if no row exists yet (new user).
+ *
+ * @param refreshToken See pushProgress — refreshes the Clerk→Supabase JWT
+ *   right before this request.
  */
 export async function pullProgress(
   userId: string,
+  refreshToken?: () => Promise<void>,
 ): Promise<{ data: CloudUserData | null; error: string | null }> {
+  if (refreshToken) await refreshToken();
   const { data, error } = await supabase
     .from('user_data')
     .select('*')

@@ -43,6 +43,15 @@ function scheduleSync(fn: () => void, delayMs = 1500) {
   _syncTimer = setTimeout(fn, delayMs);
 }
 
+// ─── Supabase auth bridge ─────────────────────────────────────────────────────
+// Clerk JWTs are short-lived (~60s default). SupabaseAuthBridge (app/_layout.tsx)
+// registers a refresher here on auth-state changes; syncToCloud/syncFromCloud
+// invoke it right before each Supabase call so pushProgress/pullProgress always
+// carry a fresh token rather than relying only on the mount-time/auth-change
+// fetch. Kept as a plain module variable (like _customerInfoUnsub above) since
+// it's an implementation detail, not reactive UI state.
+let _supabaseTokenRefresher: (() => Promise<void>) | null = null;
+
 // ─── Spaced repetition helpers ───────────────────────────────────────────────
 function todayISO(): string {
   const d = new Date();
@@ -178,6 +187,9 @@ interface AppState {
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
   dismissSyncError: () => void;
+  // Registered by SupabaseAuthBridge (app/_layout.tsx); lets syncToCloud/
+  // syncFromCloud refresh the Clerk→Supabase JWT right before each call.
+  setSupabaseTokenRefresher: (fn: (() => Promise<void>) | null) => void;
 
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
   communityStatsCache: Record<string, number>;
@@ -281,25 +293,33 @@ export const useAppStore = create<AppState>()(
 
       dismissSyncError: () => set({ lastSyncError: null }),
 
+      setSupabaseTokenRefresher: (fn) => {
+        _supabaseTokenRefresher = fn;
+      },
+
       // Cloud sync
       syncToCloud: async () => {
         const s = get();
         if (!s.clerkUserId) return;
         set({ isSyncing: true });
         try {
-          const { error } = await pushProgress(s.clerkUserId, {
-            user_profile: s.user,
-            stats: s.stats,
-            phrase_reviews: s.phraseReviews,
-            completed_scenarios: s.completedScenarios,
-            saved_phrases: s.savedPhrases,
-            milestones: s.milestones,
-            journal: s.journal,
-            last_active_date: s.lastActiveDate,
-            subscription_status: s.subscriptionStatus,
-            trial_started_at: s.trialStartedAt,
-            trial_plan: s.trialPlan,
-          });
+          const { error } = await pushProgress(
+            s.clerkUserId,
+            {
+              user_profile: s.user,
+              stats: s.stats,
+              phrase_reviews: s.phraseReviews,
+              completed_scenarios: s.completedScenarios,
+              saved_phrases: s.savedPhrases,
+              milestones: s.milestones,
+              journal: s.journal,
+              last_active_date: s.lastActiveDate,
+              subscription_status: s.subscriptionStatus,
+              trial_started_at: s.trialStartedAt,
+              trial_plan: s.trialPlan,
+            },
+            _supabaseTokenRefresher ?? undefined,
+          );
           if (error) {
             set({ isSyncing: false, lastSyncError: error });
           } else {
@@ -314,7 +334,7 @@ export const useAppStore = create<AppState>()(
         const s = get();
         if (!s.clerkUserId) return;
         set({ isSyncing: true });
-        const { data, error } = await pullProgress(s.clerkUserId);
+        const { data, error } = await pullProgress(s.clerkUserId, _supabaseTokenRefresher ?? undefined);
         if (error) {
           set({ isSyncing: false, lastSyncError: error });
           return;

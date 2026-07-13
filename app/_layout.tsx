@@ -6,9 +6,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import * as SecureStore from 'expo-secure-store';
-import { ClerkProvider } from '@clerk/expo';
+import { ClerkProvider, useAuth } from '@clerk/expo';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '../src/lib/analytics';
+import { setClerkSupabaseToken } from '../src/lib/supabase';
 
 const tokenCache = {
   async getToken(key: string) {
@@ -42,6 +43,45 @@ import { useTheme } from '../src/hooks/useTheme';
 import { useAppStore } from '../src/store/useAppStore';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Keeps the Supabase client's bearer token in sync with Clerk's auth state.
+ * Fetches a `{ template: 'supabase' }` JWT on sign-in/sign-out and whenever
+ * Clerk swaps sessions, and registers a refresher with the app store so
+ * syncService can pull a fresh (short-lived, ~60s) token before each request
+ * instead of relying solely on this mount-time/auth-change fetch. Renders
+ * nothing — this is a side-effect-only bridge component.
+ */
+function SupabaseAuthBridge() {
+  const { isSignedIn, getToken, sessionId } = useAuth();
+  const setSupabaseTokenRefresher = useAppStore((s) => s.setSupabaseTokenRefresher);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setClerkSupabaseToken(null);
+      setSupabaseTokenRefresher(null);
+      return;
+    }
+
+    const refresh = async () => {
+      try {
+        const token = await getToken({ template: 'supabase' });
+        setClerkSupabaseToken(token);
+      } catch {
+        // Non-fatal — request proceeds on the anon key / previous token and
+        // RLS will simply deny anything it shouldn't allow.
+      }
+    };
+
+    refresh();
+    setSupabaseTokenRefresher(refresh);
+
+    return () => setSupabaseTokenRefresher(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, sessionId]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const initSubscription = useAppStore((s) => s.initSubscription);
@@ -77,6 +117,7 @@ export default function RootLayout() {
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       tokenCache={tokenCache}
     >
+      <SupabaseAuthBridge />
       <PostHogProvider client={posthog}>
         <ErrorBoundary>
           <GestureHandlerRootView style={{ flex: 1 }}>
