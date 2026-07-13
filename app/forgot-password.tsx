@@ -9,6 +9,7 @@ import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } fro
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 import { STRINGS } from '../src/constants/strings';
+import { getClerkErrorMessage } from '../src/lib/clerkErrors';
 
 export default function ForgotPasswordScreen() {
   const { C } = useTheme();
@@ -34,15 +35,15 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error: createErr } = await signIn.create({ identifier: email.trim() });
-      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+      if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.forgotPassword.requestCodeFailed)); return; }
 
       const { error: sendErr } = await signIn.resetPasswordEmailCode.sendCode();
-      if (sendErr) { setError(sendErr.longMessage ?? sendErr.message); return; }
+      if (sendErr) { setError(getClerkErrorMessage(sendErr, STRINGS.auth.forgotPassword.requestCodeFailed)); return; }
 
       setStep('reset');
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? STRINGS.auth.forgotPassword.requestCodeFailed);
+      setError(getClerkErrorMessage(err.errors?.[0], STRINGS.auth.forgotPassword.requestCodeFailed));
     } finally {
       setLoading(false);
     }
@@ -54,20 +55,20 @@ export default function ForgotPasswordScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signIn.resetPasswordEmailCode.verifyCode({ code: code.trim() });
-      if (verifyErr) { setError(verifyErr.longMessage ?? verifyErr.message); return; }
+      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
 
       const { error: submitErr } = await signIn.resetPasswordEmailCode.submitPassword({ password: newPassword });
-      if (submitErr) { setError(submitErr.longMessage ?? submitErr.message); return; }
+      if (submitErr) { setError(getClerkErrorMessage(submitErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
 
       if (signIn.status === 'complete') {
         const { error: finalErr } = await signIn.finalize();
-        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
         await setActive({ session: signIn.createdSessionId! });
         router.replace('/(tabs)');
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? STRINGS.auth.forgotPassword.resetFailed);
+      setError(getClerkErrorMessage(err.errors?.[0], STRINGS.auth.forgotPassword.resetFailed));
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } fro
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 import { STRINGS } from '../src/constants/strings';
+import { getClerkErrorMessage } from '../src/lib/clerkErrors';
 
 const PASSWORD_RULES = [
   { id: 'length', label: STRINGS.auth.signUp.passwordRuleLength, test: (p: string) => p.length >= 6 },
@@ -49,15 +50,15 @@ export default function SignUpScreen() {
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' ') || undefined,
       });
-      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+      if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
       const { error: sendErr } = await signUp.verifications.sendEmailCode();
-      if (sendErr) { setError(sendErr.longMessage ?? sendErr.message); return; }
+      if (sendErr) { setError(getClerkErrorMessage(sendErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
       setPendingVerification(true);
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? STRINGS.auth.signUp.signUpFailed);
+      setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
@@ -69,17 +70,17 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(verifyErr.longMessage ?? verifyErr.message); return; }
+      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
 
       if (signUp.status === 'complete') {
         const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
         await setActive({ session: signUp.createdSessionId! });
         router.replace('/onboarding');
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? STRINGS.auth.signUp.verificationFailed);
+      setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
     }

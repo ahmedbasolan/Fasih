@@ -10,6 +10,7 @@ import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_H
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 import { STRINGS } from '../src/constants/strings';
+import { getClerkErrorMessage } from '../src/lib/clerkErrors';
 
 export default function SignInScreen() {
   const { C } = useTheme();
@@ -25,6 +26,11 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Sign-in intentionally only checks length here, not the full strength
+  // rules sign-up enforces (uppercase/number/etc.) — this is a login attempt
+  // against an existing password, not a policy check, and Clerk's dashboard
+  // password policy is the actual source of truth, enforced server-side by
+  // signIn.password() below.
   const canSubmit = email.trim().length > 3 && password.length >= 6;
 
   const handleSignIn = async () => {
@@ -33,20 +39,20 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const { error: createErr } = await signIn.create({ identifier: email.trim() });
-      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+      if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signIn.signInFailed)); return; }
 
       const { error: pwErr } = await signIn.password({ password });
-      if (pwErr) { setError(pwErr.longMessage ?? pwErr.message); return; }
+      if (pwErr) { setError(getClerkErrorMessage(pwErr, STRINGS.auth.signIn.signInFailed)); return; }
 
       if (signIn.status === 'complete') {
         const { error: finalErr } = await signIn.finalize();
-        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signIn.signInFailed)); return; }
         await setActive({ session: signIn.createdSessionId! });
         router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? STRINGS.auth.signIn.signInFailed);
+      setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signIn.signInFailed));
     } finally {
       setLoading(false);
     }
