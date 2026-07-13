@@ -43,7 +43,14 @@ function hasEntitlement(info: CustomerInfo): boolean {
   return typeof info.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
 }
 
-function toStatus(info: CustomerInfo): SubscriptionStatus {
+// RevenueCat's CustomerInfo only ever tells us whether the "Fasih Pro"
+// entitlement is active — it has no concept of the app's local 'trial'
+// grace period, so this is intentionally narrower than SubscriptionStatus.
+// Consumers (e.g. useAppStore's reconcileSubscriptionStatus) rely on this
+// type to know a 'trial' value can never arrive from RevenueCat.
+export type EntitlementStatus = 'subscribed' | 'free';
+
+function toStatus(info: CustomerInfo): EntitlementStatus {
   return hasEntitlement(info) ? 'subscribed' : 'free';
 }
 
@@ -84,7 +91,7 @@ export async function logoutPurchasesUser(): Promise<void> {
  * Returns an unsubscribe function — call it on component unmount.
  */
 export function addCustomerInfoListener(
-  onUpdate: (status: SubscriptionStatus, info: CustomerInfo) => void,
+  onUpdate: (status: EntitlementStatus, info: CustomerInfo) => void,
 ): () => void {
   const listener = (info: CustomerInfo) => onUpdate(toStatus(info), info);
   Purchases.addCustomerInfoUpdateListener(listener);
@@ -96,7 +103,7 @@ export function addCustomerInfoListener(
 /**
  * Single async check — use this on sign-in to sync entitlement status.
  */
-export async function getEntitlementStatus(): Promise<SubscriptionStatus> {
+export async function getEntitlementStatus(): Promise<EntitlementStatus> {
   try {
     const info = await Purchases.getCustomerInfo();
     return toStatus(info);

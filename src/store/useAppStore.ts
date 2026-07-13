@@ -21,12 +21,37 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
+import type { EntitlementStatus } from '../lib/purchases';
 import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASES, PHRASE_CATEGORIES } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
+
+// ─── Subscription reconciliation ─────────────────────────────────────────────
+// RevenueCat's CustomerInfo (via getEntitlementStatus/addCustomerInfoListener)
+// only ever reports 'subscribed' or 'free' — it has no concept of 'trial',
+// which is a purely local, app-managed grace period (see startTrial()). Any
+// reconciliation against RevenueCat data — whether the one-shot check in
+// initSubscription() or the long-lived addCustomerInfoListener callback that
+// fires for the rest of the app's lifetime — must go through this helper so
+// the two call sites can't drift out of sync again:
+//  - 'subscribed' always wins, correcting a lapsed/refunded subscription (or
+//    a forged subscription_status written directly to Supabase before RLS
+//    locked that column down).
+//  - 'free' downgrades an existing 'subscribed' back to 'free', but must NOT
+//    stomp a local 'trial' status back to 'free'; the existing 4-day expiry
+//    logic in hasFullAccess/hasScenarioAccess already handles trial
+//    expiration by date.
+export function reconcileSubscriptionStatus(
+  current: SubscriptionStatus,
+  entitlement: EntitlementStatus,
+): SubscriptionStatus {
+  if (entitlement === 'subscribed') return 'subscribed';
+  if (current === 'trial') return 'trial'; // local grace period, RevenueCat can't confirm or deny it
+  return 'free';
+}
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
 // Guards against ID collisions when addJournalEntry is called multiple times
@@ -436,32 +461,27 @@ export const useAppStore = create<AppState>()(
         const userId = get().clerkUserId;
         if (userId) await loginPurchasesUser(userId);
 
-        // RevenueCat's CustomerInfo is the source of truth for the
-        // 'free'/'subscribed' axis, but it can never report 'trial' — trial
-        // is a purely local, app-managed grace period (see startTrial()) that
-        // has nothing to do with a RevenueCat purchase. So reconciliation
-        // only moves the store along the free/subscribed axis:
-        //  - 'subscribed' always wins, correcting a lapsed/refunded
-        //    subscription — or a forged subscription_status written
-        //    directly to Supabase before RLS locked that column down.
-        //  - 'free' downgrades an existing 'subscribed' back to 'free', but
-        //    must NOT stomp a local 'trial' status back to 'free'; the
-        //    existing 4-day expiry logic in hasFullAccess/hasScenarioAccess
-        //    already handles trial expiration by date.
+        // See reconcileSubscriptionStatus() above for why this can only move
+        // the store along the free/subscribed axis and must never stomp a
+        // local 'trial' status.
         const status = await getEntitlementStatus();
-        if (status === 'subscribed') {
-          set({ subscriptionStatus: 'subscribed' });
-        } else if (get().subscriptionStatus === 'subscribed') {
-          set({ subscriptionStatus: 'free' });
+        const reconciled = reconcileSubscriptionStatus(get().subscriptionStatus, status);
+        if (reconciled !== get().subscriptionStatus) {
+          set({ subscriptionStatus: reconciled });
         }
 
         // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
         // Deregister any previous listener to prevent accumulation across hot-reloads.
+        // This listener runs for the app's entire lifetime (not just at startup),
+        // so it must go through the same reconciliation helper as the check
+        // above — otherwise any 'free' update firing while the user is in
+        // 'trial' would clobber it back to 'free'.
         if (_customerInfoUnsub) _customerInfoUnsub();
         _customerInfoUnsub = addCustomerInfoListener((newStatus) => {
           const current = get().subscriptionStatus;
-          if (newStatus !== current) {
-            set({ subscriptionStatus: newStatus });
+          const reconciledStatus = reconcileSubscriptionStatus(current, newStatus);
+          if (reconciledStatus !== current) {
+            set({ subscriptionStatus: reconciledStatus });
             get().syncToCloud();
           }
         });

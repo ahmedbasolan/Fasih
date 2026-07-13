@@ -63,9 +63,16 @@ function SupabaseAuthBridge() {
       return;
     }
 
+    // Guards against a rapid sign-in→sign-out: if getToken() resolves after
+    // this effect has been superseded (deps changed — e.g. the user signed
+    // out — or the component unmounted), `cancelled` is already true and we
+    // skip re-arming the Supabase client with a stale token.
+    let cancelled = false;
+
     const refresh = async () => {
       try {
         const token = await getToken({ template: 'supabase' });
+        if (cancelled) return;
         setClerkSupabaseToken(token);
       } catch {
         // Non-fatal — request proceeds on the anon key / previous token and
@@ -76,7 +83,10 @@ function SupabaseAuthBridge() {
     refresh();
     setSupabaseTokenRefresher(refresh);
 
-    return () => setSupabaseTokenRefresher(null);
+    return () => {
+      cancelled = true;
+      setSupabaseTokenRefresher(null);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, sessionId]);
 

@@ -47,15 +47,23 @@ jest.mock('../syncService', () => ({
 }));
 
 import { useAppStore } from '../../store/useAppStore';
-import { getEntitlementStatus } from '../purchases';
+import { getEntitlementStatus, addCustomerInfoListener } from '../purchases';
+import { pushProgress } from '../syncService';
 
 const mockGetEntitlementStatus = getEntitlementStatus as jest.MockedFunction<
   typeof getEntitlementStatus
 >;
+const mockAddCustomerInfoListener = addCustomerInfoListener as jest.MockedFunction<
+  typeof addCustomerInfoListener
+>;
+const mockPushProgress = pushProgress as jest.MockedFunction<typeof pushProgress>;
 
 describe('initSubscription — subscription status reconciliation', () => {
   beforeEach(() => {
     mockGetEntitlementStatus.mockReset();
+    mockAddCustomerInfoListener.mockClear();
+    mockPushProgress.mockClear();
+    useAppStore.setState({ clerkUserId: 'test-user' });
   });
 
   it('downgrades subscriptionStatus to \'free\' when RevenueCat reports no active entitlement, even if the store previously had \'subscribed\'', async () => {
@@ -102,5 +110,33 @@ describe('initSubscription — subscription status reconciliation', () => {
     await useAppStore.getState().initSubscription();
 
     expect(useAppStore.getState().subscriptionStatus).toBe('trial');
+  });
+
+  it('does not clobber \'trial\' back to \'free\' when the addCustomerInfoListener callback fires later with a \'free\' update', async () => {
+    // initSubscription's direct reconciliation isn't the only place RevenueCat
+    // data reaches the store — addCustomerInfoListener's callback runs for the
+    // app's entire lifetime and must apply the exact same reconciliation, or a
+    // 'free' CustomerInfo update firing while the user is mid-trial clobbers
+    // it back to 'free' via a different call site than the one already fixed.
+    mockGetEntitlementStatus.mockResolvedValue('free');
+
+    await useAppStore.getState().initSubscription();
+
+    // Capture the listener callback registered by initSubscription().
+    expect(mockAddCustomerInfoListener).toHaveBeenCalled();
+    const listenerCallback = mockAddCustomerInfoListener.mock.calls[0][0];
+
+    // Now simulate the user being mid-trial when a later CustomerInfo update
+    // (e.g. a renewal check) reports 'free' — RevenueCat's only other value.
+    useAppStore.setState({ subscriptionStatus: 'trial' });
+    mockPushProgress.mockClear();
+
+    // Second arg (raw CustomerInfo) is unused by the store's callback — the
+    // reconciliation only looks at the derived status string.
+    listenerCallback('free', {} as unknown as import('react-native-purchases').CustomerInfo);
+
+    expect(useAppStore.getState().subscriptionStatus).toBe('trial');
+    // 'trial' stayed 'trial' — this must be a no-op, not a spurious sync.
+    expect(mockPushProgress).not.toHaveBeenCalled();
   });
 });
