@@ -308,6 +308,7 @@ export const STRINGS = {
     signOut: 'Sign Out',
   },
   auth: {
+    rateLimited: 'Too many attempts — please wait a bit and try again.',
     signIn: {
       title: 'Sign in to your Account',
       noAccount: 'Don\'t have an account?',
