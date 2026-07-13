@@ -171,7 +171,7 @@ export default function ForgotPasswordScreen() {
                     alignItems: 'center', opacity: canSubmitEmail && !loading ? 1 : 0.5,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
                     {loading ? 'Sending...' : 'Send Reset Code'}
                   </Text>
                 </Pressable>
@@ -247,7 +247,7 @@ export default function ForgotPasswordScreen() {
                   alignItems: 'center', opacity: canSubmitReset && !loading ? 1 : 0.5,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
                   {loading ? 'Resetting...' : 'Reset Password'}
                 </Text>
               </Pressable>

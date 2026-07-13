@@ -174,7 +174,7 @@ export default function SignUpScreen() {
                   opacity: verificationCode.length >= 6 && !loading ? 1 : 0.5,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
                   {loading ? 'Verifying...' : 'Verify Email'}
                 </Text>
               </Pressable>
@@ -338,7 +338,7 @@ export default function SignUpScreen() {
                     opacity: canSubmit && !loading ? 1 : 0.5,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
                     {loading ? 'Creating Account...' : 'Create Account'}
                   </Text>
                 </Pressable>
