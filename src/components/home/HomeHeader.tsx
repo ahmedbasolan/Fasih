@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN } from '../../theme';
-import { Settings } from 'lucide-react-native';
+import { Settings } from '../icons';
 import { MotiView } from 'moti';
 
 interface HomeHeaderProps {

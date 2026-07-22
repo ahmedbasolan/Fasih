@@ -57,7 +57,7 @@ export function StreakWidget({
     }
   }, [mood, screenW, confetti.length]);
 
-  const mascotSource = mood === 'excited' ? IMAGES.foxyMaleWaving : IMAGES.foxyMale;
+  const mascotSource = IMAGES.foxyMale;
 
   const styles = useMemo(() => StyleSheet.create({
     container: {

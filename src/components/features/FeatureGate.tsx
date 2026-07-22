@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lock, Layers, ChevronRight } from 'lucide-react-native';
+import { Lock, Layers, ChevronRight } from '../icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
 import { KafMascot } from './KafMascot';

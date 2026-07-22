@@ -8,7 +8,7 @@ import {
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Volume2, Bookmark } from 'lucide-react-native';
+import { Volume2, Bookmark } from '../icons';
 
 interface DailyPhraseProps {
   arabic: string;
