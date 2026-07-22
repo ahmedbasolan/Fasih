@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
-import { CheckCircle, ArrowRight } from 'lucide-react-native';
+import { CheckCircle, ArrowRight } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_HEADING_SEMI,
@@ -10,7 +10,7 @@ import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
 import { KafMascot } from '../features/KafMascot';
 import { getTone } from '../../engine/scenarioEngine';
-import type { ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioState } from '../../types';
+import type { ScenarioScene, ScenarioScript, ScenarioState } from '../../types';
 
 const outcomeLabel: Record<string, string> = {
   excellent: 'Excellent',

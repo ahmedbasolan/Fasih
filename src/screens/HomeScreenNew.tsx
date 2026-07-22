@@ -23,7 +23,7 @@ import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../components/icons';
 import { STRINGS } from '../constants/strings';
 
 interface HomeScreenNewProps {

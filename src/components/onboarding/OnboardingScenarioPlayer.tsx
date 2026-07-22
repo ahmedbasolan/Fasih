@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_EXTRA } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../icons';
 import { FONT_HEADING_SEMI } from '../design/tokens';
 import type { ScenarioScript, ScenarioChoice, Phrase } from '../../types';
 import { PHRASES } from '../../constants/phrases';

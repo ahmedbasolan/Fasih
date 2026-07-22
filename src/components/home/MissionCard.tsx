@@ -10,7 +10,7 @@ import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../..
 import { IMAGES } from '../../constants/images';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../icons';
 
 interface MissionCardProps {
   scenarioTitle: string;

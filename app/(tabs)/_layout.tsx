@@ -1,7 +1,7 @@
 import { Tabs, usePathname } from 'expo-router';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Layers, BookOpen, User } from 'lucide-react-native';
+import { Home, Layers, BookOpen, User } from '../../src/components/icons';
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FONT_HEADING_SEMI } from '../../src/components/design/tokens';
 import { useTheme } from '../../src/hooks/useTheme';

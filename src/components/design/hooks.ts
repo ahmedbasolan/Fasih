@@ -66,6 +66,9 @@ export function useHold(onComplete: () => void, duration = 2400) {
   const isComplete = useRef(false);
 
   const tick = () => {
+    // tick runs from requestAnimationFrame, never during render, so this is not
+    // the render-path impurity the rule is looking for.
+    // eslint-disable-next-line react-hooks/purity
     const p = Math.min((Date.now() - startTime.current) / duration, 1);
     runOnJS(setProgress)(p);
     if (p < 1) {
@@ -82,6 +85,9 @@ export function useHold(onComplete: () => void, duration = 2400) {
     .minDistance(0)
     .onBegin(() => {
       if (isComplete.current) return;
+      // onBegin is a gesture callback, never during render, so this is not the
+      // render-path impurity the rule is looking for.
+      // eslint-disable-next-line react-hooks/purity
       startTime.current = Date.now();
       runOnJS(setHolding)(true);
       raf.current = requestAnimationFrame(tick);
