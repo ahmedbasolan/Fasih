@@ -5,7 +5,6 @@ import type { UserProfile } from '../src/types';
 import {
   trackOnboardingCompleted,
   trackTrialStarted,
-  trackOnboardingSkipped,
 } from '../src/lib/analytics';
 
 export default function OnboardingRoute() {

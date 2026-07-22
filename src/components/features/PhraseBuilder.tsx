@@ -133,8 +133,8 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
               {...t} 
               isPlaced={true} 
               onTap={handleTileTap} 
-              colorPrimary={C.GOLD} 
-              colorBg={C.GOLD_SURFACE} 
+              colorPrimary={C.JADE_ACCENT} 
+              colorBg={C.JADE_ACCENT_SURFACE} 
             />
           </Animated.View>
         ))}

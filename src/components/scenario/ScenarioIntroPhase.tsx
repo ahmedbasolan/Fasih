@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRight } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_HEADING_SEMI,
@@ -31,11 +31,11 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
 
         {/* Kaf icon with Arabic watermark */}
         <View style={{ position: 'relative', width: '100%', alignItems: 'center', height: 72, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 72, color: C.GOLD, opacity: 0.07, position: 'absolute' }}>
+          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 72, color: C.JADE_ACCENT, opacity: 0.07, position: 'absolute' }}>
             {scenario?.arabicScene || ''}
           </Text>
-          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 26, color: C.GOLD }}>ك</Text>
+          <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 26, color: C.JADE_ACCENT }}>ك</Text>
           </View>
         </View>
 

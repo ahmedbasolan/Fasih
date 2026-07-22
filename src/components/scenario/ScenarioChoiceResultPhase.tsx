@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
-import { CheckCircle, ArrowRight } from 'lucide-react-native';
+import { CheckCircle, ArrowRight } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_HEADING_SEMI,
@@ -10,7 +10,7 @@ import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
 import { KafMascot } from '../features/KafMascot';
 import { getTone } from '../../engine/scenarioEngine';
-import type { ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioState } from '../../types';
+import type { ScenarioScene, ScenarioScript, ScenarioState } from '../../types';
 
 const outcomeLabel: Record<string, string> = {
   excellent: 'Excellent',
@@ -128,12 +128,12 @@ export function ScenarioChoiceResultPhase({
           >
             <View style={{
               borderRadius: 14, padding: 14,
-              backgroundColor: nextTone === 'warm' ? C.GOLD_DIM : C.SURFACE,
-              borderWidth: 1, borderColor: nextTone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+              backgroundColor: nextTone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
+              borderWidth: 1, borderColor: nextTone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
               flexDirection: 'row', alignItems: 'center', gap: 10,
             }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: nextTone === 'warm' ? C.GOLD : C.TEXT3, flexShrink: 0 }} />
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: nextTone === 'warm' ? C.GOLD : C.TEXT3, flex: 1, lineHeight: 18 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: nextTone === 'warm' ? C.JADE_ACCENT : C.TEXT3, flexShrink: 0 }} />
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: nextTone === 'warm' ? C.JADE_ACCENT : C.TEXT3, flex: 1, lineHeight: 18 }}>
                 {nextTone === 'warm'
                   ? `${nextScene!.charName.split(' ')[0]} will be more open with you in the next scene`
                   : `${nextScene!.charName.split(' ')[0]} will be more guarded in the next scene`}

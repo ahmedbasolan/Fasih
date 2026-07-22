@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, TextInput, Platform, Dimensions } fr
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2 } from 'lucide-react-native';
+import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
@@ -177,7 +177,7 @@ export function PhraseLibrary() {
               onPress={() => playSlow(p)}
               accessibilityRole="button"
               accessibilityLabel="Play slowly"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 10, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, marginBottom: 8 }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 10, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, marginBottom: 8 }}
             >
               <Snail size={14} color={C.PRIMARY} />
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.playSlowly}</Text>
@@ -244,7 +244,7 @@ export function PhraseLibrary() {
               width: 32,
               height: 32,
               borderRadius: 10,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center',
               justifyContent: 'center',
             }}>
@@ -383,7 +383,7 @@ export function PhraseLibrary() {
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 12,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
             }}>
               <BookOpen size={13} color={C.PRIMARY} />
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{PHRASES.length}</Text>
@@ -403,7 +403,7 @@ export function PhraseLibrary() {
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 12,
             paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16,
-            backgroundColor: searchFocused ? C.GOLD_SURFACE : C.SURFACE,
+            backgroundColor: searchFocused ? C.JADE_ACCENT_SURFACE : C.SURFACE,
             borderWidth: 1.5,
             borderColor: searchFocused ? C.PRIMARY : C.BORDER,
             marginBottom: 12,
@@ -527,7 +527,7 @@ export function PhraseLibrary() {
                     width: 42,
                     height: 42,
                     borderRadius: 14,
-                    backgroundColor: C.GOLD_DIM,
+                    backgroundColor: C.JADE_ACCENT_DIM,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>

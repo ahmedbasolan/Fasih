@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
-import { WifiOff, RefreshCw, CheckCircle } from 'lucide-react-native';
+import { WifiOff, RefreshCw, CheckCircle } from '../icons';
 import { FONT_LATIN, FONT_LATIN_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { useAppStore } from '../../store/useAppStore';
@@ -54,7 +54,7 @@ export function SyncStatusBanner() {
               style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, flex: 1, lineHeight: 18 }}
               numberOfLines={2}
             >
-              Progress couldn't sync.{' '}
+              Progress couldn&apos;t sync.{' '}
               <Text style={{ color: C.ERROR }}>Your data is safe locally.</Text>
             </Text>
 

@@ -24,13 +24,13 @@ import {
 } from '../lib/purchases';
 import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
-import { PHRASES, PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
+import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
 import {
   todayISO, addDays,
-  newReviewCard, updateReviewCard, applyRatingToCard, RATING_INTERVALS,
+  newReviewCard, updateReviewCard, applyRatingToCard,
 } from '../engine/srsEngine';
 import {
   requestNotificationPermission,

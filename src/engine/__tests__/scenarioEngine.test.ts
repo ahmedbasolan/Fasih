@@ -220,6 +220,16 @@ describe('resolveNextScene', () => {
     const script = makeScript();
     expect(resolveNextScene(state, choice, script)).toBeNull();
   });
+
+  // Characterizes existing (surprising) behavior — do not "fix" this without
+  // checking callers first: findIndex returns -1 for an unknown sceneId, and
+  // -1 + 1 = 0, so this silently returns the FIRST scene's id instead of null.
+  it('returns the first scene id (not null) when currentSceneId matches no scene in the script', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'does-not-exist' };
+    const choice = makeChoice({ next: undefined });
+    const script = makeScript();
+    expect(resolveNextScene(state, choice, script)).toBe('scene-1');
+  });
 });
 
 // ─── evaluateEnding ───────────────────────────────────────────────────────────

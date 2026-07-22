@@ -23,7 +23,7 @@ export function RippleEffect({
   disabled = false 
 }: Props) {
   const { C } = useTheme();
-  const effectColor = rippleColor || C.GOLD;
+  const effectColor = rippleColor || C.JADE_ACCENT;
   const [ripples, setRipples] = useState<RippleProps[]>([]);
 
   const handlePress = (event: any) => {

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Mail, Lock, Eye, EyeOff, Shield, ChevronLeft } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, Shield, ChevronLeft } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignIn, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
+import { STRINGS } from '../src/constants/strings';
+import { getClerkErrorMessage } from '../src/lib/clerkErrors';
 
 export default function ForgotPasswordScreen() {
   const { C } = useTheme();
@@ -33,15 +35,15 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error: createErr } = await signIn.create({ identifier: email.trim() });
-      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+      if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.forgotPassword.requestCodeFailed)); return; }
 
       const { error: sendErr } = await signIn.resetPasswordEmailCode.sendCode();
-      if (sendErr) { setError(sendErr.longMessage ?? sendErr.message); return; }
+      if (sendErr) { setError(getClerkErrorMessage(sendErr, STRINGS.auth.forgotPassword.requestCodeFailed)); return; }
 
       setStep('reset');
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? 'Could not send reset email');
+      setError(getClerkErrorMessage(err.errors?.[0], STRINGS.auth.forgotPassword.requestCodeFailed));
     } finally {
       setLoading(false);
     }
@@ -53,20 +55,20 @@ export default function ForgotPasswordScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signIn.resetPasswordEmailCode.verifyCode({ code: code.trim() });
-      if (verifyErr) { setError(verifyErr.longMessage ?? verifyErr.message); return; }
+      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
 
       const { error: submitErr } = await signIn.resetPasswordEmailCode.submitPassword({ password: newPassword });
-      if (submitErr) { setError(submitErr.longMessage ?? submitErr.message); return; }
+      if (submitErr) { setError(getClerkErrorMessage(submitErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
 
       if (signIn.status === 'complete') {
         const { error: finalErr } = await signIn.finalize();
-        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
         await setActive({ session: signIn.createdSessionId! });
         router.replace('/(tabs)');
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? 'Reset failed');
+      setError(getClerkErrorMessage(err.errors?.[0], STRINGS.auth.forgotPassword.resetFailed));
     } finally {
       setLoading(false);
     }
@@ -98,18 +100,18 @@ export default function ForgotPasswordScreen() {
           >
             <View style={{
               width: 64, height: 64, borderRadius: 20,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
-              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+              <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
-              {step === 'email' ? 'Forgot Password?' : 'Set New Password'}
+              {step === 'email' ? STRINGS.auth.forgotPassword.title : STRINGS.auth.forgotPassword.setNewPasswordTitle}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
               {step === 'email'
-                ? "No worries, we'll send you a reset code"
-                : `Enter the code sent to ${email.trim()} and choose a new password`}
+                ? STRINGS.auth.forgotPassword.sendCodeSub
+                : STRINGS.auth.forgotPassword.resetCodeSub(email.trim())}
             </Text>
           </MotiView>
 
@@ -126,19 +128,19 @@ export default function ForgotPasswordScreen() {
                 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginBottom: 16 }}>
-                  Enter your email and we&apos;ll send you a reset code
+                  {STRINGS.auth.forgotPassword.emailInstructions}
                 </Text>
                 <View style={{
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="Email address"
+                    placeholder={STRINGS.auth.forgotPassword.emailPlaceholder}
                     placeholderTextColor={C.TEXT3}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -167,12 +169,12 @@ export default function ForgotPasswordScreen() {
                   onPress={handleRequestCode}
                   disabled={!canSubmitEmail || loading}
                   style={{
-                    backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                    backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                     alignItems: 'center', opacity: canSubmitEmail && !loading ? 1 : 0.5,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
-                    {loading ? 'Sending...' : 'Send Reset Code'}
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                    {loading ? STRINGS.auth.forgotPassword.sending : STRINGS.auth.forgotPassword.sendResetCode}
                   </Text>
                 </Pressable>
               </MotiView>
@@ -193,13 +195,13 @@ export default function ForgotPasswordScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'code' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'code' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'code' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'code' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={code}
                     onChangeText={setCode}
-                    placeholder="6-digit code"
+                    placeholder={STRINGS.auth.forgotPassword.codePlaceholder}
                     placeholderTextColor={C.TEXT3}
                     keyboardType="number-pad"
                     maxLength={6}
@@ -213,13 +215,13 @@ export default function ForgotPasswordScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
+                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="New password (6+ chars)"
+                    placeholder={STRINGS.auth.forgotPassword.newPasswordPlaceholder}
                     placeholderTextColor={C.TEXT3}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -243,12 +245,12 @@ export default function ForgotPasswordScreen() {
                 onPress={handleReset}
                 disabled={!canSubmitReset || loading}
                 style={{
-                  backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                  backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center', opacity: canSubmitReset && !loading ? 1 : 0.5,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
-                  {loading ? 'Resetting...' : 'Reset Password'}
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                  {loading ? STRINGS.auth.forgotPassword.resetting : STRINGS.auth.forgotPassword.resetPassword}
                 </Text>
               </Pressable>
 
@@ -256,7 +258,7 @@ export default function ForgotPasswordScreen() {
                 onPress={() => { setStep('email'); setCode(''); setNewPassword(''); setError(''); }}
                 style={{ alignItems: 'center', paddingVertical: 8 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>← Back</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.back}</Text>
               </Pressable>
             </MotiView>
           )}
@@ -270,9 +272,9 @@ export default function ForgotPasswordScreen() {
             style={{ alignItems: 'center' }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Remember your password?</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.rememberPassword}</Text>
               <Pressable onPress={() => router.back()} accessibilityRole="link">
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.forgotPassword.signInLink}</Text>
               </Pressable>
             </View>
           </MotiView>
