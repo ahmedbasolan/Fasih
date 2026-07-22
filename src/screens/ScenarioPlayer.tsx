@@ -96,7 +96,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
 
   // Butterfly effect indicators
   const hasToneShift = !!scene.charDialogue && tone !== 'neutral';
-  const toneColor = tone === 'warm' ? C.GOLD : C.TEXT3;
+  const toneColor = tone === 'warm' ? C.JADE_ACCENT : C.TEXT3;
 
   useEffect(() => {
     setArabicRevealed(false);
@@ -129,8 +129,8 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
             flexDirection: 'row', alignItems: 'center', gap: 6,
             alignSelf: 'flex-start', marginBottom: 12,
             paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-            backgroundColor: tone === 'warm' ? C.GOLD_DIM : C.SURFACE,
-            borderWidth: 1, borderColor: tone === 'warm' ? C.GOLD_BORDER : C.BORDER,
+            backgroundColor: tone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
+            borderWidth: 1, borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
           }}
         >
           <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
@@ -143,12 +143,12 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
         <View style={{
           width: 40, height: 40, borderRadius: 14,
-          backgroundColor: C.GOLD_DIM,
+          backgroundColor: C.JADE_ACCENT_DIM,
           borderWidth: hasToneShift ? 1.5 : 1,
-          borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
+          borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.GOLD }}>{initial}</Text>
+          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>{initial}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
@@ -156,14 +156,14 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
             <View style={{
               borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
-              backgroundColor: tone === 'cold' ? C.SURFACE : C.GOLD_SURFACE,
+              backgroundColor: tone === 'cold' ? C.SURFACE : C.JADE_ACCENT_SURFACE,
               borderWidth: 1,
-              borderColor: tone === 'cold' ? C.BORDER : C.GOLD_BORDER,
+              borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
               minHeight: 72,
             }}>
               {!arabicRevealed ? (
                 <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                  <WaveBars isPlaying={playingAudio} size="md" color={C.GOLD} />
+                  <WaveBars isPlaying={playingAudio} size="md" color={C.JADE_ACCENT} />
                 </View>
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
@@ -202,7 +202,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // C.JADE reads well on both dark and light; C.VIOLET is safe for both modes
   const accentColor = C.JADE;
   const outcomeColor: Record<string, string> = useMemo(
-    () => ({ excellent: C.JADE2, good: C.GOLD, neutral: C.VIOLET2, bad: C.ERROR }),
+    () => ({ excellent: C.JADE2, good: C.JADE_ACCENT, neutral: C.VIOLET2, bad: C.ERROR }),
     [C]
   );
   const insets = useSafeAreaInsets();
@@ -520,7 +520,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                   key={i}
                   animate={{
                     width: i <= step && phase !== 'intro' ? 20 : 6,
-                    backgroundColor: i < step ? C.JADE2 : i === step && phase !== 'intro' ? C.GOLD : C.TEXT3,
+                    backgroundColor: i < step ? C.JADE2 : i === step && phase !== 'intro' ? C.JADE_ACCENT : C.TEXT3,
                   }}
                   transition={{ type: 'timing', duration: 260 }}
                   style={{ height: 3, borderRadius: 2 }}
@@ -608,7 +608,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         <RippleEffect onPress={() => handleChoice(choice)} rippleColor={color} disabled={!!selectedChoiceId}>
                           <View style={{
                             borderRadius: 16,
-                            backgroundColor: isSelected ? `${color}08` : C.GOLD_SURFACE,
+                            backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
                             borderWidth: isSelected ? 1.5 : 1,
                             borderColor: isSelected ? `${color}45` : C.BORDER,
                             overflow: 'hidden',

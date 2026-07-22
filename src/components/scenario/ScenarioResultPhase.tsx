@@ -136,7 +136,7 @@ export function ScenarioResultPhase({
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {toneHistory.map(({ sceneId, tone }, i) => {
-                  const dotColor = tone === 'warm' ? C.GOLD : tone === 'cold' ? C.ERROR : C.TEXT3;
+                  const dotColor = tone === 'warm' ? C.JADE_ACCENT : tone === 'cold' ? C.ERROR : C.TEXT3;
                   const label = tone === 'warm' ? 'Warm' : tone === 'cold' ? 'Cold' : 'Neutral';
                   return (
                     <React.Fragment key={sceneId}>
@@ -179,8 +179,8 @@ export function ScenarioResultPhase({
 
         {/* Community stat */}
         <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
-          <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.GOLD}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.GOLD}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Users size={18} color={ending.secret ? C.VIOLET2 : C.GOLD} />
+          <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT, flex: 1, lineHeight: 20 }}>
               {ending.secret
                 ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))

@@ -48,7 +48,7 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
     });
   }, [scale]);
 
-  const disabledColors: readonly [string, string] = [C.GOLD_DIM, C.GOLD_DIM];
+  const disabledColors: readonly [string, string] = [C.JADE_ACCENT_DIM, C.JADE_ACCENT_DIM];
 
   return (
     <Animated.View

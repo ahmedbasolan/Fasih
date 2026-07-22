@@ -8,11 +8,13 @@ import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
+import { STRINGS } from '../src/constants/strings';
+import { getClerkErrorMessage } from '../src/lib/clerkErrors';
 
 const PASSWORD_RULES = [
-  { id: 'length', label: '6+ characters', test: (p: string) => p.length >= 6 },
-  { id: 'upper', label: 'One uppercase', test: (p: string) => /[A-Z]/.test(p) },
-  { id: 'number', label: 'One number', test: (p: string) => /\d/.test(p) },
+  { id: 'length', label: STRINGS.auth.signUp.passwordRuleLength, test: (p: string) => p.length >= 6 },
+  { id: 'upper', label: STRINGS.auth.signUp.passwordRuleUpper, test: (p: string) => /[A-Z]/.test(p) },
+  { id: 'number', label: STRINGS.auth.signUp.passwordRuleNumber, test: (p: string) => /\d/.test(p) },
 ];
 
 export default function SignUpScreen() {
@@ -48,15 +50,15 @@ export default function SignUpScreen() {
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' ') || undefined,
       });
-      if (createErr) { setError(createErr.longMessage ?? createErr.message); return; }
+      if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
       const { error: sendErr } = await signUp.verifications.sendEmailCode();
-      if (sendErr) { setError(sendErr.longMessage ?? sendErr.message); return; }
+      if (sendErr) { setError(getClerkErrorMessage(sendErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
       setPendingVerification(true);
     } catch (err: any) {
-       
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Sign up failed');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
@@ -68,17 +70,17 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(verifyErr.longMessage ?? verifyErr.message); return; }
+      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
 
       if (signUp.status === 'complete') {
         const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(finalErr.longMessage ?? finalErr.message); return; }
+        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
         await setActive({ session: signUp.createdSessionId! });
         router.replace('/onboarding');
       }
     } catch (err: any) {
-       
-      setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Verification failed');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
     }
@@ -110,25 +112,25 @@ export default function SignUpScreen() {
           >
             <View style={{
               width: 64, height: 64, borderRadius: 20,
-              backgroundColor: C.GOLD_DIM,
+              backgroundColor: C.JADE_ACCENT_DIM,
               alignItems: 'center', justifyContent: 'center', marginBottom: 24,
             }}>
-              <Shield size={32} color={C.GOLD} strokeWidth={2} />
+              <Shield size={32} color={C.JADE_ACCENT} strokeWidth={2} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 28, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
-              {pendingVerification ? 'Verify Email' : 'Create Account'}
+              {pendingVerification ? STRINGS.auth.signUp.verifyEmailTitle : STRINGS.auth.signUp.createAccountTitle}
             </Text>
             {!pendingVerification && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>Already have an account?</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.alreadyHaveAccount}</Text>
                 <Pressable onPress={() => router.back()} hitSlop={8}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.GOLD }}>Sign In</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.signUp.signInLink}</Text>
                 </Pressable>
               </View>
             )}
             {pendingVerification && (
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
-                We sent a 6-digit code to {email.trim()}
+                {STRINGS.auth.signUp.codeSentTo(email.trim())}
               </Text>
             )}
           </MotiView>
@@ -148,7 +150,7 @@ export default function SignUpScreen() {
                 <TextInput
                   value={verificationCode}
                   onChangeText={setVerificationCode}
-                  placeholder="Enter verification code"
+                  placeholder={STRINGS.auth.signUp.verificationCodePlaceholder}
                   placeholderTextColor={C.TEXT3}
                   keyboardType="number-pad"
                   maxLength={6}
@@ -169,18 +171,18 @@ export default function SignUpScreen() {
                 onPress={handleVerify}
                 disabled={verificationCode.length < 6 || loading}
                 style={{
-                  backgroundColor: C.GOLD, borderRadius: 14, paddingVertical: 16,
+                  backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center',
                   opacity: verificationCode.length >= 6 && !loading ? 1 : 0.5,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
-                  {loading ? 'Verifying...' : 'Verify Email'}
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                  {loading ? STRINGS.auth.signUp.verifying : STRINGS.auth.signUp.verifyEmail}
                 </Text>
               </Pressable>
 
               <Pressable onPress={() => { setPendingVerification(false); setError(''); }} style={{ alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>← Back to sign up</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
               </Pressable>
             </MotiView>
           ) : (
@@ -200,13 +202,13 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'name' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <User size={18} color={focused === 'name' ? C.GOLD : C.TEXT3} />
+                  <User size={18} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={fullName}
                     onChangeText={setFullName}
-                    placeholder="Full name"
+                    placeholder={STRINGS.auth.signUp.fullNamePlaceholder}
                     placeholderTextColor={C.TEXT3}
                     autoCapitalize="words"
                     autoComplete="name"
@@ -221,13 +223,13 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'email' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.GOLD : C.TEXT3} />
+                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="Email address"
+                    placeholder={STRINGS.auth.signUp.emailPlaceholder}
                     placeholderTextColor={C.TEXT3}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -243,13 +245,13 @@ export default function SignUpScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                   borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
                   backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'password' ? C.GOLD : C.BORDER2,
+                  borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.GOLD : C.TEXT3} />
+                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
-                    placeholder="Create password"
+                    placeholder={STRINGS.auth.signUp.passwordPlaceholder}
                     placeholderTextColor={C.TEXT3}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -298,14 +300,14 @@ export default function SignUpScreen() {
                 >
                   <View style={{
                     width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                    backgroundColor: agreed ? C.GOLD : 'transparent',
-                    borderWidth: 2, borderColor: agreed ? C.GOLD : C.BORDER2,
+                    backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                    borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                     alignItems: 'center', justifyContent: 'center',
                   }}>
                     {agreed && <Check size={12} color={C.BG} />}
                   </View>
                   <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
-                    I agree to sync my learning progress across devices
+                    {STRINGS.auth.signUp.agreeTerms}
                   </Text>
                 </Pressable>
               </MotiView>
@@ -333,13 +335,13 @@ export default function SignUpScreen() {
                   onPress={handleSignUp}
                   disabled={!canSubmit || loading}
                   style={{
-                    backgroundColor: C.GOLD, borderRadius: 14,
+                    backgroundColor: C.JADE_ACCENT, borderRadius: 14,
                     paddingVertical: 16, alignItems: 'center',
                     opacity: canSubmit && !loading ? 1 : 0.5,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: '#FFFFFF' }}>
-                    {loading ? 'Creating Account...' : 'Create Account'}
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                    {loading ? STRINGS.auth.signUp.creatingAccount : STRINGS.auth.signUp.createAccount}
                   </Text>
                 </Pressable>
               </MotiView>
@@ -349,7 +351,7 @@ export default function SignUpScreen() {
                   onPress={() => router.replace('/onboarding')}
                   style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Skip (dev only)</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.auth.signUp.skipDevOnly}</Text>
                 </Pressable>
               )}
             </>

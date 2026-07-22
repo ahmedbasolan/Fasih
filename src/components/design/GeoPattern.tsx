@@ -13,7 +13,7 @@ interface GeoPatternProps {
 // (react-native-svg doesn't support SVG <pattern> element)
 export function GeoPattern({ opacity = 0.04, color, size = 56 }: GeoPatternProps) {
   const { C } = useTheme();
-  const patternColor = color || C.GOLD;
+  const patternColor = color || C.JADE_ACCENT;
   const [dims, setDims] = useState({ width: 0, height: 0 });
   const cx = size / 2;
   const r = size * 0.44;
