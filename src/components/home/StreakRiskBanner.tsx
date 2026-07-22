@@ -24,7 +24,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
       borderRadius: 18,
       backgroundColor: C.CARD_BG,
       borderWidth: 1,
-      borderColor: C.GOLD_BORDER,
+      borderColor: C.JADE_ACCENT_BORDER,
     },
     headerRow: {
       flexDirection: 'row',
@@ -35,7 +35,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
       width: 40,
       height: 40,
       borderRadius: 12,
-      backgroundColor: C.GOLD_DIM,
+      backgroundColor: C.JADE_ACCENT_DIM,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -98,7 +98,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
     >
       <View style={styles.headerRow}>
         <View style={styles.iconWrap}>
-          <Flame size={18} color={C.GOLD} fill={C.GOLD} />
+          <Flame size={18} color={C.JADE_ACCENT} fill={C.JADE_ACCENT} />
         </View>
         <View style={styles.textBlock}>
           <Text style={styles.title}>{STRINGS.streakRisk.bannerTitle(streakDays)}</Text>
