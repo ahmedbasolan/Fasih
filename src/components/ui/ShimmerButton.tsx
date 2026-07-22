@@ -14,7 +14,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import type { LucideIcon } from 'lucide-react-native';
+import type { LucideIcon } from '../icons';
 import { LinearGradient as ExpoGradient } from 'expo-linear-gradient';
 import { ANGLE_135 } from '../design/gradients';
 import { FONT_HEADING_SEMI } from '../design/tokens';

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignIn, useClerk } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';
@@ -44,7 +44,7 @@ export default function SignInScreen() {
         router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
       }
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Sign in failed');
     } finally {
       setLoading(false);

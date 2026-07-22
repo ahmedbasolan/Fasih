@@ -9,18 +9,6 @@ import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider } from '@clerk/expo';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '../src/lib/analytics';
-
-const tokenCache = {
-  async getToken(key: string) {
-    return SecureStore.getItemAsync(key);
-  },
-  async saveToken(key: string, value: string) {
-    return SecureStore.setItemAsync(key, value);
-  },
-  async clearToken(key: string) {
-    return SecureStore.deleteItemAsync(key);
-  },
-};
 import {
   Tajawal_400Regular,
   Tajawal_500Medium,
@@ -41,6 +29,27 @@ import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 import { useTheme } from '../src/hooks/useTheme';
 import { useAppStore } from '../src/store/useAppStore';
 import { setupNotifications } from '../src/lib/notifications';
+
+const tokenCache = {
+  async getToken(key: string) {
+    return SecureStore.getItemAsync(key);
+  },
+  async saveToken(key: string, value: string) {
+    return SecureStore.setItemAsync(key, value);
+  },
+  async clearToken(key: string) {
+    return SecureStore.deleteItemAsync(key);
+  },
+};
+
+// EXPO_PUBLIC_* vars are inlined into the bundle at build time, so a missing key
+// surfaces as a confusing Clerk error at startup. Fail loudly with a fix instead.
+const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!clerkPublishableKey) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. Add it to fasih-mobile/.env, then restart with `npx expo start --clear` (EXPO_PUBLIC_* vars are inlined at bundle time, so a plain reload will not pick it up).',
+  );
+}
 
 // Configure notification handler and Android channel at module load time
 // (must happen before any scheduleNotificationAsync calls)
@@ -79,7 +88,7 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      publishableKey={clerkPublishableKey}
       tokenCache={tokenCache}
     >
       <PostHogProvider client={posthog}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from 'lucide-react-native';
+import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
@@ -55,7 +55,7 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Sign up failed');
     } finally {
       setLoading(false);
@@ -77,7 +77,7 @@ export default function SignUpScreen() {
         router.replace('/onboarding');
       }
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       setError(err.errors?.[0]?.longMessage ?? err.errors?.[0]?.message ?? err.message ?? 'Verification failed');
     } finally {
       setLoading(false);

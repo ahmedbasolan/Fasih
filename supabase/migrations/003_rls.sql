@@ -34,69 +34,92 @@ REVOKE DELETE ON scenario_choice_stats FROM anon;
 REVOKE DELETE ON scenario_ending_stats FROM anon;
 
 -- ════════════════════════════════════════════════════════════
--- OPTION B — Proper: Clerk JWT + RLS (recommended for production)
+-- OPTION B — Proper: Clerk session token + RLS (production)
 --
--- Prerequisites (one-time Clerk dashboard setup):
+-- NOTE: The old "create a JWT template named supabase" flow is DEPRECATED.
+-- Since April 2025 the native Third-Party Auth integration is the supported
+-- path — no JWT template, and no pasting JWKS into the JWT Secret field.
 --
---  1. In Clerk Dashboard → JWT Templates → Create new template named "supabase"
---  2. Set the template claims to:
---       {
---         "sub":  "{{user.id}}",
---         "role": "authenticated",
---         "iss":  "https://clerk.your-app.com"
---       }
---  3. Copy the JWKS URL from Clerk (Clerk Dashboard → API Keys → Advanced → JWT)
---  4. In Supabase Dashboard → Settings → Auth → JWT Settings:
---     - Paste the JWKS URL as the "JWT Secret" (or use the signing secret)
+-- Prerequisites (one-time, both dashboards):
 --
--- Then in the client (supabase.ts), add the Clerk JWT to every request:
+--  1. Clerk Dashboard → "Connect with Supabase".
+--     This adds the required  role: "authenticated"  claim to session tokens.
 --
---   import { useAuth } from '@clerk/expo';
---   const { getToken } = useAuth();
---   const clerkToken = await getToken({ template: 'supabase' });
---   supabase.functions.setAuth(clerkToken ?? '');
+--  2. Supabase Dashboard → Authentication → Third-Party Auth → add Clerk.
+--     Clerk domain for this project:  enjoyed-elf-2.clerk.accounts.dev
 --
--- Once Clerk JWTs are wired to Supabase, un-comment and run the block below:
+--  3. Local dev only — supabase/config.toml:
+--       [auth.third_party.clerk]
+--       enabled = true
+--       domain = "enjoyed-elf-2.clerk.accounts.dev"
+--
+-- Client wiring is ALREADY DONE in src/lib/supabase.ts: the client passes an
+-- `accessToken` callback that returns the Clerk session token via
+-- getClerkInstance().session?.getToken().
+--
+-- ⚠ ORDER MATTERS: confirm a signed-in request actually carries the token
+-- BEFORE enabling RLS. Verify with:
+--     select auth.jwt()->>'sub';        -- should return the Clerk user id
+-- If that returns NULL, enabling RLS will silently break every sync write.
+--
+-- Once verified, un-comment and run the block below.
 -- ════════════════════════════════════════════════════════════
 
 /*
--- Extract Clerk user ID from the JWT subject claim
-CREATE OR REPLACE FUNCTION requesting_user_id()
-RETURNS TEXT LANGUAGE sql STABLE AS $$
-  SELECT NULLIF(
-    current_setting('request.jwt.claims', TRUE)::json ->> 'sub',
-    ''
-  );
-$$;
+-- auth.jwt()->>'sub' is the Clerk user id. The (select ...) wrapper lets
+-- Postgres evaluate it once per query instead of once per row.
+
+-- A request carrying a Clerk token runs as the `authenticated` role, NOT `anon`.
+-- The REVOKEs at the top of this file only name `anon`, so they do not cover
+-- signed-in requests at all. Re-apply them for `authenticated` or the table-level
+-- grant stays wide open regardless of what the policies below say.
+REVOKE DELETE, TRUNCATE ON user_data              FROM authenticated;
+REVOKE DELETE            ON scenario_choice_stats FROM authenticated;
+REVOKE DELETE            ON scenario_ending_stats FROM authenticated;
 
 ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
 
--- Users can only read and write their own row
+-- Users can only read and write their own row.
+-- NOTE: pushProgress() upserts, so INSERT *and* UPDATE policies are both
+-- required. UPDATE additionally needs SELECT, or it silently affects 0 rows.
+-- `TO authenticated` means a token-less (anon) request matches no policy and is
+-- denied outright, rather than relying on auth.jwt() being NULL.
 CREATE POLICY "Users read own data"
-  ON user_data FOR SELECT
-  USING (user_id = requesting_user_id());
+  ON user_data FOR SELECT TO authenticated
+  USING (user_id = (select auth.jwt()->>'sub'));
 
 CREATE POLICY "Users write own data"
-  ON user_data FOR INSERT
-  WITH CHECK (user_id = requesting_user_id());
+  ON user_data FOR INSERT TO authenticated
+  WITH CHECK (user_id = (select auth.jwt()->>'sub'));
 
 CREATE POLICY "Users update own data"
-  ON user_data FOR UPDATE
-  USING (user_id = requesting_user_id())
-  WITH CHECK (user_id = requesting_user_id());
+  ON user_data FOR UPDATE TO authenticated
+  USING (user_id = (select auth.jwt()->>'sub'))
+  WITH CHECK (user_id = (select auth.jwt()->>'sub'));
 
--- Community stats are anonymous aggregates — public read, authenticated write
+-- Community stats are anonymous aggregates — public read, authenticated write.
+-- Deliberately NOT `FOR ALL`: that covers DELETE too, so any signed-in user
+-- could wipe the shared stats table. Grant only the two writes the app actually
+-- performs — insert a new counter row, or bump an existing one.
 ALTER TABLE scenario_choice_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read choice stats"
   ON scenario_choice_stats FOR SELECT USING (true);
-CREATE POLICY "Authenticated write choice stats"
-  ON scenario_choice_stats FOR ALL
-  USING (requesting_user_id() IS NOT NULL);
+CREATE POLICY "Authenticated insert choice stats"
+  ON scenario_choice_stats FOR INSERT TO authenticated
+  WITH CHECK ((select auth.jwt()->>'sub') IS NOT NULL);
+CREATE POLICY "Authenticated update choice stats"
+  ON scenario_choice_stats FOR UPDATE TO authenticated
+  USING ((select auth.jwt()->>'sub') IS NOT NULL)
+  WITH CHECK ((select auth.jwt()->>'sub') IS NOT NULL);
 
 ALTER TABLE scenario_ending_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read ending stats"
   ON scenario_ending_stats FOR SELECT USING (true);
-CREATE POLICY "Authenticated write ending stats"
-  ON scenario_ending_stats FOR ALL
-  USING (requesting_user_id() IS NOT NULL);
+CREATE POLICY "Authenticated insert ending stats"
+  ON scenario_ending_stats FOR INSERT TO authenticated
+  WITH CHECK ((select auth.jwt()->>'sub') IS NOT NULL);
+CREATE POLICY "Authenticated update ending stats"
+  ON scenario_ending_stats FOR UPDATE TO authenticated
+  USING ((select auth.jwt()->>'sub') IS NOT NULL)
+  WITH CHECK ((select auth.jwt()->>'sub') IS NOT NULL);
 */
