@@ -132,6 +132,7 @@ export const STRINGS = {
     goodEvening: 'Good evening',
     welcomeFasih: 'Welcome to Fasih',
     newUserTip: 'Start your first scenario to begin tracking your mastery across categories.',
+    checklistProgress: (done: number, total: number) => `${done}/${total} steps done — keep going!`,
     daysLearning: (count: number) => `${count} Day Streak`,
     studiedCount: 'Phrases Studied',
     scenariosCount: 'Scenarios Done',
@@ -147,6 +148,14 @@ export const STRINGS = {
     studiedPhrases: (count: number) => `${count} phrases`,
     reviewReady: 'Review Ready',
     featuredAuthor: 'By Fasih Team',
+  },
+  streakRisk: {
+    bannerTitle: (days: number) => `Your ${days}-day streak ends tonight`,
+    bannerSub: 'Practice for 5 minutes, or use a Streak Freeze to protect it.',
+    practiceNow: 'Practice Now',
+    useFreeze: (count: number) => `Use Freeze (${count} left)`,
+    notificationTitle: (days: number) => `🔥 ${days}-day streak at risk`,
+    notificationBody: "Don't lose it — 5 minutes keeps it alive.",
   },
   phrases: {
     title: 'Phrase Library',
@@ -284,6 +293,15 @@ export const STRINGS = {
     goals: {
       title: 'Active Goals',
       empty: 'Select goals in settings to track your progress',
+    },
+    dailyGoal: {
+      title: 'Daily Goal',
+      casual: 'Casual',
+      casualSub: '250 XP/day',
+      regular: 'Regular',
+      regularSub: '500 XP/day',
+      intense: 'Intense',
+      intenseSub: '750 XP/day',
     },
     appearance: 'Appearance',
     appearanceModes: {

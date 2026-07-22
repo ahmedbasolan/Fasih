@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { IMAGES } from '../../constants/images';
+import { STRINGS } from '../../constants/strings';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -23,6 +24,9 @@ interface StreakWidgetProps {
   weekDays: DayStatus[];
   mood?: 'happy' | 'excited' | 'celebrating';
   onComplete?: () => void;
+  /** Day-one only: steps completed out of checklistTotal. When both are set, they drive the bar instead of currentXP/goalXP. */
+  checklistCompleted?: number;
+  checklistTotal?: number;
 }
 
 type ConfettiParticle = { id: number; x: number };
@@ -34,13 +38,17 @@ export function StreakWidget({
   weekDays,
   mood = 'happy',
   onComplete,
+  checklistCompleted,
+  checklistTotal,
 }: StreakWidgetProps) {
   const { C } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [confetti, setConfetti] = useState<ConfettiParticle[]>([]);
 
-  const progressPercent = Math.min((currentXP / goalXP) * 100, 100);
-  const isEmpty = streakDays === 0 && currentXP === 0;
+  const isChecklistMode = checklistTotal !== undefined && checklistCompleted !== undefined;
+  const progressPercent = isChecklistMode
+    ? Math.min((checklistCompleted! / checklistTotal!) * 100, 100)
+    : Math.min((currentXP / goalXP) * 100, 100);
 
   useEffect(() => {
     if (mood === 'celebrating' && confetti.length === 0) {
@@ -216,20 +224,19 @@ export function StreakWidget({
           {/* Streak Info Row */}
           <View style={styles.streakInfoRow}>
             <Text style={styles.daysTitle}>Learning Days</Text>
-            {!isEmpty && (
+            {isChecklistMode ? (
+              <Text style={styles.emptyHint}>{STRINGS.home.checklistProgress(checklistCompleted!, checklistTotal!)}</Text>
+            ) : (
               <Text style={styles.bestDays}>Best: {Math.max(streakDays, 1)}</Text>
-            )}
-            {isEmpty && (
-              <Text style={styles.emptyHint}>Start today</Text>
             )}
           </View>
 
-          {/* Progress Bar - show empty state with 0% */}
+          {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
             <MotiView
               style={{ height: '100%' }}
               animate={{
-                width: `${isEmpty ? 0 : progressPercent}%`,
+                width: `${progressPercent}%`,
               }}
               transition={{ type: 'spring', stiffness: 150, damping: 20 }}
             >
