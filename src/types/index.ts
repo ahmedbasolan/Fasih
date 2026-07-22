@@ -11,6 +11,10 @@ export interface UserProfile {
   mascot?: 'maya' | 'max';
   goals: string[];
   plan: 'monthly' | 'yearly' | null;
+  /** Which onboarding steps the user actually completed — drives day-one progress display. */
+  onboardingChecklist: string[];
+  /** Adaptive daily XP target, inferred from onboarding signals — user-editable in Profile settings. */
+  dailyGoalXP: number;
 }
 
 export interface CategoryMastery {

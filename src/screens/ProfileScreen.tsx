@@ -311,6 +311,42 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
         </View>
       </MotiView>
 
+      {/* Daily Goal */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 335 }}>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.dailyGoal.title}</Text>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          {[
+            { xp: 250, label: STRINGS.profile.dailyGoal.casual, sub: STRINGS.profile.dailyGoal.casualSub },
+            { xp: 500, label: STRINGS.profile.dailyGoal.regular, sub: STRINGS.profile.dailyGoal.regularSub },
+            { xp: 750, label: STRINGS.profile.dailyGoal.intense, sub: STRINGS.profile.dailyGoal.intenseSub },
+          ].map(({ xp, label, sub }) => {
+            const active = (user?.dailyGoalXP ?? 500) === xp;
+            return (
+              <Pressable
+                key={xp}
+                onPress={() => useAppStore.getState().setDailyGoalXP(xp)}
+                accessibilityRole="button"
+                accessibilityLabel={`${label} daily goal`}
+                accessibilityState={{ selected: active }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  borderWidth: active ? 2 : 1,
+                  borderColor: active ? C.PRIMARY : C.BORDER,
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: active ? C.TEXT_ON_LIGHT : C.TEXT3 }}>{sub}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </MotiView>
+
       {/* Subscription */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 340 }}>
         <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Subscription</Text>
