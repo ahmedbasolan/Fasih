@@ -16,7 +16,7 @@ interface Props extends Omit<TextInputProps, 'style'> {
 
 export function InputField({ icon, rightIcon, focused, focusColor, containerStyle, inputStyle, accessibilityLabel, ...rest }: Props) {
   const { C } = useTheme();
-  const effectFocusColor = focusColor || C.GOLD_BORDER;
+  const effectFocusColor = focusColor || C.JADE_ACCENT_BORDER;
 
   return (
     <View style={[

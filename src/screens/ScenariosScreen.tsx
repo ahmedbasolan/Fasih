@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, Pressable, Platform,
 } from 'react-native';
@@ -9,7 +9,7 @@ import {
   Heart, Search, CheckCircle2, Lock,
   Coffee, Building2, Users, Briefcase, ShoppingBag, Moon,
   Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
-} from 'lucide-react-native';
+} from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
 import { getCareerScenarios, getMedicalScenarios, getSocialScenarios } from '../constants/scenarios';
@@ -94,16 +94,15 @@ const FUN_FACTS = [
 ];
 
 function useRandomHeading() {
-  const [heading, setHeading] = useState(MOTIVATIONAL_HEADINGS[0]);
-  const [funFact, setFunFact] = useState(FUN_FACTS[0]);
-
-  useEffect(() => {
-    // Pick random heading and fun fact on mount only
-    const randomHeadingIndex = Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length);
-    const randomFactIndex = Math.floor(Math.random() * FUN_FACTS.length);
-    setHeading(MOTIVATIONAL_HEADINGS[randomHeadingIndex]);
-    setFunFact(FUN_FACTS[randomFactIndex]);
-  }, []);
+  // Pick a random heading and fun fact once, when the component first mounts.
+  // Lazy initializers keep the value stable for the component's lifetime without
+  // an effect + setState (which would double-render and flash the default first).
+  const [heading] = useState(
+    () => MOTIVATIONAL_HEADINGS[Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length)],
+  );
+  const [funFact] = useState(
+    () => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)],
+  );
 
   return { heading, funFact };
 }

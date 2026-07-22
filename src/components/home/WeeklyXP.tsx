@@ -7,7 +7,7 @@ import {
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BarChart3 } from 'lucide-react-native';
+import { BarChart3 } from '../icons';
 
 interface DayData {
   label: string;

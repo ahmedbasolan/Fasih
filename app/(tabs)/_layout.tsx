@@ -1,7 +1,7 @@
 import { Tabs, usePathname } from 'expo-router';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Layers, BookOpen, User } from 'lucide-react-native';
+import { Home, Layers, BookOpen, User } from '../../src/components/icons';
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FONT_HEADING_SEMI } from '../../src/components/design/tokens';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -26,10 +26,10 @@ export function useTabAnimation() {
 }
 
 export default function TabsLayout() {
-  const { C, isDark } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const tabBg = isDark ? '#0C0A1C' : '#FFFFFF';
+  const tabBg = C.TAB_BG;
 
   // Track tab navigation direction for animations
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -80,8 +80,8 @@ export default function TabsLayout() {
               android: { elevation: 8 },
             }),
           },
-          tabBarActiveTintColor: '#00FF95',
-          tabBarInactiveTintColor: '#6B7280',
+          tabBarActiveTintColor: C.JADE_ACCENT,
+          tabBarInactiveTintColor: C.NEUTRAL_500,
           tabBarLabelStyle: {
             fontFamily: FONT_HEADING_SEMI,
             fontSize: 11,
@@ -94,7 +94,7 @@ export default function TabsLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <Home size={20} color={color} />
               </View>
             ),
@@ -105,7 +105,7 @@ export default function TabsLayout() {
           options={{
             title: 'Scenarios',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <Layers size={20} color={color} />
               </View>
             ),
@@ -116,7 +116,7 @@ export default function TabsLayout() {
           options={{
             title: 'Phrases',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <BookOpen size={20} color={color} />
               </View>
             ),
@@ -127,7 +127,7 @@ export default function TabsLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.GOLD_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
                 <User size={20} color={color} />
               </View>
             ),
