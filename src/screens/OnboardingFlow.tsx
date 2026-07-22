@@ -282,7 +282,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   onToggle={() => setTheme(isDark ? 'light' : 'dark')}
                   iconOn={<Moon size={14} color={isDark ? C.WHITE : C.PRIMARY} />}
                   iconOff={<Sun size={14} color={isDark ? C.WHITE : C.PRIMARY} />}
-                  backgroundColor={mode === 'career' ? C.GOLD : C.VIOLET2}
+                  backgroundColor={mode === 'career' ? C.JADE_ACCENT : C.VIOLET2}
                 />
               </FadeIn>
 
@@ -375,7 +375,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
             <View style={{ flex: 1, paddingHorizontal: 24, gap: 16 }}>
               {[
-                { id: 'career' as const, image: IMAGES.careerMode, Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.GOLD },
+                { id: 'career' as const, image: IMAGES.careerMode, Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.JADE_ACCENT },
                 { id: 'social' as const, image: IMAGES.socialMode, Icon: Users, title: STRINGS.onboarding.socialMode, sub: STRINGS.onboarding.socialSub, desc: STRINGS.onboarding.socialDesc, color: C.VIOLET2 },
               ].map(({ id, image, Icon, title, sub, desc, color }, idx) => {
                 const selected = mode === id;
@@ -480,8 +480,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       transition={{ type: 'spring', damping: 80, stiffness: 100 }}
                       style={{ width: '100%' }}
                     >
-                      <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER }}>
-                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 26, color: C.GOLD, textAlign: 'center', marginBottom: 4, textShadowColor: C.GOLD_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
+                      <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER }}>
+                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 26, color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.JADE_ACCENT_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
@@ -549,17 +549,17 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                           justifyContent: bento.align,
                           paddingHorizontal: bento.px,
                           gap: bento.dir === 'row' ? 16 : 12,
-                          backgroundColor: selected ? C.GOLD_SURFACE : C.SURFACE,
+                          backgroundColor: selected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
                           borderRadius: 24,
                           borderWidth: selected ? 2 : 1,
-                          borderColor: selected ? C.GOLD : C.BORDER,
+                          borderColor: selected ? C.JADE_ACCENT : C.BORDER,
                           overflow: 'hidden'
                         }}
                       >
                         {/* Gold gradient wash on selected */}
                         {selected && (
                           <LinearGradient
-                            colors={[C.GOLD_SURFACE, 'transparent']}
+                            colors={[C.JADE_ACCENT_SURFACE, 'transparent']}
                             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                           />
@@ -569,7 +569,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                           width: bento.dir === 'row' ? 38 : 32,
                           height: bento.dir === 'row' ? 38 : 32,
                           borderRadius: 12,
-                          backgroundColor: selected ? C.GOLD : C.BORDER,
+                          backgroundColor: selected ? C.JADE_ACCENT : C.BORDER,
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
@@ -579,7 +579,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         <Text style={{
                           fontFamily: FONT_LATIN_BOLD,
                           fontSize: bento.dir === 'row' ? 14 : 11,
-                          color: selected ? C.GOLD : C.TEXT,
+                          color: selected ? C.JADE_ACCENT : C.TEXT,
                           textAlign: bento.dir === 'column' ? 'center' : 'left',
                           flexShrink: 1
                         }}>
@@ -595,7 +595,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               transition={{ type: 'spring', damping: 12, stiffness: 260 }}
                               style={{ position: 'absolute', top: 10, right: 10 }}
                             >
-                              <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.GOLD, alignItems: 'center', justifyContent: 'center' }}>
+                              <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.JADE_ACCENT, alignItems: 'center', justifyContent: 'center' }}>
                                 <Check size={12} color={C.WHITE} />
                               </View>
                             </MotiView>
@@ -635,14 +635,14 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                             paddingVertical: 8,
                             borderRadius: 20,
                             borderWidth: 1.5,
-                            borderColor: chipSelected ? C.GOLD : C.BORDER,
-                            backgroundColor: chipSelected ? C.GOLD_SURFACE : C.SURFACE,
+                            borderColor: chipSelected ? C.JADE_ACCENT : C.BORDER,
+                            backgroundColor: chipSelected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
                           }}
                         >
                           <Text style={{
                             fontFamily: FONT_LATIN,
                             fontSize: 13,
-                            color: chipSelected ? C.GOLD : C.TEXT2,
+                            color: chipSelected ? C.JADE_ACCENT : C.TEXT2,
                           }}>
                             {p}
                           </Text>
@@ -749,7 +749,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
         return (
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             {/* Arabic geometric background pattern */}
-            <GeoPattern opacity={0.035} color={C.GOLD} size={48} />
+            <GeoPattern opacity={0.035} color={C.JADE_ACCENT} size={48} />
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
               <FadeIn delay={100} style={{ zIndex: 2 }}>
@@ -773,7 +773,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       from={{ scale: 1, opacity: 0.3 }}
                       animate={{ scale: 1.15, opacity: 0.1 }}
                       transition={{ type: 'spring', stiffness: 150, damping: 15, loop: true }}
-                      style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.GOLD }}
+                      style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: C.JADE_ACCENT }}
                     />
                   )}
                   {/* Celebration burst on complete - simplified */}
@@ -788,7 +788,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   <Svg width={136} height={136} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
                     <Circle cx={68} cy={68} r={52} fill="none" stroke={C.SURFACE} strokeWidth={5} />
                     <Circle cx={68} cy={68} r={52} fill="none"
-                      stroke={holdComplete ? C.JADE2 : C.GOLD} strokeWidth={5} strokeLinecap="round"
+                      stroke={holdComplete ? C.JADE2 : C.JADE_ACCENT} strokeWidth={5} strokeLinecap="round"
                       strokeDasharray={`${circum}`}
                       strokeDashoffset={`${circum * (1 - holdProgress)}`} />
                   </Svg>
@@ -799,7 +799,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     accessibilityRole="button"
                     accessibilityLabel={holdComplete ? 'Commitment made' : 'Hold to commit'}
                     accessibilityHint={holdComplete ? undefined : 'Press and hold for 2 seconds to make your commitment'}
-                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : holdProgress > 0 ? C.GOLD : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
+                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : holdProgress > 0 ? C.JADE_ACCENT : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
                   >
                     {holdComplete ? (
                       <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 22, stiffness: 300 }}>
@@ -901,7 +901,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         <Rect x={0} y={0} width={132} height={40} rx={12} stroke="#FFFFFF" strokeWidth={1} />
 
                         {/* App Icon */}
-                        <Circle cx={16} cy={20} r={8} fill={C.GOLD} />
+                        <Circle cx={16} cy={20} r={8} fill={C.JADE_ACCENT} />
                         <Path d="M14 18 L18 22 M18 18 L14 22" stroke="#FFFFFF" strokeWidth={1.5} strokeLinecap="round" />
 
                         {/* Text lines */}
@@ -918,7 +918,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     from={{ opacity: 0.06 }}
                     animate={{ opacity: [0.06, 0.18, 0.06] }}
                     transition={{ type: 'timing', duration: 3000, loop: true }}
-                    style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: C.GOLD }}
+                    style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: C.JADE_ACCENT }}
                   />
                   {/* Expanding rings */}
                   {[0, 1, 2].map((i) => (
@@ -927,7 +927,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       from={{ scale: 0.9, opacity: 0.55 }}
                       animate={{ scale: 2.4, opacity: 0 }}
                       transition={{ type: 'timing', duration: 2200, loop: true, delay: i * 730 }}
-                      style={{ position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 1.5, borderColor: C.GOLD }}
+                      style={{ position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 1.5, borderColor: C.JADE_ACCENT }}
                     />
                   ))}
                   {/* Jiggling bell - smaller */}
@@ -964,8 +964,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 ] as const).map(({ NotifIcon, text }, i) => (
                   <FadeIn key={text} delay={350 + i * 100}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                      <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.GOLD_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                        <NotifIcon size={16} color={C.GOLD} />
+                      <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
+                        <NotifIcon size={16} color={C.JADE_ACCENT} />
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{text}</Text>
                     </View>
@@ -1120,7 +1120,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   { Icon: Flame,    fill: true,  gradientColors: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK]   as [string, string] },
                   { Icon: Lock,     fill: false, gradientColors: [C.NEUTRAL_600,   C.NEUTRAL_700]          as [string, string] },
                 ][i];
-                const labelColor = i === 0 ? C.GOLD : i === 1 ? C.JADE2 : i === 2 ? C.CULTURAL_GOLD : C.TEXT3;
+                const labelColor = i === 0 ? C.JADE_ACCENT : i === 1 ? C.JADE2 : i === 2 ? C.CULTURAL_GOLD : C.TEXT3;
                 return (
                   <FadeIn key={day} delay={200 + i * 120}>
                     <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start' }}>
@@ -1244,7 +1244,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   accessibilityRole="radio"
                   accessibilityState={{ selected: plan === 'yearly' }}
                   accessibilityLabel="Yearly plan, AED 16.6 per month"
-                  style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'yearly' ? C.GOLD_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'yearly' ? `${C.GOLD}70` : C.BORDER }}
+                  style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'yearly' ? C.JADE_ACCENT_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'yearly' ? `${C.JADE_ACCENT}70` : C.BORDER }}
                 >
                   <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
                     <MotiView animate={{ scale: [1, 1.08, 1] }} transition={{ type: 'timing', duration: 2000, loop: true }}>
@@ -1257,21 +1257,21 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     <MotiView
                       animate={{ scale: plan === 'yearly' ? [0.8, 1.2, 1] : 1 }}
                       transition={{ type: 'spring', damping: 10, stiffness: 200 }}
-                      style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: plan === 'yearly' ? C.GOLD : C.BORDER2, alignItems: 'center', justifyContent: 'center' }}
+                      style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: plan === 'yearly' ? C.JADE_ACCENT : C.BORDER2, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      {plan === 'yearly' && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.GOLD }} />}
+                      {plan === 'yearly' && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: C.JADE_ACCENT }} />}
                     </MotiView>
                     <View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <Svg width={18} height={16} viewBox="0 0 24 20">
-                          <Path d="M2 16 L5 6 L9 11 L12 2 L15 11 L19 6 L22 16 Z" fill={C.GOLD} opacity={0.85} />
-                          <Path d="M3 17.5 L21 17.5" stroke={C.GOLD} strokeWidth={2} strokeLinecap="round" />
+                          <Path d="M2 16 L5 6 L9 11 L12 2 L15 11 L19 6 L22 16 Z" fill={C.JADE_ACCENT} opacity={0.85} />
+                          <Path d="M3 17.5 L21 17.5" stroke={C.JADE_ACCENT} strokeWidth={2} strokeLinecap="round" />
                         </Svg>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.TEXT }}>{STRINGS.onboarding.yearlyPlan}</Text>
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.yearlyBest}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.GOLD }}>AED 16.6</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.JADE_ACCENT }}>AED 16.6</Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{STRINGS.onboarding.billingYearly('AED 199', 'AED 269')}</Text>

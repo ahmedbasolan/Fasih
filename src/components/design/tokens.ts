@@ -9,12 +9,12 @@ export type ThemeColors = {
   BORDER2: string;
 
   // Primary green (main accent)
-  GOLD: string;
-  GOLD2: string;
-  GOLD3: string;
-  GOLD_DIM: string;
-  GOLD_BORDER: string;
-  GOLD_SURFACE: string;
+  JADE_ACCENT: string;
+  JADE_ACCENT2: string;
+  JADE_ACCENT3: string;
+  JADE_ACCENT_DIM: string;
+  JADE_ACCENT_BORDER: string;
+  JADE_ACCENT_SURFACE: string;
 
   // Secondary teal/green (replaces JADE)
   JADE: string;
@@ -50,6 +50,7 @@ export type ThemeColors = {
   WHITE: string;
   CARD_BG: string;
   CARD_SHADOW: string;
+  TAB_BG: string;
   PRIMARY: string;
   PRIMARY_LIGHT: string;
   PRIMARY_DARK: string;
@@ -82,12 +83,12 @@ export const darkTheme: ThemeColors = {
   BORDER: 'rgba(255,255,255,0.10)',
   BORDER2: 'rgba(255,255,255,0.16)',
 
-  GOLD: '#00FF95',
-  GOLD2: '#5FFFB8',
-  GOLD3: '#B8FFE0',
-  GOLD_DIM: 'rgba(0,255,149,0.18)',
-  GOLD_BORDER: 'rgba(0,255,149,0.35)',
-  GOLD_SURFACE: 'rgba(0,255,149,0.06)',
+  JADE_ACCENT: '#00FF95',
+  JADE_ACCENT2: '#5FFFB8',
+  JADE_ACCENT3: '#B8FFE0',
+  JADE_ACCENT_DIM: 'rgba(0,255,149,0.18)',
+  JADE_ACCENT_BORDER: 'rgba(0,255,149,0.35)',
+  JADE_ACCENT_SURFACE: 'rgba(0,255,149,0.06)',
 
   JADE: '#02B986',
   JADE2: '#00D69A',
@@ -119,6 +120,7 @@ export const darkTheme: ThemeColors = {
   WHITE: '#FFFFFF',
   CARD_BG: 'rgba(255,255,255,0.06)',
   CARD_SHADOW: 'rgba(0,0,0,0.3)',
+  TAB_BG: '#0C0A1C',
   PRIMARY: '#00FF95',
   PRIMARY_LIGHT: '#B8FFE0',
   PRIMARY_DARK: '#02B986',
@@ -151,12 +153,12 @@ export const lightTheme: ThemeColors = {
   BORDER: 'rgba(0,0,0,0.08)',
   BORDER2: 'rgba(0,0,0,0.12)',
 
-  GOLD: '#00FF95',
-  GOLD2: '#5FFFB8',
-  GOLD3: '#B8FFE0',
-  GOLD_DIM: 'rgba(0,255,149,0.12)',
-  GOLD_BORDER: 'rgba(0,255,149,0.25)',
-  GOLD_SURFACE: 'rgba(0,255,149,0.06)',
+  JADE_ACCENT: '#00FF95',
+  JADE_ACCENT2: '#5FFFB8',
+  JADE_ACCENT3: '#B8FFE0',
+  JADE_ACCENT_DIM: 'rgba(0,255,149,0.12)',
+  JADE_ACCENT_BORDER: 'rgba(0,255,149,0.25)',
+  JADE_ACCENT_SURFACE: 'rgba(0,255,149,0.06)',
 
   JADE: '#02B986',
   JADE2: '#00D69A',
@@ -188,6 +190,7 @@ export const lightTheme: ThemeColors = {
   WHITE: '#FFFFFF',
   CARD_BG: '#FFFFFF',
   CARD_SHADOW: 'rgba(0,0,0,0.06)',
+  TAB_BG: '#FFFFFF',
   PRIMARY: '#00FF95',
   PRIMARY_LIGHT: '#B8FFE0',
   PRIMARY_DARK: '#02B986',
