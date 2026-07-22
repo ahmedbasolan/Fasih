@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { MotiView } from 'moti';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../icons';
 import { FONT_HEADING, FONT_LATIN_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { CATEGORY_ILLUSTRATIONS } from './CategoryIllustrations';

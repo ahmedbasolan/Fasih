@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
-import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2 } from 'lucide-react-native';
+import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2 } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI,

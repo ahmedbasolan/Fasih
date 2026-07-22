@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignIn, useClerk } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';

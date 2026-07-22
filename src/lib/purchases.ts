@@ -52,8 +52,25 @@ function toStatus(info: CustomerInfo): SubscriptionStatus {
 /**
  * Call once on app start (in root layout useEffect).
  * Safe to call multiple times — RevenueCat ignores duplicate configures.
+ *
+ * A missing key isn't a bug the SDK reports as a JS error — Purchases.configure()
+ * validates synchronously on the native module thread, so an empty apiKey() takes
+ * down the whole app before any React error boundary can catch it (this is what
+ * happened when the RevenueCat keys weren't yet in .env). Skip configuring
+ * instead: every other function in this file already treats "not configured" as
+ * a normal, catchable case and falls back to a safe default.
  */
 export function configurePurchases(): void {
+  if (!apiKey()) {
+    if (__DEV__) {
+      console.warn(
+        `[purchases] No RevenueCat key for ${Platform.OS} — skipping configure(). ` +
+        'Subscription features are disabled until EXPO_PUBLIC_REVENUECAT_IOS_KEY / ' +
+        '_ANDROID_KEY are set in .env.',
+      );
+    }
+    return;
+  }
   Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
   Purchases.configure({ apiKey: apiKey() });
 }

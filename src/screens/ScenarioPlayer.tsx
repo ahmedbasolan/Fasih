@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { X, Volume2 } from 'lucide-react-native';
+import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
 import {
-  FONT_ARABIC, FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI,
+  FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI,
 } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
@@ -196,40 +196,11 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
   );
 }
 
-// ─── Rich phrase card ─────────────────────────────────────────────────────────
-function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
-  arabic: string; roman: string; english: string;
-  onSpeak: () => void; isPlaying: boolean;
-}) {
-  const { C } = useTheme();
-  const jadeText = C.JADE;
-  return (
-    <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.JADE_SURFACE, borderWidth: 1, borderColor: C.JADE_BORDER, gap: 4 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: jadeText, textAlign: 'right', flex: 1, lineHeight: 30 }}>{arabic}</Text>
-        <Pressable
-          onPress={onSpeak}
-          accessibilityRole="button"
-          accessibilityLabel={isPlaying ? 'Stop audio' : 'Listen to phrase'}
-          style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER, marginLeft: 10 }}
-        >
-          <Volume2 size={13} color={isPlaying ? jadeText : C.TEXT3} />
-        </Pressable>
-      </View>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${jadeText}80`, fontStyle: 'italic' }}>{roman}</Text>
-      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT2, marginTop: 2 }}>{english}</Text>
-    </View>
-  );
-}
-
-const outcomeLabel: Record<string, string> = { excellent: 'Excellent', good: 'Good choice', neutral: 'Neutral', bad: 'Cultural misstep' };
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry }: Props) {
-  const { C, G } = useTheme();
+  const { C } = useTheme();
   // C.JADE reads well on both dark and light; C.VIOLET is safe for both modes
   const accentColor = C.JADE;
-  const violetColor = C.VIOLET;
   const outcomeColor: Record<string, string> = useMemo(
     () => ({ excellent: C.JADE2, good: C.JADE_ACCENT, neutral: C.VIOLET2, bad: C.ERROR }),
     [C]
