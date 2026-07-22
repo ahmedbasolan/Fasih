@@ -152,7 +152,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
   
-  const TOTAL = 12; // 0-9 onboarding steps + 10 scenario step + 11 paywall step
+  const TOTAL = 12; // 0-6 setup, 7 quick win, 8 scenario, 9 paywall (timeline), 10 features, 11 paywall (plans)
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
@@ -990,64 +990,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </View>
         );
 
-      // Step 7: Paywall — Unlock full potential
+      // Step 7: Your first Arabic phrase quick win
       case 7:
-        return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
-            <FadeIn delay={100}>
-              <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.paywallSub}</Text>
-              </View>
-            </FadeIn>
-
-            <View style={{ flex: 1, gap: 16 }}>
-              {STRINGS.onboarding.timeline.map(({ day, title, desc }, i) => {
-                const iconData = [
-                  { Icon: Zap,      fill: true,  gradientColors: [C.JADE,          C.PRIMARY_DARK]         as [string, string] },
-                  { Icon: Sparkles, fill: false, gradientColors: [C.JADE2,         C.JADE]                 as [string, string] },
-                  { Icon: Flame,    fill: true,  gradientColors: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK]   as [string, string] },
-                  { Icon: Lock,     fill: false, gradientColors: [C.NEUTRAL_600,   C.NEUTRAL_700]          as [string, string] },
-                ][i];
-                const labelColor = i === 0 ? C.GOLD : i === 1 ? C.JADE2 : i === 2 ? C.CULTURAL_GOLD : C.TEXT3;
-                return (
-                  <FadeIn key={day} delay={200 + i * 120}>
-                    <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start' }}>
-                      <LinearGradient
-                        colors={iconData.gradientColors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{ width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                      >
-                        <iconData.Icon size={22} color={C.WHITE} {...(iconData.fill ? { fill: C.WHITE } : {})} />
-                      </LinearGradient>
-                      <View style={{ flex: 1, paddingTop: 4 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: labelColor, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{day}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
-                      </View>
-                    </View>
-                  </FadeIn>
-                );
-              })}
-            </View>
-
-            <FadeIn delay={800}>
-              <View style={{ gap: 8, width: '100%' }}>
-                <ShimmerButton onPress={next} Icon={ArrowRight}>
-                  {STRINGS.onboarding.startFreeTrial}
-                </ShimmerButton>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>{STRINGS.onboarding.cancelAnytime}</Text>
-                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
-                </Pressable>
-              </View>
-            </FadeIn>
-          </ScrollView>
-        );
-
-      // Step 8: Your first Arabic phrase quick win
-      case 8:
         return (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
@@ -1133,8 +1077,88 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
           </View>
         );
 
-      // Step 9: Everything included — features
+      // Step 8: Onboarding Scenario — Café
+      case 8: {
+        const onboardingScenario = getOnboardingScenario(C);
+        // Use the local mode state — user hasn't been saved to the store yet at this step
+        const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
+
+        if (!script) {
+          return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>;
+        }
+
+        return (
+          <OnboardingScenarioPlayer
+            script={script}
+            onComplete={(unlockedPhraseIds) => {
+              // Store unlocked phrases in app store
+              unlockedPhraseIds.forEach((phraseId) => {
+                unlockPhrase(phraseId);
+              });
+              next();
+            }}
+          />
+        );
+      }
+
+      // Step 9: Paywall — Unlock full potential
       case 9:
+        return (
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+            <FadeIn delay={100}>
+              <View style={{ marginBottom: 24 }}>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.paywallSub}</Text>
+              </View>
+            </FadeIn>
+
+            <View style={{ flex: 1, gap: 16 }}>
+              {STRINGS.onboarding.timeline.map(({ day, title, desc }, i) => {
+                const iconData = [
+                  { Icon: Zap,      fill: true,  gradientColors: [C.JADE,          C.PRIMARY_DARK]         as [string, string] },
+                  { Icon: Sparkles, fill: false, gradientColors: [C.JADE2,         C.JADE]                 as [string, string] },
+                  { Icon: Flame,    fill: true,  gradientColors: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK]   as [string, string] },
+                  { Icon: Lock,     fill: false, gradientColors: [C.NEUTRAL_600,   C.NEUTRAL_700]          as [string, string] },
+                ][i];
+                const labelColor = i === 0 ? C.GOLD : i === 1 ? C.JADE2 : i === 2 ? C.CULTURAL_GOLD : C.TEXT3;
+                return (
+                  <FadeIn key={day} delay={200 + i * 120}>
+                    <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start' }}>
+                      <LinearGradient
+                        colors={iconData.gradientColors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                      >
+                        <iconData.Icon size={22} color={C.WHITE} {...(iconData.fill ? { fill: C.WHITE } : {})} />
+                      </LinearGradient>
+                      <View style={{ flex: 1, paddingTop: 4 }}>
+                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: labelColor, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{day}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
+                      </View>
+                    </View>
+                  </FadeIn>
+                );
+              })}
+            </View>
+
+            <FadeIn delay={800}>
+              <View style={{ gap: 8, width: '100%' }}>
+                <ShimmerButton onPress={next} Icon={ArrowRight}>
+                  {STRINGS.onboarding.startFreeTrial}
+                </ShimmerButton>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>{STRINGS.onboarding.cancelAnytime}</Text>
+                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
+                </Pressable>
+              </View>
+            </FadeIn>
+          </ScrollView>
+        );
+
+      // Step 10: Everything included — features
+      case 10:
         return (
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
@@ -1192,7 +1216,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 </ShimmerButton>
               </View>
             </FadeIn>
-            
+
             <FadeIn delay={1000}>
               <Pressable onPress={skip} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
@@ -1200,30 +1224,6 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
             </FadeIn>
           </ScrollView>
         );
-
-      // Step 10: Onboarding Scenario — Café
-      case 10: {
-        const onboardingScenario = getOnboardingScenario(C);
-        // Use the local mode state — user hasn't been saved to the store yet at this step
-        const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
-
-        if (!script) {
-          return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>;
-        }
-
-        return (
-          <OnboardingScenarioPlayer
-            script={script}
-            onComplete={(unlockedPhraseIds) => {
-              // Store unlocked phrases in app store
-              unlockedPhraseIds.forEach((phraseId) => {
-                unlockPhrase(phraseId);
-              });
-              next();
-            }}
-          />
-        );
-      }
 
       // Step 11: Paywall — plans
       case 11:
