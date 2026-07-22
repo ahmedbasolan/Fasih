@@ -97,6 +97,41 @@ CREATE POLICY "Users update own data"
   USING (user_id = (select auth.jwt()->>'sub'))
   WITH CHECK (user_id = (select auth.jwt()->>'sub'));
 
+-- The policies above only check row OWNERSHIP (user_id) — nothing stops a
+-- signed-in user from writing subscription_status: 'subscribed' onto their
+-- own row directly and getting paywalled content for free. That value is
+-- pulled straight into the client's access-gating state with nothing that
+-- forces it back down if RevenueCat disagrees (src/store/useAppStore.ts,
+-- initSubscription / hasScenarioAccess). Lock the column instead of trying to
+-- police it with more policy conditions — RLS can't express "this row, but
+-- not this column."
+--
+-- RevenueCat's SDK re-confirms the real entitlement from RevenueCat's own
+-- servers on every app launch (initSubscription -> getEntitlementStatus),
+-- so this column is a convenience cache, not the sole authority — locking it
+-- costs a legitimate subscriber at most a brief flash of the pre-purchase UI
+-- on cold start before RevenueCat's own check resolves, not lost access.
+-- A future RevenueCat webhook (writing via the service_role key, which this
+-- trigger deliberately does not intercept) would close even that gap.
+CREATE OR REPLACE FUNCTION prevent_client_subscription_write()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public, pg_temp AS $$
+BEGIN
+  IF (select auth.jwt()->>'role') = 'authenticated' THEN
+    IF TG_OP = 'INSERT' THEN
+      NEW.subscription_status := 'free';
+    ELSIF NEW.subscription_status IS DISTINCT FROM OLD.subscription_status THEN
+      NEW.subscription_status := OLD.subscription_status;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS lock_subscription_status ON user_data;
+CREATE TRIGGER lock_subscription_status
+  BEFORE INSERT OR UPDATE ON user_data
+  FOR EACH ROW EXECUTE FUNCTION prevent_client_subscription_write();
+
 -- Community stats are anonymous aggregates — public read, authenticated write.
 -- Deliberately NOT `FOR ALL`: that covers DELETE too, so any signed-in user
 -- could wipe the shared stats table. Grant only the two writes the app actually
