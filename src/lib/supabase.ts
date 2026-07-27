@@ -2,12 +2,13 @@ import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { getClerkInstance } from '@clerk/expo';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://lpuwysjwerlflzynbutv.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwdXd5c2p3ZXJsZmx6eW5idXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3NzMxOTgsImV4cCI6MjA5MDM0OTE5OH0.VbyNKda0E7eDJ2sAPeyeOC5eGTjPOUP971a77DQelME';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+if (!process.env.EXPO_PUBLIC_SUPABASE_URL && !process.env.VITE_SUPABASE_URL) {
+  console.warn('⚠️ EXPO_PUBLIC_SUPABASE_URL is missing. Using default Supabase configuration.');
 }
+
 
 // Fasih uses Clerk for authentication — Supabase is the database only.
 //

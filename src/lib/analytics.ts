@@ -13,7 +13,7 @@ import PostHog from 'posthog-react-native';
 // ─── Client ──────────────────────────────────────────────────────────────────
 
 export const posthog = new PostHog(
-  process.env.EXPO_PUBLIC_POSTHOG_API_KEY ?? '',
+  process.env.EXPO_PUBLIC_POSTHOG_API_KEY || 'phc_placeholder_key_for_dev_mode',
   {
     host: 'https://eu.i.posthog.com',
     // Track app lifecycle events (open, background, etc.)

@@ -164,7 +164,7 @@ export function MissionCard({
         onPress={onPress}
         style={({ pressed }) => [
           styles.container,
-          pressed && { transform: [{ scale: 0.98 }] },
+          pressed && { transform: [{ scale: 0.96 }] },
         ]}
         accessibilityRole="button"
         accessibilityLabel={`${scenarioTitle}. ${scenesCurrent} of ${scenesTotal} scenes complete.`}
@@ -176,6 +176,14 @@ export function MissionCard({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
+          />
+
+          {/* Ambient Glow Backdrop */}
+          <LinearGradient
+            colors={['rgba(0,255,149,0.3)', 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60 }}
           />
 
           {/* Twinkling Stars */}
@@ -224,7 +232,7 @@ export function MissionCard({
                   : `${scenesTotal} scenes`}
               </Text>
             </View>
-            <Text style={styles.timerLabel}>⏱ ~5 min</Text>
+            <Text style={styles.timerLabel}>⏱ ~5 min scenario</Text>
           </View>
 
           {/* Title */}
@@ -272,6 +280,7 @@ export function MissionCard({
           </View>
         </View>
       </Pressable>
+
     </MotiView>
   );
 }

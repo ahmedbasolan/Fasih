@@ -10,6 +10,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../hooks/useTheme';
 import { FONT_HEADING_SEMI, PRESS_SCALE, PRESS_DURATION_IN, PRESS_DURATION_OUT } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
+import { haptic } from '../../lib/haptics';
+
 
 type Variant = 'gold' | 'jade';
 
@@ -35,6 +37,7 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
 
   const handlePressIn = useCallback(() => {
     if (isDisabled) return;
+    haptic.light();
     scale.value = withTiming(PRESS_SCALE, {
       duration: PRESS_DURATION_IN,
       easing: Easing.out(Easing.cubic),

@@ -208,6 +208,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const insets = useSafeAreaInsets();
   const scriptData = getScenarioScript(scenarioId, C);
   const scenario = getScenarioById(scenarioId, C);
+
+
   const { speak, isSpeaking } = useArabicTTS();
   const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
@@ -288,17 +290,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (phase === 'result') void fetchCommunityEndingStats(scenarioId);
   }, [phase, scenarioId, fetchCommunityEndingStats]);
 
-  // Record NPC tone the moment each scene is entered (engine-driven)
-  useEffect(() => {
-    if (phase !== 'scene' || !scene?.charDialogue || !activeScenarioState) return;
-    setToneHistory(prev => {
-      if (prev.some(t => t.sceneId === scene.id)) return prev;
-      const entryTone = getTone(activeScenarioState, scene.charName, scene);
-      return [...prev, { sceneId: scene.id, tone: entryTone }];
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, phase]);
-
   useEffect(() => {
     if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
     const currEnding = evaluateEnding(activeScenarioState, scriptData);
@@ -331,7 +322,21 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = useMemo(() => scriptData?.scenes ?? [], [scriptData?.scenes]);
+  const scene = scenes[step];
   const endings = scriptData?.endings ?? [];
+
+  // Record NPC tone the moment each scene is entered (engine-driven)
+  useEffect(() => {
+    if (phase !== 'scene' || !scene?.charDialogue || !activeScenarioState) return;
+    setToneHistory(prev => {
+      if (prev.some(t => t.sceneId === scene.id)) return prev;
+      const entryTone = getTone(activeScenarioState, scene.charName, scene);
+      return [...prev, { sceneId: scene.id, tone: entryTone }];
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, phase]);
+
+
 
   // Calculate max possible meter values for this scenario (for bar scaling)
   const maxMeterValues = useMemo(() => {
@@ -471,8 +476,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       </View>
     );
   }
-
-  const scene = scenes[step];
 
   // Derive total T/R/C for ImpactBar by summing all NPCs
   const impact = activeScenarioState

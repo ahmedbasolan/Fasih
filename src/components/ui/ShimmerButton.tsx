@@ -98,7 +98,8 @@ export function ShimmerButton({
           colors={G.GOLD_STOPS as any}
           start={ANGLE_135.start}
           end={ANGLE_135.end}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
+
         />
 
         {/* ── Layer 2: Button content ── */}
@@ -115,7 +116,7 @@ export function ShimmerButton({
 
         {/* ── Layer 3: Realistic Shimmer Overlay ── */}
         {dims.w > 0 && dims.h > 0 && (
-          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <Animated.View
               style={[
                 { position: 'absolute', top: 0, bottom: 0, left: 0, width: SHIMMER_W },
@@ -126,7 +127,7 @@ export function ShimmerButton({
                 colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={[StyleSheet.absoluteFillObject, { transform: [{ skewX: '-20deg' }] }]}
+                style={[StyleSheet.absoluteFill, { transform: [{ skewX: '-20deg' }] }]}
               />
             </Animated.View>
           </View>
