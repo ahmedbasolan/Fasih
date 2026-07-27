@@ -16,8 +16,7 @@
   }
 
   .badge-chip {
-    padding-horizontal: 10px;
-    padding-vertical: 4px;
+    padding: 4px 10px;
     border-radius: 9999px;
   }
 }
