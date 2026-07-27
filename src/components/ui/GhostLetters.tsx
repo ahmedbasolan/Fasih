@@ -17,7 +17,8 @@ export function GhostLetters({ glyphs }: Props) {
   const p3 = isDark ? `rgba(0,255,149,0.021)` : `${C.JADE}0A`;  // ~4 %
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+
       <Text
         style={[styles.g1, { color: p1 }]}
         accessibilityElementsHidden

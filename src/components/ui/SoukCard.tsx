@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PRESS_DURATION_IN, PRESS_DURATION_OUT, PRESS_SCALE } from '../design/tokens';
+import { haptic } from '../../lib/haptics';
 
 interface Props {
   children: React.ReactNode;
@@ -40,6 +41,7 @@ export function SoukCard({
 
   const handlePressIn = useCallback(() => {
     if (!onPress) return;
+    haptic.medium();
     scale.value = withTiming(PRESS_SCALE, {
       duration: PRESS_DURATION_IN,
       easing: Easing.out(Easing.cubic),

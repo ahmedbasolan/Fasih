@@ -24,6 +24,8 @@ import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios
 import { IMAGES } from '../constants/images';
 import { computeOnboardingChecklist, computeDailyGoalXP } from '../engine/onboardingProgress';
 import { useUser } from '@clerk/expo';
+import { haptic } from '../lib/haptics';
+
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
@@ -171,9 +173,18 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     const dailyGoalXP = computeDailyGoalXP(selectedGoals.length, mode);
     onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
   }, [onComplete, name, mode, role, profession, selectedGoals, plan, holdComplete, phraseEverRevealed, scenarioCompleted]);
-  const finishWithTrial = useCallback(() => { onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
-  const next = useCallback(() => step < TOTAL - 1 ? setStep(s => s + 1) : finishWithTrial(), [step, finishWithTrial]);
-  const back = useCallback(() => { if (step > 0) setStep(s => s - 1); }, [step]);
+  const finishWithTrial = useCallback(() => { haptic.success(); onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
+  const next = useCallback(() => {
+    haptic.light();
+    if (step < TOTAL - 1) setStep(s => s + 1);
+    else finishWithTrial();
+  }, [step, finishWithTrial]);
+  const back = useCallback(() => {
+    if (step > 0) {
+      haptic.light();
+      setStep(s => s - 1);
+    }
+  }, [step]);
   const skip = useCallback(() => {
     Alert.alert(
       STRINGS.onboarding.skipWarningTitle,
@@ -196,6 +207,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   }, [onSkipTrial, finish]);
 
   const toggleGoal = (id: string) => {
+    haptic.selection();
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 

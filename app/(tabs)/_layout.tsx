@@ -1,10 +1,12 @@
 import { Tabs, usePathname } from 'expo-router';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
 import { Home, Layers, BookOpen, User } from '../../src/components/icons';
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FONT_HEADING_SEMI } from '../../src/components/design/tokens';
 import { useTheme } from '../../src/hooks/useTheme';
+
 
 // Tab order for determining slide direction (left to right)
 const TAB_ORDER = ['index', 'scenarios', 'library', 'profile'];
@@ -94,9 +96,13 @@ export default function TabsLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <MotiView
+                animate={{ scale: focused ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              >
                 <Home size={20} color={color} />
-              </View>
+              </MotiView>
             ),
           }}
         />
@@ -105,9 +111,13 @@ export default function TabsLayout() {
           options={{
             title: 'Scenarios',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <MotiView
+                animate={{ scale: focused ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              >
                 <Layers size={20} color={color} />
-              </View>
+              </MotiView>
             ),
           }}
         />
@@ -116,9 +126,13 @@ export default function TabsLayout() {
           options={{
             title: 'Phrases',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <MotiView
+                animate={{ scale: focused ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              >
                 <BookOpen size={20} color={color} />
-              </View>
+              </MotiView>
             ),
           }}
         />
@@ -127,12 +141,17 @@ export default function TabsLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
-              <View style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}>
+              <MotiView
+                animate={{ scale: focused ? 1.1 : 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              >
                 <User size={20} color={color} />
-              </View>
+              </MotiView>
             ),
           }}
         />
+
       </Tabs>
     </TabAnimationContext.Provider>
   );

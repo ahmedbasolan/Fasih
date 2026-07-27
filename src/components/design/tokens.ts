@@ -216,6 +216,8 @@ export const lightTheme: ThemeColors = {
   CATEGORY_LAVENDER: '#E8FFF5',
 };
 
+export const ARABIC_LINE_HEIGHT_MULTIPLIER = 1.35;
+
 export const SPRING = { type: 'spring', stiffness: 420, damping: 30, mass: 0.6 } as const;
 export const SPRING_SLOW = { type: 'spring', stiffness: 200, damping: 28 } as const;
 
@@ -245,3 +247,4 @@ export const FONT_LATIN_LIGHT = 'PlusJakartaSans_300Light';
 export const FONT_LATIN_MEDIUM = 'PlusJakartaSans_500Medium';
 export const FONT_LATIN_SEMI = 'PlusJakartaSans_600SemiBold';
 export const FONT_LATIN_BOLD = 'PlusJakartaSans_700Bold';
+
