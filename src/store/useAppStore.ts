@@ -204,6 +204,7 @@ interface AppState {
   // Auth actions
   setUser: (user: UserProfile) => void;
   setUserMode: (mode: 'career' | 'social') => void;
+  setUserGender: (gender: 'male' | 'female') => void;
   setDailyGoalXP: (xp: number) => void;
   setHasOnboarded: (value: boolean) => void;
   setAuthenticated: (value: boolean) => void;
@@ -391,6 +392,7 @@ export const useAppStore = create<AppState>()(
       // Auth
       setUser: (user) => set({ user }),
       setUserMode: (mode) => set((state) => ({ user: state.user ? { ...state.user, mode } : null })),
+      setUserGender: (gender) => set((state) => ({ user: state.user ? { ...state.user, gender } : null })),
       setDailyGoalXP: (xp) => set((state) => ({ user: state.user ? { ...state.user, dailyGoalXP: xp } : null })),
       setHasOnboarded: (value) => set({ hasOnboarded: value }),
       setAuthenticated: (value) => set({ isAuthenticated: value }),

@@ -7,7 +7,12 @@
  * the learner points) are invisible in TypeScript and only surface as a confusing
  * lesson for the user.
  */
-import { getScenarioScripts, getAllScenarios } from '../../constants/scenarios';
+import {
+  getScenarioScripts,
+  getAllScenarios,
+  isScenarioAvailableFor,
+  filterScenariosForLearner,
+} from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { darkTheme } from '../../components/design/tokens';
 import type { ScenarioScript, ScenarioScene, ScenarioChoice } from '../../types';
@@ -110,6 +115,59 @@ describe('scenario data integrity', () => {
       }
     }
     expect(mismatches).toEqual([]);
+  });
+});
+
+// ─── Gender gating ───────────────────────────────────────────────────────────
+
+describe('gender-restricted scenarios', () => {
+  const catalog = getAllScenarios(darkTheme);
+
+  it('an unrestricted scenario is available to everyone, gender unknown included', () => {
+    expect(isScenarioAvailableFor({}, undefined)).toBe(true);
+    expect(isScenarioAvailableFor({}, 'male')).toBe(true);
+    expect(isScenarioAvailableFor({}, 'female')).toBe(true);
+  });
+
+  it('a restricted scenario is hidden when the gender is unknown — never guessed', () => {
+    expect(isScenarioAvailableFor({ requiresGender: 'female' }, undefined)).toBe(false);
+  });
+
+  it('a restricted scenario shows only to the matching gender', () => {
+    expect(isScenarioAvailableFor({ requiresGender: 'female' }, 'female')).toBe(true);
+    expect(isScenarioAvailableFor({ requiresGender: 'female' }, 'male')).toBe(false);
+  });
+
+  it('filterScenariosForLearner drops exactly the restricted entries', () => {
+    const restricted = catalog.filter(s => s.requiresGender);
+    expect(restricted.length).toBeGreaterThan(0); // guards the rule from silently lapsing
+    expect(filterScenariosForLearner(catalog, undefined)).toHaveLength(catalog.length - restricted.length);
+    expect(filterScenariosForLearner(catalog, 'female').map(s => s.id)).toEqual(
+      expect.arrayContaining(restricted.filter(s => s.requiresGender === 'female').map(s => s.id)),
+    );
+  });
+
+  // Café Connection stages a one-on-one encounter with an unrelated Emirati woman
+  // ending in a personal number exchange. It is written for a female learner and
+  // must not be served to a male one.
+  it('cafe-friends is restricted to female learners', () => {
+    expect(catalog.find(s => s.id === 'cafe-friends')?.requiresGender).toBe('female');
+  });
+
+  it('a gender-restricted script does not also carry arabicFeminine variants', () => {
+    // Both mechanisms solving the same problem in one script means one of them
+    // is dead code and the two will drift apart.
+    const contradictions: string[] = [];
+    for (const meta of catalog.filter(s => s.requiresGender)) {
+      const script = scripts[meta.id];
+      if (!script) continue;
+      for (const scene of script.scenes) {
+        for (const choice of scene.choices) {
+          if (choice.arabicFeminine) contradictions.push(`${meta.id}/${scene.id}/${choice.id}`);
+        }
+      }
+    }
+    expect(contradictions).toEqual([]);
   });
 });
 

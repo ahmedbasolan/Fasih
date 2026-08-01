@@ -13,7 +13,7 @@ import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
 import { GhostLetters } from '../components/ui';
-import { getScenarioScript, getScenarioById } from '../constants/scenarios';
+import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
 import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
@@ -467,7 +467,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
-  if (!scriptData) {
+  // A gender-restricted scenario reached by deep link or a stale favourite is
+  // treated as absent rather than played to the wrong learner.
+  if (!scriptData || (scenario && !isScenarioAvailableFor(scenario, user?.gender))) {
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
         <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />

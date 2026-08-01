@@ -48,6 +48,12 @@ export const STRINGS = {
     whatsYourName: 'What\'s your name?',
     kafGreetingSub: 'Kaf will greet you every morning',
     placeholderName: 'Enter your name',
+    genderQuestion: 'How should Arabic address you?',
+    genderWhy: 'Arabic changes ending depending on who is speaking — we\'ll teach you the forms you\'ll actually use',
+    genderMale: 'Masculine',
+    genderMaleExample: 'أنا يديد · مشغول',
+    genderFemale: 'Feminine',
+    genderFemaleExample: 'أنا يديدة · مشغولة',
     welcomeName: (name: string) => `"Welcome, ${name}"`,
     keepTyping: 'Keep typing...',
     mascotTitle: 'Meet your companion',
@@ -293,6 +299,10 @@ export const STRINGS = {
     goals: {
       title: 'Active Goals',
       empty: 'Select goals in settings to track your progress',
+    },
+    arabicForms: {
+      title: 'Arabic Forms',
+      subtitle: 'Arabic changes ending depending on who is speaking. This sets which forms we teach you — and unlocks scenarios written for one gender.',
     },
     dailyGoal: {
       title: 'Daily Goal',
