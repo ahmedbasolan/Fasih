@@ -136,9 +136,10 @@ export interface ScenarioScene {
     neutral: TonedDialogue;
     cold: TonedDialogue;
   };
-  // Dialogue tone thresholds (totalScore based)
-  warmThreshold?: number;  // totalScore >= this triggers warm dialogue
-  coldThreshold?: number;  // totalScore < this triggers cold dialogue (neutral in between)
+  // Dialogue tone thresholds, measured against the learner's accumulated
+  // trust + respect + culture with THIS scene's NPC (see npcRelationship()).
+  warmThreshold?: number;  // relationship >= this triggers warm dialogue
+  coldThreshold?: number;  // relationship < this triggers cold dialogue (neutral in between)
   // Teaching content for this scene
   teachingNote?: string;
   choices: ScenarioChoice[];

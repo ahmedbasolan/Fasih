@@ -18,7 +18,7 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
-import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible } from '../engine/scenarioEngine';
+import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
 import {
   trackScenarioStarted,
   trackScenarioChoiceMade,
@@ -43,17 +43,20 @@ type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
 function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; respect: number; culture: number; maxValues?: { trust: number; respect: number; culture: number } }) {
   const { C } = useTheme();
-  // Default max is 12 (4 scenes × max impact 3), but can be overridden per scenario
   const max = maxValues ?? { trust: 12, respect: 12, culture: 12 };
 
   const Col = ({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) => {
-    // Calculate percentage of bar to fill (handles both positive and negative values)
-    const absMax = Math.max(Math.abs(maxVal), 3); // Minimum scale of 3 for visibility
+    const absMax = Math.max(Math.abs(maxVal), 3);
     const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
     return (
-      <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+      <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
         <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
-        <MotiView from={{ scale: 1.2 }} animate={{ scale: 1 }} transition={{ type: 'timing', duration: 260 }} key={value}>
+        <MotiView
+          key={`stat-${label}-${value}`}
+          from={{ scale: 1.35, translateY: -4 }}
+          animate={{ scale: 1, translateY: 0 }}
+          transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+        >
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
         </MotiView>
         <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
@@ -420,7 +423,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       const secretEnding = scriptData.endings?.find(e => e.secret);
       const requiredFlagsMet = !secretEnding?.requiredFlags ||
         secretEnding.requiredFlags.every(f => activeScenarioState.flags.has(f));
-      if (secretEnding && requiredFlagsMet && activeScenarioState.totalScore >= secretEnding.min) {
+      if (secretEnding && requiredFlagsMet && relationshipScore(activeScenarioState) >= secretEnding.min) {
         const bonusScene = scenes.find(s => s.bonus === true);
         if (bonusScene) {
           advanceScenarioScene(bonusScene.id);
@@ -489,7 +492,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       )
     : { trust: 0, respect: 0, culture: 0 };
 
-  // Butterfly effect: NPC tone from engine (uses totalScore to match script thresholds)
+  // Butterfly effect: NPC tone from engine (driven by the trust/respect/culture
+  // meters shown in the ImpactBar, so the bar and the NPC's demeanour agree)
   const sceneTone: 'warm' | 'neutral' | 'cold' =
     activeScenarioState && scene
       ? getTone(activeScenarioState, scene.charName, scene)
