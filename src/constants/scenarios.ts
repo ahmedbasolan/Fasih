@@ -100,6 +100,10 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
     arabicScene: 'مقهى',
     kafIntro: 'Small talk in Arabic opens doors that formal introductions never could.',
     mode: 'social',
+    // A one-on-one café encounter between an Emirati woman and an unrelated man,
+    // ending in a personal number exchange, is not a situation a male learner
+    // should be rehearsing. Shown to female learners only.
+    requiresGender: 'female',
     dialect: 'Emirati Gulf',
     impactPreview: { trust: 70, respect: 50, culture: 70 },
   },
@@ -178,6 +182,29 @@ export const getOnboardingScenarios = (C: ThemeColors): Scenario[] => [
 ];
 
 export const getAllScenarios = (C: ThemeColors) => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)];
+
+/**
+ * Whether a scenario should be offered to this learner.
+ *
+ * A scenario with `requiresGender` stages a situation that would be culturally
+ * wrong for the other gender to practise, so it stays hidden until we actually
+ * know — an unset gender hides it rather than guessing.
+ */
+export function isScenarioAvailableFor(
+  scenario: Pick<Scenario, 'requiresGender'>,
+  gender: 'male' | 'female' | undefined,
+): boolean {
+  if (!scenario.requiresGender) return true;
+  return scenario.requiresGender === gender;
+}
+
+/** Filters a scenario list down to what this learner should see. */
+export function filterScenariosForLearner<T extends Pick<Scenario, 'requiresGender'>>(
+  scenarios: T[],
+  gender: 'male' | 'female' | undefined,
+): T[] {
+  return scenarios.filter(s => isScenarioAvailableFor(s, gender));
+}
 
 export function getScenarioById(id: string, C: ThemeColors): Scenario | undefined {
   return getAllScenarios(C).find(s => s.id === id);
@@ -781,7 +808,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         choices: [
           { id: 'a', text: 'Yeah, go ahead', arabic: 'إي تفضلي', roman: 'ii tfaddali', score: 1, impact: { trust: 0, respect: 1, culture: 0 }, note: 'You used the correct feminine form تفضلي, which is noticed. But a bare إي before it keeps the exchange functional rather than warm — the gap between "ii tfaddali" and "ahlan wa sahlan, tfaddali" is the gap between polite and welcoming.', outcome: 'neutral' },
           { id: 'b', text: 'Welcome, be at ease — please sit', arabic: 'أهلاً وسهلاً — تفضلي', roman: "ahlan wa sahlan — tfaddali", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'أهلاً وسهلاً before تفضلي turns permission into welcome. Both use the feminine form correctly — the final -i is what tells Fatima you are actually paying attention to who you are speaking to.', outcome: 'excellent' },
-          { id: 'c', text: 'Sorry, I\'m saving it for someone', arabic: 'آسف، محجوز لأحد', arabicFeminine: 'آسفة، محجوز لأحد', roman: 'aasif, mahjooz li-ahad', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'Refusing a simple request from a stranger reads as unwelcoming. Note the form for yourself: a man says آسف (aasif), a woman آسفة (aasfa) — Arabic marks your own gender every time you speak.', outcome: 'bad' },
+          { id: 'c', text: 'Sorry, I\'m saving it for someone', arabic: 'آسفة، محجوز لأحد', roman: 'aasfa, mahjooz li-ahad', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'Refusing a simple request from a stranger reads as unwelcoming. Note the form for yourself: آسفة (aasfa) because you are a woman — a man would say آسف (aasif). Arabic marks your own gender every time you speak.', outcome: 'bad' },
           { id: 'd', text: 'Please, go ahead', arabic: 'تفضلي', roman: "tfaddali", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'تفضلي (to a woman) is the right form and shows cultural awareness — it just arrives without the warmth of a greeting in front of it.', outcome: 'good' },
         ],
       },
@@ -798,28 +825,28 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         warmThreshold: 6, coldThreshold: 1,
         choices: [
           { id: 'a', text: 'I\'d rather not say — I like my privacy', arabic: 'أفضل ما أقول — أحب خصوصيتي', roman: "afaddal maa aguul — ahib khususiyyati", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: '"Where are you from?" is not a privacy question in the Gulf — it is the opening move of getting to know someone. Refusing it does not read as guarded; it reads as not interested. The conversation closes here.', outcome: 'bad' },
-          { id: 'b', text: 'I\'m from [country] — just moved here recently', arabic: 'أنا من [بلد] — توني ياي هني', arabicFeminine: 'أنا من [بلد] — توني يايه هني', roman: 'ana min [balad] — tawni yaay hini', score: 5, impact: { trust: 1, respect: 2, culture: 1 }, note: 'Honest and friendly. توني ياي (a woman says توني يايه) uses the Emirati يـ-for-جـ swap — جاي becomes ياي. You just missed the chance to turn the question back to her.', outcome: 'good' },
+          { id: 'b', text: 'I\'m from [country] — just moved here recently', arabic: 'أنا من [بلد] — توني يايه هني', roman: 'ana min [balad] — tawni yaaya hini', score: 5, impact: { trust: 1, respect: 2, culture: 1 }, note: 'Honest and friendly. توني يايه uses the Emirati يـ-for-جـ swap — جايه becomes يايه (a man says توني ياي). You just missed the chance to turn the question back to her.', outcome: 'good' },
           { id: 'c', text: 'I\'m from [country] — this place is lovely, mashaAllah', arabic: 'أنا من [بلد] — المكان حلو ما شاء الله', roman: "ana min [balad] — al-makaan hilw maa shaa' allah", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Complimenting the place with ما شاء الله shows you appreciate where you are. ما شاء الله is how you admire something without inviting the evil eye.', outcome: 'good' },
-          { id: 'd', text: 'I\'m new here — and you? Are you from this area?', arabic: 'أنا يديد هني — وأنتي؟ من أهل المنطقة؟', arabicFeminine: 'أنا يديدة هني — وأنتي؟ من أهل المنطقة؟', roman: "ana ydiid hini — wa inti? min ahl al-mintaga?", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Sharing, then handing the question back, is the whole engine of Gulf small talk. Note your own form: يديد for a man, يديدة for a woman — and هني, not هنا, is the Emirati "here".', outcome: 'excellent' },
+          { id: 'd', text: 'I\'m new here — and you? Are you from this area?', arabic: 'أنا يديدة هني — وأنتي؟ من أهل المنطقة؟', roman: "ana ydiida hini — wa inti? min ahl al-mintaga?", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Sharing, then handing the question back, is the whole engine of Gulf small talk. Note your own form: يديدة because you are a woman (a man says يديد) — and هني, not هنا, is the Emirati "here".', outcome: 'excellent' },
         ],
       },
       {
         id: 'scene3', charName: 'Fatima', charGender: 'female', setting: 'Local café — saying goodbye',
-        arabic: 'كان ودي أكمل سوالف بس لازم أروح. أنا موجودة هني كل صباح تقريباً',
-        roman: "kaan widdi akammil sawaalif bas laazim aruuh. ana mawjuuda hini kul sabaah tagriiban",
-        english: "I'd love to keep chatting but I have to go. I'm here most mornings, though.",
+        arabic: 'كان ودي أكمل سوالف بس لازم أروح. نتواصل؟',
+        roman: "kaan widdi akammil sawaalif bas laazim aruuh. nitwaasal?",
+        english: "I'd love to keep chatting but I have to go. Shall we stay in touch?",
         charDialogue: {
-          warm: { arabic: 'والله انبسطت وايد. لازم أروح بس أنا موجودة هني كل صباح تقريباً', roman: "wallah inbasatt waayid. laazim aruuh bas ana mawjuuda hini kul sabaah tagriiban", english: "Honestly, I really enjoyed this. I have to go, but I'm here most mornings." },
-          neutral: { arabic: 'كان ودي أكمل سوالف بس لازم أروح. أنا موجودة هني كل صباح تقريباً', roman: "kaan widdi akammil sawaalif bas laazim aruuh. ana mawjuuda hini kul sabaah tagriiban", english: "I'd love to keep chatting but I have to go. I'm here most mornings, though." },
+          warm: { arabic: 'والله كان ودي أكمل سوالف وياج بس لازم أروح. انبسطت وايد. نتواصل؟', roman: "wallah kaan widdi akammil sawaalif wiyyaach bas laazim aruuh. inbasatt waayid. nitwaasal?", english: "Honestly I wanted to keep chatting with you but I have to go. I had a lovely time. Shall we stay in touch?" },
+          neutral: { arabic: 'كان ودي أكمل سوالف بس لازم أروح. نتواصل؟', roman: "kaan widdi akammil sawaalif bas laazim aruuh. nitwaasal?", english: "I'd love to keep chatting but I have to go. Shall we stay in touch?" },
           cold: { arabic: 'لازم أروح. يلا مع السلامة.', roman: "laazim aruuh. yalla ma'a as-salaama.", english: "I have to go. Take care." },
         },
-        teachingNote: 'Notice what she did NOT do: ask for your number. A Gulf goodbye between new acquaintances leaves a door open ("I\'m here most mornings") rather than trading contacts. Recognising the open door — and stepping through it — is the skill here.',
+        teachingNote: 'وياج (wiyyaach) is "with you" to a woman — a man would hear وياك. Fatima has taken a small social risk by asking to stay in touch; how you answer decides whether it was worth taking.',
         warmThreshold: 11, coldThreshold: 2,
         choices: [
-          { id: 'a', text: 'Maybe — I\'m pretty busy these days', arabic: 'يمكن — وايد مشغول هالأيام', arabicFeminine: 'يمكن — وايد مشغولة هالأيام', roman: 'yimkin — waayid mashghuul hal-ayyaam', score: -4, impact: { trust: -1, respect: -2, culture: -1 }, note: 'She left a door open and you answered يمكن — the same vague hedge that means no. Fatima will read it exactly that way and will not mention the café again.', outcome: 'bad' },
-          { id: 'b', text: 'Good to know! I\'ll try to come by', arabic: 'زين أعرف! بحاول أمر', roman: "zayn a'raf! bahaawil amurr", score: 5, impact: { trust: -1, respect: 2, culture: 3 }, note: '⚖️ Smooth and warm — you noticed the door she left open and answered it in register. But بحاول (I\'ll try) is still a hedge, and Fatima files it with يمكن. Culturally polished, quietly non-committal.', outcome: 'good' },
-          { id: 'c', text: 'Honoured to meet you, Fatima! I\'ll definitely see you', arabic: 'تشرفنا يا فاطمة! أكيد بشوفج', roman: "tsharrafna ya faatima! akiid bashuufich", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'تشرفنا with her name lands as genuine rather than rote, and أكيد بشوفج commits without hedging. بشوفج is the feminine object — a man you would see is بشوفك.', outcome: 'good' },
-          { id: 'd', text: 'Of course! Honestly glad I met you — go in God\'s protection', arabic: 'أكيد! والله فرحان إني عرفتج — في أمان الله', arabicFeminine: 'أكيد! والله فرحانة إني عرفتج — في أمان الله', roman: "akiid! wallah farhaan inni 'araftich — fi amaan allah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'في أمان الله is warmer than مع السلامة — you use it for people you actually hope to see again. Say فرحان if you are a man, فرحانة if you are a woman.', outcome: 'excellent' },
+          { id: 'a', text: 'Maybe — I\'m pretty busy these days', arabic: 'يمكن — وايد مشغولة هالأيام', roman: 'yimkin — waayid mashghuula hal-ayyaam', score: -4, impact: { trust: -1, respect: -2, culture: -1 }, note: 'She offered first, and you answered يمكن — the vague hedge that means no. If you genuinely are busy, name a constraint and keep the thread: أكيد! بس هالأسبوع مشغولة — عطيني رقمج.', outcome: 'bad' },
+          { id: 'b', text: 'Of course! Here\'s my number', arabic: 'أكيد! هذا رقمي', roman: "akiid! haadha ragmi", score: 5, impact: { trust: 2, respect: 1, culture: 1 }, note: 'A clear yes with no hedging, which is exactly what her offer deserved. Brief, though — a warmer farewell would have sealed it.', outcome: 'good' },
+          { id: 'c', text: 'God willing! Honoured to meet you, Fatima', arabic: 'إن شاء الله! تشرفنا يا فاطمة', roman: "in shaa' allah! tsharrafna ya faatima", score: 5, impact: { trust: -1, respect: 2, culture: 3 }, note: '⚖️ Warm, polished, and using her name — it sounds like the most culturally fluent answer here. But a bare إن شاء الله attached to an offer is a soft no, and Fatima hears it that way. Beautiful register, quietly non-committal.', outcome: 'good' },
+          { id: 'd', text: 'Of course! Honestly glad I met you — go in God\'s protection', arabic: 'أكيد! والله فرحانة إني عرفتج — في أمان الله', roman: "akiid! wallah farhaana inni 'araftich — fi amaan allah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'أكيد commits, فرحانة إني عرفتج names the feeling, and في أمان الله is the farewell you use for someone you hope to see again — warmer than مع السلامة.', outcome: 'excellent' },
         ],
       },
     ],
@@ -827,13 +854,13 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       {
         min: 22, title: 'Lifelong Friend', arabic: 'صديقتي العزيزة', roman: "sadiigati al-'aziiza",
         en: 'My dear friend',
-        desc: 'Fatima now looks for you when she comes in. In Emirati social life a regular table companion is how most real friendships actually begin — not with an exchange of numbers, but with someone being reliably, warmly there.',
+        desc: 'Fatima invites you to her family gathering next weekend. In Emirati social culture, a family invitation after a single café meeting is rare — it means she sees you as someone worth bringing into her inner circle.',
         color: C.JADE_ACCENT, type: 'exceptional',
         culturalJourney: [
           'You opened with أهلاً وسهلاً — not just "yes" — showing warmth before a stranger even sat down',
-          'You said "أنا يديد هني — وأنتي؟" — sharing yourself first, then handing the question back',
+          'You said "أنا يديدة هني — وأنتي؟" — sharing yourself first, then handing the question back',
           'You closed with "في أمان الله" instead of مع السلامة — the farewell you use for someone you hope to see again',
-          'She left a door open rather than asking for your number. You recognised it and walked through.',
+          'Fatima asked to stay in touch and you answered أكيد, not إن شاء الله. She knew you meant it.',
         ],
       },
       {

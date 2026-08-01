@@ -88,6 +88,13 @@ export interface Scenario {
   comingSoon?: boolean;
   isOnboarding?: boolean;
   dialect?: string;
+  /**
+   * Restricts the scenario to learners of this gender. Set when the situation
+   * itself would be culturally wrong for the other gender to rehearse — not for
+   * cosmetic reasons. Scenarios with this set are hidden until the learner's
+   * gender is known.
+   */
+  requiresGender?: 'male' | 'female';
   color: string;
   gradientColors: [string, string];
   arabicScene: string;

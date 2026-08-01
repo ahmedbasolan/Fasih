@@ -12,11 +12,12 @@ import {
 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
-import { getCareerScenarios, getMedicalScenarios, getSocialScenarios } from '../constants/scenarios';
+import { getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import {
   FONT_HEADING_EXTRA,
   FONT_HEADING_SEMI,
   FONT_LATIN,
+  FONT_LATIN_SEMI,
   SMOOTH,
 } from '../components/design/tokens';
 import type { ThemeColors } from '../components/design/tokens';
@@ -107,8 +108,7 @@ function useRandomHeading() {
   return { heading, funFact };
 }
 
-// ─── Impact preview strip ─────────────────────────────────────────────────────
-
+// ─── Impact preview pill strip ────────────────────────────────────────────────
 function ImpactPreviewStrip({
   impactPreview,
   mode,
@@ -126,48 +126,31 @@ function ImpactPreviewStrip({
         { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
       ]
     : [
-        { label: '🔥 Vibe',    value: impactPreview.trust,   color: C.ERROR },
-        { label: '🤝 Rapport', value: impactPreview.respect, color: C.JADE },
-        { label: '🌙 Culture', value: impactPreview.culture, color: C.VIOLET },
+        { label: 'Vibe',    value: impactPreview.trust,   color: C.ERROR },
+        { label: 'Rapport', value: impactPreview.respect, color: C.JADE },
+        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
       ];
 
   return (
-    <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 4 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 14, paddingBottom: 12 }}>
       {metrics.map(({ label, value, color }) => (
-        <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text
-            style={{
-              fontFamily: FONT_LATIN,
-              fontSize: 9,
-              color: C.TEXT2,
-              width: isCareer ? 44 : 68,
-            }}
-          >
-            {label}
-          </Text>
-          <View
-            style={{
-              flex: 1,
-              height: isCareer ? 4 : 6,
-              borderRadius: isCareer ? 2 : 3,
-              backgroundColor: C.BORDER,
-              overflow: 'hidden',
-            }}
-          >
-            <View
-              style={{
-                width: `${value}%`,
-                height: '100%',
-                backgroundColor: color,
-                borderRadius: isCareer ? 2 : 3,
-              }}
-            />
-          </View>
-          {isCareer && (
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, width: 26, textAlign: 'right' }}>
-              {value}%
-            </Text>
-          )}
+        <View
+          key={label}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 10,
+            backgroundColor: `${color}18`,
+            borderWidth: 1,
+            borderColor: `${color}30`,
+          }}
+        >
+          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }} />
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{label}</Text>
+          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color }}>{value}%</Text>
         </View>
       ))}
     </View>
@@ -405,16 +388,20 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
+  const userGender = useAppStore((s) => s.user?.gender);
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
 
   const allScenarios: Scenario[] = useMemo(
-    () => [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
-      .filter((s) => s.mode === userMode),
+    () => filterScenariosForLearner(
+      [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
+        .filter((s) => s.mode === userMode),
+      userGender,
+    ),
     // isDark is the stable bool determining C — avoids rebuilding the scenario list
     // on every render since C is a new object reference each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isDark, userMode],
+    [isDark, userMode, userGender],
   );
 
   const displayScenarios = useMemo(() => {
