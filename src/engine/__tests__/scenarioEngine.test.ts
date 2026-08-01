@@ -1,5 +1,19 @@
-import { applyChoice, getTone, resolveNextScene, evaluateEnding, isChoiceVisible } from '../scenarioEngine';
+import {
+  applyChoice,
+  getTone,
+  resolveNextScene,
+  evaluateEnding,
+  isChoiceVisible,
+  impactTotal,
+  npcRelationship,
+  relationshipScore,
+} from '../scenarioEngine';
 import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript } from '../../types';
+
+/** Build an impactByNpc map from plain totals, splitting each across the three meters. */
+function impactOf(trust: number, respect: number, culture: number) {
+  return { trust, respect, culture };
+}
 
 // ─── Shared test fixtures ─────────────────────────────────────────────────────
 
@@ -126,53 +140,75 @@ describe('applyChoice', () => {
 
 // ─── getTone ─────────────────────────────────────────────────────────────────
 
+describe('relationship scoring helpers', () => {
+  it('impactTotal sums the three meters', () => {
+    expect(impactTotal({ trust: 2, respect: 3, culture: -1 })).toBe(4);
+  });
+
+  it('npcRelationship returns 0 for an NPC not yet met', () => {
+    expect(npcRelationship(makeEmptyState(), 'Nobody')).toBe(0);
+  });
+
+  it('relationshipScore sums across every NPC', () => {
+    const state = {
+      ...makeEmptyState(),
+      impactByNpc: { Ahmed: impactOf(2, 2, 2), Sara: impactOf(1, 0, -1) },
+    };
+    expect(relationshipScore(state)).toBe(6);
+  });
+});
+
 describe('getTone', () => {
+  const tonedScene = (warmThreshold: number, coldThreshold: number) =>
+    makeScene({
+      warmThreshold,
+      coldThreshold,
+      charDialogue: {
+        warm: { arabic: 'a', roman: 'a', english: 'a' },
+        neutral: { arabic: 'b', roman: 'b', english: 'b' },
+        cold: { arabic: 'c', roman: 'c', english: 'c' },
+      },
+    });
+
   it('returns neutral when scene has no charDialogue', () => {
     const state = makeEmptyState();
     const scene = makeScene(); // no charDialogue
     expect(getTone(state, 'Ahmed', scene)).toBe('neutral');
   });
 
-  it('returns warm when totalScore meets warmThreshold', () => {
-    const state = { ...makeEmptyState(), totalScore: 15 };
-    const scene = makeScene({
-      warmThreshold: 15,
-      coldThreshold: 5,
-      charDialogue: {
-        warm: { arabic: 'a', roman: 'a', english: 'a' },
-        neutral: { arabic: 'b', roman: 'b', english: 'b' },
-        cold: { arabic: 'c', roman: 'c', english: 'c' },
-      },
-    });
-    expect(getTone(state, 'Ahmed', scene)).toBe('warm');
+  it('returns warm when the NPC relationship meets warmThreshold', () => {
+    const state = { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(5, 5, 5) } };
+    expect(getTone(state, 'Ahmed', tonedScene(15, 5))).toBe('warm');
   });
 
-  it('returns cold when totalScore is below coldThreshold', () => {
-    const state = { ...makeEmptyState(), totalScore: 4 };
-    const scene = makeScene({
-      warmThreshold: 15,
-      coldThreshold: 5,
-      charDialogue: {
-        warm: { arabic: 'a', roman: 'a', english: 'a' },
-        neutral: { arabic: 'b', roman: 'b', english: 'b' },
-        cold: { arabic: 'c', roman: 'c', english: 'c' },
-      },
-    });
-    expect(getTone(state, 'Ahmed', scene)).toBe('cold');
+  it('returns cold when the NPC relationship is below coldThreshold', () => {
+    const state = { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(2, 1, 1) } };
+    expect(getTone(state, 'Ahmed', tonedScene(15, 5))).toBe('cold');
   });
 
-  it('returns neutral when score is between cold and warm thresholds', () => {
-    const state = { ...makeEmptyState(), totalScore: 10 };
-    const scene = makeScene({
-      warmThreshold: 15,
-      coldThreshold: 5,
-      charDialogue: {
-        warm: { arabic: 'a', roman: 'a', english: 'a' },
-        neutral: { arabic: 'b', roman: 'b', english: 'b' },
-        cold: { arabic: 'c', roman: 'c', english: 'c' },
-      },
-    });
-    expect(getTone(state, 'Ahmed', scene)).toBe('neutral');
+  it('returns neutral between the cold and warm thresholds', () => {
+    const state = { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(4, 3, 3) } };
+    expect(getTone(state, 'Ahmed', tonedScene(15, 5))).toBe('neutral');
+  });
+
+  it('ignores totalScore entirely — only the meters count', () => {
+    // A run that banked a big XP score but burned the relationship still reads cold.
+    const state = {
+      ...makeEmptyState(),
+      totalScore: 100,
+      scoreByNpc: { Ahmed: 100 },
+      impactByNpc: { Ahmed: impactOf(-1, -1, -1) },
+    };
+    expect(getTone(state, 'Ahmed', tonedScene(15, 5))).toBe('cold');
+  });
+
+  it('a trust cost actually changes the tone the learner sees', () => {
+    // Two choices with identical XP score but divergent meters must not be equivalent.
+    const warmChoice = makeChoice({ score: 5, impact: impactOf(3, 3, 3) });
+    const costlyChoice = makeChoice({ score: 5, impact: impactOf(-3, 1, 1) });
+    const scene = tonedScene(6, 0);
+    expect(getTone(applyChoice(makeEmptyState(), warmChoice, 'Ahmed'), 'Ahmed', scene)).toBe('warm');
+    expect(getTone(applyChoice(makeEmptyState(), costlyChoice, 'Ahmed'), 'Ahmed', scene)).toBe('cold');
   });
 });
 
@@ -234,37 +270,47 @@ describe('resolveNextScene', () => {
 
 // ─── evaluateEnding ───────────────────────────────────────────────────────────
 
+/** State whose total relationship score across all NPCs equals `n`. */
+function stateWithRelationship(n: number, extra: Partial<ScenarioState> = {}): ScenarioState {
+  return { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(n, 0, 0) }, ...extra };
+}
+
 describe('evaluateEnding', () => {
-  it('returns exceptional ending when totalScore is 20+', () => {
-    const state = { ...makeEmptyState(), totalScore: 22 };
-    const ending = evaluateEnding(state, makeScript());
+  it('returns exceptional ending when relationship score is 20+', () => {
+    const ending = evaluateEnding(stateWithRelationship(22), makeScript());
     expect(ending.type).toBe('exceptional');
   });
 
-  it('returns success ending when totalScore is 10-19', () => {
-    const state = { ...makeEmptyState(), totalScore: 12 };
-    const ending = evaluateEnding(state, makeScript());
+  it('returns success ending when relationship score is 10-19', () => {
+    const ending = evaluateEnding(stateWithRelationship(12), makeScript());
     expect(ending.type).toBe('success');
   });
 
-  it('returns mixed ending when totalScore is 0-9', () => {
-    const state = { ...makeEmptyState(), totalScore: 4 };
-    const ending = evaluateEnding(state, makeScript());
+  it('returns mixed ending when relationship score is 0-9', () => {
+    const ending = evaluateEnding(stateWithRelationship(4), makeScript());
     expect(ending.type).toBe('mixed');
   });
 
   it('falls back to last ending when no standard ending matches', () => {
-    const state = { ...makeEmptyState(), totalScore: -50 };
-    const ending = evaluateEnding(state, makeScript());
+    const ending = evaluateEnding(stateWithRelationship(-50), makeScript());
     expect(ending.type).toBe('failed');
   });
 
-  it('returns secret ending when requiredFlags met AND score >= min', () => {
+  it('sums the relationship across every NPC in the run', () => {
     const state = {
       ...makeEmptyState(),
-      totalScore: 25,
-      flags: new Set(['FLAG_A', 'FLAG_B']),
+      impactByNpc: { Ahmed: impactOf(4, 4, 4), Sara: impactOf(4, 3, 3) },
     };
+    expect(evaluateEnding(state, makeScript()).type).toBe('exceptional'); // 12 + 10 = 22
+  });
+
+  it('ignores totalScore — a high XP run with a burnt relationship still fails', () => {
+    const state = { ...stateWithRelationship(-5), totalScore: 90, scoreByNpc: { Ahmed: 90 } };
+    expect(evaluateEnding(state, makeScript()).type).toBe('failed');
+  });
+
+  it('returns secret ending when requiredFlags met AND score >= min', () => {
+    const state = stateWithRelationship(25, { flags: new Set(['FLAG_A', 'FLAG_B']) });
     const script = makeScript({
       endings: [
         ...makeScript().endings,
@@ -281,11 +327,7 @@ describe('evaluateEnding', () => {
   });
 
   it('does NOT return secret ending when requiredFlags not all set', () => {
-    const state = {
-      ...makeEmptyState(),
-      totalScore: 25,
-      flags: new Set(['FLAG_A']),
-    };
+    const state = stateWithRelationship(25, { flags: new Set(['FLAG_A']) });
     const script = makeScript({
       endings: [
         ...makeScript().endings,
@@ -301,11 +343,7 @@ describe('evaluateEnding', () => {
   });
 
   it('does NOT return secret ending when score is below secret min', () => {
-    const state = {
-      ...makeEmptyState(),
-      totalScore: 15,
-      flags: new Set(['FLAG_A', 'FLAG_B']),
-    };
+    const state = stateWithRelationship(15, { flags: new Set(['FLAG_A', 'FLAG_B']) });
     const script = makeScript({
       endings: [
         ...makeScript().endings,
@@ -393,20 +431,22 @@ describe('getTone per-NPC', () => {
     },
   });
 
-  it('uses scoreByNpc for the scene NPC when present', () => {
-    // Amira score = 10 (warm), Tariq score = 1 (cold), totalScore = 11
-    // getTone for Amira should be warm, not driven by totalScore
-    const state = { ...makeEmptyState(), totalScore: 11, scoreByNpc: { Amira: 10, Tariq: 1 } };
-    expect(getTone(state, 'Amira', sceneWithDialogue)).toBe('warm');
+  // Amira relationship = 10 (warm), Tariq = 1 (cold). Each NPC judges you on
+  // how YOU treated THEM — being liked by one does not warm up the other.
+  const twoNpcState: ScenarioState = {
+    ...makeEmptyState(),
+    impactByNpc: { Amira: impactOf(4, 3, 3), Tariq: impactOf(1, 0, 0) },
+  };
+
+  it('reads the scene NPC relationship, not the run total', () => {
+    expect(getTone(twoNpcState, 'Amira', sceneWithDialogue)).toBe('warm');
   });
 
-  it('uses Tariq scoreByNpc independently from Amira', () => {
-    const state = { ...makeEmptyState(), totalScore: 11, scoreByNpc: { Amira: 10, Tariq: 1 } };
-    expect(getTone(state, 'Tariq', sceneWithDialogue)).toBe('cold');
+  it('tracks Tariq independently from Amira', () => {
+    expect(getTone(twoNpcState, 'Tariq', sceneWithDialogue)).toBe('cold');
   });
 
-  it('falls back to totalScore when npcId not in scoreByNpc', () => {
-    const state = { ...makeEmptyState(), totalScore: 10, scoreByNpc: {} };
-    expect(getTone(state, 'Unknown', sceneWithDialogue)).toBe('warm');
+  it('treats an NPC not yet met as a blank slate (score 0)', () => {
+    expect(getTone(twoNpcState, 'Unknown', sceneWithDialogue)).toBe('cold');
   });
 });
