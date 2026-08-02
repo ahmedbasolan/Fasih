@@ -1421,20 +1421,20 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 </Pressable>
               </FadeIn>
 
-              {/* Features included — consistent upward */}
-              <FadeIn delay={400}>
-                <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                  {STRINGS.onboarding.features.slice(0, 4).map((f, i) => (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+              {/* Features included — each row cascades, matching the timeline/feature-grid pattern above */}
+              <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+                {STRINGS.onboarding.features.slice(0, 4).map((f, i) => (
+                  <FadeIn key={f.label} delay={400 + i * 60}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                       <Check size={13} color={C.JADE2} />
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{f.label}</Text>
                     </View>
-                  ))}
-                </View>
-              </FadeIn>
+                  </FadeIn>
+                ))}
+              </View>
             </View>
 
-            <FadeIn delay={600}>
+            <FadeIn delay={650}>
               <View style={{ gap: 8, marginTop: 16, width: '100%' }}>
                 <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight}>
                   {STRINGS.onboarding.startFreeTrial}
