@@ -245,16 +245,13 @@ export interface ScenarioState {
   /** Per-NPC accumulated impact — keyed by charName (must be unique per scenario) */
   impactByNpc: Record<string, ImpactDelta>;
   /**
-   * Sum of choice.score values — this drives warmThreshold / coldThreshold.
-   * Kept separate from impactByNpc because script authors write thresholds
-   * against choice.score, not the T/R/C impact sum.
+   * Sum of choice.score values — XP / analytics only. NOT read by getTone or
+   * evaluateEnding; those are driven entirely by impactByNpc (see
+   * relationshipScore / npcRelationship in scenarioEngine.ts). warmThreshold /
+   * coldThreshold are written against the trust+respect+culture sum, not this.
    */
   totalScore: number;
-  /**
-   * Per-NPC sum of choice.score — enables per-character tone calculation in
-   * multi-NPC scenarios. For single-NPC scenarios, scoreByNpc[npcId] === totalScore.
-   * getTone() reads this first; falls back to totalScore when npcId is absent.
-   */
+  /** Per-NPC sum of choice.score — XP / analytics only, same caveat as totalScore. */
   scoreByNpc: Record<string, number>;
   /** Ordered history of every choice made in this run */
   choiceHistory: {
