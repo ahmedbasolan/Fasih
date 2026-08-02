@@ -240,9 +240,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     };
   }, []);
 
-  // Bootstrap: initialise the run when the component mounts
+  // Bootstrap: initialise the run when the component mounts.
+  // A gender-restricted scenario must not start a run even though the render
+  // below blocks it — otherwise activeScenarioState still ends up populated
+  // with a run the learner was never supposed to see.
   useEffect(() => {
-    if (scriptData) {
+    if (scriptData && isScenarioAvailableFor(scenario ?? {}, user?.gender)) {
       startScenario(scenarioId, scriptData.scenes[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -468,8 +471,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // ─── Early return after all hooks ────────────────────────────────────────────
   // A gender-restricted scenario reached by deep link or a stale favourite is
-  // treated as absent rather than played to the wrong learner.
-  if (!scriptData || (scenario && !isScenarioAvailableFor(scenario, user?.gender))) {
+  // treated as absent rather than played to the wrong learner. `scenario ?? {}`
+  // is deliberate, not a fallback we forgot: it has no requiresGender, so a
+  // missing catalog entry never blocks play — the gate only fires when we
+  // actually know the scenario is restricted and know the learner doesn't match.
+  if (!scriptData || !isScenarioAvailableFor(scenario ?? {}, user?.gender)) {
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
         <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />

@@ -257,15 +257,17 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // -- Stable State Refs for Gestures --
   const stepRef = useRef(step);
   const nameRef = useRef(name);
+  const genderRef = useRef(gender);
   const holdCompleteRef = useRef(holdComplete);
   const nextRef = useRef(next);
 
   useEffect(() => {
     stepRef.current = step;
     nameRef.current = name;
+    genderRef.current = gender;
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
-  }, [step, name, holdComplete, next]);
+  }, [step, name, gender, holdComplete, next]);
 
   useEffect(() => {
     setPhraseRevealed(false);
@@ -275,7 +277,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const composedGesture = useMemo(() => {
     const swipeNext = () => {
       // Block swiping next on steps that require explicit interaction
-      if (stepRef.current === 2 && !nameRef.current.trim()) return;
+      if (stepRef.current === 2 && (!nameRef.current.trim() || !genderRef.current)) return;
       if (stepRef.current === 5 && !holdCompleteRef.current) return;
       nextRef.current();
     };
