@@ -7,7 +7,7 @@ import Svg, { Circle, Path, Rect, Defs, Stop, LinearGradient as SvgLinearGradien
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { Briefcase, Users, Shield, TrendingUp, Globe, ChevronLeft, ArrowRight, Check, Bell, Star, Lock, Mic, BookOpen, Layers, Trophy, Sun, Moon, Zap, Flame, Sparkles } from '../components/icons';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { GeoPattern } from '../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../components/features/RoleGoalIcons';
@@ -112,7 +112,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <View
       onLayout={(e) => setSegmentWidth((e.nativeEvent.layout.width - 4 * (total - 1)) / total)}
-      style={{ position: 'absolute', top: insets.top + 8, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
+      style={{ position: 'absolute', top: insets.top + 12, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
       accessibilityLabel={`Step ${step + 1} of ${total}`}
       accessibilityRole="progressbar"
     >
@@ -145,6 +145,9 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     }
   }, [clerkUser, name]);
   const [mode, setMode] = useState<'career' | 'social'>('career');
+  // Arabic marks the speaker's own gender, so we need this to teach the right
+  // forms — it also gates scenarios that only work for one gender.
+  const [gender, setGender] = useState<'male' | 'female' | undefined>(undefined);
   const [role, setRole] = useState('');
   const [profession, setProfession] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -154,8 +157,12 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [phraseRevealed, setPhraseRevealed] = useState(false);
   const [phraseEverRevealed, setPhraseEverRevealed] = useState(false);
   const [scenarioCompleted, setScenarioCompleted] = useState(false);
+  // Notification toggles for Step 6 — default all on to feel welcoming
+  const [toggleNotifs, setToggleNotifs] = useState([true, true, true]);
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStart = useRef(0);
+  // Tracks which haptic milestones (33, 66, 100%) have already fired this hold
+  const hapticMilestones = useRef<Set<number>>(new Set());
   
   const TOTAL = 12; // 0-6 setup, 7 quick win, 8 scenario, 9 paywall (timeline), 10 features, 11 paywall (plans)
   const HOLD_DURATION = 2200;
@@ -171,8 +178,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       profession, goalsCount: selectedGoals.length, holdComplete, phraseRevealed: phraseEverRevealed, scenarioCompleted,
     });
     const dailyGoalXP = computeDailyGoalXP(selectedGoals.length, mode);
-    onComplete({ name: name || 'Guest', mode, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
-  }, [onComplete, name, mode, role, profession, selectedGoals, plan, holdComplete, phraseEverRevealed, scenarioCompleted]);
+    onComplete({ name: name || 'Guest', mode, gender, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
+  }, [onComplete, name, mode, gender, role, profession, selectedGoals, plan, holdComplete, phraseEverRevealed, scenarioCompleted]);
   const finishWithTrial = useCallback(() => { haptic.success(); onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
   const next = useCallback(() => {
     haptic.light();
@@ -214,10 +221,19 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const startHold = useCallback(() => {
     if (holdComplete) return;
     holdStart.current = Date.now();
+    hapticMilestones.current = new Set();
     holdTimer.current = setInterval(() => {
       const elapsed = Date.now() - holdStart.current;
       const p = Math.min(elapsed / HOLD_DURATION, 1);
       setHoldProgress(p);
+      // Fire haptic pulses at 33%, 66%, and 100%
+      const pct = Math.round(p * 100);
+      [33, 66, 100].forEach((milestone) => {
+        if (pct >= milestone && !hapticMilestones.current.has(milestone)) {
+          hapticMilestones.current.add(milestone);
+          haptic.medium();
+        }
+      });
       if (p >= 1) {
         if (holdTimer.current) clearInterval(holdTimer.current);
         setHoldComplete(true);
@@ -241,15 +257,17 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // -- Stable State Refs for Gestures --
   const stepRef = useRef(step);
   const nameRef = useRef(name);
+  const genderRef = useRef(gender);
   const holdCompleteRef = useRef(holdComplete);
   const nextRef = useRef(next);
 
   useEffect(() => {
     stepRef.current = step;
     nameRef.current = name;
+    genderRef.current = gender;
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
-  }, [step, name, holdComplete, next]);
+  }, [step, name, gender, holdComplete, next]);
 
   useEffect(() => {
     setPhraseRevealed(false);
@@ -259,7 +277,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const composedGesture = useMemo(() => {
     const swipeNext = () => {
       // Block swiping next on steps that require explicit interaction
-      if (stepRef.current === 2 && !nameRef.current.trim()) return;
+      if (stepRef.current === 2 && (!nameRef.current.trim() || !genderRef.current)) return;
       if (stepRef.current === 5 && !holdCompleteRef.current) return;
       nextRef.current();
     };
@@ -387,7 +405,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
             <FadeIn delay={100}>
               <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
                 <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePath}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, color: C.TEXT2 }}>Select your primary focus</Text>
+                <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 }}>Select your primary focus</Text>
               </View>
             </FadeIn>
 
@@ -400,18 +418,18 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 return (
                   <FadeIn key={id} delay={200 + idx * 100} style={{ flex: 1 }}>
                     <Pressable
-                    onPress={() => setMode(id)}
+                    onPress={() => { haptic.selection(); setMode(id); }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
                     accessibilityLabel={title}
                     style={{ flex: 1, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: selected ? color : C.BORDER }}
                   >
-                      <Image source={image} style={{ position: 'absolute', width: '100%', height: '100%', opacity: selected ? 0.95 : 0.6 }} resizeMode="cover" accessibilityElementsHidden />
-                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)', C.BG] as [string,string,string,string]} locations={[0, 0.4, 0.7, 1]} style={{ position: 'absolute', width: '100%', height: '100%' }} />
+                      <Image source={image} style={{ position: 'absolute', width: '100%', height: '100%', opacity: selected ? 0.95 : 0.65 }} resizeMode="cover" accessibilityElementsHidden />
+                      <LinearGradient colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.95)', C.BG] as [string,string,string,string]} locations={[0, 0.4, 0.7, 1]} style={{ position: 'absolute', width: '100%', height: '100%' }} />
                       
                       <View style={{ flex: 1, padding: 24, justifyContent: 'flex-end' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', position: 'absolute', top: 20, left: 20, right: 20 }}>
-                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
                             <Icon size={20} color={selected ? color : C.WHITE} />
                           </View>
                           <AnimatePresence>
@@ -431,9 +449,9 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         </View>
                         
                         <MotiView animate={{ translateY: selected ? -4 : 0 }} transition={{ type: 'spring', damping: 80, stiffness: 200 }}>
-                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : C.WHITE, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>{title}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 8, letterSpacing: 0.5 }}>{sub}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 20 }}>{desc}</Text>
+                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : C.WHITE, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.95)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }}>{title}</Text>
+                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 8, letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{sub}</Text>
+                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 20 }}>{desc}</Text>
                         </MotiView>
                       </View>
                     </Pressable>
@@ -460,7 +478,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <FadeIn delay={200}>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourName}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.kafGreetingSub}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.kafGreetingSub}</Text>
                 </View>
               </FadeIn>
 
@@ -487,20 +505,72 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 />
               </FadeIn>
 
+              <FadeIn delay={380} style={{ width: '100%' }}>
+                <View style={{ alignItems: 'center', gap: 10 }}>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
+                    {STRINGS.onboarding.genderQuestion}
+                  </Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center', lineHeight: 18 }}>
+                    {STRINGS.onboarding.genderWhy}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                    {([
+                      { value: 'male' as const, label: STRINGS.onboarding.genderMale, example: STRINGS.onboarding.genderMaleExample },
+                      { value: 'female' as const, label: STRINGS.onboarding.genderFemale, example: STRINGS.onboarding.genderFemaleExample },
+                    ]).map((opt) => {
+                      const selected = gender === opt.value;
+                      return (
+                        <Pressable
+                          key={opt.value}
+                          onPress={() => { haptic.light(); setGender(opt.value); }}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected }}
+                          accessibilityLabel={opt.label}
+                          style={{
+                            flex: 1,
+                            minHeight: 72,
+                            paddingVertical: 12,
+                            paddingHorizontal: 10,
+                            borderRadius: 14,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 4,
+                            backgroundColor: selected ? C.JADE_ACCENT_DIM : C.SURFACE,
+                            borderWidth: selected ? 1.5 : 1,
+                            borderColor: selected ? C.JADE_ACCENT_BORDER : C.BORDER,
+                          }}
+                        >
+                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.JADE_ACCENT : C.TEXT }}>
+                            {opt.label}
+                          </Text>
+                          <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(13 * ARABIC_SCALE), color: selected ? C.JADE_ACCENT : C.TEXT3 }}>
+                            {opt.example}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </FadeIn>
+
               <AnimatePresence>
                 {typedGreeting && (
                   <FadeIn delay={0}>
                     <MotiView
                       key="greeting"
-                      from={{ scale: 0.85, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
+                      from={{ scale: 0.85, opacity: 0, translateY: 10 }}
+                      animate={{ scale: 1, opacity: 1, translateY: 0 }}
                       exit={{ scale: 0.85, opacity: 0 }}
-                      transition={{ type: 'spring', damping: 80, stiffness: 100 }}
+                      transition={{ type: 'spring', damping: 20, stiffness: 180 }}
                       style={{ width: '100%' }}
                     >
-                      <View style={{ width: '100%', borderRadius: 16, padding: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER }}>
-                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 26, color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.JADE_ACCENT_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>
+                      <View style={{
+                        width: '100%', borderRadius: 18, padding: 18,
+                        backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER,
+                        shadowColor: C.JADE_ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+                      }}>
+                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(28 * ARABIC_SCALE), color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.JADE_ACCENT_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 12, color: C.TEXT2, textAlign: 'center' }}>
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
                       </View>
@@ -511,114 +581,82 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
             </View>
 
             <FadeIn delay={500}>
-              <ShimmerButton onPress={next} disabled={!name.trim()}>{STRINGS.common.continue}</ShimmerButton>
+              <ShimmerButton onPress={next} disabled={!name.trim() || !gender}>{STRINGS.common.continue}</ShimmerButton>
             </FadeIn>
           </View>
         );
 
-      // Step 3: Role Selection — consistent upward entrance
+      // Step 3: Role Selection — clean 2-column grid layout
       case 3:
         return (
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.roleTailored}</Text>
+                <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.roleTailored}</Text>
               </View>
             </FadeIn>
 
-            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 16 }}>
+            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingBottom: 16 }}>
               {PROFESSION_CATEGORIES.map(({ id, label, Icon }, idx) => {
                 const selected = role === id;
                 const hasSelection = !!role;
-                
-                // Dynamic Bento Box Configuration
-                const getBento = (i: number): { width: any, height: number, dir: 'row'|'column', align: 'center'|'flex-start', px: number } => {
-                  switch(i) {
-                    case 0: return { width: '100%', height: 100, dir: 'row', align: 'center', px: 24 };
-                    case 3: return { width: '63%', height: 110, dir: 'row', align: 'flex-start', px: 20 };
-                    case 4: return { width: '33%', height: 110, dir: 'column', align: 'center', px: 12 };
-                    case 5: return { width: '33%', height: 110, dir: 'column', align: 'center', px: 12 };
-                    case 6: return { width: '63%', height: 110, dir: 'row', align: 'flex-start', px: 20 };
-                    case 7: return { width: '100%', height: 90, dir: 'row', align: 'center', px: 24 };
-                    default: return { width: '47.5%', height: 120, dir: 'column', align: 'center', px: 16 };
-                  }
-                };
-                const bento = getBento(idx);
 
                 return (
-                  <FadeIn key={id} delay={200 + idx * 80} style={{ width: bento.width }}>
+                  <FadeIn key={id} delay={150 + idx * 50} style={{ width: '48%' }}>
                     <MotiView
                       animate={{ 
-                        opacity: !hasSelection || selected ? 1 : 0.45,
-                        scale: 1 // removed scaling to prevent overflow cutoff on 100% elements
+                        opacity: !hasSelection || selected ? 1 : 0.5,
                       }}
                       transition={{ type: 'spring', damping: 80, stiffness: 200 }}
                     >
                       <Pressable
-                        onPress={() => { setRole(id); setProfession(''); }}
+                        onPress={() => { haptic.selection(); setRole(id); setProfession(''); }}
                         accessibilityRole="radio"
                         accessibilityState={{ selected }}
                         accessibilityLabel={label}
                         style={{
-                          height: bento.height,
-                          flexDirection: bento.dir,
+                          height: 92,
+                          flexDirection: 'column',
                           alignItems: 'center',
-                          justifyContent: bento.align,
-                          paddingHorizontal: bento.px,
-                          gap: bento.dir === 'row' ? 16 : 12,
-                          backgroundColor: selected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
-                          borderRadius: 24,
+                          justifyContent: 'center',
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          gap: 8,
+                          backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
+                          borderRadius: 20,
                           borderWidth: selected ? 2 : 1,
-                          borderColor: selected ? C.JADE_ACCENT : C.BORDER,
+                          borderColor: selected ? C.JADE : C.BORDER,
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Gold gradient wash on selected */}
                         {selected && (
                           <LinearGradient
-                            colors={[C.JADE_ACCENT_SURFACE, 'transparent']}
+                            colors={[C.JADE_SURFACE, 'transparent']}
                             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                           />
                         )}
 
                         <View style={{
-                          width: bento.dir === 'row' ? 38 : 32,
-                          height: bento.dir === 'row' ? 38 : 32,
+                          width: 34,
+                          height: 34,
                           borderRadius: 12,
-                          backgroundColor: selected ? C.JADE_ACCENT : C.BORDER,
+                          backgroundColor: selected ? C.JADE : C.BORDER,
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
-                          <Icon size={bento.dir === 'row' ? 18 : 14} color={selected ? C.WHITE : C.TEXT2} />
+                          <Icon size={16} color={selected ? C.WHITE : C.TEXT2} />
                         </View>
 
                         <Text style={{
-                          fontFamily: FONT_LATIN_BOLD,
-                          fontSize: bento.dir === 'row' ? 14 : 11,
-                          color: selected ? C.JADE_ACCENT : C.TEXT,
-                          textAlign: bento.dir === 'column' ? 'center' : 'left',
-                          flexShrink: 1
-                        }}>
+                          fontFamily: FONT_LATIN_SEMI,
+                          fontSize: 12,
+                          color: selected ? C.JADE2 : C.TEXT,
+                          textAlign: 'center',
+                        }} numberOfLines={1}>
                           {label}
                         </Text>
-
-                        <AnimatePresence>
-                          {selected && (
-                            <MotiView
-                              from={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0, opacity: 0 }}
-                              transition={{ type: 'spring', damping: 12, stiffness: 260 }}
-                              style={{ position: 'absolute', top: 10, right: 10 }}
-                            >
-                              <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.JADE_ACCENT, alignItems: 'center', justifyContent: 'center' }}>
-                                <Check size={12} color={C.WHITE} />
-                              </View>
-                            </MotiView>
-                          )}
-                        </AnimatePresence>
                       </Pressable>
                     </MotiView>
                   </FadeIn>
@@ -685,7 +723,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
             <FadeIn delay={100}>
               <View>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.selectEverything}</Text>
+                <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.selectEverything}</Text>
               </View>
             </FadeIn>
 
@@ -703,8 +741,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                         flexDirection: 'row', alignItems: 'center', gap: 12,
                         borderRadius: 16, padding: 14,
                         backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
-                        borderWidth: 1.5,
-                        borderColor: selected ? C.JADE_BORDER : C.BORDER,
+                        borderWidth: selected ? 2 : 1,
+                        borderColor: selected ? C.JADE : C.BORDER,
                       }}
                     >
                       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: selected ? C.JADE_DIM : C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
@@ -777,7 +815,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <FadeIn delay={200} style={{ zIndex: 2 }}>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 8 }}>{STRINGS.onboarding.makeCommitment}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
+                  <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>
                     {holdComplete ? STRINGS.onboarding.committed : STRINGS.onboarding.commitmentSub}
                   </Text>
                 </View>
@@ -785,7 +823,13 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
               <FadeIn delay={300} style={{ zIndex: 2 }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  {/* Pulsing hint ring when idle - simplified */}
+                  {/* Outer ambient glow that grows with hold progress */}
+                  <MotiView
+                    animate={{ scale: 1 + holdProgress * 0.35, opacity: holdProgress * 0.18 }}
+                    transition={{ type: 'timing', duration: 80 }}
+                    style={{ position: 'absolute', width: 136, height: 136, borderRadius: 68, backgroundColor: C.JADE_ACCENT }}
+                  />
+                  {/* Pulsing hint ring when idle */}
                   {!holdComplete && holdProgress === 0 && (
                     <MotiView
                       from={{ scale: 1, opacity: 0.3 }}
@@ -804,9 +848,13 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     />
                   )}
                   <Svg width={136} height={136} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
-                    <Circle cx={68} cy={68} r={52} fill="none" stroke={C.SURFACE} strokeWidth={5} />
+                    {/* Outer glow ring */}
+                    <Circle cx={68} cy={68} r={52} fill="none" stroke={C.JADE_ACCENT} strokeWidth={14} opacity={0.1} />
+                    {/* Track ring */}
+                    <Circle cx={68} cy={68} r={52} fill="none" stroke={C.SURFACE} strokeWidth={8} />
+                    {/* Progress ring */}
                     <Circle cx={68} cy={68} r={52} fill="none"
-                      stroke={holdComplete ? C.JADE2 : C.JADE_ACCENT} strokeWidth={5} strokeLinecap="round"
+                      stroke={holdComplete ? C.JADE2 : C.JADE_ACCENT} strokeWidth={8} strokeLinecap="round"
                       strokeDasharray={`${circum}`}
                       strokeDashoffset={`${circum * (1 - holdProgress)}`} />
                   </Svg>
@@ -969,24 +1017,68 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               <FadeIn delay={200}>
                 <View style={{ alignItems: 'center', gap: 6, marginTop: 10 }}>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, textAlign: 'center' }}>Never miss a day</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>Daily practice builds fluency 3× faster</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>Daily practice builds fluency 3× faster</Text>
                 </View>
               </FadeIn>
 
-              {/* Feature list - moved higher */}
-              <View style={{ width: '100%', gap: 10, marginTop: 10 }}>
+              {/* Feature notification cards — elevated floating style */}
+              <View style={{ width: '100%', gap: 12, marginTop: 10 }}>
                 {([
-                  { NotifIcon: Bell, text: 'Daily streak reminders' },
-                  { NotifIcon: Star, text: 'New scenario alerts' },
-                  { NotifIcon: TrendingUp, text: 'Progress milestones' },
-                ] as const).map(({ NotifIcon, text }, i) => (
+                  { NotifIcon: Bell, text: 'Daily streak reminders', sub: 'Keep your learning momentum going' },
+                  { NotifIcon: Star, text: 'New scenario alerts', sub: 'Discover fresh cultural scenarios' },
+                  { NotifIcon: TrendingUp, text: 'Progress milestones', sub: 'Celebrate every achievement' },
+                ] as const).map(({ NotifIcon, text, sub }, i) => (
                   <FadeIn key={text} delay={350 + i * 100}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                      <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                        <NotifIcon size={16} color={C.JADE_ACCENT} />
+                    <Pressable
+                      onPress={() => {
+                        haptic.selection();
+                        setToggleNotifs(prev => prev.map((v, idx) => idx === i ? !v : v));
+                      }}
+                      style={[{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 14,
+                        borderRadius: 18,
+                        padding: 16,
+                        backgroundColor: isDark ? C.CARD_BG : C.WHITE,
+                        borderWidth: 1,
+                        borderColor: toggleNotifs[i] ? C.JADE_BORDER : C.BORDER,
+                      }, {
+                        shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.07)',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 1,
+                        shadowRadius: 12,
+                        elevation: isDark ? 4 : 3,
+                      }]}
+                    >
+                      {/* Icon badge */}
+                      <View style={{
+                        width: 44, height: 44, borderRadius: 14,
+                        backgroundColor: toggleNotifs[i] ? C.JADE_ACCENT_DIM : C.SURFACE,
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <NotifIcon size={20} color={toggleNotifs[i] ? C.JADE_ACCENT : C.TEXT3} />
                       </View>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{text}</Text>
-                    </View>
+
+                      {/* Text block */}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, marginBottom: 2 }}>{text}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 12, color: C.TEXT2 }}>{sub}</Text>
+                      </View>
+
+                      {/* Animated toggle switch */}
+                      <MotiView
+                        animate={{ backgroundColor: toggleNotifs[i] ? C.JADE_ACCENT : C.BORDER }}
+                        transition={{ type: 'timing', duration: 200 }}
+                        style={{ width: 44, height: 26, borderRadius: 13, padding: 3, justifyContent: 'center' }}
+                      >
+                        <MotiView
+                          animate={{ translateX: toggleNotifs[i] ? 18 : 0 }}
+                          transition={{ type: 'spring', damping: 18, stiffness: 260 }}
+                          style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.WHITE }}
+                        />
+                      </MotiView>
+                    </Pressable>
                   </FadeIn>
                 ))}
               </View>
@@ -1031,7 +1123,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
             <Text style={{
               fontFamily: FONT_ARABIC,
-              fontSize: 42,
+              fontSize: Math.round(42 * ARABIC_SCALE),
               color: C.PRIMARY,
               textAlign: 'center',
               direction: 'rtl',
@@ -1041,7 +1133,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
             </Text>
 
             <Text style={{
-              fontFamily: FONT_LATIN,
+              fontFamily: FONT_LATIN_MEDIUM,
               fontSize: 14,
               color: C.TEXT2,
               marginBottom: 4,
@@ -1124,7 +1216,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       // Step 9: Paywall — Unlock full potential
       case 9:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
@@ -1180,7 +1272,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       // Step 10: Everything included — features
       case 10:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
@@ -1248,7 +1340,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       // Step 11: Paywall — plans
       case 11:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
@@ -1329,20 +1421,20 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 </Pressable>
               </FadeIn>
 
-              {/* Features included — consistent upward */}
-              <FadeIn delay={400}>
-                <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-                  {STRINGS.onboarding.features.slice(0, 4).map((f, i) => (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+              {/* Features included — each row cascades, matching the timeline/feature-grid pattern above */}
+              <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+                {STRINGS.onboarding.features.slice(0, 4).map((f, i) => (
+                  <FadeIn key={f.label} delay={400 + i * 60}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                       <Check size={13} color={C.JADE2} />
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{f.label}</Text>
                     </View>
-                  ))}
-                </View>
-              </FadeIn>
+                  </FadeIn>
+                ))}
+              </View>
             </View>
 
-            <FadeIn delay={600}>
+            <FadeIn delay={650}>
               <View style={{ gap: 8, marginTop: 16, width: '100%' }}>
                 <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight}>
                   {STRINGS.onboarding.startFreeTrial}

@@ -217,6 +217,8 @@ export const lightTheme: ThemeColors = {
 };
 
 export const ARABIC_LINE_HEIGHT_MULTIPLIER = 1.35;
+// Arabic fonts need ~1.15× optical scale boost vs Latin to achieve equal visual weight
+export const ARABIC_SCALE = 1.15;
 
 export const SPRING = { type: 'spring', stiffness: 420, damping: 30, mass: 0.6 } as const;
 export const SPRING_SLOW = { type: 'spring', stiffness: 200, damping: 28 } as const;
