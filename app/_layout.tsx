@@ -1,4 +1,5 @@
 import '../global.css';
+import { Sentry } from '../src/lib/analytics'; // must load first — initializes Sentry as early as possible
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,8 +8,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider } from '@clerk/expo';
-import { PostHogProvider } from 'posthog-react-native';
-import { posthog } from '../src/lib/analytics';
 import {
   Tajawal_400Regular,
   Tajawal_500Medium,
@@ -60,7 +59,7 @@ setupNotifications();
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   const initSubscription = useAppStore((s) => s.initSubscription);
 
   const [loaded, error] = useFonts({
@@ -94,31 +93,31 @@ export default function RootLayout() {
       publishableKey={clerkPublishableKey}
       tokenCache={tokenCache}
     >
-      <PostHogProvider client={posthog}>
-        <ErrorBoundary>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <SafeAreaProvider>
-              <StatusBar style={isDark ? "light" : "dark"} />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
-                <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-                <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-                <Stack.Screen
-                  name="scenario/[id]"
-                  options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
-                />
-                <Stack.Screen
-                  name="practice"
-                  options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
-                />
-              </Stack>
-            </SafeAreaProvider>
-          </GestureHandlerRootView>
-        </ErrorBoundary>
-      </PostHogProvider>
+      <ErrorBoundary>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <StatusBar style={isDark ? "light" : "dark"} />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+              <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen
+                name="scenario/[id]"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
+              <Stack.Screen
+                name="practice"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
+            </Stack>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ErrorBoundary>
     </ClerkProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

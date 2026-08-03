@@ -55,7 +55,14 @@
         }
       ],
       "expo-splash-screen",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "fasih-6u",
+          "project": "react-native"
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/387c7934-b747-43cc-9113-ff41e6662c66"
