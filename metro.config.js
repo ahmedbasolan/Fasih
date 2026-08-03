@@ -1,8 +1,8 @@
-const { getDefaultConfig } = require('expo/metro-config');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Deep-import lucide icons without tripping the package `exports` map, which
 // only exposes the `.` and `./icons` barrels. This lets src/components/icons.ts

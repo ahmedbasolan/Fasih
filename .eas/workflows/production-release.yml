@@ -15,7 +15,8 @@
 #   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY   (production)
 #   EXPO_PUBLIC_SUPABASE_URL            (production)
 #   EXPO_PUBLIC_SUPABASE_ANON_KEY       (production)
-#   EXPO_PUBLIC_POSTHOG_API_KEY         (production)
+#   EXPO_PUBLIC_SENTRY_DSN              (production)
+#   SENTRY_AUTH_TOKEN                   (production — build-time only, source map/debug symbol upload; NOT EXPO_PUBLIC_)
 #   EXPO_PUBLIC_REVENUECAT_IOS_KEY      (production)
 #   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY  (production)
 
