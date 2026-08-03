@@ -173,11 +173,11 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
              {!isCorrect && (
                <Text style={[styles.correctArabic, { color: C.ERROR }]}>{arabic}</Text>
              )}
-             <Pressable 
+             <Pressable
                onPress={() => onComplete(isCorrect)}
                style={[styles.nextBtn, { backgroundColor: isCorrect ? C.JADE2 : C.ERROR }]}
              >
-               <Text style={styles.nextBtnText}>Continue</Text>
+               <Text style={[styles.nextBtnText, { color: C.BG }]}>Continue</Text>
              </Pressable>
           </View>
         )}
@@ -239,5 +239,5 @@ const styles = StyleSheet.create({
   resultText: { fontFamily: FONT_LATIN_BOLD, fontSize: 16 },
   correctArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 24, textAlign: 'right' },
   nextBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  nextBtnText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: '#fff' }
+  nextBtnText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16 }
 });

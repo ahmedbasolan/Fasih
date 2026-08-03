@@ -50,7 +50,7 @@ export function ShimmerButton({
   disabled = false,
   Icon,
 }: Props) {
-  const { G } = useTheme();
+  const { C, G } = useTheme();
   const [dims, setDims] = useState({ w: 0, h: 0 });
   const tx = useSharedValue(-OVERSHOOT);
 
@@ -106,8 +106,8 @@ export function ShimmerButton({
         <View style={styles.content} pointerEvents="none">
           {isStringChild ? (
             <>
-              <Text style={[styles.text, { color: '#FFFFFF' }]}>{label}</Text>
-              {Icon && <Icon size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />}
+              <Text style={[styles.text, { color: C.BG }]}>{label}</Text>
+              {Icon && <Icon size={18} color={C.BG} style={{ marginLeft: 6 }} />}
             </>
           ) : (
             <View style={styles.childWrapper}>{children}</View>
