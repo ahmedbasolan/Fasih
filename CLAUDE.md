@@ -65,6 +65,12 @@ For every feature:
 - `dev` — integration (merge features here)
 - `master` — legacy (do not use for new work)
 
+**Git discipline (learned the hard way — see `docs/lessons-learned.md`):**
+- Never `git add -A` or `git add .`. Stage exact file paths. A broad add has repeatedly swept up unrelated pre-existing uncommitted work (someone else's WIP, or your own from an earlier task) into the wrong commit.
+- If `git status` shows modified files you didn't just touch, do not assume they're safe to ignore or overwrite. Check `git diff` on them first. If they're unrelated to your current task, `git stash push -u -m "<description>" -- <exact paths>` before you start, and `git stash pop` to restore them once your own commit is made — never let unrelated WIP silently ride along in your commit, and never let it silently vanish either.
+- Before considering a branch done, verify it compiles **from a clean checkout**, not just against your current working tree. `git stash` (temporarily, stashing everything) then `npx tsc --noEmit`, then `git stash pop`. A commit that only compiles because of an unrelated uncommitted file sitting in the working tree will break for anyone else who pulls the branch, and CI will catch it publicly instead of you catching it privately.
+- One feature = one branch, strictly — including design/token work, which touches files that *feel* like "just tweaking constants" but is its own PR-worthy change.
+
 ---
 
 ## Development Philosophy
@@ -198,6 +204,18 @@ Never hardcode colors. Always use theme tokens:
 ```
 
 Key tokens: `C.BG`, `C.CARD_BG`, `C.SURFACE`, `C.TEXT`, `C.TEXT2`, `C.TEXT3`, `C.PRIMARY`, `C.JADE`, `C.JADE2`, `C.JADE_DIM`, `C.GOLD`, `C.CULTURAL_GOLD`, `C.BORDER`, `C.BORDER2`, `C.CARD_SHADOW`, `C.TERTIARY`, `C.VIOLET2`
+
+### Changing Token Values (contrast verification is mandatory, not optional)
+
+This session has no way to view the app on a device or take a screenshot to "eyeball" a color change — verification has to be computed, not visual. Before changing any color in `tokens.ts` or `gradients.ts`:
+
+1. Grep every real usage of the token across `src/` and `app/` first. Don't trust the type's section comment — a token commented "main accent" may turn out to be used only as a rare category-badge background, and a token that looks decorative may turn out to be live correctness-feedback text (this happened with `JADE2` in `PhraseBuilder.tsx`).
+2. Compute the actual WCAG contrast ratio (`(L1+0.05)/(L2+0.05)` on relative luminance) for every real foreground/background pairing found. Text needs ≥4.5:1 (AA). Don't estimate from the hex values.
+3. Check ad-hoc gradient combinations (`colors={[C.X, C.Y]}` literals in component files, not just what's declared in `gradients.ts`) — a label color that passes against one stop can fail against the other end of the same gradient.
+4. Re-verify your own replacement values the same way before shipping them. A first-draft palette is not automatically correct just because it looks more "on brand" — this session's own first draft of a new palette had 4 contrast failures, caught only by running the same check against it that was run against the original.
+5. `TEXT_ON_LIGHT` exists specifically for text sitting on pastel/light category-badge backgrounds regardless of overall theme — don't reuse the main `TEXT` token there, and don't assume a token used as a light pastel wash needs the same value as a token used as literal foreground text, even if they're named similarly.
+
+See `docs/lessons-learned.md` for the specific numbers and mistakes from past sessions — check it before large design/token changes, and add to it when you find a new one.
 
 ### Typography
 
@@ -383,12 +401,12 @@ import { STRINGS } from '../../constants/strings';
 
 When building a feature:
 
-1. Read this file first.
+1. Read this file first, including `docs/lessons-learned.md`.
 2. Check existing patterns in similar screens — match them exactly.
 3. Identify the minimum files to touch.
 4. Keep changes focused — do not rewrite unrelated code.
 5. Ensure the feature works end to end.
-6. Run `npx tsc --noEmit` before finishing — zero errors required.
+6. Run `npx tsc --noEmit` before finishing — zero errors required. If the working tree has unrelated uncommitted changes sitting in it, also verify from a clean stash (see Git Discipline above) — a compile that only passes because of someone else's uncommitted file is not a passing compile.
 
 ---
 
@@ -403,6 +421,8 @@ When building a feature:
 - Do not call `abandonScenario` on component unmount — only on explicit exit.
 - Do not use `any` in TypeScript.
 - Do not introduce new libraries without asking.
+- A color that is safe **as text** on a background is not automatically safe **as a fill** with text on top of it — they sit at opposite ends of the luminance range. Any token used both ways (e.g. an accent color used for icon/text color in one place and as a button's `backgroundColor` in another) needs its label color checked against it specifically, not assumed. `ShimmerButton.tsx` and `PhraseBuilder.tsx` both shipped with hardcoded `#FFFFFF`/`#fff` label text that failed contrast the moment the fill wasn't a dark color anymore — twice, same root cause, two different files. Use `C.BG` as the label color convention (see `OnboardingScenarioPlayer.tsx`), not a hardcoded hex.
+- When changing a shared token's value (anything in `tokens.ts`/`gradients.ts`), grep for every real usage first — a token's *comment* ("Primary green — main accent") does not reliably describe its *actual* usage. Tokens can be combined ad-hoc as gradient stops in component files (`colors={[C.PRIMARY, C.JADE]}`) even when `gradients.ts` doesn't define that combination — those combinations need verifying too, not just each token in isolation.
 
 ---
 
