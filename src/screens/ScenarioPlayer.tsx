@@ -9,6 +9,7 @@ import {
 } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
+import { ThresholdSeam } from '../components/design/ThresholdSeam';
 import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -167,9 +168,10 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
                 </View>
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentText, textAlign: 'right', lineHeight: 32, marginBottom: translationRevealed ? 3 : 0 }}>
+                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentText, textAlign: 'right', lineHeight: 32, marginBottom: 6 }}>
                     {dialogue.arabic}
                   </Text>
+                  <ThresholdSeam height={7} style={{ marginBottom: translationRevealed ? 8 : 0 }} />
                   {translationRevealed && (
                     <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
