@@ -7,7 +7,7 @@ import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } fr
 import { useTheme } from '../hooks/useTheme';
 import { GhostLetters } from '../components/ui';
 import { HeroSceneBg } from '../components/features/SceneIllustrations';
-import { getScenarioById, getScenarioScript } from '../constants/scenarios';
+import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
 
@@ -26,10 +26,12 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const script = getScenarioScript(scenarioId, C);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const userGender = useAppStore((s) => s.user?.gender);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
   const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
 
-  if (!scenario || !script) return null;
+  // Also guards deep links and stale favourites, not just the browse list.
+  if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>

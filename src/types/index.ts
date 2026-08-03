@@ -88,6 +88,13 @@ export interface Scenario {
   comingSoon?: boolean;
   isOnboarding?: boolean;
   dialect?: string;
+  /**
+   * Restricts the scenario to learners of this gender. Set when the situation
+   * itself would be culturally wrong for the other gender to rehearse — not for
+   * cosmetic reasons. Scenarios with this set are hidden until the learner's
+   * gender is known.
+   */
+  requiresGender?: 'male' | 'female';
   color: string;
   gradientColors: [string, string];
   arabicScene: string;
@@ -136,9 +143,10 @@ export interface ScenarioScene {
     neutral: TonedDialogue;
     cold: TonedDialogue;
   };
-  // Dialogue tone thresholds (totalScore based)
-  warmThreshold?: number;  // totalScore >= this triggers warm dialogue
-  coldThreshold?: number;  // totalScore < this triggers cold dialogue (neutral in between)
+  // Dialogue tone thresholds, measured against the learner's accumulated
+  // trust + respect + culture with THIS scene's NPC (see npcRelationship()).
+  warmThreshold?: number;  // relationship >= this triggers warm dialogue
+  coldThreshold?: number;  // relationship < this triggers cold dialogue (neutral in between)
   // Teaching content for this scene
   teachingNote?: string;
   choices: ScenarioChoice[];
@@ -237,16 +245,13 @@ export interface ScenarioState {
   /** Per-NPC accumulated impact — keyed by charName (must be unique per scenario) */
   impactByNpc: Record<string, ImpactDelta>;
   /**
-   * Sum of choice.score values — this drives warmThreshold / coldThreshold.
-   * Kept separate from impactByNpc because script authors write thresholds
-   * against choice.score, not the T/R/C impact sum.
+   * Sum of choice.score values — XP / analytics only. NOT read by getTone or
+   * evaluateEnding; those are driven entirely by impactByNpc (see
+   * relationshipScore / npcRelationship in scenarioEngine.ts). warmThreshold /
+   * coldThreshold are written against the trust+respect+culture sum, not this.
    */
   totalScore: number;
-  /**
-   * Per-NPC sum of choice.score — enables per-character tone calculation in
-   * multi-NPC scenarios. For single-NPC scenarios, scoreByNpc[npcId] === totalScore.
-   * getTone() reads this first; falls back to totalScore when npcId is absent.
-   */
+  /** Per-NPC sum of choice.score — XP / analytics only, same caveat as totalScore. */
   scoreByNpc: Record<string, number>;
   /** Ordered history of every choice made in this run */
   choiceHistory: {

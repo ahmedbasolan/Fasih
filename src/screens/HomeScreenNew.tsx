@@ -22,7 +22,7 @@ import {
 } from '../components/home';
 import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
-import { getFeaturedScenario, getAllScenarios } from '../constants/scenarios';
+import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { ChevronRight } from '../components/icons';
 import { STRINGS } from '../constants/strings';
@@ -92,9 +92,10 @@ export function HomeScreenNew({
 
   // Featured scenario (first unlocked, uncompleted one for user's mode)
   const userMode = useAppStore((s) => s.user?.mode) || 'career';
+  const userGender = useAppStore((s) => s.user?.gender);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const featured = useMemo(() => {
-    const all = getAllScenarios(C);
+    const all = filterScenariosForLearner(getAllScenarios(C), userGender);
     const modeMatch = all.filter((s) => s.mode === userMode && !s.locked && !s.comingSoon);
     // Pick first one not yet completed
     const uncompleted = modeMatch.find((s) => !completedScenarios[s.id]);
@@ -102,7 +103,7 @@ export function HomeScreenNew({
   // isDark is the stable bool that determines C — prevents recomputing on every render
   // since C is a new object reference each render but isDark only changes on theme switch.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDark, userMode, completedScenarios]);
+  }, [isDark, userMode, userGender, completedScenarios]);
 
   const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 
@@ -203,34 +204,8 @@ export function HomeScreenNew({
         />
       )}
 
-      {/* Streak Widget */}
-      <View style={{ marginTop: 6 }}>
-        <StreakWidget
-          streakDays={streakDays}
-          currentXP={totalXP}
-          goalXP={goalXP}
-          weekDays={weekDays}
-          mood={streakMood}
-          checklistCompleted={isNewUser ? checklistCompleted : undefined}
-          checklistTotal={isNewUser ? checklistTotal : undefined}
-          onComplete={() => {
-            setStreakMood('celebrating');
-            // Reset mood after celebration animation completes
-            setTimeout(() => setStreakMood('happy'), 3000);
-          }}
-        />
-      </View>
-
-      {/* Quick Challenge Section */}
-      <Text style={styles.sectionLabel}>Quick Challenge</Text>
-      <View style={styles.sectionContent}>
-        <QuickChallenge 
-          onRevealed={() => setStreakMood('excited')} 
-        />
-      </View>
-
-      {/* Mission Section */}
-      <Text style={styles.sectionLabel}>Today&apos;s Mission</Text>
+      {/* HERO SECTION: Today's Mission (Primary CTA) */}
+      <Text style={[styles.sectionLabel, { marginTop: 10 }]}>Today&apos;s Mission</Text>
       <View style={styles.sectionContent}>
         {isNewUser ? (
           <MotiView
@@ -262,6 +237,31 @@ export function HomeScreenNew({
             onPress={() => onMissionPress?.(featured.id)}
           />
         )}
+      </View>
+
+      {/* Streak Widget */}
+      <View style={{ marginTop: 6 }}>
+        <StreakWidget
+          streakDays={streakDays}
+          currentXP={totalXP}
+          goalXP={goalXP}
+          weekDays={weekDays}
+          mood={streakMood}
+          checklistCompleted={isNewUser ? checklistCompleted : undefined}
+          checklistTotal={isNewUser ? checklistTotal : undefined}
+          onComplete={() => {
+            setStreakMood('celebrating');
+            setTimeout(() => setStreakMood('happy'), 3000);
+          }}
+        />
+      </View>
+
+      {/* Quick Challenge Section */}
+      <Text style={styles.sectionLabel}>Quick Challenge</Text>
+      <View style={styles.sectionContent}>
+        <QuickChallenge 
+          onRevealed={() => setStreakMood('excited')} 
+        />
       </View>
 
       {/* Daily Phrase Section */}

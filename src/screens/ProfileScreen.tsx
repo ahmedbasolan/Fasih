@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, BookOpen, ChevronRight, Settings, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
-import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
@@ -305,6 +305,43 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 <Icon size={18} color={active ? C.PRIMARY : C.TEXT3} />
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: active ? C.TEXT_ON_LIGHT : C.TEXT3 }}>{desc}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </MotiView>
+
+      {/* Arabic Forms — Arabic marks the speaker's own gender, so this changes
+          which phrasing we teach, and unlocks scenarios written for one gender. */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 332 }}>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 4 }}>{STRINGS.profile.arabicForms.title}</Text>
+        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, marginBottom: 12, lineHeight: 18 }}>{STRINGS.profile.arabicForms.subtitle}</Text>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          {[
+            { id: 'male', label: STRINGS.onboarding.genderMale, example: STRINGS.onboarding.genderMaleExample },
+            { id: 'female', label: STRINGS.onboarding.genderFemale, example: STRINGS.onboarding.genderFemaleExample },
+          ].map(({ id, label, example }) => {
+            const active = user?.gender === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => useAppStore.getState().setUserGender(id as 'male' | 'female')}
+                accessibilityRole="radio"
+                accessibilityLabel={label}
+                accessibilityState={{ selected: active }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  borderWidth: active ? 2 : 1,
+                  borderColor: active ? C.PRIMARY : C.BORDER,
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: FONT_ARABIC, fontSize: 12, color: active ? C.TEXT_ON_LIGHT : C.TEXT3 }}>{example}</Text>
               </Pressable>
             );
           })}
