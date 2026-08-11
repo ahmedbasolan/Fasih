@@ -84,6 +84,8 @@ export default function ForgotPasswordScreen() {
         onPress={() => router.back()}
         style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <ChevronLeft size={28} color={C.TEXT3} />
       </Pressable>
@@ -144,6 +146,7 @@ export default function ForgotPasswordScreen() {
                     onChangeText={setEmail}
                     placeholder={STRINGS.auth.forgotPassword.emailPlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.forgotPassword.emailPlaceholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
@@ -170,6 +173,9 @@ export default function ForgotPasswordScreen() {
                 <Pressable
                   onPress={handleRequestCode}
                   disabled={!canSubmitEmail || loading}
+                  accessibilityRole="button"
+                  accessibilityLabel={STRINGS.auth.forgotPassword.sendResetCode}
+                  accessibilityState={{ disabled: !canSubmitEmail || loading }}
                   style={{
                     backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                     alignItems: 'center', opacity: canSubmitEmail && !loading ? 1 : 0.5,
@@ -205,6 +211,7 @@ export default function ForgotPasswordScreen() {
                     onChangeText={setCode}
                     placeholder={STRINGS.auth.forgotPassword.codePlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.forgotPassword.codePlaceholder}
                     keyboardType="number-pad"
                     maxLength={6}
                     onFocus={() => setFocused('code')}
@@ -225,13 +232,19 @@ export default function ForgotPasswordScreen() {
                     onChangeText={setNewPassword}
                     placeholder={STRINGS.auth.forgotPassword.newPasswordPlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.forgotPassword.newPasswordPlaceholder}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     onFocus={() => setFocused('password')}
                     onBlur={() => setFocused(null)}
                     style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
                   />
-                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
+                  <Pressable
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
+                  >
                     {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
                   </Pressable>
                 </View>
@@ -246,6 +259,9 @@ export default function ForgotPasswordScreen() {
               <Pressable
                 onPress={handleReset}
                 disabled={!canSubmitReset || loading}
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.auth.forgotPassword.resetPassword}
+                accessibilityState={{ disabled: !canSubmitReset || loading }}
                 style={{
                   backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center', opacity: canSubmitReset && !loading ? 1 : 0.5,
@@ -259,6 +275,8 @@ export default function ForgotPasswordScreen() {
               <Pressable
                 onPress={() => { setStep('email'); setCode(''); setNewPassword(''); setError(''); }}
                 style={{ alignItems: 'center', paddingVertical: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.auth.forgotPassword.back}
               >
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.back}</Text>
               </Pressable>
@@ -275,7 +293,7 @@ export default function ForgotPasswordScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.rememberPassword}</Text>
-              <Pressable onPress={() => router.back()} accessibilityRole="link">
+              <Pressable onPress={() => router.back()} accessibilityRole="link" accessibilityLabel={STRINGS.auth.forgotPassword.signInLink}>
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.forgotPassword.signInLink}</Text>
               </Pressable>
             </View>

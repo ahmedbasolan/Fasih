@@ -94,6 +94,8 @@ export default function SignUpScreen() {
         onPress={() => router.back()}
         style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
         <ChevronLeft size={28} color={C.TEXT3} />
       </Pressable>
@@ -123,7 +125,12 @@ export default function SignUpScreen() {
             {!pendingVerification && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.alreadyHaveAccount}</Text>
-                <Pressable onPress={() => router.back()} hitSlop={8}>
+                <Pressable
+                  onPress={() => router.back()}
+                  hitSlop={8}
+                  accessibilityRole="link"
+                  accessibilityLabel={STRINGS.auth.signUp.signInLink}
+                >
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.signUp.signInLink}</Text>
                 </Pressable>
               </View>
@@ -152,6 +159,7 @@ export default function SignUpScreen() {
                   onChangeText={setVerificationCode}
                   placeholder={STRINGS.auth.signUp.verificationCodePlaceholder}
                   placeholderTextColor={C.TEXT3}
+                  accessibilityLabel={STRINGS.auth.signUp.verificationCodePlaceholder}
                   keyboardType="number-pad"
                   maxLength={6}
                   style={{
@@ -170,6 +178,9 @@ export default function SignUpScreen() {
               <Pressable
                 onPress={handleVerify}
                 disabled={verificationCode.length < 6 || loading}
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.auth.signUp.verifyEmail}
+                accessibilityState={{ disabled: verificationCode.length < 6 || loading }}
                 style={{
                   backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                   alignItems: 'center',
@@ -181,7 +192,12 @@ export default function SignUpScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable onPress={() => { setPendingVerification(false); setError(''); }} style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <Pressable
+                onPress={() => { setPendingVerification(false); setError(''); }}
+                style={{ alignItems: 'center', paddingVertical: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.auth.signUp.backToSignUp}
+              >
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
               </Pressable>
             </MotiView>
@@ -210,6 +226,7 @@ export default function SignUpScreen() {
                     onChangeText={setFullName}
                     placeholder={STRINGS.auth.signUp.fullNamePlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.signUp.fullNamePlaceholder}
                     autoCapitalize="words"
                     autoComplete="name"
                     onFocus={() => setFocused('name')}
@@ -231,6 +248,7 @@ export default function SignUpScreen() {
                     onChangeText={setEmail}
                     placeholder={STRINGS.auth.signUp.emailPlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.signUp.emailPlaceholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
@@ -253,13 +271,19 @@ export default function SignUpScreen() {
                     onChangeText={setPassword}
                     placeholder={STRINGS.auth.signUp.passwordPlaceholder}
                     placeholderTextColor={C.TEXT3}
+                    accessibilityLabel={STRINGS.auth.signUp.passwordPlaceholder}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     onFocus={() => setFocused('password')}
                     onBlur={() => setFocused(null)}
                     style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
                   />
-                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
+                  <Pressable
+                    onPress={() => setShowPassword(!showPassword)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
+                  >
                     {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
                   </Pressable>
                 </View>
@@ -296,6 +320,9 @@ export default function SignUpScreen() {
               >
                 <Pressable
                   onPress={() => setAgreed(!agreed)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: agreed }}
+                  accessibilityLabel={STRINGS.auth.signUp.agreeTerms}
                   style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 4 }}
                 >
                   <View style={{
@@ -334,6 +361,9 @@ export default function SignUpScreen() {
                 <Pressable
                   onPress={handleSignUp}
                   disabled={!canSubmit || loading}
+                  accessibilityRole="button"
+                  accessibilityLabel={STRINGS.auth.signUp.createAccount}
+                  accessibilityState={{ disabled: !canSubmit || loading }}
                   style={{
                     backgroundColor: C.JADE_ACCENT, borderRadius: 14,
                     paddingVertical: 16, alignItems: 'center',
