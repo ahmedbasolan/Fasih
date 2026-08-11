@@ -9,7 +9,7 @@
  * Data comes entirely from existing useAppStore — no new store fields needed.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -102,16 +102,15 @@ const LEVEL_LABELS: Record<ConfidenceLevel, string> = {
 
 interface SituationalConfidenceProps {
   limit?: number;
-  onSeeAll?: () => void;
 }
 
 export function SituationalConfidence({
   limit = 5,
-  onSeeAll,
 }: SituationalConfidenceProps) {
   const { C } = useTheme();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const stats              = useAppStore((s) => s.stats);
+  const [expanded, setExpanded] = useState(false);
 
   const situations = useMemo<SituationResult[]>(() => {
     return SITUATIONS.map((sit) => {
@@ -167,8 +166,9 @@ export function SituationalConfidence({
     });
   }, [situations]);
 
-  const displayed = sorted.slice(0, limit);
+  const displayed = expanded ? sorted : sorted.slice(0, limit);
   const activeSituations = sorted.filter((s) => s.score > 0).length;
+  const canExpand = !expanded && sorted.length > limit;
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -311,9 +311,9 @@ export function SituationalConfidence({
               : `${activeSituations} of ${SITUATIONS.length} situations in progress`}
           </Text>
         </View>
-        {onSeeAll && (
+        {canExpand && (
           <Pressable
-            onPress={onSeeAll}
+            onPress={() => setExpanded(true)}
             style={({ pressed }) => [styles.seeAllBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel="See all situations"

@@ -330,6 +330,7 @@ export const STRINGS = {
     account: 'Account',
     notifications: 'Notifications',
     enabled: 'Enabled',
+    disabled: 'Disabled',
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
