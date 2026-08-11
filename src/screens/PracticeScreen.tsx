@@ -282,6 +282,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const insets = useSafeAreaInsets();
   const { speak, speakSlow, isSpeaking } = useArabicTTS();
   const getDueReviews = useAppStore((s) => s.getDueReviews);
+  const phraseReviews = useAppStore((s) => s.phraseReviews);
+  const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
   const [mode, setMode] = useState<PracticeMode>('menu');
   const [deck, setDeck] = useState<Phrase[]>([]);
   const [current, setCurrent] = useState(0);
@@ -557,7 +559,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.flashcards}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.flashcardDesc}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(DECK_SIZE)}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(dueCount)}</Text>
                 </View>
               </Pressable>
 

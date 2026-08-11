@@ -187,7 +187,7 @@ export const STRINGS = {
     correctCount: (count: number) => `${count} correct`,
     chooseHowToPractice: 'Choose how you want to practice',
     flashcardDesc: 'See Arabic phrases, tap to reveal the meaning. Rate your knowledge after each card.',
-    flashcardMeta: (count: number) => `${count} cards · SRS-driven`,
+    flashcardMeta: (dueCount: number) => dueCount > 0 ? `${dueCount} due · SRS-driven` : 'All caught up · reviewing early',
     quizTitle: 'Translation Quiz',
     quizDesc: 'Read the Arabic phrase, choose the correct English translation from four options.',
     quizMeta: (count: number) => `${count} questions · Multiple choice`,
