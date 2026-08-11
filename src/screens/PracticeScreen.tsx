@@ -441,9 +441,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, justifyContent: 'center' }}>
         <EmptyState
-          arabic="لا يوجد"
-          title="No phrases to practice"
-          subtitle="Add phrases to your library first"
+          title={STRINGS.practice.noCardsTitle}
+          subtitle={STRINGS.practice.noCardsSub}
         />
       </View>
     );

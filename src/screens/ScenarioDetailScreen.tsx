@@ -115,9 +115,8 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
           <View style={{ gap: 16 }}>
             {script.scenes.length === 0 ? (
               <EmptyState
-                arabic="لا يوجد"
-                title="No scenes available"
-                subtitle="This scenario doesn't have any content yet"
+                title={STRINGS.scenarios.noScenesTitle}
+                subtitle={STRINGS.scenarios.noScenesSub}
               />
             ) : (
               script.scenes.map((scene, index) => {

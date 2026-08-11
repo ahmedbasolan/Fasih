@@ -1,12 +1,10 @@
 import { Alert, View } from 'react-native';
 import { router } from 'expo-router';
-import { MotiView } from 'moti';
-import { Easing } from 'react-native-reanimated';
 import { useClerk } from '@clerk/expo';
 import { useAppStore } from '../../src/store/useAppStore';
 import { ProfileScreen } from '../../src/screens/ProfileScreen';
 import { SyncStatusBanner } from '../../src/components/ui/SyncStatusBanner';
-import { useTabAnimation } from './_layout';
+import { TabSlideTransition } from './_layout';
 
 export default function ProfileTab() {
   const user = useAppStore((s) => s.user);
@@ -19,7 +17,6 @@ export default function ProfileTab() {
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const restorePurchases = useAppStore((s) => s.restorePurchases);
   const { signOut: clerkSignOut } = useClerk();
-  const { direction } = useTabAnimation();
 
   const handleSignOut = () => {
     Alert.alert(
@@ -40,35 +37,22 @@ export default function ProfileTab() {
     );
   };
 
-  const content = (
-    <View style={{ flex: 1 }}>
-      <SyncStatusBanner />
-      <ProfileScreen
-        user={user}
-        stats={stats}
-        milestones={milestones}
-        journal={journal}
-        subscriptionStatus={subscriptionStatus}
-        onSignOut={handleSignOut}
-        onManageSubscription={openCustomerCenter}
-        onUpgrade={async () => { await presentPaywall(); }}
-        onRestorePurchases={async () => { await restorePurchases(); }}
-      />
-    </View>
-  );
-
-  // Always animate with smooth easing - direction determines slide side
-  const slideFrom = direction === 'right' ? 60 : direction === 'left' ? -60 : 0;
-
   return (
-    <MotiView
-      key={`profile-${direction || 'initial'}`}
-      from={{ opacity: 0, translateX: slideFrom }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'timing', duration: 450, easing: Easing.out(Easing.cubic) }}
-      style={{ flex: 1 }}
-    >
-      {content}
-    </MotiView>
+    <TabSlideTransition tabKey="profile">
+      <View style={{ flex: 1 }}>
+        <SyncStatusBanner />
+        <ProfileScreen
+          user={user}
+          stats={stats}
+          milestones={milestones}
+          journal={journal}
+          subscriptionStatus={subscriptionStatus}
+          onSignOut={handleSignOut}
+          onManageSubscription={openCustomerCenter}
+          onUpgrade={async () => { await presentPaywall(); }}
+          onRestorePurchases={async () => { await restorePurchases(); }}
+        />
+      </View>
+    </TabSlideTransition>
   );
 }
