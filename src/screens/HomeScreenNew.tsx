@@ -33,7 +33,6 @@ interface HomeScreenNewProps {
   userName: string;
   onSettingsPress?: () => void;
   onMissionPress?: (missionId: string) => void;
-  onSeeAll?: () => void;
 }
 
 // Derive week-day status from streak + lastActiveDate
@@ -61,7 +60,6 @@ export function HomeScreenNew({
   userName = 'there',
   onSettingsPress,
   onMissionPress,
-  onSeeAll,
 }: HomeScreenNewProps) {
   const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -279,10 +277,7 @@ export function HomeScreenNew({
       {/* Situational Confidence Section */}
       <Text style={styles.sectionLabel}>Your Confidence</Text>
       <View style={styles.sectionContent}>
-        <SituationalConfidence
-          limit={5}
-          onSeeAll={onSeeAll}
-        />
+        <SituationalConfidence limit={5} />
       </View>
 
       {/* Community Section */}
