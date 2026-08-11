@@ -622,7 +622,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         animate={{ opacity: isDimmed ? 0.22 : 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: isDimmed ? 220 : 200, delay: isDimmed ? 0 : i * 70 }}
                       >
-                        <RippleEffect onPress={() => handleChoice(choice)} rippleColor={color} disabled={!!selectedChoiceId}>
+                        <RippleEffect
+                          onPress={() => handleChoice(choice)}
+                          rippleColor={color}
+                          disabled={!!selectedChoiceId}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
+                          accessibilityState={{ selected: isSelected }}
+                        >
                           <View style={{
                             borderRadius: 16,
                             backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
