@@ -3,7 +3,7 @@
 // Fairuz demoted from the old neon-green identity is not used here: the
 // JADE_ACCENT/JADE/PRIMARY/TERTIARY cluster below is ONE hue family (shades of
 // Zafaran gold), not several, because real components already combine them as
-// ad-hoc gradient stops (see DailyPhrase, MissionCard, StreakWidget, WeeklyXP,
+// ad-hoc gradient stops (see DailyPhrase, MissionCard, StreakWidget,
 // OnboardingScenarioPlayer: `colors={[C.PRIMARY, C.JADE]}` etc.) — splitting
 // them into different hues would make those gradients muddy. VIOLET stays a
 // genuinely distinct violet (used standalone, e.g. the "Culture" stat), and

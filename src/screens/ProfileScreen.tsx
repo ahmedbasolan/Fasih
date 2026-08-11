@@ -288,11 +288,11 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
 
       {/* Learning Mode Toggle */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 330 }}>
-        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Learning Mode</Text>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.learningMode.title}</Text>
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
           {[
-            { id: 'career', label: 'Career', Icon: CareerIcon, desc: 'Work scenarios' },
-            { id: 'social', label: 'Social', Icon: SocialIcon, desc: 'Daily life' },
+            { id: 'career', label: STRINGS.profile.learningMode.career, Icon: CareerIcon, desc: STRINGS.profile.learningMode.careerDesc },
+            { id: 'social', label: STRINGS.profile.learningMode.social, Icon: SocialIcon, desc: STRINGS.profile.learningMode.socialDesc },
           ].map(({ id, label, Icon, desc }) => {
             const active = user?.mode === id;
             return (
@@ -397,7 +397,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
 
       {/* Subscription */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 340 }}>
-        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Subscription</Text>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.subscription.title}</Text>
         {subscriptionStatus === 'subscribed' ? (
           <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: C.CARD_BG }}>
             {/* Active badge */}
@@ -406,8 +406,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 <Star size={16} color={C.WHITE} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Fasih Pro</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Active subscription</Text>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.proName}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.profile.subscription.active}</Text>
               </View>
             </View>
             <Pressable
@@ -418,7 +418,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <CreditCard size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Manage Subscription</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.manage}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -430,7 +430,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <RotateCcw size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.restore}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -447,8 +447,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 <Star size={16} color={C.WHITE} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Upgrade to Fasih Pro</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Unlock all scenarios & features</Text>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.upgradeTitle}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.profile.subscription.upgradeDesc}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -460,7 +460,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <RotateCcw size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.restore}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
