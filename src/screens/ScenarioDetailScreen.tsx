@@ -10,6 +10,7 @@ import { HeroSceneBg } from '../components/features/SceneIllustrations';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
+import { STRINGS } from '../constants/strings';
 
 interface Props {
   scenarioId: string;
@@ -69,7 +70,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               {scenario.title}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              By Fasih Team
+              {STRINGS.home.featuredAuthor}
             </Text>
           </View>
         </View>
@@ -93,7 +94,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             </Text>
           </View>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
-            Duration: 10 minutes
+            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, script.scenes.length * 2))}
           </Text>
 
           {/* Description */}

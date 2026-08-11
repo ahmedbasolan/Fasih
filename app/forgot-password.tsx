@@ -10,12 +10,14 @@ import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 import { STRINGS } from '../src/constants/strings';
 import { getClerkErrorMessage } from '../src/lib/clerkErrors';
+import { useAppStore } from '../src/store/useAppStore';
 
 export default function ForgotPasswordScreen() {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const { signIn } = useSignIn();
   const { setActive } = useClerk();
+  const hasOnboarded = useAppStore((s) => s.hasOnboarded);
 
   const [step, setStep] = useState<'email' | 'reset'>('email');
   const [email, setEmail] = useState('');
@@ -64,7 +66,7 @@ export default function ForgotPasswordScreen() {
         const { error: finalErr } = await signIn.finalize();
         if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.forgotPassword.resetFailed)); return; }
         await setActive({ session: signIn.createdSessionId! });
-        router.replace('/(tabs)');
+        router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
       }
     } catch (err: any) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

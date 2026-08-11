@@ -154,6 +154,7 @@ export const STRINGS = {
     studiedPhrases: (count: number) => `${count} phrases`,
     reviewReady: 'Review Ready',
     featuredAuthor: 'By Fasih Team',
+    durationMinutes: (min: number) => `Duration: ${min} minutes`,
   },
   streakRisk: {
     bannerTitle: (days: number) => `Your ${days}-day streak ends tonight`,
