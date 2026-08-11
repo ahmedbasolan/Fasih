@@ -3,27 +3,20 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAppStore } from '../../src/store/useAppStore';
 import { ScenarioPlayer } from '../../src/screens/ScenarioPlayer';
 import { ScenarioDetailScreen } from '../../src/screens/ScenarioDetailScreen';
-import { trackScenarioStarted, trackScenarioCompleted, trackScenarioAbandoned } from '../../src/lib/analytics';
 
 export default function ScenarioRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [showPlayer, setShowPlayer] = useState(false);
-  
+
   const user = useAppStore((s) => s.user);
   const addJournalEntry = useAppStore((s) => s.addJournalEntry);
   const checkMilestones = useAppStore((s) => s.checkMilestones);
 
-  const handleComplete = (scenarioId: string, endingType: string) => {
-    // finalizeScenario (called inside ScenarioPlayer) already wrote completedScenarios.
-    // We only need to check milestones and dismiss the player here.
+  const handleComplete = (_scenarioId: string, _endingType: string) => {
+    // finalizeScenario (called inside ScenarioPlayer) already wrote completedScenarios,
+    // and ScenarioPlayer already fires trackScenarioCompleted itself with the real
+    // title/scene count — this route only needs to check milestones and dismiss the player.
     checkMilestones();
-    trackScenarioCompleted({
-      scenarioId,
-      title: scenarioId,
-      endingType,
-      endingId: endingType,
-      sceneCount: 0,
-    });
     setShowPlayer(false);
   };
 
@@ -37,7 +30,8 @@ export default function ScenarioRoute() {
         scenarioId={id as string}
         user={user}
         onExit={() => {
-          trackScenarioAbandoned({ scenarioId: id as string, sceneId: '' });
+          // ScenarioPlayer already fires trackScenarioAbandoned itself, with the
+          // real current scene id, before calling this.
           setShowPlayer(false);
         }}
         onComplete={handleComplete}
@@ -51,7 +45,8 @@ export default function ScenarioRoute() {
       scenarioId={id as string}
       onBack={() => router.back()}
       onSceneSelect={() => {
-        trackScenarioStarted({ scenarioId: id as string, title: id as string });
+        // ScenarioPlayer fires trackScenarioStarted itself, with the real title,
+        // once the player actually begins (not just when a scene row is tapped).
         setShowPlayer(true);
       }}
     />
