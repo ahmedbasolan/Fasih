@@ -555,6 +555,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             }}
             accessibilityRole="button"
             accessibilityLabel="Exit scenario"
+            hitSlop={8}
             style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
           >
             <X size={14} color={C.TEXT3} />

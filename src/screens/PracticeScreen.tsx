@@ -231,6 +231,8 @@ function QuizOption({
       : C.BORDER;
   const textColor =
     state === 'correct' ? C.JADE2 : state === 'wrong' ? C.ERROR : C.TEXT2;
+  const stateLabel =
+    state === 'correct' ? ', correct answer' : state === 'wrong' ? ', your answer, incorrect' : '';
 
   return (
     <MotiView
@@ -241,6 +243,9 @@ function QuizOption({
       <Pressable
         onPress={onPress}
         disabled={state !== 'idle'}
+        accessibilityRole="button"
+        accessibilityLabel={`${text}${stateLabel}`}
+        accessibilityState={{ disabled: state !== 'idle' }}
         style={{
           borderRadius: 16,
           padding: 16,
@@ -473,6 +478,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
           </Text>
           <Pressable
             onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel="Close practice"
+            hitSlop={8}
             style={{
               width: 32,
               height: 32,
@@ -849,7 +857,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {mode === 'phrase-builder' && deck[current] && (
           <View style={{ flex: 1, backgroundColor: C.BG }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 16 }}>
-              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" hitSlop={8} style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
                 <X size={15} color={C.TEXT2} />
               </Pressable>
               

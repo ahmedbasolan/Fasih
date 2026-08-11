@@ -88,7 +88,12 @@ export default function SignInScreen() {
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>
                 {STRINGS.auth.signIn.noAccount}
               </Text>
-              <Pressable onPress={() => router.push('/sign-up')} hitSlop={8}>
+              <Pressable
+                onPress={() => router.push('/sign-up')}
+                hitSlop={8}
+                accessibilityRole="link"
+                accessibilityLabel={STRINGS.auth.signIn.signUpLink}
+              >
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{STRINGS.auth.signIn.signUpLink}</Text>
               </Pressable>
             </View>
@@ -116,6 +121,7 @@ export default function SignInScreen() {
                 onChangeText={setEmail}
                 placeholder={STRINGS.auth.signIn.emailPlaceholder}
                 placeholderTextColor={C.TEXT3}
+                accessibilityLabel={STRINGS.auth.signIn.emailPlaceholder}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -137,6 +143,7 @@ export default function SignInScreen() {
                 onChangeText={setPassword}
                 placeholder={STRINGS.auth.signIn.passwordPlaceholder}
                 placeholderTextColor={C.TEXT3}
+                accessibilityLabel={STRINGS.auth.signIn.passwordPlaceholder}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 onFocus={() => setFocused('password')}
@@ -193,6 +200,9 @@ export default function SignInScreen() {
             <Pressable
               onPress={handleSignIn}
               disabled={!canSubmit || loading}
+              accessibilityRole="button"
+              accessibilityLabel={STRINGS.auth.signIn.logIn}
+              accessibilityState={{ disabled: !canSubmit || loading }}
               style={{
                 backgroundColor: C.JADE_ACCENT, borderRadius: 14, paddingVertical: 16,
                 alignItems: 'center', opacity: canSubmit && !loading ? 1 : 0.5,
