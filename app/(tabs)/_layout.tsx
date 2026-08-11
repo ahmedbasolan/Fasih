@@ -2,8 +2,9 @@ import { Tabs, usePathname } from 'expo-router';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
+import { Easing } from 'react-native-reanimated';
 import { Home, Layers, BookOpen, User } from '../../src/components/icons';
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { FONT_HEADING_SEMI } from '../../src/components/design/tokens';
 import { useTheme } from '../../src/hooks/useTheme';
 
@@ -25,6 +26,25 @@ export const TabAnimationContext = createContext<TabAnimationContextType>({
 // Hook for tab screens to use animation
 export function useTabAnimation() {
   return useContext(TabAnimationContext);
+}
+
+// Shared slide+fade wrapper for tab screen content — every tab route used to
+// duplicate this exact block (compute slideFrom, wrap in a keyed MotiView).
+export function TabSlideTransition({ tabKey, children }: { tabKey: string; children: ReactNode }) {
+  const { direction } = useTabAnimation();
+  const slideFrom = direction === 'right' ? 60 : direction === 'left' ? -60 : 0;
+
+  return (
+    <MotiView
+      key={`${tabKey}-${direction || 'initial'}`}
+      from={{ opacity: 0, translateX: slideFrom }}
+      animate={{ opacity: 1, translateX: 0 }}
+      transition={{ type: 'timing', duration: 450, easing: Easing.out(Easing.cubic) }}
+      style={{ flex: 1 }}
+    >
+      {children}
+    </MotiView>
+  );
 }
 
 export default function TabsLayout() {

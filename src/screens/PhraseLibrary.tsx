@@ -186,7 +186,7 @@ export function PhraseLibrary() {
             {isUnlocked && (
               <View style={{ borderRadius: 12, padding: 10, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Sparkles size={14} color={C.PRIMARY} />
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>From your first scenario</Text>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.fromFirstScenario}</Text>
               </View>
             )}
 
@@ -251,7 +251,7 @@ export function PhraseLibrary() {
               <Grid2x2 size={16} color={C.PRIMARY} />
             </View>
             <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT }}>
-              Categories
+              {STRINGS.phrases.categoriesTitle}
             </Text>
           </View>
           <View style={{
@@ -261,7 +261,7 @@ export function PhraseLibrary() {
             backgroundColor: C.SURFACE,
           }}>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.TEXT3 }}>
-              {PHRASE_CATEGORIES.length} topics
+              {STRINGS.phrases.topicsCount(PHRASE_CATEGORIES.length)}
             </Text>
           </View>
         </View>
@@ -351,7 +351,7 @@ export function PhraseLibrary() {
             }}
           >
             <Grid2x2 size={12} color={C.TEXT3} />
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.TEXT2 }}>All</Text>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.TEXT2 }}>{STRINGS.phrases.filterAll}</Text>
           </Pressable>
         </View>
       </MotiView>
@@ -535,10 +535,10 @@ export function PhraseLibrary() {
                   </View>
                   <View>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT, marginBottom: 2 }}>
-                      Browse All Phrases
+                      {STRINGS.phrases.browseAllTitle}
                     </Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>
-                      {PHRASES.length} expressions across {PHRASE_CATEGORIES.length} categories
+                      {STRINGS.phrases.browseAllSub(PHRASES.length, PHRASE_CATEGORIES.length)}
                     </Text>
                   </View>
                 </View>
