@@ -27,8 +27,11 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
+  const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
+  const toggleFavoriteScenario = useAppStore((s) => s.toggleFavoriteScenario);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
   const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
+  const isSaved = favoriteScenarios.includes(scenarioId);
 
   // Also guards deep links and stale favourites, not just the browse list.
   if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) return null;
@@ -58,8 +61,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             >
               <ChevronLeft size={24} color={C.WHITE} />
             </Pressable>
-            <Pressable style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-              <Bookmark size={20} color={C.WHITE} />
+            <Pressable
+              onPress={() => toggleFavoriteScenario(scenarioId)}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
+              accessibilityState={{ selected: isSaved }}
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Bookmark size={20} color={isSaved ? C.PRIMARY : C.WHITE} fill={isSaved ? C.PRIMARY : 'none'} />
             </Pressable>
           </View>
 
