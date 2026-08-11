@@ -203,7 +203,6 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
         },
         {
           text: STRINGS.onboarding.skipWarningConfirm,
-          style: 'destructive',
           onPress: () => {
             onSkipTrial();
             finish();
