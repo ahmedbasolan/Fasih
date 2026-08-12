@@ -5,7 +5,7 @@ import { ChevronLeft, Bookmark, Play, Lock } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, SheetPanel } from '../components/ui';
 import { HeroSceneBg } from '../components/features/SceneIllustrations';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
@@ -85,14 +85,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         </View>
 
         {/* ── Content Section ── */}
-        <View style={{ 
-          marginTop: -30, 
-          backgroundColor: C.BG, 
-          borderTopLeftRadius: 40, 
-          borderTopRightRadius: 40,
-          paddingHorizontal: 24,
-          paddingTop: 32,
-        }}>
+        <SheetPanel radius={40} overlap={30} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
           {/* Metadata Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 24, color: C.TEXT }}>
@@ -165,7 +158,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               })
             )}
           </View>
-        </View>
+        </SheetPanel>
       </ScrollView>
     </View>
   );

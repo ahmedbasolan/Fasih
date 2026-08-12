@@ -21,7 +21,7 @@ import {
   SMOOTH,
 } from '../components/design/tokens';
 import type { ThemeColors } from '../components/design/tokens';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, SheetPanel } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
@@ -465,16 +465,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       </LinearGradient>
 
       {/* ── Content panel ── */}
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.SURFACE,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          marginTop: -28,
-          overflow: 'hidden',
-        }}
-      >
+      <SheetPanel radius={32} overlap={28} style={{ flex: 1, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
         {/* ── Tabs row ── */}
         <View
           style={{
@@ -624,7 +615,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
               : null
           }
         />
-      </View>
+      </SheetPanel>
     </View>
   );
 }
