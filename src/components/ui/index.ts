@@ -11,3 +11,4 @@ export { SwitchButton } from './SwitchButton';
 export { RippleEffect } from './RippleEffect';
 export { ProgressBar } from './ProgressBar';
 export { SyncStatusBanner, SyncSuccessBadge } from './SyncStatusBanner';
+export { SheetPanel } from './SheetPanel';
