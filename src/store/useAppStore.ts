@@ -8,6 +8,7 @@ import {
   getChoiceStats,
   recordEndingStat as rcRecordEndingStat,
   getEndingStats,
+  deleteAccountData,
   CURRENT_SCHEMA_VERSION,
 } from '../lib/syncService';
 import {
@@ -210,6 +211,12 @@ interface AppState {
   setAuthenticated: (value: boolean) => void;
   setClerkUserId: (id: string | null) => void;
   signOut: () => Promise<void>;
+  /**
+   * Erase the user's cloud data, then wipe local state. Returns an error string
+   * if the cloud delete failed — the caller MUST abort and leave the Clerk
+   * account intact in that case, or the row is stranded with no way to retry.
+   */
+  deleteAccount: () => Promise<{ error: string | null }>;
 
   // UI Actions
   setTheme: (theme: 'system' | 'light' | 'dark') => void;
@@ -428,6 +435,25 @@ export const useAppStore = create<AppState>()(
           recentSessionHours: [],
           notificationsEnabled: false,
         });
+      },
+
+      deleteAccount: async () => {
+        // Cloud data FIRST. delete_my_account() authenticates with the live
+        // Clerk session token, so removing the Clerk user before this point
+        // would revoke that token and strand the row — owned by nobody, with
+        // no way for the user (or anyone) to retry the deletion.
+        const { error } = await deleteAccountData();
+        if (error) return { error };
+
+        // Cloud row is gone; tear down everything local.
+        await get().signOut();
+
+        // signOut deliberately preserves hasOnboarded so a returning user lands
+        // on sign-in. A deleted account has no "returning" — reset it so the
+        // next launch starts from onboarding as a genuinely new user.
+        set({ hasOnboarded: false });
+
+        return { error: null };
       },
 
       // ─── Notifications ──────────────────────────────────────────────────────
