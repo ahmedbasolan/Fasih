@@ -13,6 +13,7 @@ import { StatCard } from '../components/features/StatCard';
 import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
 import { getNotificationPermissionStatus } from '../lib/notifications';
+import { isLegalUrlSet, openLegal } from '../constants/legal';
 import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 import { useAppStore } from '../store/useAppStore';
 
@@ -83,6 +84,18 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       value: 'English',
       onPress: undefined,
     },
+    // Legal rows only appear once their URL is configured — a Privacy Policy
+    // row that opens nothing is worse than no row. See src/constants/legal.ts.
+    ...(isLegalUrlSet('privacy') ? [{
+      label: STRINGS.legal.privacyPolicy,
+      value: '',
+      onPress: () => openLegal('privacy'),
+    }] : []),
+    ...(isLegalUrlSet('terms') ? [{
+      label: STRINGS.legal.termsOfService,
+      value: '',
+      onPress: () => openLegal('terms'),
+    }] : []),
     {
       label: STRINGS.profile.aboutFasih,
       value: STRINGS.profile.version('1.0'),

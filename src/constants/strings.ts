@@ -362,6 +362,10 @@ export const STRINGS = {
     version: (v: string) => `v${v}`,
     signOut: 'Sign Out',
   },
+  legal: {
+    privacyPolicy: 'Privacy Policy',
+    termsOfService: 'Terms of Service',
+  },
   auth: {
     rateLimited: 'Too many attempts — please wait a bit and try again.',
     signIn: {
@@ -394,7 +398,11 @@ export const STRINGS = {
       fullNamePlaceholder: 'Full name',
       emailPlaceholder: 'Email address',
       passwordPlaceholder: 'Create password',
-      agreeTerms: 'I agree to sync my learning progress across devices',
+      // Split so Terms / Privacy render as tappable links inside the sentence.
+      agreeTermsPrefix: 'I agree to the',
+      agreeTermsConjunction: 'and',
+      /** Whole sentence, for the checkbox's screen-reader label. */
+      agreeTermsAccessible: 'I agree to the Terms of Service and Privacy Policy',
       createAccount: 'Create Account',
       creatingAccount: 'Creating Account...',
       skipDevOnly: 'Skip (dev only)',
