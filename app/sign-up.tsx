@@ -10,12 +10,31 @@ import { useTheme } from '../src/hooks/useTheme';
 import { GhostLetters } from '../src/components/ui';
 import { STRINGS } from '../src/constants/strings';
 import { getClerkErrorMessage } from '../src/lib/clerkErrors';
+import { isLegalUrlSet, openLegal, type LegalDoc } from '../src/constants/legal';
 
 const PASSWORD_RULES = [
   { id: 'length', label: STRINGS.auth.signUp.passwordRuleLength, test: (p: string) => p.length >= 6 },
   { id: 'upper', label: STRINGS.auth.signUp.passwordRuleUpper, test: (p: string) => /[A-Z]/.test(p) },
   { id: 'number', label: STRINGS.auth.signUp.passwordRuleNumber, test: (p: string) => /\d/.test(p) },
 ];
+
+/**
+ * Inline link to a legal document. Renders as plain text (not a dead control)
+ * while LEGAL_URLS hasn't been configured yet — see src/constants/legal.ts.
+ */
+function LegalLink({ doc, label }: { doc: LegalDoc; label: string }) {
+  const { C } = useTheme();
+  if (!isLegalUrlSet(doc)) return <Text>{label}</Text>;
+  return (
+    <Text
+      onPress={() => openLegal(doc)}
+      accessibilityRole="link"
+      style={{ color: C.JADE_ACCENT, textDecorationLine: 'underline' }}
+    >
+      {label}
+    </Text>
+  );
+}
 
 export default function SignUpScreen() {
   const { C } = useTheme();
@@ -318,25 +337,31 @@ export default function SignUpScreen() {
                 transition={{ type: 'spring', stiffness: 280, damping: 25, delay: 200 }}
                 style={{ marginBottom: 24 }}
               >
-                <Pressable
-                  onPress={() => setAgreed(!agreed)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: agreed }}
-                  accessibilityLabel={STRINGS.auth.signUp.agreeTerms}
-                  style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 4 }}
-                >
-                  <View style={{
-                    width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                    backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
-                    borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
+                {/* Checkbox and label are separate touch targets so tapping a
+                    legal link opens that document instead of toggling consent. */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 4 }}>
+                  <Pressable
+                    onPress={() => setAgreed(!agreed)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: agreed }}
+                    accessibilityLabel={STRINGS.auth.signUp.agreeTermsAccessible}
+                    hitSlop={12}
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, marginTop: 1,
+                      backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                      borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
                     {agreed && <Check size={12} color={C.BG} />}
-                  </View>
+                  </Pressable>
                   <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
-                    {STRINGS.auth.signUp.agreeTerms}
+                    {STRINGS.auth.signUp.agreeTermsPrefix}{' '}
+                    <LegalLink doc="terms" label={STRINGS.legal.termsOfService} />
+                    {' '}{STRINGS.auth.signUp.agreeTermsConjunction}{' '}
+                    <LegalLink doc="privacy" label={STRINGS.legal.privacyPolicy} />
                   </Text>
-                </Pressable>
+                </View>
               </MotiView>
 
               {/* Error */}
