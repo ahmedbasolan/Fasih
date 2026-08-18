@@ -141,10 +141,17 @@ These are decisions, not code facts — they change what the policy must say:
 1. **Which regions?** Fasih targets the UAE, but the App Store is global by
    default. If EU/UK users can download it, GDPR applies: you need a lawful
    basis, a data-deletion path, and a data-export path.
-2. **Account deletion.** Apple **requires** in-app account deletion for any app
-   with account creation. There is currently no delete-account flow in the code
-   — `signOut()` clears local state only. **This is a second store-blocking gap
-   alongside the missing policy.**
+2. **Account deletion — built, but needs two dashboard steps to work.**
+   Profile → Delete Account now erases the Supabase row (via the
+   `delete_my_account()` RPC in `supabase/migrations/005_account_deletion.sql`)
+   and then the Clerk account, in that order. It **fails closed**: if the data
+   deletion doesn't succeed, the Clerk account is left intact and the user is
+   told nothing was deleted. Before it functions you must:
+   - Run migration `005_account_deletion.sql`
+   - Enable Clerk↔Supabase Third-Party Auth in **both** dashboards (the same
+     prerequisites listed for Option B in `003_rls.sql`) — without it
+     `auth.jwt()->>'sub'` is NULL and the RPC refuses every request
+   - Enable *"Allow users to delete their account"* in the Clerk Dashboard
 3. **Data retention.** How long is Supabase data kept after a user stops using
    the app or deletes their account?
 4. **Children.** Fasih is aimed at working adults. Declaring a 13+ (or 16+ in

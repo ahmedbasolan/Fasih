@@ -27,6 +27,8 @@ interface Props {
   onManageSubscription?: () => void;
   onUpgrade?: () => void;
   onRestorePurchases?: () => void;
+  onDeleteAccount?: () => void;
+  isDeletingAccount?: boolean;
 }
 
 const roleIcons: Record<string, React.ElementType> = {
@@ -34,7 +36,7 @@ const roleIcons: Record<string, React.ElementType> = {
   office: Briefcase, healthcare: Activity, driver: Car, security: Shield,
 };
 
-export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onManageSubscription, onUpgrade, onRestorePurchases }: Props) {
+export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onManageSubscription, onUpgrade, onRestorePurchases, onDeleteAccount, isDeletingAccount = false }: Props) {
   const { C, G, themePreference, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const streakCount = useCountUp(stats.currentStreak, 900, 100);
@@ -521,6 +523,26 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
           >
             <LogOut size={16} color={C.ERROR} />
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.ERROR }}>{STRINGS.profile.signOut}</Text>
+          </Pressable>
+        </MotiView>
+      )}
+
+      {/* Delete account — deliberately quieter than Sign Out. This is rare and
+          irreversible, so it reads as a text link rather than a filled button
+          that invites a mis-tap. */}
+      {onDeleteAccount && (
+        <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 400, delay: 440 }}>
+          <Pressable
+            onPress={onDeleteAccount}
+            disabled={isDeletingAccount}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.profile.deleteAccount.button}
+            accessibilityState={{ disabled: isDeletingAccount }}
+            style={{ alignItems: 'center', marginTop: 16, paddingVertical: 14, opacity: isDeletingAccount ? 0.5 : 1 }}
+          >
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, textDecorationLine: 'underline' }}>
+              {isDeletingAccount ? STRINGS.profile.deleteAccount.deleting : STRINGS.profile.deleteAccount.button}
+            </Text>
           </Pressable>
         </MotiView>
       )}

@@ -361,6 +361,24 @@ export const STRINGS = {
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
     signOut: 'Sign Out',
+    deleteAccount: {
+      button: 'Delete Account',
+      title: 'Delete your account?',
+      message:
+        'This permanently erases your streak, progress, saved phrases and journal entries. It cannot be undone, and we cannot recover any of it afterwards.',
+      /** Appended when the user has an active subscription — deleting the account does NOT cancel billing. */
+      subscriptionWarning:
+        '\n\nYour subscription is billed by the App Store, not by Fasih, so deleting your account does not cancel it. Cancel it in your device Subscriptions settings first, or you will keep being charged.',
+      confirm: 'Delete Forever',
+      deleting: 'Deleting…',
+      failedTitle: 'Could not delete your account',
+      failedMessage: (reason: string) =>
+        `Nothing has been deleted — your account and data are intact. Please try again.\n\n${reason}`,
+      /** Cloud data deleted, but removing the Clerk account itself failed. */
+      partialTitle: 'Your data was deleted',
+      partialMessage:
+        'Your learning data has been erased, but we could not remove the account itself. Please contact support so we can finish removing it.',
+    },
   },
   legal: {
     privacyPolicy: 'Privacy Policy',
