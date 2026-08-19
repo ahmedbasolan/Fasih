@@ -84,6 +84,12 @@ export function useArabicTTS(): UseTTSReturn {
           onError: () => setIsSpeaking(false),
           onStopped: () => setIsSpeaking(false),
         });
+        // Re-arm the safety timeout for the fallback speech so isSpeaking isn't
+        // cleared early by the original (longer) timeout while audio still plays.
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setIsSpeaking(false);
+        }, 15000);
       },
       onStopped: () => setIsSpeaking(false),
     };

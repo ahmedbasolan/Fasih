@@ -405,18 +405,21 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   );
 
   const displayScenarios = useMemo(() => {
-    const filtered = allScenarios.filter((s) => {
+    // Determine actual locked status based on subscription. hasScenarioAccess
+    // expects the scenario's position in the full list — index must be taken
+    // from allScenarios, NOT the filtered subset, or the "first 3 free" gate
+    // rebases and lets paywalled scenarios appear unlocked on filtered tabs.
+    const withAccess = allScenarios.map((s, index) => ({
+      ...s,
+      locked: !hasScenarioAccess(index),
+    }));
+    const filtered = withAccess.filter((s) => {
       if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
       if (filterTab === 'recommended') return !s.locked;
       return true;
     });
-    // Determine actual locked status based on subscription
-    const withAccess = filtered.map((s, index) => ({
-      ...s,
-      locked: !hasScenarioAccess(index),
-    }));
     // unlocked first, locked at the bottom
-    return withAccess.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+    return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
   }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess]);
 
   const lockedCount = displayScenarios.filter((s) => s.locked).length;
