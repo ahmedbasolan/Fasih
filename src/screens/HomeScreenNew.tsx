@@ -26,7 +26,7 @@ import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from 
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { ChevronRight } from '../components/icons';
 import { STRINGS } from '../constants/strings';
-import { todayISO } from '../engine/srsEngine';
+import { todayISO, addDays } from '../engine/srsEngine';
 import { isStreakAtRisk } from '../engine/streakEngine';
 
 interface HomeScreenNewProps {
@@ -36,16 +36,26 @@ interface HomeScreenNewProps {
 }
 
 // Derive week-day status from streak + lastActiveDate
-function getWeekDays(streak: number, lastActiveDate: string | null) {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+function getWeekDays(streak: number, lastActiveDate: string | null): { label: string; status: 'done' | 'today' | 'future' }[] {
+  const todayIso = todayISO();
+  const todayJsDay = new Date().getDay(); // 0=Sun ... 6=Sat
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Consecutive streak window ending at the last active day (yesterday if the
+  // user hasn't practiced today yet). Past days are only 'done' when they fall
+  // inside this window — never display unearned checkmarks.
+  const streakEnd = lastActiveDate ?? todayIso;
+  const streakStart = addDays(streakEnd, -(Math.max(streak, 1) - 1));
+
   return days.map((label, idx) => {
-    const dayIndex = idx === 0 ? 6 : idx - 1; // Map to Mon-Sun order
-    if (dayIndex < dayOfWeek) return { label, status: 'done' as const };
-    if (dayIndex === dayOfWeek) return { label, status: 'today' as const };
-    return { label, status: 'future' as const };
+    // JS getDay(): Mon=1 ... Sat=6, Sun=0. Mon-first array index → (idx + 1) % 7.
+    const jsDay = (idx + 1) % 7;
+    const date = addDays(todayIso, jsDay - todayJsDay); // calendar date of this weekday
+    if (jsDay < todayJsDay) {
+      return { label, status: date >= streakStart && date <= streakEnd ? 'done' : 'future' };
+    }
+    if (jsDay === todayJsDay) return { label, status: 'today' };
+    return { label, status: 'future' };
   });
 }
 
