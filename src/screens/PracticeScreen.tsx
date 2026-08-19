@@ -308,6 +308,26 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setMode('flashcard');
   }, [getDueReviews]);
 
+  // Arabic → Transliteration options (standard quiz — no English)
+  const generateQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    const correct = phrases[idx];
+    const others = PHRASES.filter((p) => p.id !== correct.id);
+    const wrong = shuffle(others).slice(0, 3);
+    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
+    setQuizOptions(options);
+    setQuizAnswer(null);
+  }, []);
+
+  // English → Arabic options (reverse quiz)
+  const generateReverseQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    const correct = phrases[idx];
+    const others = PHRASES.filter((p) => p.id !== correct.id);
+    const wrong = shuffle(others).slice(0, 3);
+    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
+    setQuizOptions(options);
+    setQuizAnswer(null);
+  }, []);
+
   const startQuiz = useCallback(() => {
     const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
     setDeck(shuffled);
@@ -316,7 +336,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setQuizAnswer(null);
     generateQuizOptions(shuffled, 0);
     setMode('quiz');
-  }, []);
+  }, [generateQuizOptions]);
 
   const startReverseQuiz = useCallback(() => {
     const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
@@ -326,7 +346,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setQuizAnswer(null);
     generateReverseQuizOptions(shuffled, 0);
     setMode('reverse-quiz');
-  }, []);
+  }, [generateReverseQuizOptions]);
 
   // Phrase Builder only works on phrases that ship word-tile breakdowns.
   const PHRASES_WITH_TILES = useMemo(
@@ -342,26 +362,6 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('phrase-builder');
   }, [PHRASES_WITH_TILES]);
-
-  // Arabic → Transliteration options (standard quiz — no English)
-  const generateQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
-
-  // English → Arabic options (reverse quiz)
-  const generateReverseQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
 
   // Flashcard navigation — calls 3-tier rating for real SRS scheduling
   const rateCard = useCallback((rating: 'knew' | 'learning' | 'new') => {
@@ -424,7 +424,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       if (mode === 'reverse-quiz') generateReverseQuizOptions(deck, next);
       else generateQuizOptions(deck, next);
     }
-  }, [current, deck, mode, onSessionComplete]);
+  }, [current, deck, mode, onSessionComplete, generateQuizOptions, generateReverseQuizOptions]);
 
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;
