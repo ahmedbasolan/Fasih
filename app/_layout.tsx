@@ -112,6 +112,10 @@ function RootLayout() {
                 name="practice"
                 options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
               />
+              <Stack.Screen
+                name="sentence-builder"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
             </Stack>
           </SafeAreaProvider>
         </GestureHandlerRootView>
