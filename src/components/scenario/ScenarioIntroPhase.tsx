@@ -51,7 +51,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
 
         {/* Kaf's introduction */}
         <View style={{ width: '100%', borderRadius: 16, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', gap: 12 }}>
-          <KafMascot size="xs" animate={false} />
+          <KafMascot size="xs" />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, marginBottom: 3 }}>
               {STRINGS.scenarios.kafSays}

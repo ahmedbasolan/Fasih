@@ -178,17 +178,12 @@ function ScenarioCard({
   const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{ ...SMOOTH, delay: index * 40 }}
+    <View
       style={{
         flex: 1,
         paddingRight: isLeft ? 6 : 0,
         paddingLeft: isLeft ? 0 : 6,
         paddingBottom: 12,
-        // Ensure no black flash by setting initial background
-        backgroundColor: 'transparent',
       }}
     >
       <Pressable
@@ -298,7 +293,7 @@ function ScenarioCard({
           </View>
         )}
       </Pressable>
-    </MotiView>
+    </View>
   );
 }
 

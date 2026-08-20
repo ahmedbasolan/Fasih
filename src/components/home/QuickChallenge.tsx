@@ -137,9 +137,9 @@ export function QuickChallenge({
           </Pressable>
         ) : (
           <MotiView
-            from={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', duration: 300 }}
             style={styles.responseContainer}
           >
             <Text style={styles.responseLabel}>Correct response:</Text>

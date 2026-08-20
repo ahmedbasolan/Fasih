@@ -97,13 +97,19 @@ function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
             <StatusBar style={isDark ? "light" : "dark"} />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: C.BG },
+                animationDuration: 300,
+              }}
+            >
+              <Stack.Screen name="index" options={{ animation: 'none' }} />
+              <Stack.Screen name="sign-in" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="onboarding" options={{ animation: 'fade_from_bottom' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade_from_bottom' }} />
               <Stack.Screen
                 name="scenario/[id]"
                 options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}

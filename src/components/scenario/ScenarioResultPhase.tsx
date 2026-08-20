@@ -141,14 +141,11 @@ export function ScenarioResultPhase({
                   return (
                     <React.Fragment key={sceneId}>
                       <View style={{ alignItems: 'center', gap: 6 }}>
-                        <MotiView
-                          from={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', damping: 14, delay: 80 + i * 130 }}
+                        <View
                           style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: `${dotColor}20`, borderWidth: 1.5, borderColor: dotColor, alignItems: 'center', justifyContent: 'center' }}
                         >
                           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
-                        </MotiView>
+                        </View>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: dotColor }}>{label}</Text>
                       </View>
                       {i < toneHistory.length - 1 && (
@@ -223,7 +220,7 @@ export function ScenarioResultPhase({
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 200 }}>
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <KafMascot size="xs" animate={false} />
+                <KafMascot size="xs" />
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: violetColor }}>
                   {STRINGS.scenarios.culturalJourneyTitle}
                 </Text>

@@ -11,7 +11,6 @@
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
@@ -380,14 +379,11 @@ export function SituationalConfidence({
       ) : (
         // ── Existing situations list ─────────────────────────────────────────────
         <View style={styles.situationsList}>
-          {displayed.map((sit, idx) => {
+          {displayed.map((sit) => {
             const colors = getLevelColors(sit.level);
             return (
-              <MotiView
+              <View
                 key={sit.id}
-                from={{ opacity: 0, translateY: 6 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 300, delay: idx * 50 }}
                 style={styles.situationRow}
               >
                 <View style={styles.situationTop}>
@@ -402,21 +398,16 @@ export function SituationalConfidence({
                   </View>
                 </View>
                 <View style={styles.barTrack}>
-                  <MotiView
-                    from={{ width: '0%' }}
-                    animate={{ width: `${sit.score}%` as any }}
-                    transition={{ type: 'spring', stiffness: 150, damping: 20, delay: idx * 80 + 100 }}
-                    style={{ height: '100%' }}
-                  >
+                  <View style={{ width: `${sit.score}%` as any, height: '100%' }}>
                     <LinearGradient
                       colors={sit.level === 'not-started' ? [C.SURFACE, C.SURFACE] : colors.bar}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={{ flex: 1, borderRadius: 99 }}
                     />
-                  </MotiView>
+                  </View>
                 </View>
-              </MotiView>
+              </View>
             );
           })}
         </View>

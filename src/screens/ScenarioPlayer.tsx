@@ -50,24 +50,17 @@ function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; resp
     const absMax = Math.max(Math.abs(maxVal), 3);
     const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
     return (
-      <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
-        <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
-        <MotiView
-          key={`stat-${label}-${value}`}
-          from={{ scale: 1.35, translateY: -4 }}
-          animate={{ scale: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-        >
+<View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
-        </MotiView>
-        <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
-          <MotiView
-            animate={{ width: `${pct * 100}%` as any }}
-            transition={{ type: 'timing', duration: 400 }}
-            style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
-          />
+          <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
+            <MotiView
+              animate={{ width: `${pct * 100}%` as any }}
+              transition={{ type: 'timing', duration: 400 }}
+              style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
+            />
+          </View>
         </View>
-      </View>
     );
   };
 
@@ -125,10 +118,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
 
       {/* Butterfly effect badge — only appears when past choices changed this NPC response */}
       {hasToneShift && (
-        <MotiView
-          from={{ opacity: 0, translateY: -6 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 18, stiffness: 180, delay: 350 }}
+        <View
           style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
             alignSelf: 'flex-start', marginBottom: 12,
@@ -141,7 +131,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: toneColor, letterSpacing: 0.5 }}>
             {tone === 'warm' ? 'Your choices shaped this response' : 'Your choices echo here'}
           </Text>
-        </MotiView>
+        </View>
       )}
 
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
@@ -632,12 +622,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                           }}>
                             {/* Left accent bar */}
                             {isSelected && (
-                              <MotiView
-                                from={{ scaleY: 0 }}
-                                animate={{ scaleY: 1 }}
-                                transition={{ type: 'spring', damping: 18, stiffness: 200 }}
-                                style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }}
-                              />
+                              <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }} />
                             )}
 
                             <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14 }}>
