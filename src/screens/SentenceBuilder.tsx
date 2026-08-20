@@ -143,10 +143,11 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     setBuildStatus('idle');
   }, []);
 
-  // Swap step: tap an option tile to fill that slot.
+  // Swap step: tap an option tile to fill that slot. Tapping a different option
+  // while one is chosen replaces it (the chosen tile itself toggles clear).
   const handleOptionTap = useCallback((slotId: string, phraseId: string) => {
     setSlotChoices((prev) => {
-      if (prev[slotId]) return prev;
+      if (prev[slotId] === phraseId) return prev;
       return { ...prev, [slotId]: phraseId };
     });
   }, []);
