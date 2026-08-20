@@ -76,7 +76,7 @@ export function StreakWidget({
       borderRadius: 20,
       backgroundColor: C.CARD_BG,
       borderWidth: 1,
-      borderColor: mood === 'celebrating' ? 'rgba(0,255,149,0.3)' : C.BORDER,
+      borderColor: mood === 'celebrating' ? 'rgba(234,197,124,0.3)' : C.BORDER,
       overflow: 'hidden',
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,

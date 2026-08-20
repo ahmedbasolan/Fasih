@@ -426,9 +426,9 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
-      {/* ── Deep green header ── */}
+      {/* ── Deep warm header ── */}
       <LinearGradient
-        colors={['#071A10', '#0C2B1A', C.JADE] as [string, string, string]}
+        colors={['#241C13', '#14100B', C.JADE] as [string, string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

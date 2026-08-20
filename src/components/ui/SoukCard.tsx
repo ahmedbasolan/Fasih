@@ -67,7 +67,7 @@ export function SoukCard({
     >
       {/* Top shimmer gradient line */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,255,149,0.38)', 'transparent']}
+        colors={['transparent', 'rgba(234,197,124,0.38)', 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.shimmer}
@@ -101,8 +101,8 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderRadius: 18,
-    backgroundColor: '#001F14',
-    borderColor: 'rgba(0,255,149,0.12)',
+    backgroundColor: '#241C13',
+    borderColor: 'rgba(234,197,124,0.12)',
   },
   shimmer: {
     position: 'absolute',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     bottom: 14,
     width: 2,
     borderRadius: 2,
-    backgroundColor: '#00FF95',
+    backgroundColor: '#D6A24C',
     opacity: 0.6,
     zIndex: 1,
   },
