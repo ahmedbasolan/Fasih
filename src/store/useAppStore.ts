@@ -23,7 +23,7 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
@@ -168,6 +168,17 @@ interface AppState {
   savedPhrases: string[];
   favoriteScenarios: string[];
   completedScenarios: Record<string, { endingType: string; date: string }>;
+  /**
+   * Pattern ids (grammar.ts) → build progress. Never unset — "masters" at 3
+   * correct builds. Persisted + synced.
+   */
+  patternProgress: Record<string, PatternProgress>;
+  /**
+   * scenarioId → ending title, set once inside finalizeScenario when the ending
+   * is secret. Never overwritten on replay — a replayed run can re-earn it but
+   * cannot lose it. Persisted + synced.
+   */
+  secretEndingsEarned: Record<string, string>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
@@ -242,6 +253,11 @@ interface AppState {
   // 3-tier flashcard rating — maps directly to SRS intervals (1 / 3 / 7 days)
   recordPhraseRating: (phraseId: string, rating: 'new' | 'learning' | 'knew') => void;
   /**
+   * Record a Sentence Builder build. Correct builds accumulate on the pattern's
+   * PatternProgress; a pattern "masters" at 3 correct builds.
+   */
+  recordPatternBuild: (patternId: string, correct: boolean) => void;
+  /**
    * @deprecated Use finalizeScenario() instead. This action is superseded by
    * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
    * Will be removed in a future cleanup.
@@ -291,6 +307,8 @@ export const useAppStore = create<AppState>()(
       savedPhrases: [],
       favoriteScenarios: [],
       completedScenarios: {},
+      patternProgress: {},
+      secretEndingsEarned: {},
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
@@ -323,6 +341,8 @@ export const useAppStore = create<AppState>()(
             stats: s.stats,
             phrase_reviews: s.phraseReviews,
             completed_scenarios: s.completedScenarios,
+            pattern_progress: s.patternProgress,
+            secret_endings_earned: s.secretEndingsEarned,
             saved_phrases: s.savedPhrases,
             unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
@@ -379,11 +399,30 @@ export const useAppStore = create<AppState>()(
           .sort((a: JournalEntry, b: JournalEntry) => b.date.localeCompare(a.date))
           .slice(0, 100);
 
+        // Merge patternProgress: per pattern, the higher correctBuilds wins
+        // (progress on one device must never regress the other).
+        const cloudProgress = data.pattern_progress ?? {};
+        const mergedPatternProgress: Record<string, PatternProgress> = { ...s.patternProgress };
+        for (const [id, cloud] of Object.entries(cloudProgress)) {
+          const local = mergedPatternProgress[id];
+          if (!local || (cloud.correctBuilds ?? 0) > (local.correctBuilds ?? 0)) {
+            mergedPatternProgress[id] = cloud;
+          }
+        }
+
+        // Merge secretEndingsEarned: union — a secret earned on any device is kept.
+        const mergedSecrets = {
+          ...(data.secret_endings_earned ?? {}),
+          ...s.secretEndingsEarned,
+        };
+
         set({
           user: data.user_profile ?? s.user,
           stats: data.stats ?? s.stats,
           phraseReviews: data.phrase_reviews ?? s.phraseReviews,
           completedScenarios: data.completed_scenarios ?? s.completedScenarios,
+          patternProgress: mergedPatternProgress,
+          secretEndingsEarned: mergedSecrets,
           savedPhrases: data.saved_phrases ?? s.savedPhrases,
           unlockedPhraseIds: mergedUnlocked,
           milestones: mergedMilestones,
@@ -637,6 +676,18 @@ export const useAppStore = create<AppState>()(
         scheduleSync(() => get().syncToCloud());
       },
 
+      recordPatternBuild: (patternId, correct) => {
+        set((s) => {
+          const existing = s.patternProgress[patternId];
+          const next: PatternProgress = {
+            correctBuilds: (existing?.correctBuilds ?? 0) + (correct ? 1 : 0),
+            lastBuilt: new Date().toISOString(),
+          };
+          return { patternProgress: { ...s.patternProgress, [patternId]: next } };
+        });
+        scheduleSync(() => get().syncToCloud());
+      },
+
       /**
        * @deprecated Use finalizeScenario() instead. This action is superseded by
        * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
@@ -795,8 +846,15 @@ export const useAppStore = create<AppState>()(
             date: new Date().toISOString(),
           },
         };
+        // Secret endings are captured once and never overwritten — replaying the
+        // scenario can re-earn but cannot lose the pattern unlock.
+        const secrets =
+          ending.secret && !s.secretEndingsEarned[scenarioId]
+            ? { ...s.secretEndingsEarned, [scenarioId]: ending.title }
+            : s.secretEndingsEarned;
         set({
           completedScenarios: completed,
+          secretEndingsEarned: secrets,
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
@@ -829,6 +887,8 @@ export const useAppStore = create<AppState>()(
         unlockedPhraseIds: state.unlockedPhraseIds,
         favoriteScenarios: state.favoriteScenarios,
         completedScenarios: state.completedScenarios,
+        patternProgress: state.patternProgress,
+        secretEndingsEarned: state.secretEndingsEarned,
         sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
         streakFreezes: state.streakFreezes,
