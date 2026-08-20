@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Lock, Layers, ChevronRight } from '../icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI } from '../design/tokens';
@@ -32,21 +31,11 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingBottom: insets.bottom + 40 }}>
-        <MotiView
-          from={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 14, stiffness: 120 }}
-          style={{ alignItems: 'center', marginBottom: 32 }}
-        >
+        <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <KafMascot size="lg" mood="thinking" />
-        </MotiView>
+        </View>
 
-        <MotiView
-          from={{ translateY: 20, opacity: 0 }}
-          animate={{ translateY: 0, opacity: 1 }}
-          transition={{ type: 'timing', duration: 400, delay: 200 }}
-          style={{ alignItems: 'center', marginBottom: 32 }}
-        >
+        <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
             <Lock size={24} color={C.JADE_ACCENT} />
           </View>
@@ -61,36 +50,27 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
           {/* Progress dots */}
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 28 }}>
             {Array.from({ length: scenariosRequired }).map((_, i) => (
-              <MotiView
+              <View
                 key={i}
-                from={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', damping: 12, stiffness: 150, delay: 400 + i * 100 }}
-              >
-                <View style={{
+                style={{
                   width: 36, height: 36, borderRadius: 12,
                   backgroundColor: i < scenariosCompleted ? C.JADE_ACCENT_DIM : C.SURFACE,
                   borderWidth: 1.5,
                   borderColor: i < scenariosCompleted ? C.JADE_ACCENT_BORDER : C.BORDER,
                   alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {i < scenariosCompleted ? (
-                    <Layers size={16} color={C.JADE_ACCENT} />
-                  ) : (
-                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT3 }}>{i + 1}</Text>
-                  )}
-                </View>
-              </MotiView>
+                }}
+              >
+                {i < scenariosCompleted ? (
+                  <Layers size={16} color={C.JADE_ACCENT} />
+                ) : (
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT3 }}>{i + 1}</Text>
+                )}
+              </View>
             ))}
           </View>
-        </MotiView>
+        </View>
 
-        <MotiView
-          from={{ translateY: 20, opacity: 0 }}
-          animate={{ translateY: 0, opacity: 1 }}
-          transition={{ type: 'timing', duration: 400, delay: 500 }}
-          style={{ width: '100%' }}
-        >
+        <View style={{ width: '100%' }}>
           <Pressable onPress={onGoToScenarios} style={{ borderRadius: 16, overflow: 'hidden' }}>
             <LinearGradient
               colors={[...G.GOLD_STOPS]}
@@ -102,7 +82,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
               <ChevronRight size={16} color={C.TEXT} />
             </LinearGradient>
           </Pressable>
-        </MotiView>
+        </View>
       </View>
     </View>
   );

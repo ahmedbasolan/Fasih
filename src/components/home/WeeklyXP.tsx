@@ -5,7 +5,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BarChart3 } from '../icons';
 
@@ -187,32 +186,19 @@ export function WeeklyXP({
 
           {/* Bar Chart */}
           <View style={styles.chartContainer}>
-        {days.map((day, idx) => {
+        {days.map((day) => {
           const heightPercent = (day.value / maxValue) * 100;
           return (
             <View key={day.label} style={styles.barWrapper}>
               <View style={{ flex: 1, width: '100%', justifyContent: 'flex-end' }}>
-                <MotiView
-                  style={{
-                    height: `${heightPercent}%`,
-                    width: '100%',
-                  }}
-                  from={{ height: '0%' }}
-                  animate={{ height: `${heightPercent}%` }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 180,
-                    damping: 18,
-                    delay: idx * 80,
-                  }}
-                >
+                <View style={{ height: `${heightPercent}%`, width: '100%' }}>
                   <LinearGradient
                     colors={[C.PRIMARY, C.JADE]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={{ flex: 1, borderRadius: 3 }}
                   />
-                </MotiView>
+                </View>
               </View>
               <Text
                 style={[

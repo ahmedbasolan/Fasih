@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
+import { MotiView } from 'moti';
 import { useAppStore } from '../../src/store/useAppStore';
 import { ScenarioPlayer } from '../../src/screens/ScenarioPlayer';
 import { ScenarioDetailScreen } from '../../src/screens/ScenarioDetailScreen';
@@ -33,16 +34,24 @@ export default function ScenarioRoute() {
 
   if (showPlayer) {
     return (
-      <ScenarioPlayer
-        scenarioId={id as string}
-        user={user}
-        onExit={() => {
-          trackScenarioAbandoned({ scenarioId: id as string, sceneId: '' });
-          setShowPlayer(false);
-        }}
-        onComplete={handleComplete}
-        onJournalEntry={handleJournal}
-      />
+      <MotiView
+        key="scenario-player"
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ type: 'timing', duration: 280 }}
+        style={{ flex: 1 }}
+      >
+        <ScenarioPlayer
+          scenarioId={id as string}
+          user={user}
+          onExit={() => {
+            trackScenarioAbandoned({ scenarioId: id as string, sceneId: '' });
+            setShowPlayer(false);
+          }}
+          onComplete={handleComplete}
+          onJournalEntry={handleJournal}
+        />
+      </MotiView>
     );
   }
 

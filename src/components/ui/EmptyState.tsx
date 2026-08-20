@@ -1,6 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
+import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_HEADING_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
@@ -21,19 +20,9 @@ export function EmptyState({
 }: Props) {
   const { C } = useTheme();
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'timing', duration: 400 }}
-      style={styles.root}
-    >
+    <View style={styles.root}>
       {icon ?? (
-        <MotiView
-          from={{ rotate: '-10deg', opacity: 0 }}
-          animate={{ rotate: '0deg', opacity: 1 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 100 }}
-          style={styles.arabicContainer}
-        >
+        <View style={styles.arabicContainer}>
           {/* Arabic calligraphy design element */}
           <Svg width={120} height={120} viewBox="0 0 120 120" style={styles.calligraphy}>
             {/* Decorative geometric frame */}
@@ -75,27 +64,15 @@ export function EmptyState({
               opacity="0.4"
             />
           </Svg>
-        </MotiView>
+        </View>
       )}
       
-      <MotiView
-        from={{ opacity: 0, translateY: 10 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 400, delay: 200 }}
-      >
-        <Text style={[styles.title, { color: C.TEXT2 }]}>{title}</Text>
-      </MotiView>
+      <Text style={[styles.title, { color: C.TEXT2 }]}>{title}</Text>
       
       {subtitle && (
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 400, delay: 300 }}
-        >
-          <Text style={[styles.subtitle, { color: C.TEXT3 }]}>{subtitle}</Text>
-        </MotiView>
+        <Text style={[styles.subtitle, { color: C.TEXT3 }]}>{subtitle}</Text>
       )}
-    </MotiView>
+    </View>
   );
 }
 

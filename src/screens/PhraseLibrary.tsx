@@ -279,7 +279,6 @@ export function PhraseLibrary() {
                 variant={getCategoryVariant(idx)}
                 bgColor={isDark ? config.darkBg : config.bg}
                 accentColor={isDark ? config.darkBg : config.accent}
-                delay={150 + idx * 60}
                 onPress={() => handleCategorySelect(category)}
               />
             </View>
