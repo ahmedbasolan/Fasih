@@ -18,14 +18,15 @@
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
 
 /**
  * Increment this when CloudUserData shape changes in a breaking way.
  * pullProgress uses it to detect stale cloud rows.
- * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids
+ * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
+ *          3 = added pattern_progress + secret_endings_earned (Sentence Builder)
  */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
@@ -38,6 +39,8 @@ export interface CloudUserData {
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
   completed_scenarios: Record<string, { endingType: string; date: string }>;
+  pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
+  secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
   saved_phrases: string[];
   unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
@@ -65,6 +68,8 @@ export async function pushProgress(
         stats: data.stats,
         phrase_reviews: data.phrase_reviews,
         completed_scenarios: data.completed_scenarios,
+        pattern_progress: data.pattern_progress,
+        secret_endings_earned: data.secret_endings_earned,
         saved_phrases: data.saved_phrases,
         unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
@@ -111,6 +116,8 @@ export async function pullProgress(
       stats: data.stats ?? {},
       phrase_reviews: data.phrase_reviews ?? {},
       completed_scenarios: data.completed_scenarios ?? {},
+      pattern_progress: data.pattern_progress ?? {},
+      secret_endings_earned: data.secret_endings_earned ?? {},
       saved_phrases: data.saved_phrases ?? [],
       unlocked_phrase_ids: data.unlocked_phrase_ids ?? [],
       milestones: data.milestones ?? [],
