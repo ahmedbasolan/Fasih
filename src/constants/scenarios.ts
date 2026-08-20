@@ -226,6 +226,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'first-morning',
     title: 'The First Morning',
     phrasesUnlocked: ['fm-s1-1', 'fm-s1-2', 'fm-s1-3', 'fm-s1-4', 'fm-s1-5', 'fm-s1-6', 'fm-s1-7', 'fm-s1-8'],
+    primerPhrases: ['fm-s1-1', 'fm-s1-2', 'fm-s1-5'], // صباح الخير / صباح النور / أنا يديد هني
     scenes: [
       {
         id: 'scene1', charName: 'Faisal', charGender: 'male', setting: 'Hotel staff room — 6:45 AM',
@@ -366,6 +367,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'coffee-invitation',
     title: 'The Coffee Invitation',
     phrasesUnlocked: ['w1', 'w2', 'w3', 's1', 'gr1', 'gr6', 'fm7', 's6'],
+    primerPhrases: ['w1', 's1', 'gr1'], // إن شاء الله / يلا نشرب قهوة / مشكور
     scenes: [
       {
         id: 'scene1', charName: 'Ahmed', charGender: 'male', setting: 'Office — break room',
@@ -424,6 +426,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'gym-consultation',
     title: 'The Gym Consultation',
     phrasesUnlocked: ['gym-1', 'gym-2', 'gym-3', 'gym-4', 'gym-5', 'gym-6', 'gym-7', 'gym-8', 'gym-9', 'gym-10', 'gym-11', 'gym-12', 'gym-13-secret'],
+    primerPhrases: ['gym-8', 'gym-9', 'gym-10'], // تفضل اقعد / كم وزنك الحين؟ / خلنا نبدا خفيف
     scenes: [
       {
         id: 'scene1', charName: 'Sultan', charGender: 'male', setting: 'Gym front desk — Tuesday 7:30 AM',
@@ -583,6 +586,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'the-checkup',
     title: 'The Checkup',
     phrasesUnlocked: ['checkup-1', 'checkup-2', 'checkup-3', 'checkup-4', 'checkup-5', 'checkup-6', 'checkup-7', 'checkup-8'],
+    primerPhrases: ['checkup-1', 'checkup-4', 'checkup-7'], // تفضلي معي / خليني أقيس ضغطك / كل شي تمام
     scenes: [
       {
         id: 'scene1', charName: 'Umm Khalid', charGender: 'female', setting: 'Medical clinic — waiting area, 10:00 AM',
@@ -702,6 +706,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'hotel-guest',
     title: 'VIP Guest Arrival',
     phrasesUnlocked: ['hg-1', 'hg-2', 'hg-3', 'hg-4', 'hg-5', 'hg-6', 'core-1'],
+    primerPhrases: ['hg-1', 'hg-4', 'hg-5'], // وعليكم السلام / ما قصرت / هذا واجبنا
     scenes: [
       {
         id: 'scene1', charName: 'Sheikh Khalid', charGender: 'male', setting: 'Hotel lobby — grand entrance',
@@ -798,6 +803,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'cafe-friends',
     title: 'Café Connection',
     phrasesUnlocked: ['cf-1', 'cf-2', 'cf-3', 'cf-4', 'cf-5', 'cf-6', 'core-2'],
+    primerPhrases: ['cf-1', 'cf-3', 'cf-6'], // أهلاً وسهلاً / من وين انت؟ / في أمان الله
     scenes: [
       {
         id: 'scene1', charName: 'Fatima', charGender: 'female', setting: 'Local café — adjacent tables',
@@ -894,6 +900,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     id: 'eid-greeting',
     title: 'Eid Greetings',
     phrasesUnlocked: ['eid-1', 'eid-2', 'eid-3', 'eid-4', 'eid-5', 'eid-6', 'core-3'],
+    primerPhrases: ['eid-1', 'eid-3', 'eid-6'], // عيدكم مبارك / يسلموا إيديك / بيتنا بيتك
     scenes: [
       {
         id: 'scene1', charName: 'Uncle Rashid', charGender: 'male', setting: 'Neighbourhood — Eid morning',
@@ -993,6 +1000,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     difficulty: 'Level 2 (Elementary)',
     estimatedMinutes: 8,
     phrasesUnlocked: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'],
+    primerPhrases: ['tx-1', 'tx-3', 'core-2'], // الله يحفظ عائلتك / شو يابك دبي؟ / شخبارك؟
     scenes: [
       {
         id: 'c1', charName: 'Youssef', charGender: 'male', setting: 'Dubai Airport pickup',
@@ -1105,6 +1113,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     difficulty: 'Level 1 (Beginner)',
     estimatedMinutes: 6,
     phrasesUnlocked: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'],
+    primerPhrases: ['el-1', 'el-3', 'el-4'], // السلام عليكم / تعال على شاي / انت في أي دور؟
     scenes: [
       {
         id: 'c1', charName: 'Sami', charGender: 'male', setting: 'Elevator — ground floor',

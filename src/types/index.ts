@@ -180,6 +180,9 @@ export interface ScenarioScript {
   endings: ScenarioEnding[];
   // IDs of phrases unlocked by completing this scenario (shown as rich cards on end screen)
   phrasesUnlocked?: string[];
+  // 2-3 phrase IDs from phrasesUnlocked previewed as tap-to-hear chips in the
+  // scenario intro — listen-only priming, no quiz. Hear now → earn later.
+  primerPhrases?: string[];
 }
 
 // Community stats (Phase 2 — Community Choice Distribution)

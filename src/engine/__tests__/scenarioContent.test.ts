@@ -64,6 +64,27 @@ describe('scenario data integrity', () => {
     expect(empty).toEqual([]);
   });
 
+  it('every primerPhrase resolves and is a subset of phrasesUnlocked (2-3 chips)', () => {
+    const broken: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      const unlocked = script.phrasesUnlocked ?? [];
+      for (const pid of script.primerPhrases ?? []) {
+        if (!phraseIds.has(pid)) broken.push(`${id} primer → ${pid} not in library`);
+        if (!unlocked.includes(pid)) broken.push(`${id} primer → ${pid} not in phrasesUnlocked`);
+      }
+      const n = (script.primerPhrases ?? []).length;
+      if (n > 0 && (n < 2 || n > 3)) broken.push(`${id} has ${n} primer phrases (want 2-3)`);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('every playable scenario has a primer (hear now → earn later)', () => {
+    const missing = scriptEntries
+      .filter(([, s]) => !s.id.startsWith('onboarding') && (s.primerPhrases ?? []).length === 0)
+      .map(([id]) => id);
+    expect(missing).toEqual([]);
+  });
+
   it('every choice.next points at a real scene in the same script', () => {
     const broken: string[] = [];
     for (const [id, script] of scriptEntries) {
