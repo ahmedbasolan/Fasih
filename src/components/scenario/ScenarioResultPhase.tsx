@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { MotiView } from 'moti';
-import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2 } from '../icons';
+import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2, Blocks, Sparkles } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI,
@@ -10,6 +11,7 @@ import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
 import { KafMascot } from '../features/KafMascot';
 import { STRINGS } from '../../constants/strings';
+import { GRAMMAR_PATTERNS } from '../../constants/grammar';
 import type { Phrase, ScenarioEnding, ScenarioScript } from '../../types';
 
 // ─── PhraseCard ───────────────────────────────────────────────────────────────
@@ -268,6 +270,57 @@ export function ScenarioResultPhase({
             </View>
           </MotiView>
         )}
+
+        {/* Pattern unlocked */}
+        {(() => {
+          const unlockedPatterns = GRAMMAR_PATTERNS.filter(
+            (p) => p.unlockedByScenario === scenarioId && !p.secretUnlock,
+          );
+          if (unlockedPatterns.length === 0) return null;
+          return (
+            <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 420 }}>
+              <View style={{ borderRadius: 16, padding: 16, backgroundColor: `${C.CULTURAL_GOLD}12`, borderWidth: 1, borderColor: `${C.CULTURAL_GOLD}30` }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Sparkles size={14} color={C.CULTURAL_GOLD_DARK} />
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.CULTURAL_GOLD_DARK }}>
+                    {STRINGS.scenarios.patternUnlockedTitle}
+                  </Text>
+                </View>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 12 }}>
+                  {STRINGS.scenarios.patternUnlockedSub}
+                </Text>
+                {unlockedPatterns.map((p) => (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => router.push(`/sentence-builder?pattern=${p.id}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${p.title} — ${STRINGS.sentenceBuilder.title}`}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 12,
+                      paddingHorizontal: 14,
+                      borderRadius: 14,
+                      backgroundColor: `${C.CULTURAL_GOLD}14`,
+                      borderWidth: 1,
+                      borderColor: `${C.CULTURAL_GOLD}30`,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${C.CULTURAL_GOLD}22`, alignItems: 'center', justifyContent: 'center' }}>
+                        <Blocks size={15} color={C.CULTURAL_GOLD_DARK} />
+                      </View>
+                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 15, color: C.TEXT }}>{p.title}</Text>
+                    </View>
+                    <ArrowRight size={14} color={C.CULTURAL_GOLD_DARK} style={{ transform: [{ rotate: '-45deg' }] }} />
+                  </Pressable>
+                ))}
+              </View>
+            </MotiView>
+          );
+        })()}
 
         {/* Share result */}
         <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 460 }}>
