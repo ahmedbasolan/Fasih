@@ -1,5 +1,5 @@
 -- ============================================================
--- Fasih — Migration 005: Schema v3 additions (Sentence Builder)
+-- Fasih — Migration 006: Schema v3 additions (Sentence Builder)
 -- Run this if your database was created before schema_version 3.
 -- Safe to run multiple times (uses IF NOT EXISTS / IF EXISTS guards).
 -- ============================================================
