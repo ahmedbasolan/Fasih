@@ -139,6 +139,8 @@ export const STRINGS = {
     welcomeFasih: 'Welcome to Fasih',
     newUserTip: 'Start your first scenario to begin tracking your mastery across categories.',
     checklistProgress: (done: number, total: number) => `${done}/${total} steps done — keep going!`,
+    learningDaysTitle: 'Learning Days',
+    gettingStartedTitle: 'Getting Started',
     daysLearning: (count: number) => `${count} Day Streak`,
     studiedCount: 'Phrases Studied',
     scenariosCount: 'Scenarios Done',

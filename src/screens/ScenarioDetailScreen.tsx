@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Bookmark, Play, Lock } from '../components/icons';
+import { ChevronLeft, Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
@@ -114,6 +114,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             ) : (
               script.scenes.map((scene, index) => {
                 const isLocked = index > scenesUnlocked && !isCompleted;
+                const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
                 return (
                   <Pressable
                     key={scene.id}
@@ -132,13 +133,15 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
                       width: 56,
                       height: 56,
                       borderRadius: 16,
-                      backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : 'rgba(2,185,134,0.12)',
+                      backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : isDone ? C.JADE_DIM : 'rgba(2,185,134,0.12)',
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: 16
                     }}>
                       {isLocked ? (
                         <Lock size={20} color={C.TEXT3} />
+                      ) : isDone ? (
+                        <CheckCircle2 size={20} color={C.JADE} />
                       ) : (
                         <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
                       )}
