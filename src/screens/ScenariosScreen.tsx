@@ -21,7 +21,7 @@ import {
   SMOOTH,
 } from '../components/design/tokens';
 import type { ThemeColors } from '../components/design/tokens';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, SheetPanel } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
@@ -400,18 +400,21 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   );
 
   const displayScenarios = useMemo(() => {
-    const filtered = allScenarios.filter((s) => {
+    // Determine actual locked status based on subscription. hasScenarioAccess
+    // expects the scenario's position in the full list — index must be taken
+    // from allScenarios, NOT the filtered subset, or the "first 3 free" gate
+    // rebases and lets paywalled scenarios appear unlocked on filtered tabs.
+    const withAccess = allScenarios.map((s, index) => ({
+      ...s,
+      locked: !hasScenarioAccess(index),
+    }));
+    const filtered = withAccess.filter((s) => {
       if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
       if (filterTab === 'recommended') return !s.locked;
       return true;
     });
-    // Determine actual locked status based on subscription
-    const withAccess = filtered.map((s, index) => ({
-      ...s,
-      locked: !hasScenarioAccess(index),
-    }));
     // unlocked first, locked at the bottom
-    return withAccess.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+    return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
   }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess]);
 
   const lockedCount = displayScenarios.filter((s) => s.locked).length;
@@ -460,16 +463,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       </LinearGradient>
 
       {/* ── Content panel ── */}
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.SURFACE,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          marginTop: -28,
-          overflow: 'hidden',
-        }}
-      >
+      <SheetPanel radius={32} overlap={28} style={{ flex: 1, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
         {/* ── Tabs row ── */}
         <View
           style={{
@@ -619,7 +613,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
               : null
           }
         />
-      </View>
+      </SheetPanel>
     </View>
   );
 }

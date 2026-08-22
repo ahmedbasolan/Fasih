@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -44,26 +44,32 @@ export function StreakWidget({
   const { C } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [confetti, setConfetti] = useState<ConfettiParticle[]>([]);
+  const prevMood = useRef(mood);
 
   const isChecklistMode = checklistTotal !== undefined && checklistCompleted !== undefined;
   const progressPercent = isChecklistMode
     ? Math.min((checklistCompleted! / checklistTotal!) * 100, 100)
     : Math.min((currentXP / goalXP) * 100, 100);
 
+  // Fire a single confetti burst only when mood transitions INTO 'celebrating'.
+  // Clearing the timeout on cleanup prevents a setState after unmount, and not
+  // re-triggering on confetti state changes prevents an infinite respawn loop
+  // if the parent forgets to reset mood back to 'happy'.
   useEffect(() => {
-    if (mood === 'celebrating' && confetti.length === 0) {
-      const particles = Array.from({ length: 20 }, (_, i) => ({
-        id: i,
-        x: Math.random() * (screenW - 48),
-      }));
-      setConfetti(particles);
-      // Reset mood after celebration animation
-      setTimeout(() => {
-        setConfetti([]);
-        // Note: Parent component should reset mood to 'happy' after celebration
-      }, 900);
-    }
-  }, [mood, screenW, confetti.length]);
+    const justEnteredCelebrating = prevMood.current !== 'celebrating' && mood === 'celebrating';
+    prevMood.current = mood;
+    if (!justEnteredCelebrating) return;
+
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * (screenW - 48),
+    }));
+    setConfetti(particles);
+    const t = setTimeout(() => {
+      setConfetti([]);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [mood, screenW]);
 
   const mascotSource = IMAGES.foxyMale;
 

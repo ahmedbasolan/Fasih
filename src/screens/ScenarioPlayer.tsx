@@ -42,35 +42,43 @@ interface Props {
 type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
+function ImpactCol({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) {
+  const { C } = useTheme();
+  const absMax = Math.max(Math.abs(maxVal), 3);
+  const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
+  return (
+    <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
+      <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
+      <MotiView
+        key={`stat-${label}-${value}`}
+        from={{ scale: 1.35, translateY: -4 }}
+        animate={{ scale: 1, translateY: 0 }}
+        transition={{ type: 'spring', damping: 15, stiffness: 200 }}
+      >
+        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
+      </MotiView>
+      <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
+        <MotiView
+          animate={{ width: `${pct * 100}%` as any }}
+          transition={{ type: 'timing', duration: 400 }}
+          style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
+        />
+      </View>
+    </View>
+  );
+}
+
 function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; respect: number; culture: number; maxValues?: { trust: number; respect: number; culture: number } }) {
   const { C } = useTheme();
   const max = maxValues ?? { trust: 12, respect: 12, culture: 12 };
 
-  const Col = ({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) => {
-    const absMax = Math.max(Math.abs(maxVal), 3);
-    const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
-    return (
-<View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
-          <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
-            <MotiView
-              animate={{ width: `${pct * 100}%` as any }}
-              transition={{ type: 'timing', duration: 400 }}
-              style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
-            />
-          </View>
-        </View>
-    );
-  };
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-      <Col label="Trust" value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
+      <ImpactCol label="Trust" value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
       <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <Col label="Respect" value={respect} color={C.JADE2} maxVal={max.respect} />
+      <ImpactCol label="Respect" value={respect} color={C.JADE2} maxVal={max.respect} />
       <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <Col label="Culture" value={culture} color={C.VIOLET} maxVal={max.culture} />
+      <ImpactCol label="Culture" value={culture} color={C.VIOLET} maxVal={max.culture} />
     </View>
   );
 }
@@ -545,6 +553,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             }}
             accessibilityRole="button"
             accessibilityLabel="Exit scenario"
+            hitSlop={8}
             style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
           >
             <X size={14} color={C.TEXT3} />
@@ -612,7 +621,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         animate={{ opacity: isDimmed ? 0.22 : 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: isDimmed ? 220 : 200, delay: isDimmed ? 0 : i * 70 }}
                       >
-                        <RippleEffect onPress={() => handleChoice(choice)} rippleColor={color} disabled={!!selectedChoiceId}>
+                        <RippleEffect
+                          onPress={() => handleChoice(choice)}
+                          rippleColor={color}
+                          disabled={!!selectedChoiceId}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
+                          accessibilityState={{ selected: isSelected }}
+                        >
                           <View style={{
                             borderRadius: 16,
                             backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,

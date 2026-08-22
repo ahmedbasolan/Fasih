@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, AccessibilityRole, AccessibilityState } from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -8,6 +8,10 @@ interface Props {
   onPress?: () => void;
   rippleColor?: string;
   disabled?: boolean;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 }
 
 interface RippleProps {
@@ -16,11 +20,15 @@ interface RippleProps {
   id: number;
 }
 
-export function RippleEffect({ 
-  children, 
-  onPress, 
+export function RippleEffect({
+  children,
+  onPress,
   rippleColor,
-  disabled = false 
+  disabled = false,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: Props) {
   const { C } = useTheme();
   const effectColor = rippleColor || C.JADE_ACCENT;
@@ -43,7 +51,15 @@ export function RippleEffect({
   };
 
   return (
-    <Pressable onPress={handlePress} disabled={disabled} style={styles.container}>
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled, ...accessibilityState }}
+      style={styles.container}
+    >
       <View style={styles.content}>
         {children}
       </View>

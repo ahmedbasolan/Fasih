@@ -5,11 +5,12 @@ import { ChevronLeft, Bookmark, Play, Lock } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, SheetPanel } from '../components/ui';
 import { HeroSceneBg } from '../components/features/SceneIllustrations';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
+import { STRINGS } from '../constants/strings';
 
 interface Props {
   scenarioId: string;
@@ -27,8 +28,11 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
+  const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
+  const toggleFavoriteScenario = useAppStore((s) => s.toggleFavoriteScenario);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
   const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
+  const isSaved = favoriteScenarios.includes(scenarioId);
 
   // Also guards deep links and stale favourites, not just the browse list.
   if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) return null;
@@ -58,8 +62,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             >
               <ChevronLeft size={24} color={C.WHITE} />
             </Pressable>
-            <Pressable style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-              <Bookmark size={20} color={C.WHITE} />
+            <Pressable
+              onPress={() => toggleFavoriteScenario(scenarioId)}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
+              accessibilityState={{ selected: isSaved }}
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Bookmark size={20} color={isSaved ? C.PRIMARY : C.WHITE} fill={isSaved ? C.PRIMARY : 'none'} />
             </Pressable>
           </View>
 
@@ -69,20 +79,13 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               {scenario.title}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              By Fasih Team
+              {STRINGS.home.featuredAuthor}
             </Text>
           </View>
         </View>
 
         {/* ── Content Section ── */}
-        <View style={{ 
-          marginTop: -30, 
-          backgroundColor: C.BG, 
-          borderTopLeftRadius: 40, 
-          borderTopRightRadius: 40,
-          paddingHorizontal: 24,
-          paddingTop: 32,
-        }}>
+        <SheetPanel radius={40} overlap={30} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
           {/* Metadata Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 24, color: C.TEXT }}>
@@ -93,7 +96,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             </Text>
           </View>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
-            Duration: 10 minutes
+            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, script.scenes.length * 2))}
           </Text>
 
           {/* Description */}
@@ -105,9 +108,8 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
           <View style={{ gap: 16 }}>
             {script.scenes.length === 0 ? (
               <EmptyState
-                arabic="لا يوجد"
-                title="No scenes available"
-                subtitle="This scenario doesn't have any content yet"
+                title={STRINGS.scenarios.noScenesTitle}
+                subtitle={STRINGS.scenarios.noScenesSub}
               />
             ) : (
               script.scenes.map((scene, index) => {
@@ -156,7 +158,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               })
             )}
           </View>
-        </View>
+        </SheetPanel>
       </ScrollView>
     </View>
   );

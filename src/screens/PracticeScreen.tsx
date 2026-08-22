@@ -231,6 +231,8 @@ function QuizOption({
       : C.BORDER;
   const textColor =
     state === 'correct' ? C.JADE2 : state === 'wrong' ? C.ERROR : C.TEXT2;
+  const stateLabel =
+    state === 'correct' ? ', correct answer' : state === 'wrong' ? ', your answer, incorrect' : '';
 
   return (
     <MotiView
@@ -241,6 +243,9 @@ function QuizOption({
       <Pressable
         onPress={onPress}
         disabled={state !== 'idle'}
+        accessibilityRole="button"
+        accessibilityLabel={`${text}${stateLabel}`}
+        accessibilityState={{ disabled: state !== 'idle' }}
         style={{
           borderRadius: 16,
           padding: 16,
@@ -277,6 +282,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const insets = useSafeAreaInsets();
   const { speak, speakSlow, isSpeaking } = useArabicTTS();
   const getDueReviews = useAppStore((s) => s.getDueReviews);
+  const phraseReviews = useAppStore((s) => s.phraseReviews);
+  const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
   const [mode, setMode] = useState<PracticeMode>('menu');
   const [deck, setDeck] = useState<Phrase[]>([]);
   const [current, setCurrent] = useState(0);
@@ -301,6 +308,26 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setMode('flashcard');
   }, [getDueReviews]);
 
+  // Arabic → Transliteration options (standard quiz — no English)
+  const generateQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    const correct = phrases[idx];
+    const others = PHRASES.filter((p) => p.id !== correct.id);
+    const wrong = shuffle(others).slice(0, 3);
+    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
+    setQuizOptions(options);
+    setQuizAnswer(null);
+  }, []);
+
+  // English → Arabic options (reverse quiz)
+  const generateReverseQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    const correct = phrases[idx];
+    const others = PHRASES.filter((p) => p.id !== correct.id);
+    const wrong = shuffle(others).slice(0, 3);
+    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
+    setQuizOptions(options);
+    setQuizAnswer(null);
+  }, []);
+
   const startQuiz = useCallback(() => {
     const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
     setDeck(shuffled);
@@ -309,7 +336,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setQuizAnswer(null);
     generateQuizOptions(shuffled, 0);
     setMode('quiz');
-  }, []);
+  }, [generateQuizOptions]);
 
   const startReverseQuiz = useCallback(() => {
     const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
@@ -319,7 +346,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setQuizAnswer(null);
     generateReverseQuizOptions(shuffled, 0);
     setMode('reverse-quiz');
-  }, []);
+  }, [generateReverseQuizOptions]);
 
   // Phrase Builder only works on phrases that ship word-tile breakdowns.
   const PHRASES_WITH_TILES = useMemo(
@@ -335,26 +362,6 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('phrase-builder');
   }, [PHRASES_WITH_TILES]);
-
-  // Arabic → Transliteration options (standard quiz — no English)
-  const generateQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
-
-  // English → Arabic options (reverse quiz)
-  const generateReverseQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
 
   // Flashcard navigation — calls 3-tier rating for real SRS scheduling
   const rateCard = useCallback((rating: 'knew' | 'learning' | 'new') => {
@@ -417,7 +424,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       if (mode === 'reverse-quiz') generateReverseQuizOptions(deck, next);
       else generateQuizOptions(deck, next);
     }
-  }, [current, deck, mode, onSessionComplete]);
+  }, [current, deck, mode, onSessionComplete, generateQuizOptions, generateReverseQuizOptions]);
 
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;
@@ -434,9 +441,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, justifyContent: 'center' }}>
         <EmptyState
-          arabic="لا يوجد"
-          title="No phrases to practice"
-          subtitle="Add phrases to your library first"
+          title={STRINGS.practice.noCardsTitle}
+          subtitle={STRINGS.practice.noCardsSub}
         />
       </View>
     );
@@ -473,6 +479,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
           </Text>
           <Pressable
             onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel="Close practice"
+            hitSlop={8}
             style={{
               width: 32,
               height: 32,
@@ -549,7 +558,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.flashcards}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.flashcardDesc}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(DECK_SIZE)}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(dueCount)}</Text>
                 </View>
               </Pressable>
 
@@ -574,7 +583,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.reverseQuiz}</Text>
                     <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: C.VIOLET2 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 9, color: '#fff', letterSpacing: 0.5 }}>NEW</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 9, color: C.BG, letterSpacing: 0.5 }}>NEW</Text>
                     </View>
                   </View>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.reverseQuizDesc}</Text>
@@ -849,7 +858,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {mode === 'phrase-builder' && deck[current] && (
           <View style={{ flex: 1, backgroundColor: C.BG }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 16 }}>
-              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" hitSlop={8} style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
                 <X size={15} color={C.TEXT2} />
               </Pressable>
               

@@ -154,6 +154,7 @@ export const STRINGS = {
     studiedPhrases: (count: number) => `${count} phrases`,
     reviewReady: 'Review Ready',
     featuredAuthor: 'By Fasih Team',
+    durationMinutes: (min: number) => `Duration: ${min} minutes`,
   },
   streakRisk: {
     bannerTitle: (days: number) => `Your ${days}-day streak ends tonight`,
@@ -174,6 +175,11 @@ export const STRINGS = {
     culturalContext: 'Cultural Context',
     noPhrasesFound: 'No phrases found',
     noPhrasesSub: 'Try a different search or category',
+    categoriesTitle: 'Categories',
+    topicsCount: (count: number) => `${count} topics`,
+    browseAllTitle: 'Browse All Phrases',
+    browseAllSub: (phraseCount: number, categoryCount: number) => `${phraseCount} expressions across ${categoryCount} categories`,
+    fromFirstScenario: 'From your first scenario',
   },
   practice: {
     title: 'Practice',
@@ -186,7 +192,7 @@ export const STRINGS = {
     correctCount: (count: number) => `${count} correct`,
     chooseHowToPractice: 'Choose how you want to practice',
     flashcardDesc: 'See Arabic phrases, tap to reveal the meaning. Rate your knowledge after each card.',
-    flashcardMeta: (count: number) => `${count} cards · SRS-driven`,
+    flashcardMeta: (dueCount: number) => dueCount > 0 ? `${dueCount} due · SRS-driven` : 'All caught up · reviewing early',
     quizTitle: 'Translation Quiz',
     quizDesc: 'Read the Arabic phrase, choose the correct English translation from four options.',
     quizMeta: (count: number) => `${count} questions · Multiple choice`,
@@ -214,6 +220,8 @@ export const STRINGS = {
     practiceAgain: 'Practice Again',
     next: 'Next',
     seeResults: 'See Results',
+    noCardsTitle: 'No phrases to practice',
+    noCardsSub: 'Add phrases to your library first',
   },
   scenarios: {
     title: 'Scenarios',
@@ -233,6 +241,8 @@ export const STRINGS = {
     noScript: (id: string) => `No script available for "${id}". This scenario may be coming soon.`,
     scenarioNotFound: 'Scenario not found',
     notFound: 'Scenario not found',
+    noScenesTitle: 'No scenes available',
+    noScenesSub: "This scenario doesn't have any content yet",
     goBack: 'Go Back',
     playing: 'Playing...',
     listen: 'Listen',
@@ -327,13 +337,52 @@ export const STRINGS = {
       title: 'Language',
       select: 'Interface Language',
     },
+    learningMode: {
+      title: 'Learning Mode',
+      career: 'Career',
+      careerDesc: 'Work scenarios',
+      social: 'Social',
+      socialDesc: 'Daily life',
+    },
+    subscription: {
+      title: 'Subscription',
+      proName: 'Fasih Pro',
+      active: 'Active subscription',
+      manage: 'Manage Subscription',
+      restore: 'Restore Purchases',
+      upgradeTitle: 'Upgrade to Fasih Pro',
+      upgradeDesc: 'Unlock all scenarios & features',
+    },
     account: 'Account',
     notifications: 'Notifications',
     enabled: 'Enabled',
+    disabled: 'Disabled',
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
     signOut: 'Sign Out',
+    deleteAccount: {
+      button: 'Delete Account',
+      title: 'Delete your account?',
+      message:
+        'This permanently erases your streak, progress, saved phrases and journal entries. It cannot be undone, and we cannot recover any of it afterwards.',
+      /** Appended when the user has an active subscription — deleting the account does NOT cancel billing. */
+      subscriptionWarning:
+        '\n\nYour subscription is billed by the App Store, not by Fasih, so deleting your account does not cancel it. Cancel it in your device Subscriptions settings first, or you will keep being charged.',
+      confirm: 'Delete Forever',
+      deleting: 'Deleting…',
+      failedTitle: 'Could not delete your account',
+      failedMessage: (reason: string) =>
+        `Nothing has been deleted — your account and data are intact. Please try again.\n\n${reason}`,
+      /** Cloud data deleted, but removing the Clerk account itself failed. */
+      partialTitle: 'Your data was deleted',
+      partialMessage:
+        'Your learning data has been erased, but we could not remove the account itself. Please contact support so we can finish removing it.',
+    },
+  },
+  legal: {
+    privacyPolicy: 'Privacy Policy',
+    termsOfService: 'Terms of Service',
   },
   auth: {
     rateLimited: 'Too many attempts — please wait a bit and try again.',
@@ -367,7 +416,11 @@ export const STRINGS = {
       fullNamePlaceholder: 'Full name',
       emailPlaceholder: 'Email address',
       passwordPlaceholder: 'Create password',
-      agreeTerms: 'I agree to sync my learning progress across devices',
+      // Split so Terms / Privacy render as tappable links inside the sentence.
+      agreeTermsPrefix: 'I agree to the',
+      agreeTermsConjunction: 'and',
+      /** Whole sentence, for the checkbox's screen-reader label. */
+      agreeTermsAccessible: 'I agree to the Terms of Service and Privacy Policy',
       createAccount: 'Create Account',
       creatingAccount: 'Creating Account...',
       skipDevOnly: 'Skip (dev only)',

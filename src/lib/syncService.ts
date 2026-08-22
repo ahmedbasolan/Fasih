@@ -145,6 +145,31 @@ const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
   'neighborhood':       { exceptional: 29, success: 39, mixed: 22, failed: 10 },
 };
 
+/**
+ * Permanently delete the signed-in user's cloud row.
+ *
+ * Calls the delete_my_account() RPC (supabase/migrations/005_account_deletion.sql)
+ * rather than a plain .delete() — DELETE on user_data is revoked from the client
+ * roles on purpose, so the RPC is the only sanctioned path. It takes no arguments:
+ * the row to delete is derived from the Clerk session token server-side, so this
+ * cannot be pointed at another user's account.
+ *
+ * ⚠ Requires a live Clerk session. Deleting the Clerk user first would revoke the
+ * token this call authenticates with and strand the row permanently — always call
+ * this BEFORE removing the Clerk account.
+ *
+ * Unlike the fire-and-forget stat helpers, errors are surfaced: the caller must
+ * abort deletion rather than tell someone their data is gone when it isn't.
+ */
+export async function deleteAccountData(): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase.rpc('delete_my_account');
+    return { error: error?.message ?? null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Could not reach the server' };
+  }
+}
+
 /** Atomically increment the pick count for one choice (fire-and-forget). */
 export async function recordChoiceStat(
   scenarioId: string,
