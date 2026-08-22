@@ -12,7 +12,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from '../icons';
+import { ChevronRight, Coffee, Building2, Briefcase, Moon, Compass, Activity, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -21,7 +21,7 @@ type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 interface SituationConfig {
   id: string;
   label: string;
-  icon: string;
+  icon: React.ElementType;
   scenarioIds: string[];
   phraseCategories: string[];
 }
@@ -37,49 +37,49 @@ const SITUATIONS: SituationConfig[] = [
   {
     id: 'cafe-social',
     label: 'Café & Social',
-    icon: '☕',
+    icon: Coffee,
     scenarioIds: ['coffee-invitation', 'cafe-friends'],
     phraseCategories: ['Social', 'Food & Drink'],
   },
   {
     id: 'hotel-hospitality',
     label: 'Hotel & Hospitality',
-    icon: '🏨',
+    icon: Building2,
     scenarioIds: ['hotel-guest'],
     phraseCategories: ['Hospitality'],
   },
   {
     id: 'workplace',
     label: 'Workplace',
-    icon: '💼',
+    icon: Briefcase,
     scenarioIds: ['first-morning', 'office-meeting'],
     phraseCategories: ['Workplace', 'Greetings'],
   },
   {
     id: 'cultural-moments',
     label: 'Cultural Moments',
-    icon: '🌙',
+    icon: Moon,
     scenarioIds: ['eid-greeting', 'ramadan-shift'],
     phraseCategories: ['Gratitude', 'Social'],
   },
   {
     id: 'daily-navigation',
     label: 'Daily Navigation',
-    icon: '🧭',
+    icon: Compass,
     scenarioIds: [],
     phraseCategories: ['Everyday'],
   },
   {
     id: 'healthcare',
     label: 'Healthcare',
-    icon: '🏥',
+    icon: Activity,
     scenarioIds: ['the-checkup'],
     phraseCategories: [],
   },
   {
     id: 'family-friends',
     label: 'Family & Friends',
-    icon: '👨‍👩‍👧',
+    icon: Users,
     scenarioIds: ['weekend-invite'],
     phraseCategories: ['Family'],
   },
@@ -241,9 +241,6 @@ export function SituationalConfidence({
       alignItems: 'center',
       gap: 8,
     },
-    situationIcon: {
-      fontSize: 14,
-    },
     situationName: {
       fontFamily: FONT_LATIN_SEMI,
       fontSize: 13,
@@ -335,24 +332,27 @@ export function SituationalConfidence({
         }}>
           {/* Row of situation icons — gives user a preview of what they'll unlock */}
           <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
-            {SITUATIONS.slice(0, 5).map((sit) => (
-              <View
-                key={sit.id}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  backgroundColor: C.SURFACE,
-                  borderWidth: 1,
-                  borderColor: C.BORDER,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: 0.55,
-                }}
-              >
-                <Text style={{ fontSize: 18 }}>{sit.icon}</Text>
-              </View>
-            ))}
+            {SITUATIONS.slice(0, 5).map((sit) => {
+              const PreviewIcon = sit.icon;
+              return (
+                <View
+                  key={sit.id}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: C.SURFACE,
+                    borderWidth: 1,
+                    borderColor: C.BORDER,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.55,
+                  }}
+                >
+                  <PreviewIcon size={18} color={C.TEXT2} strokeWidth={1.75} />
+                </View>
+              );
+            })}
           </View>
 
           <View style={{ alignItems: 'center', gap: 4 }}>
@@ -381,6 +381,7 @@ export function SituationalConfidence({
         <View style={styles.situationsList}>
           {displayed.map((sit) => {
             const colors = getLevelColors(sit.level);
+            const SitIcon = sit.icon;
             return (
               <View
                 key={sit.id}
@@ -388,7 +389,7 @@ export function SituationalConfidence({
               >
                 <View style={styles.situationTop}>
                   <View style={styles.situationLabel}>
-                    <Text style={styles.situationIcon}>{sit.icon}</Text>
+                    <SitIcon size={14} color={C.TEXT2} strokeWidth={1.75} />
                     <Text style={styles.situationName}>{sit.label}</Text>
                   </View>
                   <View style={[styles.levelBadge, { backgroundColor: colors.badge }]}>
