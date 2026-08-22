@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Platform, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, BookOpen, ChevronRight, Settings, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
+import { Calendar, BookOpen, ChevronRight, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
@@ -12,6 +12,8 @@ import { useCountUp } from '../components/design/hooks';
 import { StatCard } from '../components/features/StatCard';
 import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
+import { getNotificationPermissionStatus } from '../lib/notifications';
+import { isLegalUrlSet, openLegal } from '../constants/legal';
 import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 import { useAppStore } from '../store/useAppStore';
 
@@ -22,10 +24,11 @@ interface Props {
   journal: JournalEntry[];
   subscriptionStatus?: SubscriptionStatus;
   onSignOut?: () => void;
-  onSettings?: () => void;
   onManageSubscription?: () => void;
   onUpgrade?: () => void;
   onRestorePurchases?: () => void;
+  onDeleteAccount?: () => void;
+  isDeletingAccount?: boolean;
 }
 
 const roleIcons: Record<string, React.ElementType> = {
@@ -33,11 +36,16 @@ const roleIcons: Record<string, React.ElementType> = {
   office: Briefcase, healthcare: Activity, driver: Car, security: Shield,
 };
 
-export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onSettings, onManageSubscription, onUpgrade, onRestorePurchases }: Props) {
+export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onManageSubscription, onUpgrade, onRestorePurchases, onDeleteAccount, isDeletingAccount = false }: Props) {
   const { C, G, themePreference, setTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const streakCount = useCountUp(stats.currentStreak, 900, 100);
   const phrasesMastered = useCountUp(stats.phrasesMastered, 900, 200);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    getNotificationPermissionStatus().then((status) => setNotificationsEnabled(status === 'granted'));
+  }, []);
   const name = user?.name || STRINGS.profile.learner;
   const RoleIcon = roleIcons[user?.role || ''] || Briefcase;
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
@@ -66,10 +74,36 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
   ], []);
 
   const accountItems = useMemo(() => [
-    [STRINGS.profile.notifications, STRINGS.profile.enabled],
-    [STRINGS.profile.displayLanguage, 'English'],
-    [STRINGS.profile.aboutFasih, STRINGS.profile.version('1.0')],
-  ], []);
+    {
+      label: STRINGS.profile.notifications,
+      value: notificationsEnabled ? STRINGS.profile.enabled : STRINGS.profile.disabled,
+      onPress: () => Linking.openSettings(),
+    },
+    {
+      // No language switcher exists yet — English is the only option, so this
+      // row is informational rather than tappable.
+      label: STRINGS.profile.displayLanguage,
+      value: 'English',
+      onPress: undefined,
+    },
+    // Legal rows only appear once their URL is configured — a Privacy Policy
+    // row that opens nothing is worse than no row. See src/constants/legal.ts.
+    ...(isLegalUrlSet('privacy') ? [{
+      label: STRINGS.legal.privacyPolicy,
+      value: '',
+      onPress: () => openLegal('privacy'),
+    }] : []),
+    ...(isLegalUrlSet('terms') ? [{
+      label: STRINGS.legal.termsOfService,
+      value: '',
+      onPress: () => openLegal('terms'),
+    }] : []),
+    {
+      label: STRINGS.profile.aboutFasih,
+      value: STRINGS.profile.version('1.0'),
+      onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version('1.0')),
+    },
+  ], [notificationsEnabled]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -77,16 +111,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
 
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <View style={{ marginBottom: 20 }}>
         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT }}>{STRINGS.profile.title}</Text>
-        <Pressable
-          onPress={onSettings}
-          accessibilityRole="button"
-          accessibilityLabel="Settings"
-          style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Settings size={18} color={C.TEXT2} />
-        </Pressable>
       </View>
 
       {/* User Identity Card */}
@@ -277,11 +303,11 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
 
       {/* Learning Mode Toggle */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 330 }}>
-        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Learning Mode</Text>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.learningMode.title}</Text>
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
           {[
-            { id: 'career', label: 'Career', Icon: CareerIcon, desc: 'Work scenarios' },
-            { id: 'social', label: 'Social', Icon: SocialIcon, desc: 'Daily life' },
+            { id: 'career', label: STRINGS.profile.learningMode.career, Icon: CareerIcon, desc: STRINGS.profile.learningMode.careerDesc },
+            { id: 'social', label: STRINGS.profile.learningMode.social, Icon: SocialIcon, desc: STRINGS.profile.learningMode.socialDesc },
           ].map(({ id, label, Icon, desc }) => {
             const active = user?.mode === id;
             return (
@@ -386,7 +412,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
 
       {/* Subscription */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 340 }}>
-        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>Subscription</Text>
+        <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.subscription.title}</Text>
         {subscriptionStatus === 'subscribed' ? (
           <View style={{ borderRadius: 20, overflow: 'hidden', backgroundColor: C.CARD_BG }}>
             {/* Active badge */}
@@ -395,8 +421,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 <Star size={16} color={C.WHITE} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Fasih Pro</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Active subscription</Text>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.proName}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.profile.subscription.active}</Text>
               </View>
             </View>
             <Pressable
@@ -407,7 +433,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <CreditCard size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Manage Subscription</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.manage}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -419,7 +445,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <RotateCcw size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.restore}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -436,8 +462,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 <Star size={16} color={C.WHITE} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>Upgrade to Fasih Pro</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>Unlock all scenarios & features</Text>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.upgradeTitle}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.profile.subscription.upgradeDesc}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -449,7 +475,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <RotateCcw size={16} color={C.TEXT2} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>Restore Purchases</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.restore}</Text>
               </View>
               <ChevronRight size={14} color={C.TEXT3} />
             </Pressable>
@@ -467,17 +493,19 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             android: { elevation: 2 },
           }),
         }}>
-          {accountItems.map(([label, val], i, arr) => (
+          {accountItems.map(({ label, value, onPress }, i, arr) => (
             <Pressable
               key={label}
-              accessibilityRole="button"
+              onPress={onPress}
+              disabled={!onPress}
+              accessibilityRole={onPress ? 'button' : 'text'}
               accessibilityLabel={label}
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: C.BORDER }}
             >
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT }}>{label}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{val}</Text>
-                <ChevronRight size={14} color={C.TEXT3} />
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{value}</Text>
+                {onPress && <ChevronRight size={14} color={C.TEXT3} />}
               </View>
             </Pressable>
           ))}
@@ -495,6 +523,26 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
           >
             <LogOut size={16} color={C.ERROR} />
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.ERROR }}>{STRINGS.profile.signOut}</Text>
+          </Pressable>
+        </MotiView>
+      )}
+
+      {/* Delete account — deliberately quieter than Sign Out. This is rare and
+          irreversible, so it reads as a text link rather than a filled button
+          that invites a mis-tap. */}
+      {onDeleteAccount && (
+        <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 400, delay: 440 }}>
+          <Pressable
+            onPress={onDeleteAccount}
+            disabled={isDeletingAccount}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.profile.deleteAccount.button}
+            accessibilityState={{ disabled: isDeletingAccount }}
+            style={{ alignItems: 'center', marginTop: 16, paddingVertical: 14, opacity: isDeletingAccount ? 0.5 : 1 }}
+          >
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, textDecorationLine: 'underline' }}>
+              {isDeletingAccount ? STRINGS.profile.deleteAccount.deleting : STRINGS.profile.deleteAccount.button}
+            </Text>
           </Pressable>
         </MotiView>
       )}

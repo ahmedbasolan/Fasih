@@ -65,6 +65,12 @@ export function setupNotifications(): void {
   }
 }
 
+/** Current notification permission status, for display in Settings/Profile UI. */
+export async function getNotificationPermissionStatus(): Promise<Notifications.PermissionStatus> {
+  const { status } = await Notifications.getPermissionsAsync();
+  return status;
+}
+
 /**
  * Request notification permission from the user.
  * Returns true if granted, false if denied or unsupported.
