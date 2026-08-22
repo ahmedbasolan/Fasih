@@ -292,10 +292,10 @@ export function SituationalConfidence({
 
   function getLevelColors(level: ConfidenceLevel) {
     switch (level) {
-      case 'confident':   return { badge: 'rgba(234,197,124,0.12)', text: C.PRIMARY,       bar: [C.PRIMARY, C.JADE] as [string,string] };
-      case 'familiar':    return { badge: 'rgba(214,162,76,0.10)', text: C.TERTIARY,      bar: [C.TERTIARY, C.JADE2] as [string,string] };
-      case 'learning':    return { badge: 'rgba(214,162,76,0.10)', text: C.CULTURAL_GOLD, bar: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string,string] };
-      case 'not-started': return { badge: 'rgba(255,255,255,0.06)', text: C.TEXT3,       bar: [C.SURFACE, C.SURFACE] as [string,string] };
+      case 'confident':   return { badge: `${C.JADE_ACCENT}33`,   text: C.PRIMARY,       bar: [C.PRIMARY, C.JADE] as [string,string] };
+      case 'familiar':    return { badge: C.JADE_DIM,             text: C.TERTIARY,      bar: [C.TERTIARY, C.JADE2] as [string,string] };
+      case 'learning':    return { badge: C.JADE_ACCENT_SURFACE,  text: C.CULTURAL_GOLD, bar: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string,string] };
+      case 'not-started': return { badge: C.SURFACE2,             text: C.TEXT3,         bar: [C.SURFACE, C.SURFACE] as [string,string] };
     }
   }
 

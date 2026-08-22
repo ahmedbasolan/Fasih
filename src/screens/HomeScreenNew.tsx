@@ -3,12 +3,13 @@ import {
   View,
   ScrollView,
   Text,
-  Pressable,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IMAGES } from '../constants/images';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, PrimaryButton } from '../components/ui';
 import { MotiView } from 'moti';
 import {
   HomeHeader,
@@ -24,7 +25,6 @@ import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
-import { ChevronRight } from '../components/icons';
 import { STRINGS } from '../constants/strings';
 import { todayISO, addDays } from '../engine/srsEngine';
 import { isStreakAtRisk } from '../engine/streakEngine';
@@ -156,6 +156,10 @@ export function HomeScreenNew({
       shadowRadius: 4,
       elevation: 2,
     },
+    emptyMascot: {
+      width: 48,
+      height: 48,
+    },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
       fontSize: 15,
@@ -168,23 +172,6 @@ export function HomeScreenNew({
       color: C.TEXT2,
       textAlign: 'center',
       lineHeight: 18,
-    },
-    emptyButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 12,
-      backgroundColor: C.JADE_DIM,
-      borderWidth: 1,
-      borderColor: C.PRIMARY,
-    },
-    emptyButtonText: {
-      fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
-      color: C.PRIMARY,
-      fontWeight: '600',
     },
   }), [C, insets.bottom]);
 
@@ -222,18 +209,16 @@ export function HomeScreenNew({
             transition={{ type: 'timing', duration: 400 }}
           >
             <View style={styles.emptyCard}>
-              <Text style={{ fontSize: 40 }}>🦊</Text>
+              <Image source={IMAGES.foxyMale} style={styles.emptyMascot} resizeMode="contain" />
               <Text style={styles.emptyTitle}>{STRINGS.home.noProgressYet}</Text>
               <Text style={styles.emptySubtitle}>{STRINGS.home.newUserTip}</Text>
-              <Pressable
+              <PrimaryButton
                 onPress={() => onMissionPress?.(featured.id)}
-                style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
                 accessibilityLabel="Begin your first scenario"
+                style={{ alignSelf: 'stretch', marginTop: 4 }}
               >
-                <Text style={styles.emptyButtonText}>{STRINGS.home.beginScenario}</Text>
-                <ChevronRight size={16} color={C.PRIMARY} />
-              </Pressable>
+                {STRINGS.home.beginScenario}
+              </PrimaryButton>
             </View>
           </MotiView>
         ) : (

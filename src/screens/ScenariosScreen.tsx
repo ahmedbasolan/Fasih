@@ -212,7 +212,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_HEADING_SEMI,
               fontSize: 15,
-              color: locked ? C.TEXT3 : C.TEXT,
+              color: C.TEXT_ON_LIGHT,
               lineHeight: 21,
             }}
             numberOfLines={2}
@@ -224,7 +224,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_LATIN,
               fontSize: 12,
-              color: locked ? C.TEXT3 : C.TEXT2,
+              color: C.TEXT_ON_LIGHT,
               marginTop: 3,
             }}
           >
@@ -419,6 +419,13 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const lockedCount = displayScenarios.filter((s) => s.locked).length;
 
+  // FlashList's 2-column grid leaves a dangling half-empty row when the count is
+  // odd — pad with an invisible filler so the trailing card doesn't look orphaned.
+  type GridItem = Scenario | { id: '__filler__'; filler: true };
+  const gridData: GridItem[] = displayScenarios.length % 2 === 0
+    ? displayScenarios
+    : [...displayScenarios, { id: '__filler__', filler: true }];
+
   const TABS: { id: FilterTab; label: string }[] = [
     { id: 'all', label: 'All' },
     { id: 'saved', label: 'Favourite' },
@@ -469,10 +476,10 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: 20,
+            paddingHorizontal: 12,
             paddingTop: 24,
             paddingBottom: 8,
-            gap: 22,
+            gap: 8,
           }}
         >
           {TABS.map(({ id, label }) => {
@@ -485,12 +492,18 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={label}
                 hitSlop={8}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 99,
+                  backgroundColor: active ? C.JADE_DIM : 'transparent',
+                }}
               >
                 <Text
                   style={{
                     fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
                     fontSize: 15,
-                    color: active ? C.TEXT : C.TEXT3,
+                    color: active ? C.PRIMARY : C.TEXT3,
                   }}
                 >
                   {label}
@@ -502,17 +515,21 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
         {/* ── Scenario grid ── */}
         <FlashList
-          data={displayScenarios}
+          data={gridData}
           numColumns={2}
-          keyExtractor={(item: Scenario) => item.id}
-          renderItem={({ item, index }: { item: Scenario; index: number }) => (
-            <ScenarioCard
-              scenario={item}
-              index={index}
-              isLeft={index % 2 === 0}
-              onPress={() => onScenarioSelect(item.id)}
-            />
-          )}
+          keyExtractor={(item: GridItem) => item.id}
+          renderItem={({ item, index }: { item: GridItem; index: number }) =>
+            'filler' in item ? (
+              <View style={{ flex: 1 }} />
+            ) : (
+              <ScenarioCard
+                scenario={item}
+                index={index}
+                isLeft={index % 2 === 0}
+                onPress={() => onScenarioSelect(item.id)}
+              />
+            )
+          }
           {...({ estimatedItemSize: 222 } as any)}
           contentContainerStyle={{
             paddingHorizontal: 18,

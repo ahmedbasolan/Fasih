@@ -210,7 +210,9 @@ export function StreakWidget({
         <View style={styles.rightBlock}>
           {/* Streak Info Row */}
           <View style={styles.streakInfoRow}>
-            <Text style={styles.daysTitle}>Learning Days</Text>
+            <Text style={styles.daysTitle}>
+              {isChecklistMode ? STRINGS.home.gettingStartedTitle : STRINGS.home.learningDaysTitle}
+            </Text>
             {isChecklistMode ? (
               <Text style={styles.emptyHint}>{STRINGS.home.checklistProgress(checklistCompleted!, checklistTotal!)}</Text>
             ) : (
