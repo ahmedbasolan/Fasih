@@ -54,6 +54,20 @@ function getCardPalettes(C: ThemeColors) {
 // Bento height pattern — alternates for visual interest
 const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
 
+// Locked/coming-soon card scrim — intentionally theme-invariant near-black.
+// It must stay dark to gray out a light pastel card in BOTH light and dark
+// theme, so it can't be built from a themed token the way most colors are.
+const LOCK_SCRIM_STRONG = 'rgba(10,15,12,0.52)';
+const LOCK_SCRIM_SOFT = 'rgba(10,15,12,0.38)';
+// White chrome drawn on top of the scrim above — always safe since the
+// surface underneath is guaranteed dark regardless of app theme.
+const SCRIM_CHIP_BG = 'rgba(255,255,255,0.12)';
+const SCRIM_CHIP_BORDER = 'rgba(255,255,255,0.18)';
+const SCRIM_TEXT = 'rgba(255,255,255,0.75)';
+const SCRIM_BADGE_BG = 'rgba(255,255,255,0.10)';
+const SCRIM_BADGE_BORDER = 'rgba(255,255,255,0.14)';
+const SCRIM_ICON = 'rgba(255,255,255,0.45)';
+
 // ─── Random motivational headings ───────────────────────────────────────────
 
 const MOTIVATIONAL_HEADINGS = [
@@ -248,21 +262,21 @@ function ScenarioCard({
         {comingSoon && (
           <View style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10,15,12,0.52)',
+            backgroundColor: LOCK_SCRIM_STRONG,
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <View style={{
               paddingHorizontal: 12, paddingVertical: 5,
               borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.12)',
+              backgroundColor: SCRIM_CHIP_BG,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.18)',
+              borderColor: SCRIM_CHIP_BORDER,
             }}>
               <Text style={{
                 fontFamily: FONT_HEADING_SEMI,
                 fontSize: 11,
-                color: 'rgba(255,255,255,0.75)',
+                color: SCRIM_TEXT,
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
               }}>
@@ -276,19 +290,19 @@ function ScenarioCard({
         {locked && !comingSoon && (
           <View style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10,15,12,0.38)',
+            backgroundColor: LOCK_SCRIM_SOFT,
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
             padding: 12,
           }}>
             <View style={{
               width: 30, height: 30, borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.10)',
+              backgroundColor: SCRIM_BADGE_BG,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.14)',
+              borderColor: SCRIM_BADGE_BORDER,
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Lock size={14} color="rgba(255,255,255,0.45)" strokeWidth={2} />
+              <Lock size={14} color={SCRIM_ICON} strokeWidth={2} />
             </View>
           </View>
         )}
