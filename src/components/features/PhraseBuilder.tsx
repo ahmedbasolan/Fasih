@@ -199,23 +199,21 @@ const styles = StyleSheet.create({
     borderRadius: 20, 
     borderWidth: 2, 
     borderStyle: 'dashed',
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
     alignItems: 'center',
     alignContent: 'center',
     justifyContent: 'center',
-    padding: 16, 
+    padding: 16,
     gap: 12,
     marginBottom: 32,
-    direction: 'rtl'
   },
-  
-  bankArea: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'center', 
+
+  bankArea: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 12,
-    direction: 'rtl'
   },
   
   tile: {

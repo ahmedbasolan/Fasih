@@ -1125,7 +1125,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               fontSize: Math.round(42 * ARABIC_SCALE),
               color: C.PRIMARY,
               textAlign: 'center',
-              direction: 'rtl',
+              writingDirection: 'rtl',
               marginBottom: 6,
             }}>
               مرحبا
