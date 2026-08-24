@@ -63,6 +63,8 @@ export function PhraseLibrary() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const categoryScrollRef = useRef<ScrollView>(null);
+  const categoryChipX = useRef<Record<string, number>>({});
 
   // Count phrases per category
   const categoryCounts = useMemo(() => {
@@ -115,6 +117,20 @@ export function PhraseLibrary() {
     setShowGrid(true);
   }, []);
 
+  // Bring the active category chip into view — it's the only visual
+  // confirmation of what's selected, since the row always mounts scrolled
+  // to the leftmost position regardless of which chip triggered the filter.
+  const scrollToCategoryChip = useCallback((label: string, animated: boolean) => {
+    const x = categoryChipX.current[label];
+    if (x !== undefined) {
+      categoryScrollRef.current?.scrollTo({ x: Math.max(0, x - 16), animated });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showGrid) scrollToCategoryChip(cat, true);
+  }, [cat, showGrid, scrollToCategoryChip]);
+
   const renderItem = useCallback(({ item: p }: { item: Phrase }) => {
     const isExpanded = expanded === p.id;
     const isPlaying = playingId === p.id;
@@ -154,7 +170,8 @@ export function PhraseLibrary() {
                 accessibilityRole="button"
                 accessibilityLabel={isPlaying ? 'Playing audio' : 'Play audio'}
                 accessibilityState={{ selected: isPlaying }}
-                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
+                hitSlop={4}
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Volume2 size={14} color={isPlaying ? C.JADE : C.TEXT3} />
               </Pressable>
@@ -163,7 +180,8 @@ export function PhraseLibrary() {
                 accessibilityRole="button"
                 accessibilityLabel={isSaved ? 'Remove from saved' : 'Save phrase'}
                 accessibilityState={{ selected: isSaved }}
-                style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+                hitSlop={4}
+                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
               >
                 <BookmarkPlus size={14} color={isSaved ? C.PRIMARY : C.TEXT3} fill={isSaved ? C.PRIMARY : 'none'} />
               </Pressable>
@@ -333,7 +351,7 @@ export function PhraseLibrary() {
               backgroundColor: `${accent}18`,
             }}>
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: accent }}>
-                {categoryCounts[cat] || 0}
+                {filtered.length}
               </Text>
             </View>
           </View>
@@ -357,7 +375,7 @@ export function PhraseLibrary() {
     );
   // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGrid, cat, C, isDark, categoryCounts, handleShowAll]);
+  }, [showGrid, cat, C, isDark, filtered.length, handleShowAll]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -439,19 +457,29 @@ export function PhraseLibrary() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 280 }}
           >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+              {STRINGS.phrases.categoryFilterLabel}
+            </Text>
+            <ScrollView ref={categoryScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
               {[STRINGS.phrases.filterAll, ...PHRASE_CATEGORIES].map(c => {
                 const active = cat === c;
                 return (
-                  <Pressable key={c} onPress={() => {
-                    setCat(c);
-                    if (c === STRINGS.phrases.filterAll && search.length === 0) setShowGrid(true);
-                  }} style={{
-                    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-                    backgroundColor: active ? C.PRIMARY : C.SURFACE,
-                    borderWidth: active ? 0 : 1,
-                    borderColor: C.BORDER,
-                  }}>
+                  <Pressable
+                    key={c}
+                    onPress={() => {
+                      setCat(c);
+                      if (c === STRINGS.phrases.filterAll && search.length === 0) setShowGrid(true);
+                    }}
+                    onLayout={(e) => {
+                      categoryChipX.current[c] = e.nativeEvent.layout.x;
+                      if (active) scrollToCategoryChip(c, false);
+                    }}
+                    style={{
+                      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+                      backgroundColor: active ? C.PRIMARY : C.SURFACE,
+                      borderWidth: active ? 0 : 1,
+                      borderColor: C.BORDER,
+                    }}>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.WHITE : C.TEXT3 }}>{c}</Text>
                   </Pressable>
                 );
@@ -459,6 +487,9 @@ export function PhraseLibrary() {
             </ScrollView>
 
             {/* Difficulty filter */}
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+              {STRINGS.phrases.levelFilterLabel}
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {[STRINGS.phrases.filterAll, 'basic', 'intermediate', 'advanced'].map(d => {
                 const active = diff === d;
@@ -558,9 +589,13 @@ export function PhraseLibrary() {
           ListHeaderComponent={() => (
             <View style={{ marginBottom: 4 }}>
               {CategoryFilterBanner}
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
-                {STRINGS.phrases.expressionCount(filtered.length)}
-              </Text>
+              {/* The banner's own pill already shows this count once a category is
+                  selected — only show the standalone line when there's no banner. */}
+              {cat === STRINGS.phrases.filterAll && (
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
+                  {STRINGS.phrases.expressionCount(filtered.length)}
+                </Text>
+              )}
             </View>
           )}
           ListEmptyComponent={() => (
