@@ -171,6 +171,8 @@ export const STRINGS = {
     subtitle: (count: number) => `${count} Gulf Arabic expressions`,
     searchPlaceholder: 'Arabic, English, or phonetic...',
     filterAll: 'All',
+    categoryFilterLabel: 'Category',
+    levelFilterLabel: 'Level',
     expressionCount: (count: number) => `${count} expression${count !== 1 ? 's' : ''}`,
     playSlowly: 'Play slowly',
     pronunciation: 'Pronunciation',
