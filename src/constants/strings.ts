@@ -99,6 +99,8 @@ export const STRINGS = {
     skipWarningMessage: "You've already set up your custom learning path and unlocked Gulf Arabic phrases. Skipping now means you won't save this progress.",
     skipWarningConfirm: 'Continue Without Saving',
     skipWarningCancel: 'Go Back to Onboarding',
+    purchaseErrorTitle: 'Purchase failed',
+    purchaseErrorMessage: "We couldn't process your payment. Please check your payment method and try again.",
     roles: {
       hospitality: 'Hospitality',
       food_beverage: 'Food & Beverage',
