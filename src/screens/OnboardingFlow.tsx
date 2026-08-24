@@ -29,7 +29,7 @@ import { haptic } from '../lib/haptics';
 
 interface Props {
   onComplete: (profile: UserProfile) => void;
-  onStartTrial: (plan: 'monthly' | 'yearly') => void;
+  onStartTrial: (plan: 'monthly' | 'yearly') => Promise<boolean>;
   onSkipTrial: () => void;
 }
 
@@ -180,7 +180,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     const dailyGoalXP = computeDailyGoalXP(selectedGoals.length, mode);
     onComplete({ name: name || 'Guest', mode, gender, role, profession, goals: selectedGoals, plan, onboardingChecklist, dailyGoalXP });
   }, [onComplete, name, mode, gender, role, profession, selectedGoals, plan, holdComplete, phraseEverRevealed, scenarioCompleted]);
-  const finishWithTrial = useCallback(() => { haptic.success(); onStartTrial(plan); finish(); }, [onStartTrial, plan, finish]);
+  const finishWithTrial = useCallback(async () => {
+    haptic.success();
+    const shouldFinish = await onStartTrial(plan);
+    if (shouldFinish) finish();
+  }, [onStartTrial, plan, finish]);
   const next = useCallback(() => {
     haptic.light();
     if (step < TOTAL - 1) setStep(s => s + 1);

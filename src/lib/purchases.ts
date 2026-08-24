@@ -214,22 +214,29 @@ export interface PaywallResult {
  * Returns whether the user ended up with access.
  */
 export async function presentPaywallIfNeeded(): Promise<PaywallResult> {
-  const result = await RevenueCatUI.presentPaywallIfNeeded({
-    requiredEntitlementIdentifier: ENTITLEMENT_ID,
-  });
+  try {
+    const result = await RevenueCatUI.presentPaywallIfNeeded({
+      requiredEntitlementIdentifier: ENTITLEMENT_ID,
+    });
 
-  switch (result) {
-    case PAYWALL_RESULT.PURCHASED:
-      return { purchased: true, restored: false, cancelled: false };
-    case PAYWALL_RESULT.RESTORED:
-      return { purchased: false, restored: true, cancelled: false };
-    case PAYWALL_RESULT.NOT_PRESENTED:
-      // User already has entitlement — treat as "purchased"
-      return { purchased: true, restored: false, cancelled: false };
-    case PAYWALL_RESULT.CANCELLED:
-    case PAYWALL_RESULT.ERROR:
-    default:
-      return { purchased: false, restored: false, cancelled: true };
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+        return { purchased: true, restored: false, cancelled: false };
+      case PAYWALL_RESULT.RESTORED:
+        return { purchased: false, restored: true, cancelled: false };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+        // User already has entitlement — treat as "purchased"
+        return { purchased: true, restored: false, cancelled: false };
+      case PAYWALL_RESULT.CANCELLED:
+      case PAYWALL_RESULT.ERROR:
+      default:
+        return { purchased: false, restored: false, cancelled: true };
+    }
+  } catch {
+    // RevenueCat unreachable/misconfigured — let the caller's own
+    // purchase-flow fallback handle it instead of throwing an
+    // unhandled rejection.
+    return { purchased: false, restored: false, cancelled: true };
   }
 }
 
@@ -238,17 +245,24 @@ export async function presentPaywallIfNeeded(): Promise<PaywallResult> {
  * Use on the Profile / Settings screen for upgrades.
  */
 export async function presentPaywall(): Promise<PaywallResult> {
-  const result = await RevenueCatUI.presentPaywall();
+  try {
+    const result = await RevenueCatUI.presentPaywall();
 
-  switch (result) {
-    case PAYWALL_RESULT.PURCHASED:
-      return { purchased: true, restored: false, cancelled: false };
-    case PAYWALL_RESULT.RESTORED:
-      return { purchased: false, restored: true, cancelled: false };
-    case PAYWALL_RESULT.CANCELLED:
-    case PAYWALL_RESULT.ERROR:
-    default:
-      return { purchased: false, restored: false, cancelled: true };
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+        return { purchased: true, restored: false, cancelled: false };
+      case PAYWALL_RESULT.RESTORED:
+        return { purchased: false, restored: true, cancelled: false };
+      case PAYWALL_RESULT.CANCELLED:
+      case PAYWALL_RESULT.ERROR:
+      default:
+        return { purchased: false, restored: false, cancelled: true };
+    }
+  } catch {
+    // RevenueCat unreachable/misconfigured — let the caller's own
+    // purchase-flow fallback handle it instead of throwing an
+    // unhandled rejection.
+    return { purchased: false, restored: false, cancelled: true };
   }
 }
 
