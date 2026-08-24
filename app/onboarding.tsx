@@ -43,31 +43,38 @@ export default function OnboardingRoute() {
   //      Store / Play Store require one for any subscription trial), so a
   //      transient RevenueCat/store error should surface as a retryable
   //      error, not a silent free trial.
-  const handleStartTrial = async (plan: 'monthly' | 'yearly') => {
+  // Returns whether onboarding should proceed to completion — the caller
+  // must await this and only navigate away when it resolves true, so a
+  // cancelled or failed purchase leaves the user on the paywall step
+  // instead of being onboarded with no subscription.
+  const handleStartTrial = async (plan: 'monthly' | 'yearly'): Promise<boolean> => {
     // Attempt RevenueCat hosted paywall (shows all plans including lifetime)
     const paywallResult = await presentPaywall();
     if (paywallResult.purchased) {
       trackTrialStarted(plan);
-      return;
+      return true;
     }
 
     // Fallback: direct purchase of the plan the user selected in the UI
-    const { cancelled, error } = await purchaseSubscription(plan);
-    if (cancelled) return; // user dismissed — stay on paywall step
+    const { subscribed, cancelled } = await purchaseSubscription(plan);
+    if (cancelled) return false; // user dismissed — stay on paywall step
 
-    if (error) {
-      if (__DEV__) {
-        // Store / RevenueCat unreachable (e.g., simulator) — grant local trial
-        startTrial(plan);
-        trackTrialStarted(plan);
-      } else {
-        Alert.alert(STRINGS.onboarding.purchaseErrorTitle, STRINGS.onboarding.purchaseErrorMessage);
-      }
-      return;
+    if (subscribed) {
+      trackTrialStarted(plan);
+      return true;
     }
 
-    // On success, purchaseSubscription already set status to 'subscribed'
-    trackTrialStarted(plan);
+    // Purchase didn't result in an active subscription — either a real
+    // error, or (rarely) a completed call with no active entitlement yet.
+    // Either way, never grant free access in production.
+    if (__DEV__) {
+      // Store / RevenueCat unreachable (e.g., simulator) — grant local trial
+      startTrial(plan);
+      trackTrialStarted(plan);
+      return true;
+    }
+    Alert.alert(STRINGS.onboarding.purchaseErrorTitle, STRINGS.onboarding.purchaseErrorMessage);
+    return false;
   };
 
   return (

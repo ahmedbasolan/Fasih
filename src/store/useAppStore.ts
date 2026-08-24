@@ -224,7 +224,7 @@ interface AppState {
   // Subscription actions
   startTrial: (plan: 'monthly' | 'yearly') => void;
   skipTrial: () => void;
-  purchaseSubscription: (plan: 'monthly' | 'yearly' | 'lifetime') => Promise<{ cancelled: boolean; error: string | null }>;
+  purchaseSubscription: (plan: 'monthly' | 'yearly' | 'lifetime') => Promise<{ subscribed: boolean; cancelled: boolean; error: string | null }>;
   restorePurchases: () => Promise<{ restored: boolean; error: string | null }>;
   presentPaywall: () => Promise<{ purchased: boolean }>;
   presentPaywallIfNeeded: () => Promise<{ purchased: boolean }>;
@@ -494,11 +494,12 @@ export const useAppStore = create<AppState>()(
 
       purchaseSubscription: async (plan) => {
         const result = await purchasePlan(plan);
-        if (result.status === 'subscribed') {
+        const subscribed = result.status === 'subscribed';
+        if (subscribed) {
           set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
           get().syncToCloud();
         }
-        return { cancelled: result.cancelled, error: result.error };
+        return { subscribed, cancelled: result.cancelled, error: result.error };
       },
 
       restorePurchases: async () => {
