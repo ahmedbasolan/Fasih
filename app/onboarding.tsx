@@ -1,6 +1,8 @@
+import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
 import { OnboardingFlow } from '../src/screens/OnboardingFlow';
+import { STRINGS } from '../src/constants/strings';
 import type { UserProfile } from '../src/types';
 import {
   trackOnboardingCompleted,
@@ -35,7 +37,12 @@ export default function OnboardingRoute() {
   //   1. Try RevenueCat's hosted paywall first (best UX, handles all 3 plans).
   //   2. If paywall UI is unavailable (no internet / simulator), fall back to
   //      direct purchase of the selected plan.
-  //   3. If that also fails, grant a local trial so the user isn't blocked.
+  //   3. If that also fails: in dev, grant a local trial so testing isn't
+  //      blocked. In production, never grant free access on a failed
+  //      purchase — trials must go through a real payment method (App
+  //      Store / Play Store require one for any subscription trial), so a
+  //      transient RevenueCat/store error should surface as a retryable
+  //      error, not a silent free trial.
   const handleStartTrial = async (plan: 'monthly' | 'yearly') => {
     // Attempt RevenueCat hosted paywall (shows all plans including lifetime)
     const paywallResult = await presentPaywall();
@@ -49,11 +56,18 @@ export default function OnboardingRoute() {
     if (cancelled) return; // user dismissed — stay on paywall step
 
     if (error) {
-      // Store / RevenueCat unreachable (e.g., simulator) — grant local trial
-      startTrial(plan);
+      if (__DEV__) {
+        // Store / RevenueCat unreachable (e.g., simulator) — grant local trial
+        startTrial(plan);
+        trackTrialStarted(plan);
+      } else {
+        Alert.alert(STRINGS.onboarding.purchaseErrorTitle, STRINGS.onboarding.purchaseErrorMessage);
+      }
+      return;
     }
-    trackTrialStarted(plan);
+
     // On success, purchaseSubscription already set status to 'subscribed'
+    trackTrialStarted(plan);
   };
 
   return (
