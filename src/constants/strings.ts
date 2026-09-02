@@ -256,6 +256,17 @@ export const STRINGS = {
     // writingNext above: those describe content that is not written yet, these
     // describe content that exists and is behind the paywall. Conflating them
     // tells a paying-ready user the scenario doesn't exist.
+    startScenario: 'Start scenario',
+    continueScenario: 'Continue',
+    playAgain: 'Play again',
+    sceneNumber: (n: number) => `Scene ${String(n).padStart(2, '0')}`,
+    sceneDone: 'completed',
+    sceneLocked: 'locked',
+    sceneNext: 'up next',
+    tabAll: 'All',
+    tabFavourite: 'Favourite',
+    noFavourites: 'No favourites yet\nTap the heart on any card',
+    noResults: 'No results found',
     lockedCount: (count: number) => `${count} more scenario${count === 1 ? '' : 's'} with Fasih Pro`,
     lockedSub: 'Unlock every situation and practise without limits.',
     unlock: 'Unlock',

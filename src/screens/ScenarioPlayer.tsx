@@ -221,8 +221,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     [C]
   );
   const insets = useSafeAreaInsets();
-  const scriptData = getScenarioScript(scenarioId, C);
-  const scenario = getScenarioById(scenarioId, C);
+  // Doherty threshold: keep the player responsive under 400ms.
+  // getScenarioScripts() is an arrow function returning a ~1,140-line object
+  // literal, and getAllScenarios() spreads three more builders. Called bare in
+  // the render body — as these were — the entire scenario corpus was rebuilt on
+  // every state change: every phase transition, every choice tap, every
+  // typewriter tick in a child. On the low-end Android hardware this app is
+  // aimed at, that is exactly the kind of cost that turns a tap into a stutter.
+  // It also defeated every downstream memo, since `scriptData` was a fresh
+  // reference each render.
+  const scriptData = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
+  const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
 
   const { speak, isSpeaking } = useArabicTTS();
@@ -685,6 +694,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               {/* Listen button — only when not yet chosen */}
                               {!selectedChoiceId && (
                                 <Pressable
+                                  hitSlop={8}
                                   onPress={(e) => { e.stopPropagation?.(); playChoice(choice.id, choiceArabic); }}
                                   accessibilityRole="button"
                                   accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}

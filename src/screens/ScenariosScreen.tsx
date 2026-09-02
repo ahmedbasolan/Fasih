@@ -32,7 +32,12 @@ interface Props {
   onScenarioSelect: (id: string) => void;
 }
 
-type FilterTab = 'all' | 'saved' | 'recommended';
+// Hick's law / Occam's razor: 'Recommended' was defined as !s.locked — i.e.
+// 'All, minus the locked ones'. It recommended nothing, duplicated a view the
+// user already had, and its empty state claimed 'All scenarios coming soon!',
+// which can never be true while the first three are free. Two tabs that each
+// mean something distinct beat three where one is noise.
+type FilterTab = 'all' | 'saved';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -438,7 +443,6 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
     }));
     const filtered = withAccess.filter((s) => {
       if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
-      if (filterTab === 'recommended') return !s.locked;
       return true;
     });
     // unlocked first, locked at the bottom
@@ -462,9 +466,8 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
     : [...displayScenarios, { id: '__filler__', filler: true }];
 
   const TABS: { id: FilterTab; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'saved', label: 'Favourite' },
-    { id: 'recommended', label: 'Recommended' },
+    { id: 'all', label: STRINGS.scenarios.tabAll },
+    { id: 'saved', label: STRINGS.scenarios.tabFavourite },
   ];
 
   return (
@@ -594,10 +597,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
               >
                 {filterTab === 'saved'
                   ? <Heart size={24} color={C.PRIMARY} fill="transparent" />
-                  : filterTab === 'recommended'
-                    ? <CheckCircle2 size={24} color={C.PRIMARY} />
-                    : <Search size={24} color={C.PRIMARY} />
-                }
+                  : <Search size={24} color={C.PRIMARY} />}
               </View>
               <Text
                 style={{
@@ -609,10 +609,8 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 }}
               >
                 {filterTab === 'saved'
-                  ? 'No favourites yet\nTap the heart on any card'
-                  : filterTab === 'recommended'
-                    ? 'No recommendations yet\nAll scenarios coming soon!'
-                    : 'No results found'}
+                  ? STRINGS.scenarios.noFavourites
+                  : STRINGS.scenarios.noResults}
               </Text>
             </MotiView>
           )}

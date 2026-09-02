@@ -95,6 +95,7 @@ function FlashCard({
                 {phrase.arabic}
               </Text>
               <Pressable
+                hitSlop={8}
                 onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
               >
@@ -157,6 +158,7 @@ function FlashCard({
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
                 >
@@ -164,6 +166,7 @@ function FlashCard({
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeakSlow(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
                 >
@@ -725,6 +728,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   {phrase.arabic}
                 </Text>
                 <Pressable
+                  hitSlop={8}
                   onPress={() => speak(phrase.arabic)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                 >
@@ -851,6 +855,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Pressable
+                    hitSlop={8}
                     onPress={() => speak(phrase.arabic)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                   >

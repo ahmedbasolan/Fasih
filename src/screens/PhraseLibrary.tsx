@@ -15,6 +15,7 @@ import { PHRASES, PHRASE_CATEGORIES, getCategoryColors, getDifficultyColors, TYP
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
+import { arabicIncludes } from '../engine/arabic';
 
 type Phrase = typeof PHRASES[0];
 
@@ -77,7 +78,15 @@ export function PhraseLibrary() {
 
   const filtered = useMemo(() => PHRASES.filter(p => {
     const q = search.toLowerCase();
-    const matchSearch = !search || p.arabic.includes(search) || p.roman.toLowerCase().includes(q) || p.english.toLowerCase().includes(q);
+    // Postel's law: be liberal in what you accept. Matching the raw query
+    // against the raw stored string meant a learner who typed a form they had
+    // seen elsewhere — with vowel marks, or a bare alef where we store a
+    // hamzated one — got an empty list and no explanation. arabicIncludes
+    // folds those differences; Latin queries pass through it unchanged.
+    const matchSearch = !search
+      || arabicIncludes(p.arabic, search)
+      || p.roman.toLowerCase().includes(q)
+      || p.english.toLowerCase().includes(q);
     const matchCat = cat === STRINGS.phrases.filterAll || p.category === cat;
     const matchDiff = diff === STRINGS.phrases.filterAll || p.difficulty === diff;
     return matchSearch && matchCat && matchDiff;
@@ -192,6 +201,7 @@ export function PhraseLibrary() {
         {isExpanded && (
           <View style={{ paddingHorizontal: 14, paddingBottom: 14, backgroundColor: C.SURFACE }}>
             <Pressable
+              hitSlop={8}
               onPress={() => playSlow(p)}
               accessibilityRole="button"
               accessibilityLabel="Play slowly"
@@ -356,6 +366,7 @@ export function PhraseLibrary() {
             </View>
           </View>
           <Pressable
+            hitSlop={8}
             onPress={handleShowAll}
             style={{
               flexDirection: 'row',
@@ -465,6 +476,7 @@ export function PhraseLibrary() {
                 const active = cat === c;
                 return (
                   <Pressable
+                    hitSlop={8}
                     key={c}
                     onPress={() => {
                       setCat(c);
@@ -496,7 +508,7 @@ export function PhraseLibrary() {
                 const color = d === STRINGS.phrases.filterAll ? C.PRIMARY : DIFFICULTY_COLORS[d];
                 const label = d === STRINGS.phrases.filterAll ? d : d === 'basic' ? STRINGS.common.levelBasic : d === 'intermediate' ? STRINGS.common.levelIntermediate : STRINGS.common.levelAdvanced;
                 return (
-                  <Pressable key={d} onPress={() => setDiff(d)} style={{
+                  <Pressable key={d} onPress={() => setDiff(d)} hitSlop={8} style={{
                     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
                     backgroundColor: active ? `${color}18` : 'transparent',
                     borderWidth: 1,

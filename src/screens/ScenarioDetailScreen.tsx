@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters, SheetPanel } from '../components/ui';
+import { GhostLetters, SheetPanel, PrimaryButton } from '../components/ui';
 import { HeroSceneBg } from '../components/features/SceneIllustrations';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
@@ -23,8 +23,11 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   
-  const scenario = getScenarioById(scenarioId, C);
-  const script = getScenarioScript(scenarioId, C);
+  // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
+  // the whole scenario corpus on every call, and calling them in the render
+  // body meant doing that on every re-render. See the note there.
+  const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
+  const script = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
@@ -132,7 +135,28 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             {scenario.kafIntro || scenario.subtitle}
           </Text>
 
-          {/* Scenes List */}
+          {/* One primary action.
+              Every row of the list below used to be a Pressable calling
+              onSceneSelect(index) — but the route discards that index and the
+              player always boots at scene 0, so tapping "Scene 04" silently
+              started from the beginning. Rows that look tappable and don't do
+              what they promise are worse than rows that don't look tappable
+              (Jakob's law), and offering N identical-looking entry points to
+              one destination is a choice that isn't one (Hick's law).
+              The list is now a progress display; this is the way in. */}
+          <PrimaryButton
+            onPress={() => onSceneSelect(0)}
+            accessibilityLabel={isCompleted
+              ? STRINGS.scenarios.playAgain
+              : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
+            style={{ marginBottom: 28 }}
+          >
+            {isCompleted
+              ? STRINGS.scenarios.playAgain
+              : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
+          </PrimaryButton>
+
+          {/* Scenes list — progress, not navigation. */}
           <View style={{ gap: 16 }}>
             {script.scenes.length === 0 ? (
               <EmptyState
@@ -144,9 +168,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
                 const isLocked = index > scenesUnlocked && !isCompleted;
                 const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
                 return (
-                  <Pressable
+                  <View
                     key={scene.id}
-                    onPress={() => !isLocked && onSceneSelect(index)}
+                    accessible
+                    accessibilityLabel={`${STRINGS.scenarios.sceneNumber(index + 1)}, ${scene.setting}, ${
+                      isDone ? STRINGS.scenarios.sceneDone
+                      : isLocked ? STRINGS.scenarios.sceneLocked
+                      : STRINGS.scenarios.sceneNext
+                    }`}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -155,13 +184,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
                       padding: 16,
                       borderWidth: 1,
                       borderColor: C.BORDER,
+                      opacity: isLocked ? 0.55 : 1,
                     }}
                   >
                     <View style={{
                       width: 56,
                       height: 56,
                       borderRadius: 16,
-                      backgroundColor: isLocked ? 'rgba(2,185,134,0.05)' : isDone ? C.JADE_DIM : 'rgba(2,185,134,0.12)',
+                      backgroundColor: isLocked ? C.SURFACE2 : isDone ? C.JADE_DIM : C.JADE_ACCENT_DIM,
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: 16
@@ -177,14 +207,14 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
 
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
-                        Scene {String(index + 1).padStart(2, '0')}
+                        {STRINGS.scenarios.sceneNumber(index + 1)}
                       </Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
                         {scene.setting}
                       </Text>
                     </View>
 
-                  </Pressable>
+                  </View>
                 );
               })
             )}
