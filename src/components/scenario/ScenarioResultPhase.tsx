@@ -28,6 +28,7 @@ function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: C.JADE, textAlign: 'right', flex: 1, lineHeight: 30 }}>{arabic}</Text>
         <Pressable
+          hitSlop={8}
           onPress={onSpeak}
           accessibilityRole="button"
           accessibilityLabel={isPlaying ? 'Stop audio' : 'Listen to phrase'}

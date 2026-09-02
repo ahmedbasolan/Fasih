@@ -60,6 +60,7 @@ export function SyncStatusBanner() {
 
             {/* Retry */}
             <Pressable
+              hitSlop={8}
               onPress={() => void syncToCloud()}
               disabled={isSyncing}
               accessibilityRole="button"
@@ -75,6 +76,7 @@ export function SyncStatusBanner() {
 
             {/* Dismiss */}
             <Pressable
+              hitSlop={8}
               onPress={dismissSyncError}
               accessibilityRole="button"
               accessibilityLabel="Dismiss sync error"
