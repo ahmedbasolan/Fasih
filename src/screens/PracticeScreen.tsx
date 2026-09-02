@@ -294,59 +294,84 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
   const DECK_SIZE = 8;
 
+  /**
+   * SRS-aware deck: due cards first, topped up with fresh phrases.
+   *
+   * Shared by all three modes. Previously only flashcards used it — the two
+   * quizzes drew uniformly at random from the whole library while still
+   * calling onPhraseReview, so they rescheduled cards that were not due and
+   * churned the very schedule the flashcard deck was maintaining.
+   */
+  const buildSrsDeck = useCallback((source: Phrase[] = PHRASES) => {
+    const dueIds = new Set(getDueReviews().map((r) => r.phraseId));
+    const due = shuffle(source.filter((p) => dueIds.has(p.id)));
+    const rest = shuffle(source.filter((p) => !dueIds.has(p.id)));
+    return [...due, ...rest].slice(0, DECK_SIZE);
+  }, [getDueReviews]);
+
   const startFlashcards = useCallback(() => {
-    // SRS-aware deck: due cards first, filled up with fresh phrases.
-    // This ensures the spaced-repetition schedule is actually honoured.
-    const dueIds = new Set(getDueReviews().map(r => r.phraseId));
-    const due = shuffle(PHRASES.filter(p => dueIds.has(p.id)));
-    const rest = shuffle(PHRASES.filter(p => !dueIds.has(p.id)));
-    const pool = [...due, ...rest].slice(0, DECK_SIZE);
-    setDeck(pool);
+    setDeck(buildSrsDeck());
     setCurrent(0);
     setFlipped(false);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('flashcard');
-  }, [getDueReviews]);
+  }, [buildSrsDeck]);
+
+  /**
+   * Build a multiple-choice set for one question.
+   *
+   * Distractors are excluded by the VALUE the answer is checked against, not by
+   * id. The library contains genuine duplicates — seven phrases share an
+   * `arabic` string and several share a `roman` one — so filtering by id alone
+   * let a phrase's twin be drawn as a "wrong" option identical to the right
+   * one. The learner then saw the same answer twice with no way to choose
+   * correctly, and the string comparison scored either tap as correct.
+   *
+   * Options are also de-duplicated after selection, so a question never renders
+   * two identical rows even if the pool is small.
+   */
+  const buildOptions = useCallback((correct: Phrase, field: 'roman' | 'arabic') => {
+    const answer = correct[field];
+    const pool = PHRASES.filter((p) => p[field] !== answer);
+    const wrong: string[] = [];
+    for (const p of shuffle(pool)) {
+      if (wrong.length >= 3) break;
+      if (!wrong.includes(p[field])) wrong.push(p[field]);
+    }
+    return shuffle([answer, ...wrong]);
+  }, []);
 
   // Arabic → Transliteration options (standard quiz — no English)
   const generateQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
-    setQuizOptions(options);
+    setQuizOptions(buildOptions(phrases[idx], 'roman'));
     setQuizAnswer(null);
-  }, []);
+  }, [buildOptions]);
 
   // English → Arabic options (reverse quiz)
   const generateReverseQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
-    setQuizOptions(options);
+    setQuizOptions(buildOptions(phrases[idx], 'arabic'));
     setQuizAnswer(null);
-  }, []);
+  }, [buildOptions]);
 
   const startQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateQuizOptions(shuffled, 0);
+    generateQuizOptions(deckCards, 0);
     setMode('quiz');
-  }, [generateQuizOptions]);
+  }, [buildSrsDeck, generateQuizOptions]);
 
   const startReverseQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateReverseQuizOptions(shuffled, 0);
+    generateReverseQuizOptions(deckCards, 0);
     setMode('reverse-quiz');
-  }, [generateReverseQuizOptions]);
+  }, [buildSrsDeck, generateReverseQuizOptions]);
 
   // Phrase Builder only works on phrases that ship word-tile breakdowns.
   const PHRASES_WITH_TILES = useMemo(
@@ -355,13 +380,11 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   );
 
   const startPhraseBuilder = useCallback(() => {
-    const pool = shuffle(PHRASES_WITH_TILES);
-    const shuffled = pool.slice(0, Math.min(DECK_SIZE, pool.length));
-    setDeck(shuffled);
+    setDeck(buildSrsDeck(PHRASES_WITH_TILES));
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('phrase-builder');
-  }, [PHRASES_WITH_TILES]);
+  }, [buildSrsDeck, PHRASES_WITH_TILES]);
 
   // Flashcard navigation — calls 3-tier rating for real SRS scheduling
   const rateCard = useCallback((rating: 'knew' | 'learning' | 'new') => {
@@ -885,7 +908,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                    onPhraseRating?.(deck[current].id, 'knew');
                 } else {
                    setScore(s => ({ ...s, wrong: s.wrong + 1 }));
-                   onPhraseRating?.(deck[current].id, 'learning');
+                   // A failed build is 'new' (1 day), not 'learning' (3 days) —
+                   // getting it wrong must not schedule the card further out
+                   // than admitting you are still learning it.
+                   onPhraseRating?.(deck[current].id, 'new');
                 }
                 if (current + 1 >= deck.length) {
                    setMode('result');

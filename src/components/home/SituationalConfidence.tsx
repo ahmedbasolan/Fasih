@@ -85,6 +85,22 @@ const SITUATIONS: SituationConfig[] = [
   },
 ];
 
+/**
+ * How much a completed scenario counts toward confidence, by its ending.
+ *
+ * Keyed by ScenarioEnding['type']. The old inline ladder tested for
+ * 'success_strong', which is not a member of that union — the branch was dead
+ * and plain 'success', the most common good outcome, silently fell through to
+ * the neutral 1.0. `src/engine/__tests__/scenarioContent.test.ts` now asserts
+ * every authored ending uses a known type.
+ */
+const ENDING_WEIGHTS: Record<string, number> = {
+  exceptional: 1.2,
+  success: 1.1,
+  mixed: 1.0,
+  failed: 0.6,
+};
+
 function getConfidenceLevel(score: number): ConfidenceLevel {
   if (score >= 70) return 'confident';
   if (score >= 40) return 'familiar';
@@ -113,40 +129,45 @@ export function SituationalConfidence({
 
   const situations = useMemo<SituationResult[]>(() => {
     return SITUATIONS.map((sit) => {
+      // Each dimension is scored 0–100 on its own, then the populated ones are
+      // averaged. The previous version capped each at ~60 and summed them, so a
+      // situation with only one dimension mapped could never exceed 60 — and
+      // "Confident" needs 70. Daily Navigation (no scenarios) and Healthcare
+      // (no phrase categories) were therefore permanently stuck at "Familiar"
+      // no matter how much the learner practised.
       const totalScenarios = sit.scenarioIds.length;
-      let scenarioScore = 0;
+      let scenarioPart: number | null = null;
       let scenariosCompleted = 0;
       if (totalScenarios > 0) {
+        let weighted = 0;
         for (const id of sit.scenarioIds) {
-          if (completedScenarios[id]) {
-            scenariosCompleted++;
-            const ending = completedScenarios[id].endingType;
-            const bonus = ending === 'exceptional' ? 1.2
-              : ending === 'success_strong' ? 1.1
-              : ending === 'failed' ? 0.6
-              : 1.0;
-            scenarioScore += (50 / totalScenarios) * bonus;
-          }
+          const run = completedScenarios[id];
+          if (!run) continue;
+          scenariosCompleted++;
+          weighted += (100 / totalScenarios) * (ENDING_WEIGHTS[run.endingType] ?? 1);
         }
+        scenarioPart = Math.min(weighted, 100);
       }
 
       const totalCategories = sit.phraseCategories.length;
-      let phraseScore = 0;
+      let phrasePart: number | null = null;
       let phrasesStudied = 0;
-      if (totalCategories > 0 && stats.categoryMastery) {
+      if (totalCategories > 0) {
+        let sum = 0;
         for (const cat of sit.phraseCategories) {
-          const mastery = stats.categoryMastery[cat];
-          if (mastery && mastery.phrasesStudied > 0) {
-            phrasesStudied += mastery.phrasesStudied;
-            const accuracyContrib = (mastery.accuracy / 100) * (50 / totalCategories);
-            const totalInCat = mastery.phrasesTotal || 1;
-            const coverageBonus = Math.min(mastery.phrasesStudied / totalInCat, 1) * 10;
-            phraseScore += accuracyContrib + (coverageBonus / totalCategories);
-          }
+          const mastery = stats.categoryMastery?.[cat];
+          if (!mastery || mastery.phrasesStudied <= 0) continue;
+          phrasesStudied += mastery.phrasesStudied;
+          // Mostly how well you know them, partly how many you have met.
+          const coverage = Math.min(mastery.phrasesStudied / (mastery.phrasesTotal || 1), 1) * 100;
+          sum += mastery.accuracy * 0.85 + coverage * 0.15;
         }
+        phrasePart = Math.min(sum / totalCategories, 100);
       }
 
-      const raw = Math.min(Math.round(scenarioScore + phraseScore), 100);
+      const parts = [scenarioPart, phrasePart].filter((p): p is number => p !== null);
+      const raw = parts.length ? Math.round(parts.reduce((a, b) => a + b, 0) / parts.length) : 0;
+
       return {
         ...sit,
         score: raw,

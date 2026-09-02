@@ -44,6 +44,71 @@ const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, script: ScenarioSc
   }
 };
 
+/** The only endingType values the app is allowed to branch on. */
+const ENDING_TYPES = ['exceptional', 'success', 'mixed', 'failed'] as const;
+
+describe('bonus scenes', () => {
+  // ScenarioScene.bonus is documented as "only shown for secret ending". Bonus
+  // scenes live in the same scenes[] array as the main path, so linear
+  // progression used to walk straight into them — every player saw the bonus
+  // scene and the secret-ending gate could never fire. ScenarioPlayer.next()
+  // now skips them; these guard the content side of that contract.
+
+  it('a script with a bonus scene also has a secret ending to unlock it', () => {
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      if (!script.scenes.some(s => s.bonus === true)) continue;
+      if (!script.endings.some(e => e.secret)) {
+        offenders.push(`${id}: has a bonus scene but no secret ending — it is unreachable`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('no script is made entirely of bonus scenes', () => {
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      if (script.scenes.filter(s => s.bonus !== true).length === 0) {
+        offenders.push(`${id}: has no non-bonus scenes`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('no choice branches directly into a bonus scene', () => {
+    // A bonus scene is earned by the secret-ending gate, not routed to by a
+    // choice — a `next` pointing at one would bypass the flag/score check.
+    for (const [id, script] of scriptEntries) {
+      const bonusIds = new Set(script.scenes.filter(s => s.bonus === true).map(s => s.id));
+      if (bonusIds.size === 0) continue;
+      for (const scene of script.scenes) {
+        for (const choice of scene.choices) {
+          if (choice.next && bonusIds.has(choice.next)) {
+            throw new Error(`"${id}" scene "${scene.id}" choice "${choice.id}" branches into bonus scene "${choice.next}"`);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('ending types', () => {
+  // SituationalConfidence branched on 'success_strong', which is not a member of
+  // ScenarioEnding['type']. TypeScript could not catch it because the store
+  // widens completedScenarios to `endingType: string`. This is the guard.
+  it('every ending declares a known type', () => {
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      for (const ending of script.endings) {
+        if (!(ENDING_TYPES as readonly string[]).includes(ending.type)) {
+          offenders.push(`${id} / "${ending.title}": unknown type "${ending.type}"`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 // ─── Data integrity ──────────────────────────────────────────────────────────
 
 describe('scenario data integrity', () => {
