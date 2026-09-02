@@ -361,7 +361,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                       end={ANGLE_135.end}
                       style={{ borderRadius: 100, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                         Get Started
                       </Text>
                     </LinearGradient>
@@ -619,7 +619,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                           alignItems: 'center',
                           justifyContent: 'center'
                         }}>
-                          <Icon size={16} color={selected ? C.WHITE : C.TEXT2} />
+                          <Icon size={16} color={selected ? C.BG : C.TEXT2} />
                         </View>
 
                         <Text style={{
@@ -739,7 +739,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: 'timing', duration: 180 }}
                             >
-                              <Check size={14} color={C.WHITE} />
+                              <Check size={14} color={C.BG} />
                             </MotiView>
                           )}
                         </AnimatePresence>
@@ -825,12 +825,12 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                     {holdComplete ? (
                       <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
                         <LinearGradient colors={[...G.JADE_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
-                          <Check size={34} color={C.WHITE} />
+                          <Check size={34} color={C.BG} />
                         </LinearGradient>
                       </MotiView>
                     ) : holdProgress > 0 ? (
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.WHITE, letterSpacing: 1.2 }}>{Math.round(holdProgress * 100)}%</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{Math.round(holdProgress * 100)}%</Text>
                       </LinearGradient>
                     ) : (
                       <View
@@ -1294,7 +1294,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 >
                   <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
                     <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.WHITE }}>{STRINGS.onboarding.savePct(57)}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
                     </LinearGradient>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 80 }}>

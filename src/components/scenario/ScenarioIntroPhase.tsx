@@ -89,8 +89,8 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
         {/* Begin button */}
         <Pressable onPress={onBegin} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
           <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>{STRINGS.scenarios.begin}</Text>
-            <ArrowRight size={17} color={C.WHITE} />
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>{STRINGS.scenarios.begin}</Text>
+            <ArrowRight size={17} color={C.BG} />
           </LinearGradient>
         </Pressable>
 

@@ -24,6 +24,7 @@ import type { ThemeColors } from '../components/design/tokens';
 import { GhostLetters, SheetPanel } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
+import { STRINGS } from '../constants/strings';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
 
 interface Props {
@@ -202,7 +203,13 @@ function ScenarioCard({
     >
       <Pressable
         onPress={comingSoon ? undefined : onPress}
-        disabled={locked || !!comingSoon}
+        // Only genuinely unwritten scenarios are inert. A subscription-locked
+        // card stays tappable and routes to the paywall — the moment the user
+        // feels the limit is the only moment the upgrade is worth offering.
+        disabled={!!comingSoon}
+        accessibilityRole="button"
+        accessibilityLabel={locked ? `${title}, locked` : title}
+        accessibilityState={{ disabled: !!comingSoon }}
         style={{
           width: '100%',
           borderRadius: 24,
@@ -396,6 +403,14 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
+  // hasScenarioAccess is a store getter, so selecting it subscribes to the
+  // function identity — which never changes. These two selectors subscribe to
+  // the state it actually reads, so the grid re-locks/unlocks when the user
+  // subscribes or finishes their third scenario instead of staying stale until
+  // the screen remounts.
+  const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
+  const completedCount = useAppStore((s) => Object.keys(s.completedScenarios).length);
+  const presentPaywall = useAppStore((s) => s.presentPaywall);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
   const userGender = useAppStore((s) => s.user?.gender);
 
@@ -429,9 +444,16 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
     });
     // unlocked first, locked at the bottom
     return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
-  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess]);
+    // subscriptionStatus and completedCount are what hasScenarioAccess reads —
+    // they are the real dependencies. hasScenarioAccess itself is a stable ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess, subscriptionStatus, completedCount]);
 
-  const lockedCount = displayScenarios.filter((s) => s.locked).length;
+  // Paywalled and unwritten are different states and get different copy.
+  // `locked` is assigned above from hasScenarioAccess (subscription); `comingSoon`
+  // is authored content metadata.
+  const paywalledCount = displayScenarios.filter((s) => s.locked && !s.comingSoon).length;
+  const comingSoonCount = displayScenarios.filter((s) => s.comingSoon).length;
 
   // FlashList's 2-column grid leaves a dangling half-empty row when the count is
   // odd — pad with an invisible filler so the trailing card doesn't look orphaned.
@@ -540,7 +562,9 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 scenario={item}
                 index={index}
                 isLeft={index % 2 === 0}
-                onPress={() => onScenarioSelect(item.id)}
+                onPress={() =>
+                  item.locked ? void presentPaywall() : onScenarioSelect(item.id)
+                }
               />
             )
           }
@@ -594,14 +618,24 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
             </MotiView>
           )}
           ListFooterComponent={
-            filterTab === 'all' && lockedCount > 0
+            filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
               ? () => (
                   <MotiView
                     from={{ opacity: 0, translateY: 16, scale: 0.95 }}
                     animate={{ opacity: 1, translateY: 0, scale: 1 }}
                     transition={{ ...SMOOTH, delay: 200 }}
                   >
-                    <View
+                    {/* Paywalled scenarios are written and shipping — the card
+                        offers the upgrade. Unwritten ones say so and stay inert. */}
+                    <Pressable
+                      onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
+                      disabled={paywalledCount === 0}
+                      accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
+                      accessibilityLabel={
+                        paywalledCount > 0
+                          ? STRINGS.scenarios.lockedCount(paywalledCount)
+                          : undefined
+                      }
                       style={{
                         borderRadius: 20, padding: 18,
                         flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -618,14 +652,20 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                           alignItems: 'center', justifyContent: 'center',
                         }}
                       >
-                        <CheckCircle2 size={20} color={C.WHITE} />
+                        {paywalledCount > 0
+                          ? <Lock size={20} color={C.BG} />
+                          : <CheckCircle2 size={20} color={C.BG} />}
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
-                          {lockedCount} more scenarios coming soon
+                          {paywalledCount > 0
+                            ? STRINGS.scenarios.lockedCount(paywalledCount)
+                            : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
                         </Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>
-                          We are writing the next conversations now.
+                          {paywalledCount > 0
+                            ? STRINGS.scenarios.lockedSub
+                            : STRINGS.scenarios.writingNext}
                         </Text>
                       </View>
                       <View
@@ -634,11 +674,11 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                           borderRadius: 14, backgroundColor: C.JADE,
                         }}
                       >
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.WHITE }}>
-                          Soon
+                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.BG }}>
+                          {paywalledCount > 0 ? STRINGS.scenarios.unlock : STRINGS.common.soon}
                         </Text>
                       </View>
-                    </View>
+                    </Pressable>
                   </MotiView>
                 )
               : null

@@ -480,7 +480,7 @@ export function PhraseLibrary() {
                       borderWidth: active ? 0 : 1,
                       borderColor: C.BORDER,
                     }}>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.WHITE : C.TEXT3 }}>{c}</Text>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.BG : C.TEXT3 }}>{c}</Text>
                   </Pressable>
                 );
               })}

@@ -372,10 +372,15 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     else if (rating === 'new') setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
     else setScore((s) => ({ ...s, skipped: s.skipped + 1 }));
 
-    // 3-tier SRS scheduling (1/3/7 days)
+    // 3-tier SRS scheduling (1/3/7 days).
+    // Deliberately the ONLY write for this card. recordPhraseRating already
+    // recomputes phrasesStudied / phrasesMastered / categoryMastery via
+    // computeMastery(), so there is nothing for a second binary write to add —
+    // and adding one is actively destructive: updateReviewCard would read the
+    // card this call just wrote and overwrite the interval, e.g. turning a
+    // 'learning' (3 days, no counters) into a wrong answer (1 day, ease -0.2,
+    // incorrect +1). See docs/code-quality-review.md, Batch 6b.
     onPhraseRating?.(deck[current].id, rating);
-    // Also record binary for backward compat (milestones, category mastery)
-    onPhraseReview?.(deck[current].id, rating === 'knew');
 
     if (current + 1 >= deck.length) {
       onSessionComplete?.();
@@ -384,7 +389,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       setCurrent((c) => c + 1);
       setFlipped(false);
     }
-  }, [current, deck, onPhraseRating, onPhraseReview, onSessionComplete]);
+  }, [current, deck, onPhraseRating, onSessionComplete]);
 
   const fireAnswerHaptic = useCallback((correct: boolean) => {
     void Haptics.notificationAsync(
@@ -759,10 +764,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -843,10 +848,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -1002,7 +1007,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.WHITE }}>{STRINGS.common.done}</Text>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.BG }}>{STRINGS.common.done}</Text>
                   </LinearGradient>
                 </Pressable>
               </View>
