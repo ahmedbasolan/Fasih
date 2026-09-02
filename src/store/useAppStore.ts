@@ -42,10 +42,46 @@ import {
   derivePreferredHour,
 } from '../lib/notifications';
 import { shouldGrantStreakFreeze, applyStreakFreeze } from '../engine/streakEngine';
+import {
+  mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
+} from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
 // Single source of truth — used in hasFullAccess AND hasScenarioAccess.
 const TRIAL_DAYS = 4;
+
+/** Number of scenarios a free user completes to earn full access. */
+const FREE_ACCESS_SCENARIO_COUNT = 3;
+
+/**
+ * Access rules, as pure functions of the fields they read.
+ *
+ * These exist so the store getters and the React hooks at the bottom of this
+ * file cannot drift apart. The getters are convenient outside React; the hooks
+ * are the only correct way to read access *inside* a component, because
+ * selecting a getter subscribes to the function's identity — which never
+ * changes — leaving the component frozen at its first-render answer.
+ */
+type AccessFields = Pick<AppState, 'subscriptionStatus' | 'trialStartedAt' | 'completedScenarios'>;
+
+function isTrialActive(s: Pick<AppState, 'subscriptionStatus' | 'trialStartedAt'>): boolean {
+  if (s.subscriptionStatus !== 'trial' || !s.trialStartedAt) return false;
+  const trialEnd = new Date(s.trialStartedAt);
+  trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+  return new Date() < trialEnd;
+}
+
+function computeHasFullAccess(s: AccessFields): boolean {
+  if (s.subscriptionStatus === 'subscribed') return true;
+  if (isTrialActive(s)) return true;
+  return Object.keys(s.completedScenarios).length >= FREE_ACCESS_SCENARIO_COUNT;
+}
+
+function computeHasScenarioAccess(s: AccessFields, scenarioIndex: number): boolean {
+  if (computeHasFullAccess(s)) return true;
+  // Otherwise only the first few scenarios are free.
+  return scenarioIndex < FREE_ACCESS_SCENARIO_COUNT;
+}
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
 // Guards against ID collisions when addJournalEntry is called multiple times
@@ -337,8 +373,8 @@ export const useAppStore = create<AppState>()(
           } else {
             set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
           }
-        } catch (e: any) {
-          set({ isSyncing: false, lastSyncError: e?.message ?? 'Sync failed' });
+        } catch (e) {
+          set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed' });
         }
       },
 
@@ -354,37 +390,37 @@ export const useAppStore = create<AppState>()(
         set({ isSyncing: false, lastSyncError: null });
         if (!data) return;
 
-        // Merge strategy: cloud wins for progress data (so reinstalls restore history).
-        // Milestones: keep any locally-reached ones the cloud doesn't have yet.
-        const mergedMilestones = (data.milestones?.length ? data.milestones : s.milestones).map(
-          (m: LearningMilestone) => {
-            const local = s.milestones.find(lm => lm.id === m.id);
-            return local?.reached && !m.reached ? local : m;
-          },
-        );
+        // Merge strategy: never lose a record. See src/engine/syncMerge.ts —
+        // the rules are pure and unit-tested there. The old code let the cloud
+        // win outright for phraseReviews and completedScenarios, so anything
+        // studied offline, or on a second device since its last push, was
+        // silently erased the next time this ran.
+        const mergedMilestones = mergeMilestones(s.milestones, data.milestones);
+        const mergedUnlocked = mergeIds(s.unlockedPhraseIds, data.unlocked_phrase_ids);
+        const mergedJournal = mergeJournal(s.journal, data.journal);
+        const mergedReviews = mergeReviews(s.phraseReviews, data.phrase_reviews);
+        const mergedCompleted = mergeCompletions(s.completedScenarios, data.completed_scenarios);
 
-        // Merge unlockedPhraseIds: union of cloud + local (never lose locally unlocked phrases)
-        const mergedUnlocked = Array.from(
-          new Set([...(data.unlocked_phrase_ids ?? []), ...s.unlockedPhraseIds])
-        );
-
-        // Merge journal: union by id so entries made offline on another device
-        // are not lost when cloud data arrives. Newest entries first, capped at 100.
-        const cloudJournal: JournalEntry[] = data.journal ?? [];
-        const localIds = new Set(s.journal.map((e: JournalEntry) => e.id));
-        const mergedJournal = [
-          ...s.journal,
-          ...cloudJournal.filter((e: JournalEntry) => !localIds.has(e.id)),
-        ]
-          .sort((a: JournalEntry, b: JournalEntry) => b.date.localeCompare(a.date))
-          .slice(0, 100);
+        // stats is derived from the two maps above, so recompute it rather than
+        // trusting either side's snapshot. daysActive and currentStreak are the
+        // only genuinely independent counters — take the higher, since neither
+        // can legitimately go backwards on a merge.
+        const { studied, mastered, categoryMastery } = computeMastery(mergedReviews);
+        const mergedStats: UserStats = {
+          daysActive: Math.max(s.stats.daysActive, data.stats.daysActive),
+          currentStreak: Math.max(s.stats.currentStreak, data.stats.currentStreak),
+          phrasesStudied: studied,
+          phrasesMastered: mastered,
+          categoryMastery,
+          scenariosCompleted: Object.keys(mergedCompleted),
+        };
 
         set({
           user: data.user_profile ?? s.user,
-          stats: data.stats ?? s.stats,
-          phraseReviews: data.phrase_reviews ?? s.phraseReviews,
-          completedScenarios: data.completed_scenarios ?? s.completedScenarios,
-          savedPhrases: data.saved_phrases ?? s.savedPhrases,
+          stats: mergedStats,
+          phraseReviews: mergedReviews,
+          completedScenarios: mergedCompleted,
+          savedPhrases: Array.from(new Set([...s.savedPhrases, ...data.saved_phrases])),
           unlockedPhraseIds: mergedUnlocked,
           milestones: mergedMilestones,
           journal: mergedJournal,
@@ -407,6 +443,13 @@ export const useAppStore = create<AppState>()(
       signOut: async () => {
         await logoutPurchasesUser();
         await cancelAllNotifications();
+        // Drop the RevenueCat listener too. Left registered, it keeps firing
+        // after sign-out and can write a subscriptionStatus for the anonymous
+        // customer into the freshly-cleared store.
+        if (_customerInfoUnsub) {
+          _customerInfoUnsub();
+          _customerInfoUnsub = null;
+        }
         // Clear all user-specific data so the next sign-in starts clean.
         // hasOnboarded is intentionally preserved — a returning user lands on
         // sign-in, not onboarding.
@@ -463,7 +506,7 @@ export const useAppStore = create<AppState>()(
         set({ notificationsEnabled: true });
         const s = get();
         const hour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
         await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
         await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.stats.currentStreak);
@@ -478,7 +521,7 @@ export const useAppStore = create<AppState>()(
         const s = get();
         if (!s.notificationsEnabled) return;
         const preferredHour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= new Date().toISOString().split('T')[0]).length;
+        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
       },
 
@@ -556,31 +599,8 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      hasFullAccess: () => {
-        const s = get();
-        if (s.subscriptionStatus === 'subscribed') return true;
-        if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
-          const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-          if (new Date() < trialEnd) return true;
-        }
-        // Free users unlock full access after completing 3 scenarios
-        return Object.keys(s.completedScenarios).length >= 3;
-      },
-      hasScenarioAccess: (scenarioIndex: number) => {
-        const s = get();
-        // Subscribers and trial users get all scenarios
-        if (s.subscriptionStatus === 'subscribed') return true;
-        if (s.subscriptionStatus === 'trial' && s.trialStartedAt) {
-          const trialEnd = new Date(s.trialStartedAt);
-          trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-          if (new Date() < trialEnd) return true;
-        }
-        // Free users who completed 3+ scenarios get full access (matches hasFullAccess)
-        if (Object.keys(s.completedScenarios).length >= 3) return true;
-        // Otherwise only first 3 scenarios (index 0, 1, 2) are free
-        return scenarioIndex < 3;
-      },
+      hasFullAccess: () => computeHasFullAccess(get()),
+      hasScenarioAccess: (scenarioIndex: number) => computeHasScenarioAccess(get(), scenarioIndex),
       scenariosCompletedCount: () => Object.keys(get().completedScenarios).length,
 
       // Learning
@@ -841,3 +861,23 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+// ─── Access hooks ─────────────────────────────────────────────────────────────
+// Use these in components instead of calling the store getters. Selecting a
+// getter (`useAppStore(s => s.hasFullAccess)`) subscribes to the function's
+// identity, which is stable for the life of the store — so the component never
+// re-renders when the access answer actually changes, and gates stay frozen at
+// whatever they were on first mount. These select the underlying state, so they
+// re-render correctly when a subscription starts or a scenario is completed.
+
+/** True when the learner has full access: subscribed, in trial, or 3+ scenarios done. */
+export const useHasFullAccess = (): boolean =>
+  useAppStore((s) => computeHasFullAccess(s));
+
+/** True when this scenario index is playable for the current learner. */
+export const useHasScenarioAccess = (scenarioIndex: number): boolean =>
+  useAppStore((s) => computeHasScenarioAccess(s, scenarioIndex));
+
+/** Number of scenarios completed — subscribes to the map, unlike the getter. */
+export const useScenariosCompletedCount = (): number =>
+  useAppStore((s) => Object.keys(s.completedScenarios).length);

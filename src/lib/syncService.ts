@@ -19,6 +19,43 @@
 
 import { supabase } from './supabase';
 import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
+import { DEFAULT_USER_STATS } from '../types';
+
+/**
+ * Coerce whatever the `stats` column holds into a complete UserStats.
+ *
+ * The column is `JSONB NOT NULL DEFAULT '{}'`, so `{}` is a perfectly ordinary
+ * value for a row that was created by anything other than pushProgress. The old
+ * code returned it as-is behind a `UserStats` annotation — supabase-js hands back
+ * `any`, so nothing type-checked it — and the store then wrote it straight over
+ * good local state. The next call after that is checkMilestones(), which reads
+ * `stats.scenariosCompleted.length` and threw on the first screen after sign-in.
+ *
+ * Every field is defaulted individually rather than by a single spread, because
+ * a present-but-null field (e.g. `{"scenariosCompleted": null}`) survives a
+ * spread and crashes exactly the same way.
+ */
+function normalizeStats(raw: unknown): UserStats {
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserStats>;
+  return {
+    daysActive: typeof s.daysActive === 'number' ? s.daysActive : DEFAULT_USER_STATS.daysActive,
+    currentStreak: typeof s.currentStreak === 'number' ? s.currentStreak : DEFAULT_USER_STATS.currentStreak,
+    phrasesMastered: typeof s.phrasesMastered === 'number' ? s.phrasesMastered : DEFAULT_USER_STATS.phrasesMastered,
+    phrasesStudied: typeof s.phrasesStudied === 'number' ? s.phrasesStudied : DEFAULT_USER_STATS.phrasesStudied,
+    scenariosCompleted: Array.isArray(s.scenariosCompleted) ? s.scenariosCompleted : [],
+    categoryMastery:
+      s.categoryMastery && typeof s.categoryMastery === 'object' ? s.categoryMastery : {},
+  };
+}
+
+/** Same reasoning as normalizeStats, for the collection-shaped columns. */
+function asRecord<T>(raw: unknown): Record<string, T> {
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, T>) : {};
+}
+
+function asArray<T>(raw: unknown): T[] {
+  return Array.isArray(raw) ? (raw as T[]) : [];
+}
 
 /**
  * Increment this when CloudUserData shape changes in a breaking way.
@@ -108,13 +145,13 @@ export async function pullProgress(
     data: {
       schema_version: cloudVersion,
       user_profile: data.user_profile ?? null,
-      stats: data.stats ?? {},
-      phrase_reviews: data.phrase_reviews ?? {},
-      completed_scenarios: data.completed_scenarios ?? {},
-      saved_phrases: data.saved_phrases ?? [],
-      unlocked_phrase_ids: data.unlocked_phrase_ids ?? [],
-      milestones: data.milestones ?? [],
-      journal: data.journal ?? [],
+      stats: normalizeStats(data.stats),
+      phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
+      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
+      saved_phrases: asArray<string>(data.saved_phrases),
+      unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
+      milestones: asArray<LearningMilestone>(data.milestones),
+      journal: asArray<JournalEntry>(data.journal),
       last_active_date: data.last_active_date ?? null,
       subscription_status: data.subscription_status ?? 'free',
       trial_started_at: data.trial_started_at ?? null,
