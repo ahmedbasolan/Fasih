@@ -11,7 +11,7 @@ import {
   Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import { getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import {
   FONT_HEADING_EXTRA,
@@ -404,12 +404,11 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
   // hasScenarioAccess is a store getter, so selecting it subscribes to the
-  // function identity — which never changes. These two selectors subscribe to
-  // the state it actually reads, so the grid re-locks/unlocks when the user
-  // subscribes or finishes their third scenario instead of staying stale until
-  // the screen remounts.
+  // function identity — which never changes. These two subscribe to the state
+  // it actually reads, so the grid re-locks/unlocks when the user subscribes or
+  // finishes their third scenario instead of staying stale until remount.
   const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
-  const completedCount = useAppStore((s) => Object.keys(s.completedScenarios).length);
+  const completedCount = useScenariosCompletedCount();
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
   const userGender = useAppStore((s) => s.user?.gender);
