@@ -54,6 +54,17 @@ const TRIAL_DAYS = 4;
 const FREE_ACCESS_SCENARIO_COUNT = 3;
 
 /**
+ * XP awarded per action, toward the learner's daily goal.
+ *
+ * The home screen used to show `scenariosCompleted.length * 50` against
+ * `dailyGoalXP` — a lifetime total measured against a per-day target, so the
+ * ring filled permanently after about ten scenarios and never reset. There was
+ * no XP field in UserStats at all. These feed a real per-day counter instead.
+ */
+export const XP_PER_SCENARIO = 50;
+export const XP_PER_PHRASE_REVIEW = 10;
+
+/**
  * Access rules, as pure functions of the fields they read.
  *
  * These exist so the store getters and the React hooks at the bottom of this
@@ -207,6 +218,11 @@ interface AppState {
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
+  /** XP earned toward today's goal. `date` is a local ISO date; a different
+   *  date means the counter has rolled over and `xp` should read as 0. */
+  dailyXP: { date: string; xp: number };
+  /** Add XP toward today's goal, rolling the counter over at local midnight. */
+  addXP: (amount: number) => void;
   phraseReviews: Record<string, PhraseReviewData>;
   journal: JournalEntry[];
   milestones: LearningMilestone[];
@@ -330,6 +346,7 @@ export const useAppStore = create<AppState>()(
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
+      dailyXP: { date: todayISO(), xp: 0 },
       phraseReviews: {},
       journal: [],
       milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
@@ -469,6 +486,7 @@ export const useAppStore = create<AppState>()(
           sceneProgress: {},
           lastActiveDate: null,
           streakFreezes: 0,
+          dailyXP: { date: todayISO(), xp: 0 },
           journal: [],
           milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
           activeScenarioState: null,
@@ -625,6 +643,13 @@ export const useAppStore = create<AppState>()(
 
       grantStreakFreeze: (count) => set((s) => ({ streakFreezes: s.streakFreezes + count })),
 
+      addXP: (amount) =>
+        set((s) => {
+          const today = todayISO();
+          const base = s.dailyXP.date === today ? s.dailyXP.xp : 0;
+          return { dailyXP: { date: today, xp: base + amount } };
+        }),
+
       spendStreakFreeze: () => {
         const s = get();
         const result = applyStreakFreeze({ streakFreezes: s.streakFreezes, lastActiveDate: s.lastActiveDate }, todayISO());
@@ -647,6 +672,7 @@ export const useAppStore = create<AppState>()(
       },
 
       recordPhraseRating: (phraseId, rating) => {
+        get().addXP(XP_PER_PHRASE_REVIEW);
         set((s) => {
           const existing = s.phraseReviews[phraseId];
           const card = applyRatingToCard(existing ?? newReviewCard(phraseId), rating);
@@ -823,6 +849,7 @@ export const useAppStore = create<AppState>()(
         // Fire milestone checks immediately so first-scenario and scenarios-3
         // milestones appear in the same session they are earned (not next app open).
         get().checkMilestones();
+        get().addXP(XP_PER_SCENARIO);
         scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, ending.type);
       },
@@ -852,6 +879,7 @@ export const useAppStore = create<AppState>()(
         sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
         streakFreezes: state.streakFreezes,
+        dailyXP: state.dailyXP,
         phraseReviews: state.phraseReviews,
         journal: state.journal,
         milestones: state.milestones,

@@ -133,6 +133,10 @@ export const STRINGS = {
     ],
   },
   home: {
+    newToday: 'New today',
+    quickChallengePrompt: 'How would you say this in Arabic?',
+    quickChallengeReveal: 'Tap to reveal →',
+    quickChallengeAnswer: 'Answer',
     goodMorning: 'Good morning',
     goodAfternoon: 'Good afternoon',
     goodEvening: 'Good evening',
@@ -226,6 +230,13 @@ export const STRINGS = {
     seeResults: 'See Results',
     noCardsTitle: 'No phrases to practice',
     noCardsSub: 'Add phrases to your library first',
+  },
+  homeSections: {
+    todaysMission: "Today's Mission",
+    quickChallenge: 'Quick Challenge',
+    dailyPhrase: 'Daily Phrase',
+    yourConfidence: 'Your Confidence',
+    beginFirstScenario: 'Begin your first scenario',
   },
   scenarios: {
     title: 'Scenarios',
