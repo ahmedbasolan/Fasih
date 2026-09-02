@@ -557,7 +557,10 @@ export const useAppStore = create<AppState>()(
         const result = await purchasePlan(plan);
         if (result.status === 'subscribed') {
           set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
-          get().syncToCloud();
+          // A dev-simulated purchase unlocks the app locally but must never
+          // reach the cloud row — otherwise a release build pulls it down and
+          // grants permanent free Pro to a real account.
+          if (!result.simulated) get().syncToCloud();
         }
         return { cancelled: result.cancelled, error: result.error };
       },

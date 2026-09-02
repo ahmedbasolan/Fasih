@@ -13,6 +13,7 @@ import { StatCard } from '../components/features/StatCard';
 import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
 import { getNotificationPermissionStatus } from '../lib/notifications';
+import * as Application from 'expo-application';
 import { isLegalUrlSet, openLegal } from '../constants/legal';
 import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 import { useAppStore } from '../store/useAppStore';
@@ -30,6 +31,11 @@ interface Props {
   onDeleteAccount?: () => void;
   isDeletingAccount?: boolean;
 }
+
+// Read from the build rather than hardcoded. This was '1.0' in two places,
+// so the About row reported 1.0 through every release and support could not
+// tell which build a user was on.
+const APP_VERSION = Application.nativeApplicationVersion ?? '—';
 
 const roleIcons: Record<string, React.ElementType> = {
   barista: Coffee, hotel: Building2, retail: ShoppingBag, restaurant: Utensils,
@@ -100,8 +106,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
     }] : []),
     {
       label: STRINGS.profile.aboutFasih,
-      value: STRINGS.profile.version('1.0'),
-      onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version('1.0')),
+      value: STRINGS.profile.version(APP_VERSION),
+      onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version(APP_VERSION)),
     },
   ], [notificationsEnabled]);
 
