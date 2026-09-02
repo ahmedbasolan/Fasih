@@ -1675,22 +1675,52 @@ components.
 
 **117 findings across 10 batches** — 5 P0, 32 P1, 49 P2, 31 P3.
 
-### Fix status (branch `fix/p0-review-findings`)
+### Fix status — branch `fix/p0-review-findings` (7 commits)
+
+**All five P0s and 24 P1/P2s are fixed.** Baseline after: `tsc` 0 errors ·
+149/149 tests (was 129) · `npm run lint` **0 errors** (was 7) · 52 warnings.
 
 | P0 | Status |
 |---|---|
-| 2. Double flashcard write | ✅ fixed — `PracticeScreen.tsx`, + regression test in `srsEngine.test.ts` |
-| 3. Contrast failures | ✅ fixed — 26 sites / 11 files swapped to `C.BG` (12 more than this report catalogued) |
-| 5. Locked scenarios inert | ✅ fixed — cards route to the paywall, footer copy splits paywalled vs unwritten |
-| 1. Empty legal URLs | ⛔ needs published policy/terms URLs — cannot be invented |
-| 4. RLS disabled | ⛔ needs a Supabase + Clerk dashboard decision; `003_rls.sql` warns that enabling it before verifying the token silently breaks every sync write |
+| 2. Double flashcard write | ✅ fixed + regression test |
+| 3. Contrast failures | ✅ fixed — 26 sites / 11 files (12 more than this report caught) |
+| 5. Locked scenarios inert | ✅ fixed — cards open the paywall; footer splits paywalled vs unwritten |
+| 1. Empty legal URLs | 🔵 **owner: Ahmed** — needs real published URLs |
+| 4. RLS disabled | 🔵 **owner: Ahmed** — needs the Clerk↔Supabase dashboard setup |
 
-Two follow-ups deliberately left alone: `OnboardingFlow.tsx:1179,1236` render icons
-over **data-driven** gradients where some entries are gold (white fails) and others
-are neutral/violet/error (where `C.BG` would fail instead) — these need a per-entry
-ink decision, not a blanket swap. And `ScenariosScreen.tsx:342`'s heading sits on a
-three-stop gradient whose final stop is `C.JADE`; the text renders over the dark end,
-so it passes in practice but is fragile.
+Also fixed beyond the P0s:
+
+| Area | What changed |
+|---|---|
+| Cloud sync | `stats: {}` crash guarded at the boundary; merges are now union-shaped (15 new tests in `engine/syncMerge.ts`) so offline progress is never clobbered |
+| Startup | A failed launch sync no longer silently skips the daily streak |
+| Access gates | 3 stale-selector sites fixed via shared `useHasFullAccess` / `useScenariosCompletedCount` hooks |
+| Learning loop | Bonus scenes gated properly; quiz answers de-duplicated; all 3 modes SRS-aware; scenario completion actually unlocks phrases |
+| Confidence | Dead `'success_strong'` branch removed; the 2 situations that could never reach "Confident" now can |
+| Timers | `useTypewriter`/`useCountUp`/`RippleEffect` no longer leak intervals |
+| Empty states | `EmptyState` artwork now renders; bad deep links no longer show a blank screen |
+| Home truth | Daily Phrase shows its real category; week strip can't tick a future day; daily XP is a real per-day counter; Quick Challenge rotates; fabricated community numbers removed |
+| Subscriptions | Paywall fallback chain reachable; `NOT_PRESENTED` no longer grants Pro; dev purchases stay local |
+| Startup safety | Release builds refuse to boot on fallback credentials |
+| Onboarding | Swipe-back works (the `backRef` the comment claimed existed) |
+| Dead code | `useHold`, `SoukCard`, `SyncSuccessBadge` deleted |
+
+**Deliberately not changed**, needing a decision rather than a fix:
+
+- `OnboardingFlow.tsx:1179,1236` — icons over **data-driven** gradients; some
+  entries are gold (white fails), others neutral/violet/error (where `C.BG`
+  would fail instead). Needs a per-entry ink choice, not a blanket swap.
+- `ScenariosScreen.tsx:342` — heading on a three-stop gradient ending in
+  `C.JADE`; the text sits over the dark end so it passes, but it is fragile.
+- **Quick Challenge framing.** It now asks "how would you say this" rather than
+  "someone says this — reply". The reply format needs authored
+  stimulus/response pairs; the library glosses exactly one of them, and
+  inventing the rest would be guessing at Gulf conversational convention.
+- **CommunityBar** is unmounted rather than deleted — it needs a real source
+  for the learner count before it can truthfully render.
+- **Anonymous onboarding** (P1, Batch 6c): a first-time user still completes
+  onboarding without an account. Fixing it means choosing where sign-up sits in
+  the flow — a product decision.
 
 ### The five P0s, in the order they should be fixed
 
