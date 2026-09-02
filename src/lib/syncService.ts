@@ -207,6 +207,43 @@ export async function deleteAccountData(): Promise<{ error: string | null }> {
   }
 }
 
+/**
+ * Ask the database who it thinks is calling.
+ *
+ * This is the prerequisite check for enabling RLS. Running
+ * `select auth.jwt()->>'sub'` in the Supabase SQL editor always returns NULL —
+ * that connection carries no Clerk token — so the check is only meaningful made
+ * from the app, signed in, over this same client.
+ *
+ * Signed in and correctly configured: `{ clerkUserId: 'user_2abc…', jwtRole:
+ * 'authenticated' }`. A null clerkUserId means Clerk↔Supabase Third-Party Auth
+ * is not connected yet, and enabling RLS would break every write.
+ *
+ * Requires supabase/migrations/006_auth_check.sql.
+ */
+export async function checkAuthBridge(): Promise<{
+  clerkUserId: string | null;
+  jwtRole: string | null;
+  error: string | null;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('whoami').single();
+    if (error) return { clerkUserId: null, jwtRole: null, error: error.message };
+    const row = data as { clerk_user_id: string | null; jwt_role: string | null } | null;
+    return {
+      clerkUserId: row?.clerk_user_id ?? null,
+      jwtRole: row?.jwt_role ?? null,
+      error: null,
+    };
+  } catch (e) {
+    return {
+      clerkUserId: null,
+      jwtRole: null,
+      error: e instanceof Error ? e.message : 'Could not reach the server',
+    };
+  }
+}
+
 /** Atomically increment the pick count for one choice (fire-and-forget). */
 export async function recordChoiceStat(
   scenarioId: string,

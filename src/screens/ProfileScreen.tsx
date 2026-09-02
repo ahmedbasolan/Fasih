@@ -13,6 +13,7 @@ import { StatCard } from '../components/features/StatCard';
 import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
 import { getNotificationPermissionStatus } from '../lib/notifications';
+import { checkAuthBridge } from '../lib/syncService';
 import * as Application from 'expo-application';
 import { isLegalUrlSet, openLegal } from '../constants/legal';
 import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
@@ -109,6 +110,36 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       value: STRINGS.profile.version(APP_VERSION),
       onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version(APP_VERSION)),
     },
+    // Dev-only. This is the prerequisite check for enabling Row Level Security:
+    // running `select auth.jwt()->>'sub'` in the Supabase SQL editor always
+    // returns NULL because that connection carries no Clerk token, so the
+    // check is only meaningful made from the signed-in app. Remove this row
+    // once RLS is enabled and confirmed working.
+    ...(__DEV__ ? [{
+      label: 'Check database connection',
+      value: 'Dev only',
+      onPress: async () => {
+        const { clerkUserId, jwtRole, error } = await checkAuthBridge();
+        if (error) {
+          Alert.alert(
+            'Check failed',
+            `${error}\n\nIf this says the function does not exist, run supabase/migrations/006_auth_check.sql first.`,
+          );
+          return;
+        }
+        if (!clerkUserId) {
+          Alert.alert(
+            'Not connected',
+            'Supabase cannot see your Clerk identity, so it is not safe to enable Row Level Security yet.\n\nFinish steps 1 and 2 of the runbook (Clerk → Connect with Supabase, then Supabase → Third-Party Auth → Clerk) and check again.',
+          );
+          return;
+        }
+        Alert.alert(
+          'Connected',
+          `Supabase sees you as:\n\n${clerkUserId}\nrole: ${jwtRole ?? 'unknown'}\n\nThis is what needs to be true before enabling Row Level Security.`,
+        );
+      },
+    }] : []),
   ], [notificationsEnabled]);
 
   return (
