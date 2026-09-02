@@ -241,6 +241,13 @@ export const STRINGS = {
     outcomeLabel: (count: number) => count === 1 ? 'outcome' : 'outcomes',
     comingSoon: (count: number, mode: string) => `${count} more ${mode} scenario${count === 1 ? '' : 's'} coming soon`,
     writingNext: 'We are writing the next conversations now.',
+    // Subscription-locked scenarios. Deliberately distinct from comingSoon /
+    // writingNext above: those describe content that is not written yet, these
+    // describe content that exists and is behind the paywall. Conflating them
+    // tells a paying-ready user the scenario doesn't exist.
+    lockedCount: (count: number) => `${count} more scenario${count === 1 ? '' : 's'} with Fasih Pro`,
+    lockedSub: 'Unlock every situation and practise without limits.',
+    unlock: 'Unlock',
     notAvailable: (id: string) => `No script available for "${id}". This scenario may be coming soon.`,
     noScript: (id: string) => `No script available for "${id}". This scenario may be coming soon.`,
     scenarioNotFound: 'Scenario not found',

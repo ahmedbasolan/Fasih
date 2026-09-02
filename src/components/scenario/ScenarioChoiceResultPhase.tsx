@@ -147,10 +147,10 @@ export function ScenarioChoiceResultPhase({
           style={{ borderRadius: 20, overflow: 'hidden', marginTop: 10 }}
         >
           <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10 }}>
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.WHITE }}>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.BG }}>
               {isLastScene ? 'See Final Result' : 'Continue'}
             </Text>
-            <ArrowRight size={20} color={C.WHITE} />
+            <ArrowRight size={20} color={C.BG} />
           </LinearGradient>
         </Pressable>
 

@@ -289,8 +289,8 @@ export function ScenarioResultPhase({
           </Pressable>
           <Pressable onPress={onExit} accessibilityRole="button" style={{ flex: 1, borderRadius: 16, overflow: 'hidden' }}>
             <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <Home size={14} color={C.WHITE} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.WHITE }}>{STRINGS.scenarios.home}</Text>
+              <Home size={14} color={C.BG} />
+              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.BG }}>{STRINGS.scenarios.home}</Text>
             </LinearGradient>
           </Pressable>
         </View>

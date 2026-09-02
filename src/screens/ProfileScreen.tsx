@@ -131,7 +131,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               end={ANGLE_135.end}
               style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
             >
-              <RoleIcon size={26} color={C.WHITE} />
+              <RoleIcon size={26} color={C.BG} />
             </LinearGradient>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.PRIMARY_DARK }}>{name}</Text>
@@ -418,7 +418,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             {/* Active badge */}
             <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}>
               <LinearGradient colors={G.AVATAR_STOPS} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                <Star size={16} color={C.WHITE} />
+                <Star size={16} color={C.BG} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.proName}</Text>
@@ -459,7 +459,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}
             >
               <LinearGradient colors={[C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                <Star size={16} color={C.WHITE} />
+                <Star size={16} color={C.BG} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.upgradeTitle}</Text>

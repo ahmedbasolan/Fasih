@@ -78,8 +78,8 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
               end={ANGLE_135.end}
               style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
             >
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT }}>{STRINGS.ui.featureGate.goToScenarios}</Text>
-              <ChevronRight size={16} color={C.TEXT} />
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG }}>{STRINGS.ui.featureGate.goToScenarios}</Text>
+              <ChevronRight size={16} color={C.BG} />
             </LinearGradient>
           </Pressable>
         </View>
