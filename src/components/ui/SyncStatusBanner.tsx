@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView, AnimatePresence } from 'moti';
-import { WifiOff, RefreshCw, CheckCircle } from '../icons';
+import { WifiOff, RefreshCw } from '../icons';
 import { FONT_LATIN, FONT_LATIN_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { useAppStore } from '../../store/useAppStore';
@@ -89,37 +89,3 @@ export function SyncStatusBanner() {
   );
 }
 
-/**
- * Small inline badge shown after a successful sync (e.g. in ProfileScreen).
- * Auto-hides after 3 seconds.
- */
-export function SyncSuccessBadge() {
-  const { C } = useTheme();
-  const lastSyncedAt = useAppStore((s) => s.lastSyncedAt);
-  const [visible, setVisible] = React.useState(false);
-  const prevSyncedAt = React.useRef<string | null>(null);
-
-  React.useEffect(() => {
-    if (lastSyncedAt && lastSyncedAt !== prevSyncedAt.current) {
-      prevSyncedAt.current = lastSyncedAt;
-      setVisible(true);
-      const t = setTimeout(() => setVisible(false), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [lastSyncedAt]);
-
-  if (!visible) return null;
-
-  return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'timing', duration: 200 }}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
-    >
-      <CheckCircle size={12} color={C.JADE2} />
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.JADE2 }}>Synced</Text>
-    </MotiView>
-  );
-}

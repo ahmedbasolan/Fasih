@@ -35,7 +35,35 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const isSaved = favoriteScenarios.includes(scenarioId);
 
   // Also guards deep links and stale favourites, not just the browse list.
-  if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) return null;
+  // Returning bare null here rendered an empty full-screen route with no back
+  // affordance — a dead end for anyone arriving on a stale link. ScenarioPlayer
+  // already handles the identical case with an empty state and a way out.
+  if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
+        <EmptyState
+          arabic="؟"
+          title={STRINGS.scenarios.notFound}
+          subtitle={STRINGS.scenarios.noScript(scenarioId)}
+        />
+        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.scenarios.goBack}
+            style={{
+              borderRadius: 16, paddingVertical: 14, alignItems: 'center',
+              backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
+            }}
+          >
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
+              {STRINGS.scenarios.goBack}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
