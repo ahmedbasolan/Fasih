@@ -259,6 +259,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const genderRef = useRef(gender);
   const holdCompleteRef = useRef(holdComplete);
   const nextRef = useRef(next);
+  const backRef = useRef(back);
 
   useEffect(() => {
     stepRef.current = step;
@@ -266,7 +267,8 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     genderRef.current = gender;
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
-  }, [step, name, gender, holdComplete, next]);
+    backRef.current = back;
+  }, [step, name, gender, holdComplete, next, back]);
 
   useEffect(() => {
     setPhraseRevealed(false);
@@ -290,7 +292,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     const rightFling = Gesture.Fling()
       .direction(Directions.RIGHT)
       .onEnd(() => {
-        runOnJS(back)();
+        runOnJS(backRef.current)();
       });
 
     return Gesture.Exclusive(leftFling, rightFling);

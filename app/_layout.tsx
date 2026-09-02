@@ -41,6 +41,16 @@ const tokenCache = {
   },
 };
 
+// A release build with a broken EAS secret must fail loudly rather than boot
+// against the development Clerk instance. The key itself is publishable and
+// safe to ship; the hazard is the silent fallback, which lets a misconfigured
+// production build authenticate real users against the wrong project.
+if (!process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY && !__DEV__) {
+  throw new Error(
+    'EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. Refusing to start a release build against the development Clerk instance.',
+  );
+}
+
 const clerkPublishableKey =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
   'pk_test_Y2xlcmsuZmFzaWgtbW9iaWxlLmRldiQ';
