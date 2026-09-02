@@ -29,7 +29,7 @@ import {
 import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
-import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding } from '../types';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioScript } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -40,6 +40,18 @@ interface Props {
 }
 
 type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
+
+/**
+ * Phrase ids a scenario grants on completion.
+ *
+ * Single source of truth for both the result screen's "phrases unlocked" list
+ * and the store writes that actually unlock them — those two used to be derived
+ * separately, and only the display half existed.
+ */
+function resolveUnlockedPhraseIds(script: ScenarioScript, scenarioId: string): string[] {
+  if (script.phrasesUnlocked?.length) return script.phrasesUnlocked;
+  return PHRASES.filter(p => p.scenarioSource === scenarioId).slice(0, 8).map(p => p.id);
+}
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
 function ImpactCol({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) {
@@ -223,6 +235,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
   const finalizeScenario = useAppStore((s) => s.finalizeScenario);
+  const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
 
@@ -302,6 +315,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setFinalizedEnding(currEnding);
     setCompletionFired(true);
     finalizeScenario(currEnding);
+    // Actually unlock the phrases the result screen is about to present as
+    // unlocked. Without this, unlockPhrase() was only ever called from
+    // onboarding, so every phrase earned by finishing a scenario stayed
+    // un-unlocked in the library and the two screens disagreed.
+    for (const phraseId of resolveUnlockedPhraseIds(scriptData, scenarioId)) {
+      unlockPhrase(phraseId);
+    }
     trackScenarioCompleted({
       scenarioId,
       title: scriptData.title,
@@ -328,6 +348,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = useMemo(() => scriptData?.scenes ?? [], [scriptData?.scenes]);
+  // Progress dots represent the main path only — a bonus scene is a reward for
+  // the secret ending, not a step the learner is expected to reach, so showing
+  // a dot for it makes every normal run look unfinished.
+  const mainScenes = useMemo(() => scenes.filter((sc) => sc.bonus !== true), [scenes]);
   const scene = scenes[step];
   const endings = scriptData?.endings ?? [];
 
@@ -418,7 +442,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       }
       // targetIndex === -1: bad script data, fall through to linear progression
     }
-    const nextStep = step + 1;
+    // Bonus scenes live in the same `scenes` array as everything else, so plain
+    // step + 1 walked straight into them — every player saw the bonus scene and
+    // the secret-ending gate below could never fire, because by the time
+    // nextStep passed the end, the bonus scene had already been played. Skip
+    // them here so they are only ever reachable through the gate.
+    let nextStep = step + 1;
+    while (nextStep < scenes.length && scenes[nextStep].bonus === true) nextStep++;
 
     // Check bonus scene eligibility for secret ending
     const isOnBonusScene = scenes[step]?.bonus === true;
@@ -517,9 +547,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
 
-  const unlockedPhrases = scriptData.phrasesUnlocked
-    ? scriptData.phrasesUnlocked.map(id => PHRASES.find(p => p.id === id)).filter(Boolean) as typeof PHRASES
-    : PHRASES.filter(p => p.scenarioSource === scenarioId).slice(0, 8);
+  const unlockedPhrases = resolveUnlockedPhraseIds(scriptData, scenarioId)
+    .map(id => PHRASES.find(p => p.id === id))
+    .filter(Boolean) as typeof PHRASES;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -530,7 +560,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           <View>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
             <View style={{ flexDirection: 'row', gap: 3 }}>
-              {scenes.map((_: ScenarioScene, i: number) => (
+              {mainScenes.map((_: ScenarioScene, i: number) => (
                 <MotiView
                   key={i}
                   animate={{
