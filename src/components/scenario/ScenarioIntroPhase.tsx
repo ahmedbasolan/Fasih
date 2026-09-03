@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowRight, Volume2 } from '../icons';
@@ -36,9 +36,24 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
     .filter((p): p is Phrase => !!p)
     .slice(0, 3);
 
+  // The playing indicator has to clear itself. Setting it without a reset left
+  // the chip lit permanently after the first tap, since expo-speech gives this
+  // component no completion callback. Same timer-ref pattern as PhraseLibrary
+  // and ScenarioPlayer, including the unmount cleanup those learned to need.
+  const primerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (primerTimerRef.current) clearTimeout(primerTimerRef.current);
+  }, []);
+
   const playPrimer = (phraseId: string, arabic: string) => {
+    if (primerTimerRef.current) clearTimeout(primerTimerRef.current);
     setPlayingId(phraseId);
     speak(arabic);
+    primerTimerRef.current = setTimeout(() => {
+      setPlayingId(null);
+      primerTimerRef.current = null;
+    }, 4000);
   };
 
   return (
@@ -93,6 +108,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
                 <Pressable
                   key={p.id}
                   onPress={() => playPrimer(p.id, p.arabic)}
+                  hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel={`${p.arabic} — ${p.english}. ${STRINGS.scenarios.primerListen}`}
                   style={{
