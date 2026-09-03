@@ -674,27 +674,32 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         animate={{ opacity: isDimmed ? 0.22 : 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: isDimmed ? 220 : 200, delay: isDimmed ? 0 : i * 70 }}
                       >
-                        <RippleEffect
-                          onPress={() => handleChoice(choice)}
-                          rippleColor={color}
-                          disabled={!!selectedChoiceId}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
-                          accessibilityState={{ selected: isSelected }}
-                        >
-                          <View style={{
-                            borderRadius: 16,
-                            backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
-                            borderWidth: isSelected ? 1.5 : 1,
-                            borderColor: isSelected ? `${color}45` : C.BORDER,
-                            overflow: 'hidden',
-                          }}>
-                            {/* Left accent bar */}
-                            {isSelected && (
-                              <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }} />
-                            )}
+                        <View style={{
+                          borderRadius: 16,
+                          backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
+                          borderWidth: isSelected ? 1.5 : 1,
+                          borderColor: isSelected ? `${color}45` : C.BORDER,
+                          overflow: 'hidden',
+                        }}>
+                          {/* Left accent bar */}
+                          {isSelected && (
+                            <MotiView
+                              from={{ scaleY: 0 }}
+                              animate={{ scaleY: 1 }}
+                              transition={{ type: 'spring', damping: 18, stiffness: 200 }}
+                              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }}
+                            />
+                          )}
 
-                            <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14 }}>
+                          <RippleEffect
+                            onPress={() => handleChoice(choice)}
+                            rippleColor={color}
+                            disabled={!!selectedChoiceId}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
+                            accessibilityState={{ selected: isSelected }}
+                          >
+                            <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14, paddingBottom: selectedChoiceId ? 14 : 6 }}>
                               <Text style={{ fontFamily: FONT_ARABIC, fontSize: 17, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
                                 {replaceName(choiceArabic)}
                               </Text>
@@ -704,26 +709,29 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: isSelected ? C.TEXT1_5 : C.TEXT2, lineHeight: 20 }}>
                                 {replaceName(choice.text)}
                               </Text>
-
-                              {/* Listen button — only when not yet chosen */}
-                              {!selectedChoiceId && (
-                                <Pressable
-                                  hitSlop={8}
-                                  onPress={(e) => { e.stopPropagation?.(); playChoice(choice.id, choiceArabic); }}
-                                  accessibilityRole="button"
-                                  accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}
-                                  accessibilityState={{ selected: isChoicePlaying }}
-                                  style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 8, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER }}
-                                >
-                                  <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
-                                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
-                                    {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
-                                  </Text>
-                                </Pressable>
-                              )}
                             </View>
-                          </View>
-                        </RippleEffect>
+                          </RippleEffect>
+
+                          {/* Listen button — only when not yet chosen. Kept as a sibling of
+                              RippleEffect (not nested inside it): both render as a button on
+                              web, and a button inside another button is invalid HTML that
+                              also confuses nested-touchable accessibility on native. */}
+                          {!selectedChoiceId && (
+                            <Pressable
+                              onPress={() => playChoice(choice.id, choiceArabic)}
+                              hitSlop={8}
+                              accessibilityRole="button"
+                              accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}
+                              accessibilityState={{ selected: isChoicePlaying }}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER }}
+                            >
+                              <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
+                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
+                                {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
+                              </Text>
+                            </Pressable>
+                          )}
+                        </View>
                       </MotiView>
                     );
                   })}
