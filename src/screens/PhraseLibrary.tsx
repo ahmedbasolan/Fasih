@@ -17,6 +17,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getAvailablePatterns } from '../engine/sentenceBuilder';
+import { arabicIncludes } from '../engine/arabic';
 
 type Phrase = typeof PHRASES[0];
 
@@ -73,6 +74,8 @@ export function PhraseLibrary() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const categoryScrollRef = useRef<ScrollView>(null);
+  const categoryChipX = useRef<Record<string, number>>({});
 
   // Count phrases per category
   const categoryCounts = useMemo(() => {
@@ -85,7 +88,15 @@ export function PhraseLibrary() {
 
   const filtered = useMemo(() => PHRASES.filter(p => {
     const q = search.toLowerCase();
-    const matchSearch = !search || p.arabic.includes(search) || p.roman.toLowerCase().includes(q) || p.english.toLowerCase().includes(q);
+    // Postel's law: be liberal in what you accept. Matching the raw query
+    // against the raw stored string meant a learner who typed a form they had
+    // seen elsewhere — with vowel marks, or a bare alef where we store a
+    // hamzated one — got an empty list and no explanation. arabicIncludes
+    // folds those differences; Latin queries pass through it unchanged.
+    const matchSearch = !search
+      || arabicIncludes(p.arabic, search)
+      || p.roman.toLowerCase().includes(q)
+      || p.english.toLowerCase().includes(q);
     const matchCat = cat === STRINGS.phrases.filterAll || p.category === cat;
     const matchDiff = diff === STRINGS.phrases.filterAll || p.difficulty === diff;
     return matchSearch && matchCat && matchDiff;
@@ -124,6 +135,20 @@ export function PhraseLibrary() {
     setCat(STRINGS.phrases.filterAll);
     setShowGrid(true);
   }, []);
+
+  // Bring the active category chip into view — it's the only visual
+  // confirmation of what's selected, since the row always mounts scrolled
+  // to the leftmost position regardless of which chip triggered the filter.
+  const scrollToCategoryChip = useCallback((label: string, animated: boolean) => {
+    const x = categoryChipX.current[label];
+    if (x !== undefined) {
+      categoryScrollRef.current?.scrollTo({ x: Math.max(0, x - 16), animated });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showGrid) scrollToCategoryChip(cat, true);
+  }, [cat, showGrid, scrollToCategoryChip]);
 
   const renderItem = useCallback(({ item: p }: { item: Phrase }) => {
     const isExpanded = expanded === p.id;
@@ -164,7 +189,8 @@ export function PhraseLibrary() {
                 accessibilityRole="button"
                 accessibilityLabel={isPlaying ? 'Playing audio' : 'Play audio'}
                 accessibilityState={{ selected: isPlaying }}
-                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
+                hitSlop={4}
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Volume2 size={14} color={isPlaying ? C.JADE : C.TEXT3} />
               </Pressable>
@@ -173,7 +199,8 @@ export function PhraseLibrary() {
                 accessibilityRole="button"
                 accessibilityLabel={isSaved ? 'Remove from saved' : 'Save phrase'}
                 accessibilityState={{ selected: isSaved }}
-                style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+                hitSlop={4}
+                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
               >
                 <BookmarkPlus size={14} color={isSaved ? C.PRIMARY : C.TEXT3} fill={isSaved ? C.PRIMARY : 'none'} />
               </Pressable>
@@ -184,6 +211,7 @@ export function PhraseLibrary() {
         {isExpanded && (
           <View style={{ paddingHorizontal: 14, paddingBottom: 14, backgroundColor: C.SURFACE }}>
             <Pressable
+              hitSlop={8}
               onPress={() => playSlow(p)}
               accessibilityRole="button"
               accessibilityLabel="Play slowly"
@@ -289,7 +317,6 @@ export function PhraseLibrary() {
                 variant={getCategoryVariant(idx)}
                 bgColor={isDark ? config.darkBg : config.bg}
                 accentColor={isDark ? config.darkBg : config.accent}
-                delay={150 + idx * 60}
                 onPress={() => handleCategorySelect(category)}
               />
             </View>
@@ -418,11 +445,12 @@ export function PhraseLibrary() {
               backgroundColor: `${accent}18`,
             }}>
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: accent }}>
-                {categoryCounts[cat] || 0}
+                {filtered.length}
               </Text>
             </View>
           </View>
           <Pressable
+            hitSlop={8}
             onPress={handleShowAll}
             style={{
               flexDirection: 'row',
@@ -442,7 +470,7 @@ export function PhraseLibrary() {
     );
   // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGrid, cat, C, isDark, categoryCounts, handleShowAll]);
+  }, [showGrid, cat, C, isDark, filtered.length, handleShowAll]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -524,33 +552,47 @@ export function PhraseLibrary() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 280 }}
           >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+              {STRINGS.phrases.categoryFilterLabel}
+            </Text>
+            <ScrollView ref={categoryScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
               {[STRINGS.phrases.filterAll, ...PHRASE_CATEGORIES].map(c => {
                 const active = cat === c;
                 return (
-                  <Pressable key={c} onPress={() => {
-                    setCat(c);
-                    if (c === STRINGS.phrases.filterAll && search.length === 0) setShowGrid(true);
-                  }} style={{
-                    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-                    backgroundColor: active ? C.PRIMARY : C.SURFACE,
-                    borderWidth: active ? 0 : 1,
-                    borderColor: C.BORDER,
-                  }}>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.WHITE : C.TEXT3 }}>{c}</Text>
+                  <Pressable
+                    hitSlop={8}
+                    key={c}
+                    onPress={() => {
+                      setCat(c);
+                      if (c === STRINGS.phrases.filterAll && search.length === 0) setShowGrid(true);
+                    }}
+                    onLayout={(e) => {
+                      categoryChipX.current[c] = e.nativeEvent.layout.x;
+                      if (active) scrollToCategoryChip(c, false);
+                    }}
+                    style={{
+                      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+                      backgroundColor: active ? C.PRIMARY : C.SURFACE,
+                      borderWidth: active ? 0 : 1,
+                      borderColor: C.BORDER,
+                    }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.BG : C.TEXT3 }}>{c}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
 
             {/* Difficulty filter */}
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+              {STRINGS.phrases.levelFilterLabel}
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {[STRINGS.phrases.filterAll, 'basic', 'intermediate', 'advanced'].map(d => {
                 const active = diff === d;
                 const color = d === STRINGS.phrases.filterAll ? C.PRIMARY : DIFFICULTY_COLORS[d];
                 const label = d === STRINGS.phrases.filterAll ? d : d === 'basic' ? STRINGS.common.levelBasic : d === 'intermediate' ? STRINGS.common.levelIntermediate : STRINGS.common.levelAdvanced;
                 return (
-                  <Pressable key={d} onPress={() => setDiff(d)} style={{
+                  <Pressable key={d} onPress={() => setDiff(d)} hitSlop={8} style={{
                     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
                     backgroundColor: active ? `${color}18` : 'transparent',
                     borderWidth: 1,
@@ -643,9 +685,13 @@ export function PhraseLibrary() {
           ListHeaderComponent={() => (
             <View style={{ marginBottom: 4 }}>
               {CategoryFilterBanner}
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
-                {STRINGS.phrases.expressionCount(filtered.length)}
-              </Text>
+              {/* The banner's own pill already shows this count once a category is
+                  selected — only show the standalone line when there's no banner. */}
+              {cat === STRINGS.phrases.filterAll && (
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
+                  {STRINGS.phrases.expressionCount(filtered.length)}
+                </Text>
+              )}
             </View>
           )}
           ListEmptyComponent={() => (
