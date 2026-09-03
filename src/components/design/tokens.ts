@@ -83,12 +83,6 @@ export type ThemeColors = {
   NEUTRAL_700: string;
   NEUTRAL_800: string;
   NEUTRAL_900: string;
-  CATEGORY_PINK: string;
-  CATEGORY_MINT: string;
-  CATEGORY_BLUE: string;
-  CATEGORY_PEACH: string;
-  CATEGORY_CREAM: string;
-  CATEGORY_LAVENDER: string;
 };
 
 export const darkTheme: ThemeColors = {
@@ -161,12 +155,6 @@ export const darkTheme: ThemeColors = {
   NEUTRAL_700: '#374151',
   NEUTRAL_800: '#1F2937',
   NEUTRAL_900: '#14100B',
-  CATEGORY_PINK: '#FFE0EC',
-  CATEGORY_MINT: '#D5F5EC',
-  CATEGORY_BLUE: '#D0F4FF',
-  CATEGORY_PEACH: '#FFE8D0',
-  CATEGORY_CREAM: '#FFF8E0',
-  CATEGORY_LAVENDER: '#E3D9F0',
 };
 
 export const lightTheme: ThemeColors = {
@@ -246,12 +234,6 @@ export const lightTheme: ThemeColors = {
   NEUTRAL_700: '#374151',
   NEUTRAL_800: '#1F2937',
   NEUTRAL_900: '#14100B',
-  CATEGORY_PINK: '#FFE8F0',
-  CATEGORY_MINT: '#E0FFF0',
-  CATEGORY_BLUE: '#E0FAFF',
-  CATEGORY_PEACH: '#FFF0E0',
-  CATEGORY_CREAM: '#FFF8E8',
-  CATEGORY_LAVENDER: '#EDE5F5',
 };
 
 export const ARABIC_LINE_HEIGHT_MULTIPLIER = 1.35;

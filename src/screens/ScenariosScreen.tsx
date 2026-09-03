@@ -48,12 +48,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
 // Card palettes built from theme tokens — avoids hardcoded hex
 function getCardPalettes(C: ThemeColors) {
   return [
-    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
-    { bg: C.CATEGORY_CREAM, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
-    { bg: C.CATEGORY_PEACH, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
+    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
   ];
 }
 

@@ -155,7 +155,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       {/* User Identity Card */}
       <MotiView from={{ opacity: 0, translateY: 12 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
         <View style={{
-          borderRadius: 24, padding: 24, marginBottom: 20, backgroundColor: C.CATEGORY_LAVENDER,
+          borderRadius: 24, padding: 24, marginBottom: 20, backgroundColor: C.SURFACE,
           ...Platform.select({
             ios: { shadowColor: C.PRIMARY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16 },
             android: { elevation: 4 },
@@ -191,9 +191,9 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       {/* Stats cards */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 100 }}>
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-          <StatCard icon={<Calendar size={18} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} color={C.PRIMARY} bg={C.CATEGORY_LAVENDER} />
-          <StatCard icon={<BookOpen size={18} color={C.JADE} />} value={phrasesMastered} label={STRINGS.profile.mastered} color={C.JADE} bg={C.CATEGORY_MINT} />
-          <StatCard icon={<MessageCircle size={18} color={C.VIOLET} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color={C.VIOLET} bg={C.CATEGORY_PINK} />
+          <StatCard icon={<Calendar size={18} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} color={C.PRIMARY} bg={C.SURFACE} />
+          <StatCard icon={<BookOpen size={18} color={C.JADE} />} value={phrasesMastered} label={STRINGS.profile.mastered} color={C.JADE} bg={C.SURFACE} />
+          <StatCard icon={<MessageCircle size={18} color={C.VIOLET} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color={C.VIOLET} bg={C.SURFACE} />
         </View>
       </MotiView>
 
@@ -240,7 +240,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
           <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.yourGoals}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
             {user.goals.map(g => (
-              <View key={g} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: C.CATEGORY_MINT }}>
+              <View key={g} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.BORDER }}>
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.JADE }}>{getGoalLabel(g)}</Text>
               </View>
             ))}
@@ -259,7 +259,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
           }),
         }}>
           {milestones.map((m, i) => (
-            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: i < milestones.length - 1 ? 1 : 0, borderBottomColor: C.BORDER, backgroundColor: m.reached ? C.CATEGORY_LAVENDER : 'transparent' }}>
+            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: i < milestones.length - 1 ? 1 : 0, borderBottomColor: C.BORDER, backgroundColor: 'transparent' }}>
               {m.reached && (
                 <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.PRIMARY, borderTopLeftRadius: i === 0 ? 20 : 0 }} />
               )}
@@ -323,7 +323,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   flex: 1,
                   paddingVertical: 14,
                   borderRadius: 16,
-                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  backgroundColor: 'transparent',
                   borderWidth: active ? 2 : 1,
                   borderColor: active ? C.PRIMARY : C.BORDER,
                   alignItems: 'center',
@@ -358,7 +358,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   flex: 1,
                   paddingVertical: 14,
                   borderRadius: 16,
-                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  backgroundColor: 'transparent',
                   borderWidth: active ? 2 : 1,
                   borderColor: active ? C.PRIMARY : C.BORDER,
                   alignItems: 'center',
@@ -396,7 +396,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   flex: 1,
                   paddingVertical: 14,
                   borderRadius: 16,
-                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  backgroundColor: 'transparent',
                   borderWidth: active ? 2 : 1,
                   borderColor: active ? C.PRIMARY : C.BORDER,
                   alignItems: 'center',
@@ -432,7 +432,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   flex: 1,
                   paddingVertical: 14,
                   borderRadius: 16,
-                  backgroundColor: active ? C.CATEGORY_LAVENDER : C.SURFACE,
+                  backgroundColor: 'transparent',
                   borderWidth: active ? 2 : 1,
                   borderColor: active ? C.PRIMARY : C.BORDER,
                   alignItems: 'center',

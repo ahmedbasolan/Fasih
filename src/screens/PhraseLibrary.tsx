@@ -30,14 +30,14 @@ const COL_WIDTH = (SCREEN_WIDTH - GRID_PAD * 2 - GRID_GAP) / 2;
 // Category card configuration built from theme tokens — no hardcoded hex
 function getCategoryCardConfig(C: ThemeColors): Record<string, { bg: string; accent: string; darkBg: string }> {
   return {
-    'Greetings':    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET,             darkBg: C.VIOLET },
-    'Gratitude':    { bg: C.CATEGORY_PINK,  accent: C.ERROR,              darkBg: C.ERROR },
-    'Hospitality':  { bg: C.CATEGORY_CREAM, accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
-    'Workplace':    { bg: C.CATEGORY_MINT,  accent: C.JADE,               darkBg: C.JADE },
-    'Social':       { bg: C.CATEGORY_PEACH, accent: C.ERROR,              darkBg: C.ERROR },
-    'Everyday':     { bg: C.CATEGORY_MINT,  accent: C.JADE,               darkBg: C.JADE2 },
-    'Food & Drink': { bg: C.CATEGORY_CREAM, accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
-    'Family':       { bg: C.CATEGORY_BLUE,  accent: C.VIOLET,             darkBg: C.VIOLET2 },
+    'Greetings':    { bg: 'transparent',  accent: C.VIOLET,             darkBg: C.VIOLET },
+    'Gratitude':    { bg: 'transparent',  accent: C.ERROR,              darkBg: C.ERROR },
+    'Hospitality':  { bg: 'transparent', accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
+    'Workplace':    { bg: 'transparent',  accent: C.JADE,               darkBg: C.JADE },
+    'Social':       { bg: 'transparent', accent: C.ERROR,              darkBg: C.ERROR },
+    'Everyday':     { bg: 'transparent',  accent: C.JADE,               darkBg: C.JADE2 },
+    'Food & Drink': { bg: 'transparent', accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
+    'Family':       { bg: 'transparent',  accent: C.VIOLET,             darkBg: C.VIOLET2 },
   };
 }
 
@@ -230,14 +230,14 @@ export function PhraseLibrary() {
             )}
 
             {p.pronTip && (
-              <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.CATEGORY_LAVENDER, marginBottom: 8 }}>
+              <View style={{ borderRadius: 12, padding: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.BORDER, marginBottom: 8 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.PRIMARY, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{STRINGS.phrases.pronunciation}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>{p.pronTip}</Text>
               </View>
             )}
 
             {p.culturalNote && (
-              <View style={{ borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, backgroundColor: C.CATEGORY_CREAM, marginBottom: 8 }}>
+              <View style={{ borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.BORDER, marginBottom: 8 }}>
                 <Info size={13} color={C.CULTURAL_GOLD} style={{ marginTop: 2 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.CULTURAL_GOLD_DARK, marginBottom: 4 }}>{STRINGS.phrases.culturalContext}</Text>
