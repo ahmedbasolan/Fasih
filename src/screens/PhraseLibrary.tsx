@@ -1,14 +1,13 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Search, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Trophy, ArrowRight } from '../components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC_BLACK, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters, PhraseEntry, Rule } from '../components/ui';
-import { SPACE } from '../components/design/spacing';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
 import type { CEFRBand } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -21,12 +20,11 @@ import { arabicIncludes } from '../engine/arabic';
 
 type Phrase = typeof PHRASES[0];
 
-const GRID_PAD = 20;
 
 
 
 export function PhraseLibrary() {
-  const { C, G, isDark } = useTheme();
+  const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const savedPhrases = useAppStore((s) => s.savedPhrases);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
@@ -181,7 +179,7 @@ export function PhraseLibrary() {
 
   // ── Category grid header component ──
   const CategoryGridHeader = useMemo(() => (
-    <View style={{ marginBottom: 20 }}>
+    <View style={{ marginBottom: SPACE.xl }}>
       {/* Section label. A rule and a count — no chip fills, no icon tile. */}
       <View
         style={{
@@ -256,17 +254,16 @@ export function PhraseLibrary() {
 
       {/* Patterns strip */}
       {availablePatterns.length > 0 && (
-        <View style={{ marginTop: 24 }}>
+        <View style={{ marginTop: SPACE.xl }}>
           <MotiView
             from={{ opacity: 0, translateY: 8 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 380, delay: 500 }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                  <Blocks size={15} color={C.CULTURAL_GOLD_DARK} />
-                </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACE.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
+                {/* The icon, not a tinted tile holding the icon. */}
+                <Blocks size={15} strokeWidth={1.5} color={C.PRIMARY} />
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
                   {STRINGS.sentenceBuilder.patternsTitle}
                 </Text>
@@ -276,7 +273,7 @@ export function PhraseLibrary() {
               </Text>
             </View>
           </MotiView>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: SPACE.md }}>
             {availablePatterns.map((p, idx) => {
               const mastered = (patternProgress[p.id]?.correctBuilds ?? 0) >= 3;
               return (
@@ -292,32 +289,33 @@ export function PhraseLibrary() {
                     accessibilityLabel={p.title}
                     style={{
                       width: 168,
-                      borderRadius: 18,
-                      padding: 14,
-                      backgroundColor: `${C.CULTURAL_GOLD}0F`,
+                      borderRadius: RADIUS.flat,
+                      padding: SPACE.md,
                       borderWidth: 1,
-                      borderColor: `${C.CULTURAL_GOLD}2E`,
+                      borderColor: C.BORDER,
                     }}
                   >
-                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: 6, textAlign: 'right' }}>
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: SPACE.sm, textAlign: 'right' }}>
                       {p.title.split(' — ')[0]}
                     </Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, lineHeight: 15 }}>
                       {p.title.split(' — ')[1] ?? ''}
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: SPACE.md }}>
+                      {/* Circular by intent — a dot is the degenerate pill, and
+                          the budget's flat rule is about boxes, not marks. */}
+                      <View style={{ flexDirection: 'row', gap: SPACE.xs }}>
                         {[0, 1, 2].map((i) => (
                           <View key={i} style={{
-                            width: 6, height: 6, borderRadius: 3,
-                            backgroundColor: (patternProgress[p.id]?.correctBuilds ?? 0) > i ? C.CULTURAL_GOLD : C.BORDER2,
+                            width: 6, height: 6, borderRadius: RADIUS.pill,
+                            backgroundColor: (patternProgress[p.id]?.correctBuilds ?? 0) > i ? C.PRIMARY : C.BORDER2,
                           }} />
                         ))}
                       </View>
                       {mastered ? (
-                        <Trophy size={13} color={C.CULTURAL_GOLD} />
+                        <Trophy size={13} strokeWidth={1.5} color={C.PRIMARY} />
                       ) : (
-                        <ArrowRight size={13} color={C.CULTURAL_GOLD_DARK} />
+                        <ArrowRight size={13} strokeWidth={1.5} color={C.TEXT3} />
                       )}
                     </View>
                   </Pressable>
@@ -329,7 +327,7 @@ export function PhraseLibrary() {
       )}
     </View>
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [C, isDark, categoryCounts, handleCategorySelect]);
+  ), [C, categoryCounts, handleCategorySelect]);
 
   // ── When a category is selected, show a back-to-grid banner ──
   const CategoryFilterBanner = useMemo(() => {
@@ -372,28 +370,27 @@ export function PhraseLibrary() {
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 4,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 10,
+              gap: SPACE.xs,
+              paddingHorizontal: SPACE.md,
+              paddingVertical: SPACE.sm,
+              borderRadius: RADIUS.pill,
               borderWidth: 1,
               borderColor: C.BORDER,
             }}
           >
-            <Grid2x2 size={12} color={C.TEXT3} />
+            <Grid2x2 size={12} strokeWidth={1.5} color={C.TEXT3} />
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.TEXT2 }}>{STRINGS.phrases.filterAll}</Text>
           </Pressable>
         </View>
       </MotiView>
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGrid, cat, C, isDark, filtered.length, handleShowAll]);
+  }, [showGrid, cat, C, filtered.length, handleShowAll]);
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ق', 'و', 'ل']} />
       {/* Fixed header — title, search + filters */}
-      <View style={{ paddingHorizontal: GRID_PAD, paddingTop: insets.top + 16, paddingBottom: 12 }}>
+      <View style={{ paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.lg, paddingBottom: SPACE.md }}>
 
         {/* Title row with stats */}
         <MotiView
@@ -401,24 +398,18 @@ export function PhraseLibrary() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 360, delay: 50 }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: SPACE.xs }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 26, color: C.TEXT }}>
               {STRINGS.phrases.title}
             </Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-              backgroundColor: C.JADE_ACCENT_DIM,
-            }}>
-              <BookOpen size={13} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{PHRASES.length}</Text>
+            {/* A count, not a badge. The tinted pill around it was a fill
+                spent on a number that is already legible. */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
+              <BookOpen size={13} strokeWidth={1.5} color={C.TEXT3} />
+              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.TEXT3, fontVariant: ['tabular-nums'] }}>{PHRASES.length}</Text>
             </View>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, marginBottom: 14 }}>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, marginBottom: SPACE.lg }}>
             {STRINGS.phrases.subtitle(PHRASES.length)}
           </Text>
         </MotiView>
@@ -429,15 +420,16 @@ export function PhraseLibrary() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 360, delay: 120 }}
         >
+          {/* No fill. SURFACE is the sheet's material (spec section 4.1), and
+              the field sits on the page — focus is the PRIMARY rule around it. */}
           <View style={{
-            flexDirection: 'row', alignItems: 'center', gap: 12,
-            paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16,
-            backgroundColor: searchFocused ? C.JADE_ACCENT_SURFACE : C.SURFACE,
-            borderWidth: 1.5,
+            flexDirection: 'row', alignItems: 'center', gap: SPACE.md,
+            paddingHorizontal: SPACE.lg, paddingVertical: SPACE.md, borderRadius: RADIUS.flat,
+            borderWidth: 1,
             borderColor: searchFocused ? C.PRIMARY : C.BORDER,
-            marginBottom: 12,
+            marginBottom: SPACE.md,
           }}>
-            <Search size={16} color={searchFocused ? C.PRIMARY : C.TEXT3} />
+            <Search size={16} strokeWidth={1.5} color={searchFocused ? C.PRIMARY : C.TEXT3} />
             <TextInput
               value={search}
               onChangeText={(text) => {
@@ -488,12 +480,11 @@ export function PhraseLibrary() {
                       if (active) scrollToCategoryChip(c, false);
                     }}
                     style={{
-                      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-                      backgroundColor: active ? C.PRIMARY : C.SURFACE,
-                      borderWidth: active ? 0 : 1,
-                      borderColor: C.BORDER,
+                      paddingHorizontal: SPACE.lg, paddingVertical: SPACE.sm, borderRadius: RADIUS.pill,
+                      borderWidth: 1,
+                      borderColor: active ? C.PRIMARY : C.BORDER,
                     }}>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.BG : C.TEXT3 }}>{c}</Text>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{c}</Text>
                   </Pressable>
                 );
               })}
@@ -510,8 +501,7 @@ export function PhraseLibrary() {
                 const label = d === STRINGS.phrases.filterAll ? d : CEFR_LABELS[d as CEFRBand];
                 return (
                   <Pressable key={d} onPress={() => setDiff(d)} hitSlop={8} style={{
-                    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
-                    backgroundColor: 'transparent',
+                    paddingHorizontal: SPACE.md, paddingVertical: SPACE.sm, borderRadius: RADIUS.pill,
                     borderWidth: 1,
                     borderColor: active ? color : C.BORDER,
                   }}>
@@ -530,65 +520,38 @@ export function PhraseLibrary() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            paddingHorizontal: GRID_PAD,
+            paddingHorizontal: SCREEN_MARGIN,
             paddingBottom: insets.bottom + 80,
           }}
         >
           {CategoryGridHeader}
 
-          {/* Quick stats banner */}
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 400, delay: 650 }}
-          >
-            <Pressable
+          {/* Browse-all. Was a gradient card carrying the screen's only
+              shadow, an 18 radius and a tinted icon tile — three fills to say
+              one thing. It is the last entry in the category list, so it is
+              the same ruled row the categories above it are. */}
+          <View style={{ marginTop: SPACE.xl }}>
+            <Rule
+              first
               onPress={() => { setCat(STRINGS.phrases.filterAll); setShowGrid(false); }}
-              style={{
-                borderRadius: 18,
-                overflow: 'hidden',
-                ...Platform.select({
-                  ios: { shadowColor: C.PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 },
-                  android: { elevation: 3 },
-                }),
-              }}
+              accessibilityLabel={STRINGS.phrases.browseAllTitle}
             >
-              <LinearGradient
-                colors={isDark ? G.SCENARIO_GOLD_STOPS : G.SCENARIO_JADE_STOPS}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  borderRadius: 18,
-                  padding: 18,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
-                    backgroundColor: C.JADE_ACCENT_DIM,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Sparkles size={20} color={C.PRIMARY} />
-                  </View>
-                  <View>
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT, marginBottom: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.md, flex: 1 }}>
+                  <Sparkles size={18} strokeWidth={1.5} color={C.PRIMARY} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
                       {STRINGS.phrases.browseAllTitle}
                     </Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs }}>
                       {STRINGS.phrases.browseAllSub(PHRASES.length, PHRASE_CATEGORIES.length)}
                     </Text>
                   </View>
                 </View>
-                <ChevronRight size={16} color={C.PRIMARY} />
-              </LinearGradient>
-            </Pressable>
-          </MotiView>
+                <ChevronRight size={16} strokeWidth={1.5} color={C.TEXT3} />
+              </View>
+            </Rule>
+          </View>
         </ScrollView>
       ) : (
         /* ── Phrase List View ── */
@@ -598,7 +561,6 @@ export function PhraseLibrary() {
           renderItem={renderItem}
           {...({ estimatedItemSize: 80 } as any)}
           extraData={[expanded, playingId, savedPhrases]}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           ListHeaderComponent={() => (
             <View style={{ marginBottom: 4 }}>
               {CategoryFilterBanner}
@@ -614,7 +576,7 @@ export function PhraseLibrary() {
           ListEmptyComponent={() => (
             <EmptyState title={STRINGS.phrases.noPhrasesFound} subtitle={STRINGS.phrases.noPhrasesSub} />
           )}
-          contentContainerStyle={{ paddingHorizontal: GRID_PAD, paddingBottom: insets.bottom + 80 }}
+          contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: insets.bottom + 80 }}
           showsVerticalScrollIndicator={false}
         />
       )}
