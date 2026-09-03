@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';
 import { loginPurchasesUser } from '../src/lib/purchases';
 import { useTheme } from '../src/hooks/useTheme';
+import { captureError } from '../src/lib/analytics';
 
 export default function Index() {
   const { C } = useTheme();
@@ -34,9 +35,19 @@ export default function Index() {
         // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves
         // to prevent syncFromCloud from overwriting the streak/lastActiveDate they set.
         router.replace('/(tabs)');
+        // recordDailyActivity and checkMilestones must run whether or not the
+        // network work above succeeds. Chained bare, a RevenueCat or Supabase
+        // failure (offline, simulator, expired token) rejected the promise and
+        // silently skipped them — the user opened the app, practised, and lost
+        // their streak. The catch reports the failure and still records the day.
         void loginPurchasesUser(userId)
           .then(() => syncFromCloud())
-          .then(() => {
+          .catch((e: unknown) => {
+            captureError('Startup sync failed', {
+              reason: e instanceof Error ? e.message : String(e),
+            });
+          })
+          .finally(() => {
             recordDailyActivity();
             checkMilestones();
           });

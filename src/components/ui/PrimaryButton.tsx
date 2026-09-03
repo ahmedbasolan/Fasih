@@ -73,9 +73,9 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
           style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, minHeight: 52 }}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={C.WHITE} />
+            <ActivityIndicator size="small" color={C.BG} />
           ) : typeof children === 'string' ? (
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>{children}</Text>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>{children}</Text>
           ) : children}
         </LinearGradient>
       </Pressable>

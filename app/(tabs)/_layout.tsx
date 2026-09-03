@@ -1,77 +1,15 @@
-import { Tabs, usePathname } from 'expo-router';
-import { View, Platform } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Easing } from 'react-native-reanimated';
 import { Home, Layers, BookOpen, User } from '../../src/components/icons';
-import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { FONT_HEADING_SEMI } from '../../src/components/design/tokens';
 import { useTheme } from '../../src/hooks/useTheme';
-
-
-// Tab order for determining slide direction (left to right)
-const TAB_ORDER = ['index', 'scenarios', 'library', 'profile'];
-
-// Context for tab slide animation direction
-interface TabAnimationContextType {
-  direction: 'left' | 'right' | null;
-  triggerAnimation: (direction: 'left' | 'right') => void;
-}
-
-export const TabAnimationContext = createContext<TabAnimationContextType>({
-  direction: null,
-  triggerAnimation: () => {},
-});
-
-// Hook for tab screens to use animation
-export function useTabAnimation() {
-  return useContext(TabAnimationContext);
-}
-
-// Shared slide+fade wrapper for tab screen content — every tab route used to
-// duplicate this exact block (compute slideFrom, wrap in a keyed MotiView).
-export function TabSlideTransition({ tabKey, children }: { tabKey: string; children: ReactNode }) {
-  const { direction } = useTabAnimation();
-  const slideFrom = direction === 'right' ? 60 : direction === 'left' ? -60 : 0;
-
-  return (
-    <MotiView
-      key={`${tabKey}-${direction || 'initial'}`}
-      from={{ opacity: 0, translateX: slideFrom }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'timing', duration: 450, easing: Easing.out(Easing.cubic) }}
-      style={{ flex: 1 }}
-    >
-      {children}
-    </MotiView>
-  );
-}
 
 export default function TabsLayout() {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const pathname = usePathname();
   const tabBg = C.TAB_BG;
-
-  // Track tab navigation direction for animations
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
-  const prevTabIndex = useRef<number>(0);
-
-  const triggerAnimation = useCallback((direction: 'left' | 'right') => {
-    setSlideDirection(direction);
-  }, []);
-
-  // Determine slide direction based on tab change
-  useEffect(() => {
-    const currentTab = pathname.split('/')[1] || 'index';
-    const currentIndex = TAB_ORDER.indexOf(currentTab);
-
-    if (currentIndex !== -1 && prevTabIndex.current !== currentIndex) {
-      const direction = currentIndex > prevTabIndex.current ? 'right' : 'left';
-      setSlideDirection(direction);
-      prevTabIndex.current = currentIndex;
-    }
-  }, [pathname]);
 
   // Adapt to the user's phone nav setting.
   // iOS: insets.bottom is ~34 on home-indicator devices, 0 on older iPhones.
@@ -81,99 +19,96 @@ export default function TabsLayout() {
   const BOTTOM_INSET_PAD = Math.max(insets.bottom, Platform.OS === 'android' ? 8 : 0);
 
   return (
-    <TabAnimationContext.Provider value={{ direction: slideDirection, triggerAnimation }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: tabBg,
-            borderTopWidth: 0,
-            elevation: 0,
-            height: BAR_CONTENT_HEIGHT + BOTTOM_INSET_PAD,
-            paddingTop: 8,
-            paddingBottom: BOTTOM_INSET_PAD,
-            ...Platform.select({
-              ios: {
-                shadowColor: C.PRIMARY,
-                shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.06,
-                shadowRadius: 12,
-              },
-              android: { elevation: 8 },
-            }),
-          },
-          tabBarActiveTintColor: C.JADE_ACCENT,
-          tabBarInactiveTintColor: C.NEUTRAL_500,
-          tabBarLabelStyle: {
-            fontFamily: FONT_HEADING_SEMI,
-            fontSize: 11,
-            marginTop: 2,
-          },
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+        tabBarStyle: {
+          backgroundColor: tabBg,
+          borderTopWidth: 0,
+          elevation: 0,
+          height: BAR_CONTENT_HEIGHT + BOTTOM_INSET_PAD,
+          paddingTop: 8,
+          paddingBottom: BOTTOM_INSET_PAD,
+          ...Platform.select({
+            ios: {
+              shadowColor: C.PRIMARY,
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+            },
+            android: { elevation: 8 },
+          }),
+        },
+        tabBarActiveTintColor: C.JADE_ACCENT,
+        tabBarInactiveTintColor: C.NEUTRAL_500,
+        tabBarLabelStyle: {
+          fontFamily: FONT_HEADING_SEMI,
+          fontSize: 11,
+          marginTop: 2,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <MotiView
+              animate={{ scale: focused ? 1.1 : 1 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+            >
+              <Home size={20} color={color} />
+            </MotiView>
+          ),
         }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color, focused }) => (
-              <MotiView
-                animate={{ scale: focused ? 1.1 : 1 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
-              >
-                <Home size={20} color={color} />
-              </MotiView>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="scenarios"
-          options={{
-            title: 'Scenarios',
-            tabBarIcon: ({ color, focused }) => (
-              <MotiView
-                animate={{ scale: focused ? 1.1 : 1 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
-              >
-                <Layers size={20} color={color} />
-              </MotiView>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="library"
-          options={{
-            title: 'Phrases',
-            tabBarIcon: ({ color, focused }) => (
-              <MotiView
-                animate={{ scale: focused ? 1.1 : 1 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
-              >
-                <BookOpen size={20} color={color} />
-              </MotiView>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Profile',
-            tabBarIcon: ({ color, focused }) => (
-              <MotiView
-                animate={{ scale: focused ? 1.1 : 1 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
-              >
-                <User size={20} color={color} />
-              </MotiView>
-            ),
-          }}
-        />
-
-      </Tabs>
-    </TabAnimationContext.Provider>
+      />
+      <Tabs.Screen
+        name="scenarios"
+        options={{
+          title: 'Scenarios',
+          tabBarIcon: ({ color, focused }) => (
+            <MotiView
+              animate={{ scale: focused ? 1.1 : 1 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+            >
+              <Layers size={20} color={color} />
+            </MotiView>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: 'Phrases',
+          tabBarIcon: ({ color, focused }) => (
+            <MotiView
+              animate={{ scale: focused ? 1.1 : 1 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+            >
+              <BookOpen size={20} color={color} />
+            </MotiView>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <MotiView
+              animate={{ scale: focused ? 1.1 : 1 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+            >
+              <User size={20} color={color} />
+            </MotiView>
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
-
