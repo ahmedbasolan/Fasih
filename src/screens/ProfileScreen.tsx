@@ -11,7 +11,6 @@ import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { useCountUp } from '../components/design/hooks';
 import { StatCard } from '../components/features/StatCard';
-import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
 import { getNotificationPermissionStatus } from '../lib/notifications';
 import { checkAuthBridge } from '../lib/syncService';
@@ -51,7 +50,6 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
     getNotificationPermissionStatus().then((status) => setNotificationsEnabled(status === 'granted'));
   }, []);
   const name = user?.name || STRINGS.profile.learner;
-  const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
 
   const categories = Object.values(stats.categoryMastery);
 
@@ -219,7 +217,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             }),
           }}>
             {categories.map((cat: any, i) => {
-              const color = CATEGORY_COLORS[cat.category] || C.PRIMARY;
+              // Sadaf: one accent. Category is the label beside the bar, not a hue.
               const pct = cat.phrasesTotal > 0 ? Math.round((cat.phrasesStudied / cat.phrasesTotal) * 100) : 0;
               return (
                 <View key={cat.category}>
@@ -229,12 +227,12 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                       {cat.phrasesStudied}/{cat.phrasesTotal} · {STRINGS.profile.accuracy(cat.accuracy)}
                     </Text>
                   </View>
-                  <View style={{ height: 8, borderRadius: 4, backgroundColor: C.SURFACE }}>
+                  <View style={{ height: 2, backgroundColor: C.BORDER }}>
                     <MotiView
                       from={{ width: '0%' }}
                       animate={{ width: `${pct}%` }}
                       transition={{ type: 'timing', duration: 1000, delay: 300 + i * 100 }}
-                      style={{ height: 8, borderRadius: 4, backgroundColor: color }}
+                      style={{ height: 2, backgroundColor: C.PRIMARY }}
                     />
                   </View>
                 </View>

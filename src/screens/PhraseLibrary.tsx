@@ -328,7 +328,6 @@ export function PhraseLibrary() {
         </View>
       )}
     </View>
-  // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [C, isDark, categoryCounts, handleCategorySelect]);
 
@@ -387,7 +386,6 @@ export function PhraseLibrary() {
         </View>
       </MotiView>
     );
-  // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showGrid, cat, C, isDark, filtered.length, handleShowAll]);
 
