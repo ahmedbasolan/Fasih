@@ -12,3 +12,4 @@ export { ProgressBar } from './ProgressBar';
 export { SyncStatusBanner } from './SyncStatusBanner';
 export { SheetPanel } from './SheetPanel';
 export { Rule } from './Rule';
+export { PhraseEntry } from './PhraseEntry';
