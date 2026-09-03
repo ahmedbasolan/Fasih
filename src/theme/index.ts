@@ -30,3 +30,5 @@ export {
 export type { ThemeGradients } from '../components/design/gradients';
 
 export { useTheme } from '../hooks/useTheme';
+
+export { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
