@@ -4,8 +4,6 @@
 export {
   darkTheme,
   lightTheme,
-  SPRING,
-  SPRING_SLOW,
   FONT_ARABIC,
   FONT_ARABIC_SEMI,
   FONT_ARABIC_EXTRA,

@@ -1,7 +1,6 @@
 export { PrimaryButton } from './PrimaryButton';
 export { GhostButton } from './GhostButton';
 export { GhostLetters } from './GhostLetters';
-export { SoukCard } from './SoukCard';
 export { EmptyState } from './EmptyState';
 export { InputField } from './InputField';
 export { ErrorBoundary } from './ErrorBoundary';
@@ -10,5 +9,5 @@ export { ShimmerButton } from './ShimmerButton';
 export { SwitchButton } from './SwitchButton';
 export { RippleEffect } from './RippleEffect';
 export { ProgressBar } from './ProgressBar';
-export { SyncStatusBanner, SyncSuccessBadge } from './SyncStatusBanner';
+export { SyncStatusBanner } from './SyncStatusBanner';
 export { SheetPanel } from './SheetPanel';

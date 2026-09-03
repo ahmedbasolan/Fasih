@@ -206,7 +206,7 @@ export default function SignUpScreen() {
                   opacity: verificationCode.length >= 6 && !loading ? 1 : 0.5,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.BG }}>
                   {loading ? STRINGS.auth.signUp.verifying : STRINGS.auth.signUp.verifyEmail}
                 </Text>
               </Pressable>
@@ -395,7 +395,7 @@ export default function SignUpScreen() {
                     opacity: canSubmit && !loading ? 1 : 0.5,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.BG }}>
                     {loading ? STRINGS.auth.signUp.creatingAccount : STRINGS.auth.signUp.createAccount}
                   </Text>
                 </Pressable>

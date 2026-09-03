@@ -258,12 +258,7 @@ export const ARABIC_LINE_HEIGHT_MULTIPLIER = 1.35;
 // Arabic fonts need ~1.15× optical scale boost vs Latin to achieve equal visual weight
 export const ARABIC_SCALE = 1.15;
 
-export const SPRING = { type: 'spring', stiffness: 420, damping: 30, mass: 0.6 } as const;
-export const SPRING_SLOW = { type: 'spring', stiffness: 200, damping: 28 } as const;
-
 export const SMOOTH = { type: 'timing', duration: 380 } as const;
-export const SMOOTH_FAST = { type: 'timing', duration: 220 } as const;
-export const SMOOTH_SLOW = { type: 'timing', duration: 600 } as const;
 
 export const PRESS_SCALE = 0.96;
 export const PRESS_DURATION_IN = 120;
