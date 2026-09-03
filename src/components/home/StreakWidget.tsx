@@ -82,7 +82,7 @@ export function StreakWidget({
       borderRadius: 20,
       backgroundColor: C.CARD_BG,
       borderWidth: 1,
-      borderColor: mood === 'celebrating' ? 'rgba(0,255,149,0.3)' : C.BORDER,
+      borderColor: mood === 'celebrating' ? 'rgba(234,197,124,0.3)' : C.BORDER,
       overflow: 'hidden',
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
@@ -115,15 +115,6 @@ export function StreakWidget({
       fontFamily: FONT_LATIN,
       fontSize: 10,
       color: C.TEXT2,
-    },
-    shimmer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      borderRadius: 20,
-      pointerEvents: 'none',
     },
     rightBlock: {
       flex: 1,
@@ -201,26 +192,16 @@ export function StreakWidget({
 
   return (
     <>
-      <MotiView
+      <View
         style={styles.container}
-        from={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
       >
         {/* LEFT BLOCK - Mascot + Streak */}
         <View style={styles.leftBlock}>
-          <MotiView
-            animate={{
-              scale: mood === 'celebrating' ? 1.12 : mood === 'excited' ? 1.08 : 1,
-            }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          >
-            <Image
-              source={mascotSource}
-              style={styles.mascotImage}
-              resizeMode="contain"
-            />
-          </MotiView>
+          <Image
+            source={mascotSource}
+            style={styles.mascotImage}
+            resizeMode="contain"
+          />
           <Text style={styles.streakNumber}>{streakDays}</Text>
           <Text style={styles.daysLabel}>days</Text>
         </View>
@@ -229,7 +210,9 @@ export function StreakWidget({
         <View style={styles.rightBlock}>
           {/* Streak Info Row */}
           <View style={styles.streakInfoRow}>
-            <Text style={styles.daysTitle}>Learning Days</Text>
+            <Text style={styles.daysTitle}>
+              {isChecklistMode ? STRINGS.home.gettingStartedTitle : STRINGS.home.learningDaysTitle}
+            </Text>
             {isChecklistMode ? (
               <Text style={styles.emptyHint}>{STRINGS.home.checklistProgress(checklistCompleted!, checklistTotal!)}</Text>
             ) : (
@@ -239,37 +222,20 @@ export function StreakWidget({
 
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
-            <MotiView
-              style={{ height: '100%' }}
-              animate={{
-                width: `${progressPercent}%`,
-              }}
-              transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-            >
+            <View style={{ height: '100%', width: `${progressPercent}%` }}>
               <LinearGradient
                 colors={[C.PRIMARY, C.TERTIARY]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}
               />
-            </MotiView>
+            </View>
           </View>
 
           {/* Days Row - always show */}
           <View style={styles.daysRow}>
-            {weekDays.map((day, idx) => (
-              <MotiView
-                key={day.label}
-                from={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 250,
-                  damping: 15,
-                  delay: idx * 80,
-                }}
-                style={{ flex: 1, alignItems: 'center' }}
-              >
+            {weekDays.map((day) => (
+              <View key={day.label} style={{ flex: 1, alignItems: 'center' }}>
                 <View
                   style={[
                     styles.dayDot,
@@ -293,27 +259,11 @@ export function StreakWidget({
                     {day.status === 'done' ? '✓' : day.label[0]}
                   </Text>
                 </View>
-              </MotiView>
+              </View>
             ))}
           </View>
         </View>
-
-        {/* Shimmer sweep effect */}
-        <MotiView
-          style={styles.shimmer}
-          from={{ translateX: -320 }}
-          animate={{ translateX: 320 }}
-          transition={{ type: 'timing', duration: 1200, delay: 300 }}
-          pointerEvents="none"
-        >
-          <LinearGradient
-            colors={['transparent', 'rgba(255,255,255,0.3)', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ flex: 1 }}
-          />
-        </MotiView>
-      </MotiView>
+      </View>
 
       {/* Confetti particles for celebrating state */}
       {mood === 'celebrating' &&

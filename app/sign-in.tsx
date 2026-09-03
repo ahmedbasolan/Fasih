@@ -208,7 +208,7 @@ export default function SignInScreen() {
                 alignItems: 'center', opacity: canSubmit && !loading ? 1 : 0.5,
               }}
             >
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.WHITE }}>
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.BG }}>
                 {loading ? STRINGS.auth.signIn.signingIn : STRINGS.auth.signIn.logIn}
               </Text>
             </Pressable>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
-import { MotiView } from 'moti';
 import { ChevronRight } from '../icons';
 import { FONT_HEADING, FONT_LATIN_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
@@ -15,8 +14,6 @@ interface CategoryCardProps {
   bgColor: string;
   /** Accent color for text/decorations */
   accentColor: string;
-  /** Animation delay in ms */
-  delay?: number;
   onPress: () => void;
 }
 
@@ -25,7 +22,7 @@ interface CategoryCardProps {
  * Inspired by modern course platform UI with soft backgrounds,
  * bold typography, and rich SVG illustrations.
  */
-export function CategoryCard({ category, phraseCount, variant, bgColor, accentColor, delay = 0, onPress }: CategoryCardProps) {
+export function CategoryCard({ category, phraseCount, variant, bgColor, accentColor, onPress }: CategoryCardProps) {
   const { C, isDark } = useTheme();
   const Illustration = CATEGORY_ILLUSTRATIONS[category];
   const isLarge = variant === 'large';
@@ -35,34 +32,29 @@ export function CategoryCard({ category, phraseCount, variant, bgColor, accentCo
   const borderColor = isDark ? `${accentColor}22` : `${accentColor}12`;
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 16, scale: 0.96 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{ type: 'spring', damping: 22, stiffness: 160, delay }}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${category} - ${phraseCount} phrases`}
+      style={({ pressed }) => ({
+        borderRadius: 22,
+        overflow: 'hidden',
+        backgroundColor: cardBg,
+        borderWidth: 1,
+        borderColor,
+        height: isLarge ? 200 : 160,
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+        ...Platform.select({
+          ios: {
+            shadowColor: accentColor,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: isDark ? 0.2 : 0.12,
+            shadowRadius: 16,
+          },
+          android: { elevation: 3 },
+        }),
+      })}
     >
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`${category} - ${phraseCount} phrases`}
-        style={({ pressed }) => ({
-          borderRadius: 22,
-          overflow: 'hidden',
-          backgroundColor: cardBg,
-          borderWidth: 1,
-          borderColor,
-          height: isLarge ? 200 : 160,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-          ...Platform.select({
-            ios: {
-              shadowColor: accentColor,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: isDark ? 0.2 : 0.12,
-              shadowRadius: 16,
-            },
-            android: { elevation: 3 },
-          }),
-        })}
-      >
         {/* Content layer */}
         <View style={{ flex: 1, padding: 16, justifyContent: 'space-between' }}>
           {/* Title & count */}
@@ -119,6 +111,5 @@ export function CategoryCard({ category, phraseCount, variant, bgColor, accentCo
           <ChevronRight size={12} color={accentColor} />
         </View>
       </Pressable>
-    </MotiView>
   );
 }
