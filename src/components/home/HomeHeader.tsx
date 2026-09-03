@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN } from '../../theme';
 import { Settings } from '../icons';
-import { MotiView } from 'moti';
 
 interface HomeHeaderProps {
   userName: string;
@@ -69,12 +68,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
-        <MotiView
-          animate={{ opacity: [0.85, 1, 0.85] }}
-          transition={{ type: 'timing', duration: 2500, loop: true }}
-        >
-          <Text style={styles.arabicGreeting}>{greeting.arabic}</Text>
-        </MotiView>
+        <Text style={styles.arabicGreeting}>{greeting.arabic}</Text>
         <Text style={styles.subtitle}>
           {greeting.english}, <Text style={{ color: C.TEXT, fontWeight: '600' }}>{userName}</Text>
         </Text>

@@ -7,16 +7,24 @@ import {
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 
 interface CommunityBarProps {
-  count?: number;
-  location?: string;
+  /** A real count of learners. Required on purpose — see the note below. */
+  count: number;
+  /** The learner's actual city. Required on purpose. */
+  location: string;
 }
 
 const AVATAR_EMOJIS = ['👨‍💼', '👩‍💻', '🧑‍🎓'];
 
-export function CommunityBar({
-  count = 47,
-  location = 'Dubai',
-}: CommunityBarProps) {
+/**
+ * Social-proof bar.
+ *
+ * `count` and `location` used to default to 47 and "Dubai", so the card stated
+ * a specific, false fact to every user regardless of where they were — and a
+ * caller that forgot a prop still rendered a confident claim. Both are now
+ * required, so this cannot render invented numbers. It is currently not
+ * mounted anywhere; wire it up when there is a real source for the count.
+ */
+export function CommunityBar({ count, location }: CommunityBarProps) {
   const { C } = useTheme();
 
   const avatarColors = [C.PRIMARY, C.TERTIARY, C.JADE];
