@@ -104,7 +104,14 @@ export function addCustomerInfoListener(
   onUpdate: (status: SubscriptionStatus, info: CustomerInfo) => void,
 ): () => void {
   const listener = (info: CustomerInfo) => onUpdate(toStatus(info), info);
-  Purchases.addCustomerInfoUpdateListener(listener);
+  try {
+    Purchases.addCustomerInfoUpdateListener(listener);
+  } catch {
+    // Not configured (e.g. no API key for this platform) — non-fatal, same as
+    // every other function here. Without this, initSubscription() surfaces an
+    // uncaught promise rejection on every app boot whenever configure() was skipped.
+    return () => {};
+  }
   return () => Purchases.removeCustomerInfoUpdateListener(listener);
 }
 
