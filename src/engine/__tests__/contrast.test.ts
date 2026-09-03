@@ -16,6 +16,13 @@ describe('parseColor', () => {
   it('throws on an unsupported format rather than guessing', () => {
     expect(() => parseColor('rebeccapurple')).toThrow(/Unsupported/);
   });
+
+  it('throws on a malformed numeric rather than yielding NaN', () => {
+    // `1.2.3` is not a number. A looser group matched it, `Number()` gave NaN,
+    // and the NaN travelled all the way to a contrast ratio that silently
+    // compared false against every threshold. A typo'd token has to fail loudly.
+    expect(() => parseColor('rgba(1.2.3,0,0,1)')).toThrow(/Unsupported/);
+  });
 });
 
 describe('relativeLuminance', () => {

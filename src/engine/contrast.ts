@@ -10,7 +10,14 @@
 export type Rgba = { r: number; g: number; b: number; a: number };
 
 const HEX = /^#([0-9a-f]{6})$/i;
-const RGB = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i;
+// Each group is a single well-formed number. `[\d.]+` also matched `1.2.3`,
+// which `Number()` turns into NaN — so a typo'd token produced a NaN ratio
+// that compared false against every threshold instead of throwing below.
+const NUM = String.raw`\d+(?:\.\d+)?`;
+const RGB = new RegExp(
+  `^rgba?\\(\\s*(${NUM})\\s*,\\s*(${NUM})\\s*,\\s*(${NUM})\\s*(?:,\\s*(${NUM})\\s*)?\\)$`,
+  'i',
+);
 
 export function parseColor(value: string): Rgba {
   const trimmed = value.trim();
