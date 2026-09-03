@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Lock, Layers, ChevronRight } from '../icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
-import { KafMascot } from './KafMascot';
+import { Companion } from '../ui/Companion';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 
@@ -32,7 +32,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingBottom: insets.bottom + 40 }}>
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
-          <KafMascot size="lg" mood="thinking" />
+          <Companion size={80} />
         </View>
 
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
