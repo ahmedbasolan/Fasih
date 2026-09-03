@@ -149,6 +149,51 @@ assets/
 
 ---
 
+## Language Authority (CRITICAL — read before touching any Arabic)
+
+**Full rules: [`docs/language/authority.md`](docs/language/authority.md). Curriculum: [`docs/language/curriculum.md`](docs/language/curriculum.md). How to add content: [`docs/language/pipeline.md`](docs/language/pipeline.md).**
+
+Every checkable rule lives in `src/constants/curriculum.ts` and is enforced by
+`src/engine/__tests__/languageContent.test.ts`. **Never restate a threshold in prose** —
+two documents disagreeing about tashkeel is the exact failure this system exists to stop.
+
+**1. No MSA. Anywhere.** Not in choice cards, NPC dialogue, phrases, grammar patterns,
+UI Arabic, or audio. MSA in content is a bug, not a style choice. Arabic is diglossic and
+MSA is nobody's spoken register — teaching an expat MSA to survive in Dubai is the classic
+failure mode. The blocklist is `MSA_BLOCKLIST`; it was validated against all 457 Arabic
+strings in the app, and four candidates were rejected on evidence. Read that comment before
+re-proposing any of them. The rule does **not** apply to English teaching notes, which
+legitimately quote MSA to contrast it.
+
+**2. Target: contemporary urban Emirati** — Dubai/Abu Dhabi speech as spoken *today*, not
+the most "authentically Emirati" form available. Younger Emiratis have shifted toward a
+pan-Gulf koine, so a pan-Gulf form is often the current one and a distinctly-Emirati form is
+sometimes the archaic one. The flag that matters is `currency` (`current` / `dated` /
+`heritage` / `unknown`), not how Emirati something sounds. Other dialects (Egyptian,
+Levantine) are `use: 'recognise'` only — understand them, answer in Khaleeji.
+
+**3. Cite a source, split by claim type.** `Phrase.source` is required. Grammar ages slowly
+and lexicon fast, so Qafisheh (1977) and Holes (1990) are valid for `morphosyntax` **only** —
+never as a sole citation for word choice, usage or register. For those, use contemporary
+sources (Ramsa corpus 2026, Al Ramsa, Leung 2024). `UNSOURCED` is an honest, permitted value.
+**Never invent a page number** — a fabricated citation is worse than an admitted gap.
+
+**4. Bare Arabic script. No tashkeel.** Only shadda (real gemination: `عليّ` vs `علي`) and
+conventional tanwīn (`شكراً`) are allowed. Harakat encode MSA's vowel system and cannot
+write Emirati mid-vowels (`shloon`, `zain`) — vocalising dialect means inventing conventions
+*and* importing MSA machinery. **Romanisation is the authoritative pronunciation channel.**
+
+**5. Ahmed's approval is a product decision, never a linguistic one.** He does not speak
+Gulf Arabic. Never record content as verified because he approved it, and never present a
+phrase as correct without saying what it is sourced to. No native speaker has reviewed this
+content; the lint catches wrong *forms*, not unnatural ones.
+
+**Audio is a standing violation of rule 1.** `ar-AE` is a locale tag, not a dialect model —
+device Arabic voices are MSA-trained, so the app says *qahwa* while the card teaches *gahwa*.
+Do not "fix" this with a locale change; it needs human recordings.
+
+---
+
 ## Styling Rules (CRITICAL — read before every UI task)
 
 ### The Theme System
@@ -328,6 +373,8 @@ All shared types live in `src/types/index.ts`. Import from there, not from indiv
 
 Key types: `UserProfile`, `Phrase`, `ScenarioScript`, `ScenarioScene`, `ScenarioChoice`, `ScenarioEnding`, `ScenarioState`, `ImpactMetrics`, `JournalEntry`, `PhraseReviewData`
 
+Language types: `CEFRBand`, `SourceRef`, `SourceClaim`, `SourceId`, `PhraseCurrency`, `PhraseUse`, `PhraseOrigin`, `PhraseRegister`. There is ONE difficulty scale — CEFR. `PhraseDifficulty` and `ScenarioScript.difficulty` are gone; do not reintroduce a second scale.
+
 ---
 
 ## Scenario Engine Rules
@@ -401,7 +448,7 @@ import { STRINGS } from '../../constants/strings';
 
 When building a feature:
 
-1. Read this file first, including `docs/lessons-learned.md`.
+1. Read this file first, including `docs/lessons-learned.md` — and `docs/language/` for anything touching Arabic.
 2. Check existing patterns in similar screens — match them exactly.
 3. Identify the minimum files to touch.
 4. Keep changes focused — do not rewrite unrelated code.
