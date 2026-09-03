@@ -251,11 +251,9 @@ that is scheduled for deletion.
 
 ## 9. Open questions
 
-- **`app_version` — keep or drop?** It is useful for spotting when a change to onboarding
-  shifted the distribution, and it is coarse enough not to identify anyone. It is also the
-  only field here with no direct authoring value. My recommendation is keep; it costs nothing
-  and answering "did the new mode screen change what people pick" later without it is
-  impossible.
+- ~~**`app_version` — keep or drop?**~~ **Resolved 2026-09-03: keep.** It is the only way to
+  tell later whether a change to onboarding shifted the distribution, and it is coarse enough
+  not to identify anyone.
 - **Does the toggle stop future writes only, or is it retroactive?** It can only be the
   former — there is no way to find and delete an anonymous row. The toggle copy must not
   imply otherwise.
