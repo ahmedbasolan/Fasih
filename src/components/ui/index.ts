@@ -11,3 +11,4 @@ export { RippleEffect } from './RippleEffect';
 export { ProgressBar } from './ProgressBar';
 export { SyncStatusBanner } from './SyncStatusBanner';
 export { SheetPanel } from './SheetPanel';
+export { Rule } from './Rule';
