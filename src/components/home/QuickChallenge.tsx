@@ -7,19 +7,34 @@ import {
 } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
-import { LinearGradient } from 'expo-linear-gradient';
+import { STRINGS } from '../../constants/strings';
 
 interface QuickChallengeProps {
-  stimulus?: string;
-  response?: string;
+  /** English prompt the learner has to produce in Arabic. */
+  prompt: string;
+  /** The Arabic answer, revealed on tap. */
+  answer: string;
+  /** Romanisation of the answer. */
+  roman?: string;
   onRevealed?: () => void;
 }
 
-export function QuickChallenge({
-  stimulus = 'مساء الخير',
-  response = 'مساء النور',
-  onRevealed,
-}: QuickChallengeProps) {
+/**
+ * A one-tap recall check that changes every day.
+ *
+ * This used to declare `stimulus`/`response` as default parameters and its only
+ * caller passed neither — so every learner saw the same two words on day 1 and
+ * day 300, directly above a Daily Phrase card that does rotate. It now takes
+ * its content from the caller, which rotates it by date over the real phrase
+ * library.
+ *
+ * Note the framing changed from "someone says this — reply" to "say this in
+ * Arabic". The reply format needs authored stimulus/response pairs, and the
+ * library only glosses one of them ("reply to good morning"); inventing the
+ * rest would be guessing at Gulf conversational convention. If the reply
+ * framing is wanted back, the pairs need authoring first.
+ */
+export function QuickChallenge({ prompt, answer, roman, onRevealed }: QuickChallengeProps) {
   const { C } = useTheme();
   const [revealed, setRevealed] = useState(false);
 
@@ -44,25 +59,18 @@ export function QuickChallenge({
     content: {
       padding: 20,
     },
-        promptText: {
+    promptText: {
       fontFamily: FONT_LATIN,
       fontSize: 13,
       color: C.TEXT2,
-      marginBottom: 14,
+      marginBottom: 10,
     },
-    arabicText: {
-      fontFamily: FONT_ARABIC_EXTRA,
-      fontSize: 28,
+    englishPrompt: {
+      fontFamily: FONT_LATIN_SEMI,
+      fontSize: 20,
       color: C.TEXT,
-      textAlign: 'right',
-      writingDirection: 'rtl',
       marginBottom: 20,
-      fontWeight: '800',
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
+      lineHeight: 28,
     },
     revealButton: {
       paddingHorizontal: 16,
@@ -70,6 +78,7 @@ export function QuickChallenge({
       borderRadius: 12,
       borderWidth: 1,
       borderColor: C.PRIMARY,
+      alignSelf: 'flex-start',
     },
     revealButtonText: {
       fontFamily: FONT_LATIN_SEMI,
@@ -78,7 +87,7 @@ export function QuickChallenge({
       fontWeight: '600',
     },
     responseContainer: {
-      marginTop: 16,
+      marginTop: 4,
       paddingTop: 16,
       borderTopWidth: 1,
       borderTopColor: C.BORDER,
@@ -97,7 +106,16 @@ export function QuickChallenge({
       fontSize: 26,
       color: C.PRIMARY,
       textAlign: 'right',
+      writingDirection: 'rtl',
       fontWeight: '800',
+    },
+    responseRoman: {
+      fontFamily: FONT_LATIN,
+      fontSize: 12,
+      color: C.TEXT3,
+      fontStyle: 'italic',
+      textAlign: 'right',
+      marginTop: 4,
     },
   }), [C]);
 
@@ -108,21 +126,15 @@ export function QuickChallenge({
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[C.PRIMARY, C.PRIMARY]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.topHighlight}
-      />
+      {/* A flat 2px rule — this was a LinearGradient between C.PRIMARY and
+          itself, i.e. a native gradient view rendering a solid colour. */}
+      <View style={styles.topHighlight} />
 
       <View style={styles.content}>
-        {/* Prompt */}
-        <Text style={styles.promptText}>Someone says this to you — reply:</Text>
+        <Text style={styles.promptText}>{STRINGS.home.quickChallengePrompt}</Text>
 
-        {/* Stimulus Arabic */}
-        <Text style={styles.arabicText}>{stimulus}</Text>
+        <Text style={styles.englishPrompt}>{prompt}</Text>
 
-        {/* Reveal Button */}
         {!revealed ? (
           <Pressable
             onPress={handleReveal}
@@ -131,19 +143,20 @@ export function QuickChallenge({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Reveal correct response"
+            accessibilityLabel={STRINGS.home.quickChallengeReveal}
           >
-            <Text style={styles.revealButtonText}>Tap to reveal →</Text>
+            <Text style={styles.revealButtonText}>{STRINGS.home.quickChallengeReveal}</Text>
           </Pressable>
         ) : (
           <MotiView
-            from={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', duration: 300 }}
             style={styles.responseContainer}
           >
-            <Text style={styles.responseLabel}>Correct response:</Text>
-            <Text style={styles.responseText}>{response}</Text>
+            <Text style={styles.responseLabel}>{STRINGS.home.quickChallengeAnswer}</Text>
+            <Text style={styles.responseText}>{answer}</Text>
+            {roman ? <Text style={styles.responseRoman}>{roman}</Text> : null}
           </MotiView>
         )}
       </View>

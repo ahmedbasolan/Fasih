@@ -11,9 +11,34 @@ module.exports = [
       'node_modules/**',
       '.expo/**',
       'dist/**',
+      'coverage/**',
       '.worktrees/**',
       'babel.config.js',
+      // Vendored skill bundles. They ship their own dependencies (ajv et al)
+      // that this project does not install, so import/no-unresolved fires on
+      // every one — 4 errors for code that is never bundled into the app.
+      '.agents/**',
+      '.claude/**',
     ],
+  },
+  {
+    // Build/tooling scripts are Node CommonJS, not app code. Without this they
+    // are linted with the app's browser globals and every __dirname is a
+    // no-undef error, which kept `npm run lint` permanently red and trained
+    // everyone to ignore it.
+    files: ['scripts/**/*.js', 'generate-icons.js', '*.config.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'writable',
+        require: 'readonly',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
   },
   {
     // The lucide-react-native/icons/<name> subpath is resolved at bundle time by
