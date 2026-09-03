@@ -22,6 +22,16 @@ interface PhraseEntryProps {
   onToggleExpand: (id: string) => void;
   onPlay: (phrase: Phrase) => void;
   onToggleSave: (id: string) => void;
+  /**
+   * Screen-specific content for the expanded state — the Library's play-slowly
+   * control, unlock badge and CEFR chips live here.
+   *
+   * A slot rather than more props on purpose: the entry owns the canonical
+   * phrase hierarchy, and anything only one screen needs stays that screen's
+   * business. Adding a prop per affordance is how the component this replaced
+   * grew to 110 lines of inline styles.
+   */
+  expandedExtra?: React.ReactNode;
 }
 
 const ARABIC_SIZE = 28;
@@ -34,7 +44,7 @@ const ARABIC_SIZE = 28;
  */
 export function PhraseEntry({
   phrase, expanded, saved, playing, first,
-  onToggleExpand, onPlay, onToggleSave,
+  onToggleExpand, onPlay, onToggleSave, expandedExtra,
 }: PhraseEntryProps) {
   const { C } = useTheme();
 
@@ -89,11 +99,12 @@ export function PhraseEntry({
         },
         detail: {
           marginTop: SPACE.md,
-          gap: SPACE.sm,
+          gap: SPACE.lg,
         },
         detailText: {
           fontFamily: FONT_LATIN,
           fontSize: 13,
+          marginTop: SPACE.xs,
           lineHeight: 19,
           color: C.TEXT2,
         },
@@ -146,8 +157,19 @@ export function PhraseEntry({
 
       {expanded ? (
         <View style={styles.detail}>
-          {phrase.pronTip ? <Text style={styles.detailText}>{phrase.pronTip}</Text> : null}
-          {phrase.culturalNote ? <Text style={styles.detailText}>{phrase.culturalNote}</Text> : null}
+          {phrase.pronTip ? (
+            <View>
+              <Text style={styles.label}>{STRINGS.phrases.pronunciation}</Text>
+              <Text style={styles.detailText}>{phrase.pronTip}</Text>
+            </View>
+          ) : null}
+          {phrase.culturalNote ? (
+            <View>
+              <Text style={styles.label}>{STRINGS.phrases.culturalContext}</Text>
+              <Text style={styles.detailText}>{phrase.culturalNote}</Text>
+            </View>
+          ) : null}
+          {expandedExtra}
         </View>
       ) : null}
     </Rule>

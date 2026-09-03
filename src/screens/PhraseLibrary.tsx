@@ -4,16 +4,17 @@ import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Trophy, ArrowRight } from '../components/icons';
+import { Search, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Trophy, ArrowRight } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
-import { GhostLetters } from '../components/ui';
+import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { GhostLetters, PhraseEntry } from '../components/ui';
+import { SPACE } from '../components/design/spacing';
 import type { ThemeColors } from '../components/design/tokens';
 import type { CEFRBand } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
 import { CategoryCard } from '../components/features/CategoryCard';
-import { PHRASES, PHRASE_CATEGORIES, getCategoryColors, getCefrColors, CEFR_LABELS, TYPE_LABELS } from '../constants/phrases';
+import { PHRASES, PHRASE_CATEGORIES, getCefrColors, CEFR_LABELS, TYPE_LABELS } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
@@ -63,7 +64,6 @@ export function PhraseLibrary() {
     () => getAvailablePatterns(unlockedPhraseIds, completedScenarios, secretEndingsEarned),
     [unlockedPhraseIds, completedScenarios, secretEndingsEarned],
   );
-  const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
   const CEFR_COLORS = useMemo(() => getCefrColors(C), [C]);
   const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
   const [search, setSearch] = useState('');
@@ -151,117 +151,59 @@ export function PhraseLibrary() {
     if (!showGrid) scrollToCategoryChip(cat, true);
   }, [cat, showGrid, scrollToCategoryChip]);
 
-  const renderItem = useCallback(({ item: p }: { item: Phrase }) => {
-    const isExpanded = expanded === p.id;
-    const isPlaying = playingId === p.id;
-    const isSaved = savedPhrases.includes(p.id);
+  const renderItem = useCallback(({ item: p, index }: { item: Phrase; index: number }) => {
     const isUnlocked = isPhraseUnlocked(p.id);
-    const color = CATEGORY_COLORS[p.category] || C.PRIMARY;
 
     return (
-      <Pressable
-        onPress={() => toggleExpand(p.id)}
-        accessibilityRole="button"
-        accessibilityLabel={`${p.english} phrase`}
-        accessibilityState={{ expanded: isExpanded }}
-        style={{
-          borderRadius: 16,
-          overflow: 'hidden',
-          backgroundColor: C.CARD_BG,
-          borderWidth: isExpanded ? 1 : 0,
-          borderColor: isExpanded ? `${color}30` : 'transparent',
-          ...Platform.select({
-            ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
-            android: { elevation: 2 },
-          }),
-        }}
-      >
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ width: 4, backgroundColor: CEFR_COLORS[p.cefr], borderTopLeftRadius: 16, borderBottomLeftRadius: isExpanded ? 0 : 16 }} />
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 18, color: C.TEXT, textAlign: 'right', marginBottom: 2 }}>{p.arabic}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.PRIMARY, marginBottom: 2 }}>{p.roman}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>{p.english}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              <Pressable
-                onPress={(e) => { e.stopPropagation?.(); play(p); }}
-                accessibilityRole="button"
-                accessibilityLabel={isPlaying ? 'Playing audio' : 'Play audio'}
-                accessibilityState={{ selected: isPlaying }}
-                hitSlop={4}
-                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Volume2 size={14} color={isPlaying ? C.JADE : C.TEXT3} />
-              </Pressable>
-              <Pressable
-                onPress={(e) => { e.stopPropagation?.(); toggleSavedPhrase(p.id); }}
-                accessibilityRole="button"
-                accessibilityLabel={isSaved ? 'Remove from saved' : 'Save phrase'}
-                accessibilityState={{ selected: isSaved }}
-                hitSlop={4}
-                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <BookmarkPlus size={14} color={isSaved ? C.PRIMARY : C.TEXT3} fill={isSaved ? C.PRIMARY : 'none'} />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        {isExpanded && (
-          <View style={{ paddingHorizontal: 14, paddingBottom: 14, backgroundColor: C.SURFACE }}>
+      <PhraseEntry
+        phrase={p}
+        first={index === 0}
+        expanded={expanded === p.id}
+        saved={savedPhrases.includes(p.id)}
+        playing={playingId === p.id}
+        onToggleExpand={toggleExpand}
+        onPlay={play}
+        onToggleSave={toggleSavedPhrase}
+        expandedExtra={
+          <>
             <Pressable
               hitSlop={8}
               onPress={() => playSlow(p)}
               accessibilityRole="button"
-              accessibilityLabel="Play slowly"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, padding: 10, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, marginBottom: 8 }}
+              accessibilityLabel={STRINGS.phrases.playSlowly}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, minHeight: 44 }}
             >
-              <Snail size={14} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.playSlowly}</Text>
+              <Snail size={16} strokeWidth={1.5} color={C.PRIMARY} />
+              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 13, color: C.PRIMARY }}>
+                {STRINGS.phrases.playSlowly}
+              </Text>
             </Pressable>
 
             {isUnlocked && (
-              <View style={{ borderRadius: 12, padding: 10, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Sparkles size={14} color={C.PRIMARY} />
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.PRIMARY }}>{STRINGS.phrases.fromFirstScenario}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
+                <Sparkles size={14} strokeWidth={1.5} color={C.PRIMARY} />
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 }}>
+                  {STRINGS.phrases.fromFirstScenario}
+                </Text>
               </View>
             )}
 
-            {p.pronTip && (
-              <View style={{ borderRadius: 12, padding: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.BORDER, marginBottom: 8 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.PRIMARY, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{STRINGS.phrases.pronunciation}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>{p.pronTip}</Text>
-              </View>
-            )}
-
-            {p.culturalNote && (
-              <View style={{ borderRadius: 12, padding: 12, flexDirection: 'row', gap: 8, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.BORDER, marginBottom: 8 }}>
-                <Info size={13} color={C.CULTURAL_GOLD} style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.CULTURAL_GOLD_DARK, marginBottom: 4 }}>{STRINGS.phrases.culturalContext}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 20 }}>{p.culturalNote}</Text>
-                </View>
-              </View>
-            )}
-
-            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${CEFR_COLORS[p.cefr]}18` }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: CEFR_COLORS[p.cefr] }}>{CEFR_LABELS[p.cefr]}</Text>
-              </View>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${color}14` }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color }}>{p.category}</Text>
-              </View>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: C.SURFACE }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: C.TEXT3 }}>{TYPE_LABELS[p.type]}</Text>
-              </View>
+            {/* CEFR and type. Labels, not coloured chips — category and level
+                are information, and Sadaf spends no fills on them. */}
+            <View style={{ flexDirection: 'row', gap: SPACE.md, flexWrap: 'wrap' }}>
+              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
+                {CEFR_LABELS[p.cefr]}
+              </Text>
+              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
+                {TYPE_LABELS[p.type]}
+              </Text>
             </View>
-          </View>
-        )}
-      </Pressable>
+          </>
+        }
+      />
     );
-  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, CATEGORY_COLORS, CEFR_COLORS, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
+  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
+
 
   // ── Category grid header component ──
   const CategoryGridHeader = useMemo(() => (
