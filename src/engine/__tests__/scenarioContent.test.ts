@@ -25,16 +25,28 @@ const impactOf = (c: ScenarioChoice) =>
   (c.impact?.trust ?? 0) + (c.impact?.respect ?? 0) + (c.impact?.culture ?? 0);
 
 /**
- * Impact bands per outcome tier. Adjacent tiers overlap on purpose — a 6 can be
- * a strong "good" or a modest "excellent" — but a choice must not sit two tiers
- * away from its own label.
+ * Impact bands now live in `src/constants/curriculum.ts`, imported here.
+ *
+ * They used to be declared locally, which let this file and the
+ * `fasih-scenario-review` checklist disagree about what a "bad" choice costs —
+ * the checklist said −3..−9, this file said −1..−9, and the suite passed with
+ * three "bad" choices costing only −2. One home per rule.
  */
-const TIER_BANDS: Record<string, { min: number; max: number }> = {
-  excellent: { min: 6, max: 9 },
-  good: { min: 3, max: 7 },
-  neutral: { min: -2, max: 2 },
-  bad: { min: -9, max: -1 },
-};
+import { TIER_BANDS } from '../../constants/curriculum';
+
+/**
+ * Choices whose impact sits outside its tier band, recorded rather than fixed.
+ *
+ * Tightening `bad` to −3 (a mistake the learner barely pays for teaches nothing)
+ * surfaced three pre-existing choices at −2. Re-scoring them changes how those
+ * scenarios play, which is a content decision and not this commit's business.
+ * New offenders still fail; this list may only shrink.
+ */
+const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [
+  'gym-consultation/scene1/d',
+  'gym-consultation/scene4/d',
+  'the-checkup/scene1/d',
+];
 
 const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, script: ScenarioScript, id: string) => void) => {
   for (const [id, script] of scriptEntries) {
@@ -305,16 +317,26 @@ describe('language hygiene', () => {
 // ─── Scoring discipline ──────────────────────────────────────────────────────
 
 describe('scoring discipline', () => {
-  it('every choice impact lands inside its outcome tier band', () => {
-    const offenders: string[] = [];
+  /** Choice keys currently outside their tier band. */
+  const bandOffenders = (): string[] => {
+    const out: string[] = [];
     eachChoice((c, s, _script, id) => {
       const band = TIER_BANDS[c.outcome];
       const total = impactOf(c);
-      if (total < band.min || total > band.max) {
-        offenders.push(`${id}/${s.id}/${c.id} is "${c.outcome}" but totals ${total} (band ${band.min}..${band.max})`);
-      }
+      if (total < band.min || total > band.max) out.push(`${id}/${s.id}/${c.id}`);
     });
-    expect(offenders).toEqual([]);
+    return out.sort();
+  };
+
+  it('introduces no NEW choice outside its outcome tier band', () => {
+    const known = new Set(KNOWN_TIER_BAND_VIOLATIONS);
+    const added = bandOffenders().filter(k => !known.has(k));
+    expect(added).toEqual([]);
+  });
+
+  it('KNOWN_TIER_BAND_VIOLATIONS lists nothing already fixed', () => {
+    const current = new Set(bandOffenders());
+    expect(KNOWN_TIER_BAND_VIOLATIONS.filter(k => !current.has(k))).toEqual([]);
   });
 
   it('no "good" or "excellent" choice has a negative total', () => {
