@@ -292,6 +292,9 @@ export const STRINGS = {
     // Distinct from comingSoon() above, which is a sentence about how much
     // content is pending. This is the badge on a single entry.
     comingSoonBadge: 'Coming soon',
+    // Distinct from comingSoonBadge: this content exists and is one tap from
+    // the paywall, so the row stays pressable and says so.
+    lockedBadge: 'Locked',
     subtitle: 'Choose a situation to practice',
     career: 'Career',
     social: 'Social',

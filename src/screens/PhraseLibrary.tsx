@@ -142,7 +142,7 @@ export function PhraseLibrary() {
           <>
             <Pressable
               hitSlop={8}
-              onPress={() => playSlow(p)}
+              onPress={(e) => { e.stopPropagation?.(); playSlow(p); }}
               accessibilityRole="button"
               accessibilityLabel={STRINGS.phrases.playSlowly}
               style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, minHeight: 44 }}
