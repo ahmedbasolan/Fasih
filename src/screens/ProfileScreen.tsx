@@ -3,9 +3,10 @@ import { View, Text, ScrollView, Pressable, Platform, Linking, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, BookOpen, ChevronRight, Coffee, Building2, ShoppingBag, Utensils, Briefcase, Car, Shield, Activity, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
-import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
-import { GhostLetters } from '../components/ui';
+import { Calendar, BookOpen, Circle, ChevronRight, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
+import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { SPACE } from '../components/design/spacing';
+import { GhostLetters, Companion, Rule } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { useCountUp } from '../components/design/hooks';
@@ -38,10 +39,6 @@ interface Props {
 // tell which build a user was on.
 const APP_VERSION = Application.nativeApplicationVersion ?? '—';
 
-const roleIcons: Record<string, React.ElementType> = {
-  barista: Coffee, hotel: Building2, retail: ShoppingBag, restaurant: Utensils,
-  office: Briefcase, healthcare: Activity, driver: Car, security: Shield,
-};
 
 export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onManageSubscription, onUpgrade, onRestorePurchases, onDeleteAccount, isDeletingAccount = false }: Props) {
   const { C, G, themePreference, setTheme } = useTheme();
@@ -54,7 +51,6 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
     getNotificationPermissionStatus().then((status) => setNotificationsEnabled(status === 'granted'));
   }, []);
   const name = user?.name || STRINGS.profile.learner;
-  const RoleIcon = roleIcons[user?.role || ''] || Briefcase;
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
 
   const categories = Object.values(stats.categoryMastery);
@@ -152,48 +148,62 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT }}>{STRINGS.profile.title}</Text>
       </View>
 
-      {/* User Identity Card */}
+      {/* Identity. A monogram, a name, and a running head naming the mode —
+          no raised card, no gradient tile, no shadow. */}
       <MotiView from={{ opacity: 0, translateY: 12 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400 }}>
         <View style={{
-          borderRadius: 24, padding: 24, marginBottom: 20, backgroundColor: C.SURFACE,
-          ...Platform.select({
-            ios: { shadowColor: C.PRIMARY, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16 },
-            android: { elevation: 4 },
-          }),
+          paddingBottom: SPACE.xl,
+          marginBottom: SPACE.xl,
+          borderBottomWidth: 1,
+          borderBottomColor: C.BORDER,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-            <LinearGradient
-              colors={G.AVATAR_STOPS}
-              start={ANGLE_135.start}
-              end={ANGLE_135.end}
-              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <RoleIcon size={26} color={C.BG} />
-            </LinearGradient>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, marginBottom: SPACE.xl }}>
+            <Companion size={64} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.PRIMARY_DARK }}>{name}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT_ON_LIGHT, textTransform: 'capitalize', marginTop: 2 }}>{getRoleLabel(user?.role || '') || STRINGS.profile.learner} · {user?.mode || 'Career'} focus</Text>
+              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT }}>{name}</Text>
+              <Text style={{
+                fontFamily: FONT_LATIN_MEDIUM,
+                fontSize: 10,
+                letterSpacing: 1.6,
+                textTransform: 'uppercase',
+                color: C.TEXT3,
+                marginTop: SPACE.xs,
+              }}>
+                {getRoleLabel(user?.role || '') || STRINGS.profile.learner} · {user?.mode || 'Career'}
+              </Text>
             </View>
           </View>
 
           {/* Summary stats */}
-          <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flexDirection: 'row', gap: SPACE.xl }}>
             {summaryStats.map(({ value, label }) => (
-              <View key={label} style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: FONT_HEADING, fontSize: 20, color: C.PRIMARY_DARK }}>{value}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT_ON_LIGHT, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{label}</Text>
+              <View key={label}>
+                <Text style={{
+                  fontFamily: FONT_HEADING_EXTRA,
+                  fontSize: 20,
+                  color: C.TEXT,
+                  fontVariant: ['tabular-nums'],
+                }}>{value}</Text>
+                <Text style={{
+                  fontFamily: FONT_LATIN_MEDIUM,
+                  fontSize: 9,
+                  color: C.TEXT3,
+                  textTransform: 'uppercase',
+                  letterSpacing: 1.6,
+                  marginTop: SPACE.xs,
+                }}>{label}</Text>
               </View>
             ))}
           </View>
         </View>
       </MotiView>
 
-      {/* Stats cards */}
+      {/* Stats */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 100 }}>
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-          <StatCard icon={<Calendar size={18} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} color={C.PRIMARY} bg={C.SURFACE} />
-          <StatCard icon={<BookOpen size={18} color={C.JADE} />} value={phrasesMastered} label={STRINGS.profile.mastered} color={C.JADE} bg={C.SURFACE} />
-          <StatCard icon={<MessageCircle size={18} color={C.VIOLET} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} color={C.VIOLET} bg={C.SURFACE} />
+        <View style={{ flexDirection: 'row', gap: SPACE.lg, marginBottom: SPACE.xl }}>
+          <StatCard icon={<Calendar size={18} strokeWidth={1.5} color={C.PRIMARY} />} value={streakCount} label={streakCount === 1 ? STRINGS.profile.dayLearning : STRINGS.profile.daysLearning} />
+          <StatCard icon={<BookOpen size={18} strokeWidth={1.5} color={C.PRIMARY} />} value={phrasesMastered} label={STRINGS.profile.mastered} />
+          <StatCard icon={<MessageCircle size={18} strokeWidth={1.5} color={C.PRIMARY} />} value={stats.scenariosCompleted.length} label={STRINGS.profile.scenarios} />
         </View>
       </MotiView>
 
@@ -251,29 +261,28 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       {/* Milestones */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 250 }}>
         <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.milestones}</Text>
-        <View style={{
-          borderRadius: 20, backgroundColor: C.CARD_BG, overflow: 'hidden', marginBottom: 20,
-          ...Platform.select({
-            ios: { shadowColor: C.CARD_SHADOW, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
-            android: { elevation: 2 },
-          }),
-        }}>
+        <View style={{ marginBottom: SPACE.xl }}>
           {milestones.map((m, i) => (
-            <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: i < milestones.length - 1 ? 1 : 0, borderBottomColor: C.BORDER, backgroundColor: 'transparent' }}>
-              {m.reached && (
-                <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.PRIMARY, borderTopLeftRadius: i === 0 ? 20 : 0 }} />
-              )}
-              <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: m.reached ? C.JADE_ACCENT_DIM : C.SURFACE, alignItems: 'center', justifyContent: 'center', opacity: m.reached ? 1 : 0.5 }}>
-                {m.reached ? <Check size={14} color={C.PRIMARY} /> : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.TEXT2 }} />}
+            <Rule key={m.id} first={i === 0}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.md }}>
+                {m.reached
+                  ? <Check size={16} strokeWidth={1.5} color={C.PRIMARY} />
+                  : <Circle size={16} strokeWidth={1.5} color={C.TEXT3} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: m.reached ? C.TEXT : C.TEXT3 }}>{m.label}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs }}>{m.description}</Text>
+                </View>
+                {m.dateReached && (
+                  <Text style={{
+                    fontFamily: FONT_LATIN_MEDIUM,
+                    fontSize: 10,
+                    letterSpacing: 1.6,
+                    textTransform: 'uppercase',
+                    color: C.TEXT3,
+                  }}>{m.dateReached}</Text>
+                )}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 13, color: m.reached ? C.PRIMARY_DARK : C.TEXT2 }}>{m.label}</Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: m.reached ? C.TEXT_ON_LIGHT : C.TEXT2, marginTop: 1 }}>{m.description}</Text>
-              </View>
-              {m.dateReached && (
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3 }}>{m.dateReached}</Text>
-              )}
-            </View>
+            </Rule>
           ))}
         </View>
       </MotiView>
