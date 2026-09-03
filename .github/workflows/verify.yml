@@ -44,13 +44,21 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: pip
+          # setup-python's pip cache hashes a dependency file; without this it
+          # fails outright with "No file matched to [**/requirements.txt ...]".
+          cache-dependency-path: tools/requirements.txt
 
       - name: Install CAMeL Tools
+        run: pip install -r tools/requirements.txt
+
+      - name: Download morphology databases
+        # Package names are NOT the dataset names the analyser asks for:
+        #   morphology-db-glf-01  -> calima-glf-01   (CC BY 4.0, ~8 MB)
+        #   morphology-db-msa-r13 -> calima-msa-r13  (GPL v2, ~40 MB)
         run: |
-          pip install camel-tools
-          camel_data -i morphology-db-glf
+          camel_data -i morphology-db-glf-01
           camel_data -i morphology-db-msa-r13
 
       - name: Analyse content

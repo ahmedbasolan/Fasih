@@ -12,8 +12,8 @@ If so, it is almost certainly MSA that leaked into a dialect-only app.
 
 Requires CAMeL Tools and its Gulf database:
 
-    pip install camel-tools
-    camel_data -i morphology-db-glf     # CALIMA-GLF, ~2,600 verbal lemmas
+    pip install -r tools/requirements.txt
+    camel_data -i morphology-db-glf-01   # CALIMA-GLF, ~2,600 verbal lemmas
     camel_data -i morphology-db-msa-r13
 
 Reports; does not block. Deliberately: morphological analysis has false
@@ -109,17 +109,19 @@ def main() -> int:
         from camel_tools.morphology.analyzer import Analyzer
     except ImportError:
         print('camel-tools is not installed.\n'
-              '  pip install camel-tools\n'
-              '  camel_data -i morphology-db-glf\n'
+              '  pip install -r tools/requirements.txt\n'
+              '  camel_data -i morphology-db-glf-01\n'
               '  camel_data -i morphology-db-msa-r13', file=sys.stderr)
         return 2
 
     try:
         glf = Analyzer(MorphologyDB.builtin_db('calima-glf-01', 'a'))
-        msa = Analyzer(MorphologyDB.builtin_db('calima-msa-s31', 'a'))
+        msa = Analyzer(MorphologyDB.builtin_db('calima-msa-r13', 'a'))
     except Exception as exc:  # noqa: BLE001 — surface the real setup problem
+        # Package name != dataset name: morphology-db-glf-01 installs
+        # calima-glf-01, morphology-db-msa-r13 installs calima-msa-r13.
         print(f'could not load morphology databases: {exc}\n'
-              '  camel_data -i morphology-db-glf\n'
+              '  camel_data -i morphology-db-glf-01\n'
               '  camel_data -i morphology-db-msa-r13', file=sys.stderr)
         return 2
 
