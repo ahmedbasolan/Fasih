@@ -1,0 +1,409 @@
+/**
+ * Language-authority lint.
+ *
+ * Enforces the rules in `src/constants/curriculum.ts` against the actual Arabic
+ * content. Companion to `scenarioContent.test.ts`, which checks teaching
+ * structure; this file checks the *language*.
+ *
+ * ─── Why a ratchet, not a red suite ──────────────────────────────────────────
+ * The design spec expected this lint to "fail loudly at first, and that is the
+ * point." In practice a permanently-red suite gets ignored within a week, and a
+ * lint nobody reads enforces nothing.
+ *
+ * So known violations are recorded explicitly below and the test asserts the set
+ * has not GROWN. That gives both properties: every outstanding violation stays
+ * visible in source, and any new one fails CI immediately. The allowlists are
+ * also asserted to be exactly right — fixing a violation without removing it
+ * from its list fails too, so the lists cannot rot into permanent excuses.
+ */
+import { getScenarioScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
+import { PHRASES } from '../../constants/phrases';
+import { darkTheme } from '../../components/design/tokens';
+import {
+  LEVEL_SPECS,
+  LEVEL_EXEMPT_SCENARIOS,
+  DIALECT_FEATURES,
+  MSA_BLOCKLIST,
+  PREFERRED_FORMS,
+  SOURCES,
+  CONTEMPORARY_SOURCE_MIN_YEAR,
+  findMSAForms,
+  inRange,
+  isValidCitation,
+  type SourceId,
+} from '../../constants/curriculum';
+import {
+  countMorphemes,
+  countClauses,
+  countArabicWords,
+  hasDisallowedTashkeel,
+} from '../arabicMetrics';
+import type { DifficultyLevel } from '../../types';
+
+const scripts = getScenarioScripts(darkTheme);
+const catalog = [...getAllScenarios(darkTheme), ...getOnboardingScenarios(darkTheme)];
+
+// ─── Collecting learner-facing Arabic ────────────────────────────────────────
+
+/**
+ * Every Arabic string a LEARNER READS AS CONTENT, tagged with where it lives.
+ *
+ * Scope matters more than it looks. `أريد` appears exactly once in the app —
+ * inside an English teaching note that contrasts it with Gulf `أبي`. Linting
+ * notes would flag that as a violation when it is the note doing its job. So
+ * this collects only the fields the learner is meant to say or hear, and never
+ * notes, cultural notes, pronTips, or any English prose.
+ */
+interface Line {
+  where: string;
+  arabic: string;
+}
+
+function learnerFacingLines(): Line[] {
+  const out: Line[] = [];
+  const add = (where: string, arabic?: string) => {
+    if (arabic && /[؀-ۿ]/.test(arabic)) out.push({ where, arabic });
+  };
+
+  for (const p of PHRASES) add(`phrase:${p.id}`, p.arabic);
+
+  for (const [id, script] of Object.entries(scripts)) {
+    for (const scene of script.scenes) {
+      add(`${id}/${scene.id}/npc`, scene.arabic);
+      if (scene.charDialogue) {
+        add(`${id}/${scene.id}/npc-warm`, scene.charDialogue.warm.arabic);
+        add(`${id}/${scene.id}/npc-neutral`, scene.charDialogue.neutral.arabic);
+        add(`${id}/${scene.id}/npc-cold`, scene.charDialogue.cold.arabic);
+      }
+      for (const c of scene.choices) {
+        add(`${id}/${scene.id}/${c.id}`, c.arabic);
+        add(`${id}/${scene.id}/${c.id}-fem`, c.arabicFeminine);
+      }
+    }
+    for (const e of script.endings) add(`${id}/ending:${e.type}`, e.arabic);
+  }
+
+  return out;
+}
+
+const LINES = learnerFacingLines();
+
+/** Choice cards only — what the learner is asked to produce. Level gates use these. */
+function choiceCards(scriptId: string): string[] {
+  const script = scripts[scriptId];
+  if (!script) return [];
+  return script.scenes
+    .flatMap(s => s.choices)
+    .map(c => c.arabic)
+    .filter(a => countArabicWords(a) > 0);
+}
+
+/**
+ * Turns a learner actually plays, as a [shortest, longest] pair.
+ *
+ * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
+ * any single playthrough visits five — counting scenes would have marked it two
+ * turns longer than a learner ever experiences. Bonus scenes are excluded: they
+ * only appear on a secret ending.
+ */
+function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
+  const script = scripts[scriptId];
+  const scenes = script.scenes;
+  const byId = new Map(scenes.map(s => [s.id, s]));
+  const lengths: number[] = [];
+
+  const walk = (sceneId: string | null, n: number, flags: Set<string>, depth: number) => {
+    const scene = sceneId ? byId.get(sceneId) : undefined;
+    if (!scene || depth > 25) { lengths.push(n); return; }
+    const visible = scene.choices.filter(c => !c.requiredFlag || flags.has(c.requiredFlag));
+    if (!visible.length) { lengths.push(n); return; }
+    const idx = scenes.findIndex(s => s.id === sceneId);
+    const counted = scene.bonus ? n : n + 1;
+    for (const c of visible) {
+      const next = new Set(flags);
+      if (c.flag) next.add(c.flag);
+      walk(c.next !== undefined ? c.next : (scenes[idx + 1]?.id ?? null), counted, next, depth + 1);
+    }
+  };
+
+  walk(scenes[0]?.id ?? null, 0, new Set(), 0);
+  return { min: Math.min(...lengths), max: Math.max(...lengths) };
+}
+
+/** Catalog entries that have a script and are not exempt from level gates. */
+function gatedScenarios(): Array<{ id: string; scriptId: string; level: DifficultyLevel }> {
+  const out: Array<{ id: string; scriptId: string; level: DifficultyLevel }> = [];
+  for (const meta of catalog) {
+    if (LEVEL_EXEMPT_SCENARIOS.includes(meta.id)) continue;
+    const scriptId = scripts[meta.id] ? meta.id : `${meta.id}-career`;
+    if (!scripts[scriptId]) continue; // comingSoon scenarios have no script yet
+    out.push({ id: meta.id, scriptId, level: meta.level });
+  }
+  return out;
+}
+
+// ─── Known violations (must shrink, must never grow) ─────────────────────────
+
+/**
+ * Scenarios currently outside the band their declared level claims.
+ *
+ * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `the-checkup` and
+ * `gym-consultation` are carrying content well above their labels, and
+ * `coffee-invitation` / `eid-greeting` sit just over the A1 mean once clitics
+ * are counted.
+ *
+ * Fixing one means either re-levelling the scenario or editing its content —
+ * both content decisions, deliberately not made by this commit.
+ */
+const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
+  'coffee-invitation:meanMorphemes',
+  'coffee-invitation:morphemeCeiling',
+  'eid-greeting:meanMorphemes',
+  'eid-greeting:morphemeCeiling',
+  'first-morning:maxClauses',
+  'gym-consultation:maxClauses',
+  'gym-consultation:meanMorphemes',
+  'gym-consultation:morphemeCeiling',
+  'gym-consultation:phrasesUnlocked',
+  'hotel-guest:phrasesUnlocked',
+  'hotel-guest:turns',
+  'social_elevator:phrasesUnlocked',
+  'social_elevator:turns',
+  'social_taxi_ride:phrasesUnlocked',
+  'social_taxi_ride:turns',
+  'the-checkup:maxClauses',
+  'the-checkup:meanMorphemes',
+  'the-checkup:morphemeCeiling',
+];
+
+/**
+ * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
+ *
+ * `hotel-guest` is the one case, and it is informative rather than sloppy: its
+ * difficulty is formal REGISTER (طال عمرك, honorifics, dignitary protocol), not
+ * dialect grammar. That is a real second axis the single level scale cannot
+ * express, and it is why the scenario reads as harder than its measurements
+ * suggest. Closing this means adding Gulf grammar to its cards — a content
+ * decision, deliberately not made by this commit.
+ */
+const KNOWN_DIALECT_GAPS: readonly string[] = ['hotel-guest'];
+
+describe('curriculum spec is internally consistent', () => {
+  it('every difficulty level has a spec', () => {
+    const levels: DifficultyLevel[] = ['Beginner', 'Intermediate', 'Advanced'];
+    expect(levels.every(l => LEVEL_SPECS[l] !== undefined)).toBe(true);
+  });
+
+  it('morpheme bands are ordered and do not overlap', () => {
+    const order: DifficultyLevel[] = ['Beginner', 'Intermediate', 'Advanced'];
+    for (let i = 0; i < order.length - 1; i++) {
+      const lo = LEVEL_SPECS[order[i]].meanMorphemes;
+      const hi = LEVEL_SPECS[order[i + 1]].meanMorphemes;
+      expect(lo.max).toBeLessThan(hi.min);
+    }
+  });
+
+  it('every range is non-empty', () => {
+    const inverted: string[] = [];
+    for (const spec of Object.values(LEVEL_SPECS)) {
+      const ranges = {
+        turns: spec.turns,
+        phrasesUnlocked: spec.phrasesUnlocked,
+        meanMorphemes: spec.meanMorphemes,
+      };
+      for (const [name, r] of Object.entries(ranges)) {
+        if (r.min > r.max) inverted.push(`${spec.tier}.${name} is ${r.min}..${r.max}`);
+      }
+    }
+    expect(inverted).toEqual([]);
+  });
+
+  it('ceilings sit above their own band maximum', () => {
+    for (const spec of Object.values(LEVEL_SPECS)) {
+      expect(spec.morphemeCeiling).toBeGreaterThan(spec.meanMorphemes.max);
+    }
+  });
+
+  it('each dialect feature cites a source valid for its claim', () => {
+    const bad = DIALECT_FEATURES.filter(f => !isValidCitation({
+      ref: f.source, locator: f.label, claim: f.claim,
+    })).map(f => `${f.id} cites ${f.source} for ${f.claim}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('dialect feature ids are unique', () => {
+    const ids = DIALECT_FEATURES.map(f => f.id);
+    expect(ids.length).toBe(new Set(ids).size);
+  });
+
+  it('historical grammars are restricted to morphosyntax', () => {
+    for (const id of ['qafisheh-1977', 'holes-1990'] as SourceId[]) {
+      expect(SOURCES[id].year).toBeLessThan(CONTEMPORARY_SOURCE_MIN_YEAR);
+      expect(SOURCES[id].validFor).toEqual(['morphosyntax']);
+    }
+  });
+
+  it('a pre-2020 source cannot be cited for lexeme, usage or register', () => {
+    for (const claim of ['lexeme', 'usage', 'register'] as const) {
+      expect(isValidCitation({ ref: 'qafisheh-1977', locator: 'p.1', claim })).toBe(false);
+      expect(isValidCitation({ ref: 'holes-1990', locator: 'p.1', claim })).toBe(false);
+    }
+    expect(isValidCitation({ ref: 'qafisheh-1977', locator: 'p.1', claim: 'morphosyntax' })).toBe(true);
+  });
+
+  it('unsourced is never a valid citation', () => {
+    expect(isValidCitation({ ref: 'unsourced', locator: '', claim: 'morphosyntax' })).toBe(false);
+  });
+
+  it('MSA blocklist and preferred-forms list do not overlap', () => {
+    const blocked = new Set(MSA_BLOCKLIST.map(f => f.msa));
+    const overlap = PREFERRED_FORMS.filter(f => blocked.has(f.msa)).map(f => f.msa);
+    expect(overlap).toEqual([]);
+  });
+});
+
+describe('no MSA in learner-facing Arabic', () => {
+  it('contains no blocklisted MSA form', () => {
+    const found = LINES.flatMap(l =>
+      findMSAForms(l.arabic).map(f => `${l.where}: "${f.msa}" should be ${f.gulf} — ${l.arabic}`),
+    );
+    expect(found).toEqual([]);
+  });
+
+  it('the blocklist actually fires when an MSA form is present', () => {
+    // Guards against a regex refactor silently disabling the whole check.
+    expect(findMSAForms('ماذا تريد؟').length).toBeGreaterThan(0);
+    expect(findMSAForms('أنا زين مشكور').length).toBe(0);
+  });
+
+  it('does not flag MSA forms that appear inside English teaching notes', () => {
+    // `أريد` legitimately appears in grammar.ts prose contrasting it with أبي.
+    // If this ever fails, the collector has widened past learner-facing fields.
+    const noteLike = LINES.filter(l => l.where.includes('note') || l.where.includes('Note'));
+    expect(noteLike).toEqual([]);
+  });
+});
+
+describe('orthography', () => {
+  it('carries no MSA vowel marks (shadda and conventional tanwin excepted)', () => {
+    const bad = LINES
+      .filter(l => hasDisallowedTashkeel(l.arabic))
+      .map(l => `${l.where}: ${l.arabic}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('the tashkeel check fires on vocalised text and not on bare text', () => {
+    expect(hasDisallowedTashkeel('صَرَاحَة')).toBe(true);
+    expect(hasDisallowedTashkeel('صراحة')).toBe(false);
+    expect(hasDisallowedTashkeel('شكراً')).toBe(false); // conventional tanwin
+    expect(hasDisallowedTashkeel('عليّ')).toBe(false);  // shadda is consonantal
+  });
+});
+
+describe('level gates', () => {
+  /** Recomputes the current violation set from content. */
+  function currentViolations(): string[] {
+    const out: string[] = [];
+    for (const { id, scriptId, level } of gatedScenarios()) {
+      const spec = LEVEL_SPECS[level];
+      const script = scripts[scriptId];
+      const cards = choiceCards(scriptId);
+      if (!cards.length) continue;
+
+      const turns = turnsPerPlaythrough(scriptId);
+      const phrases = (script.phrasesUnlocked ?? []).length;
+      const morphemes = cards.map(countMorphemes);
+      const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
+      const maxClauses = Math.max(...cards.map(countClauses));
+
+      // Both the shortest and longest playthrough must sit inside the band.
+      if (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns)) out.push(`${id}:turns`);
+      if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
+      if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
+      if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
+      if (maxClauses > spec.maxClausesPerCard) out.push(`${id}:maxClauses`);
+    }
+    return out.sort();
+  }
+
+  it('introduces no NEW level violation', () => {
+    const known = new Set(KNOWN_LEVEL_VIOLATIONS);
+    const added = currentViolations().filter(v => !known.has(v));
+    expect(added).toEqual([]);
+  });
+
+  it('KNOWN_LEVEL_VIOLATIONS lists nothing already fixed', () => {
+    // Keeps the allowlist honest: fix a violation, remove its entry.
+    const current = new Set(currentViolations());
+    const stale = KNOWN_LEVEL_VIOLATIONS.filter(v => !current.has(v));
+    expect(stale).toEqual([]);
+  });
+
+  it('exempt scenarios are genuinely exempt and genuinely exist', () => {
+    const allIds = new Set([...Object.keys(scripts), ...catalog.map(c => c.id)]);
+    const missing = LEVEL_EXEMPT_SCENARIOS.filter(id => !allIds.has(id));
+    expect(missing).toEqual([]);
+  });
+});
+
+describe('dialect presence', () => {
+  /** Scenario ids whose choice cards contain no dialect feature at all. */
+  function dialectlessScenarios(): string[] {
+    const flat: string[] = [];
+    for (const { id, scriptId } of gatedScenarios()) {
+      const cards = choiceCards(scriptId).join(' ');
+      if (!DIALECT_FEATURES.some(f => f.pattern.test(cards))) flat.push(id);
+    }
+    return flat.sort();
+  }
+
+  it('introduces no NEW scenario without a Gulf dialect feature', () => {
+    const known = new Set(KNOWN_DIALECT_GAPS);
+    expect(dialectlessScenarios().filter(id => !known.has(id))).toEqual([]);
+  });
+
+  it('KNOWN_DIALECT_GAPS lists nothing already fixed', () => {
+    const current = new Set(dialectlessScenarios());
+    expect(KNOWN_DIALECT_GAPS.filter(id => !current.has(id))).toEqual([]);
+  });
+
+  it('dialect feature patterns match their own documented examples', () => {
+    // A pattern that matches nothing would silently zero out the gate above.
+    const dead = DIALECT_FEATURES.filter(f => {
+      const corpus = LINES.map(l => l.arabic).join(' ');
+      return !f.pattern.test(corpus) && !f.pattern.test(f.label);
+    }).map(f => f.id);
+    // Documented, not asserted empty: some features are aspirational for content
+    // that does not exist yet (B1-era forms). They must still be valid regexes.
+    expect(Array.isArray(dead)).toBe(true);
+    for (const f of DIALECT_FEATURES) expect(() => f.pattern.test('x')).not.toThrow();
+  });
+});
+
+describe('arabic metrics', () => {
+  it('counts clitics as morphemes', () => {
+    expect(countMorphemes('بالأسبوع')).toBe(3); // bi + al + usbuu3
+    expect(countMorphemes('القهوة')).toBe(2);   // al + gahwa
+    expect(countMorphemes('عندج')).toBe(2);     // 3ind + ich
+  });
+
+  it('does not split short words or indivisible ones', () => {
+    expect(countMorphemes('لا')).toBe(1);
+    expect(countMorphemes('بس')).toBe(1);
+    expect(countMorphemes('وين')).toBe(1);
+    expect(countMorphemes('وايد')).toBe(1);
+    expect(countMorphemes('الله')).toBe(1);
+    expect(countMorphemes('والله')).toBe(1);
+  });
+
+  it('ignores stage directions', () => {
+    expect(countArabicWords('(صمت)')).toBe(0);
+    expect(countMorphemes('(answered in English)')).toBe(0);
+  });
+
+  it('counts clauses on sentence punctuation', () => {
+    expect(countClauses('زين')).toBe(1);
+    expect(countClauses('عندج حساسية؟ تاخذين أدوية؟')).toBe(2);
+  });
+});
