@@ -10,11 +10,11 @@ interface Props {
 export function GhostLetters({ glyphs }: Props) {
   const { isDark, C } = useTheme();
 
-  // Dark mode: neon jade + cyan at 3 % — crisp against deep bg
+  // Dark mode: gold + violet at ~3 % — crisp against deep bg
   // Light mode: jade + gold at 6 % — enough contrast on pale bg
-  const p1 = isDark ? `rgba(0,255,149,0.03)` : `${C.JADE}0F`;   // ~6 %
-  const p2 = isDark ? `rgba(0,214,252,0.023)` : `${C.CULTURAL_GOLD}0C`; // ~5 %
-  const p3 = isDark ? `rgba(0,255,149,0.021)` : `${C.JADE}0A`;  // ~4 %
+  const p1 = isDark ? `rgba(234,197,124,0.03)` : `${C.JADE}0F`;   // ~6 %
+  const p2 = isDark ? `rgba(166,136,214,0.023)` : `${C.CULTURAL_GOLD}0C`; // ~5 %
+  const p3 = isDark ? `rgba(234,197,124,0.021)` : `${C.JADE}0A`;  // ~4 %
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">

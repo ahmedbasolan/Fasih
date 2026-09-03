@@ -11,9 +11,8 @@
 
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from '../icons';
+import { ChevronRight, Coffee, Building2, Briefcase, Moon, Compass, Activity, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -22,7 +21,7 @@ type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 interface SituationConfig {
   id: string;
   label: string;
-  icon: string;
+  icon: React.ElementType;
   scenarioIds: string[];
   phraseCategories: string[];
 }
@@ -38,53 +37,69 @@ const SITUATIONS: SituationConfig[] = [
   {
     id: 'cafe-social',
     label: 'Café & Social',
-    icon: '☕',
+    icon: Coffee,
     scenarioIds: ['coffee-invitation', 'cafe-friends'],
     phraseCategories: ['Social', 'Food & Drink'],
   },
   {
     id: 'hotel-hospitality',
     label: 'Hotel & Hospitality',
-    icon: '🏨',
+    icon: Building2,
     scenarioIds: ['hotel-guest'],
     phraseCategories: ['Hospitality'],
   },
   {
     id: 'workplace',
     label: 'Workplace',
-    icon: '💼',
+    icon: Briefcase,
     scenarioIds: ['first-morning', 'office-meeting'],
     phraseCategories: ['Workplace', 'Greetings'],
   },
   {
     id: 'cultural-moments',
     label: 'Cultural Moments',
-    icon: '🌙',
+    icon: Moon,
     scenarioIds: ['eid-greeting', 'ramadan-shift'],
     phraseCategories: ['Gratitude', 'Social'],
   },
   {
     id: 'daily-navigation',
     label: 'Daily Navigation',
-    icon: '🧭',
+    icon: Compass,
     scenarioIds: [],
     phraseCategories: ['Everyday'],
   },
   {
     id: 'healthcare',
     label: 'Healthcare',
-    icon: '🏥',
+    icon: Activity,
     scenarioIds: ['the-checkup'],
     phraseCategories: [],
   },
   {
     id: 'family-friends',
     label: 'Family & Friends',
-    icon: '👨‍👩‍👧',
+    icon: Users,
     scenarioIds: ['weekend-invite'],
     phraseCategories: ['Family'],
   },
 ];
+
+/**
+ * How much a completed scenario counts toward confidence, by its ending.
+ *
+ * Keyed by ScenarioEnding['type']. The old inline ladder tested for
+ * 'success_strong', which is not a member of that union — the branch was dead
+ * and plain 'success', the most common good outcome, silently fell through to
+ * the neutral 1.0. `src/engine/__tests__/scenarioContent.test.ts` now asserts
+ * every authored ending uses a known type.
+ */
+const ENDING_WEIGHTS: Record<string, number> = {
+  exceptional: 1.2,
+  success: 1.1,
+  mixed: 1.0,
+  failed: 0.6,
+};
 
 function getConfidenceLevel(score: number): ConfidenceLevel {
   if (score >= 70) return 'confident';
@@ -114,40 +129,45 @@ export function SituationalConfidence({
 
   const situations = useMemo<SituationResult[]>(() => {
     return SITUATIONS.map((sit) => {
+      // Each dimension is scored 0–100 on its own, then the populated ones are
+      // averaged. The previous version capped each at ~60 and summed them, so a
+      // situation with only one dimension mapped could never exceed 60 — and
+      // "Confident" needs 70. Daily Navigation (no scenarios) and Healthcare
+      // (no phrase categories) were therefore permanently stuck at "Familiar"
+      // no matter how much the learner practised.
       const totalScenarios = sit.scenarioIds.length;
-      let scenarioScore = 0;
+      let scenarioPart: number | null = null;
       let scenariosCompleted = 0;
       if (totalScenarios > 0) {
+        let weighted = 0;
         for (const id of sit.scenarioIds) {
-          if (completedScenarios[id]) {
-            scenariosCompleted++;
-            const ending = completedScenarios[id].endingType;
-            const bonus = ending === 'exceptional' ? 1.2
-              : ending === 'success_strong' ? 1.1
-              : ending === 'failed' ? 0.6
-              : 1.0;
-            scenarioScore += (50 / totalScenarios) * bonus;
-          }
+          const run = completedScenarios[id];
+          if (!run) continue;
+          scenariosCompleted++;
+          weighted += (100 / totalScenarios) * (ENDING_WEIGHTS[run.endingType] ?? 1);
         }
+        scenarioPart = Math.min(weighted, 100);
       }
 
       const totalCategories = sit.phraseCategories.length;
-      let phraseScore = 0;
+      let phrasePart: number | null = null;
       let phrasesStudied = 0;
-      if (totalCategories > 0 && stats.categoryMastery) {
+      if (totalCategories > 0) {
+        let sum = 0;
         for (const cat of sit.phraseCategories) {
-          const mastery = stats.categoryMastery[cat];
-          if (mastery && mastery.phrasesStudied > 0) {
-            phrasesStudied += mastery.phrasesStudied;
-            const accuracyContrib = (mastery.accuracy / 100) * (50 / totalCategories);
-            const totalInCat = mastery.phrasesTotal || 1;
-            const coverageBonus = Math.min(mastery.phrasesStudied / totalInCat, 1) * 10;
-            phraseScore += accuracyContrib + (coverageBonus / totalCategories);
-          }
+          const mastery = stats.categoryMastery?.[cat];
+          if (!mastery || mastery.phrasesStudied <= 0) continue;
+          phrasesStudied += mastery.phrasesStudied;
+          // Mostly how well you know them, partly how many you have met.
+          const coverage = Math.min(mastery.phrasesStudied / (mastery.phrasesTotal || 1), 1) * 100;
+          sum += mastery.accuracy * 0.85 + coverage * 0.15;
         }
+        phrasePart = Math.min(sum / totalCategories, 100);
       }
 
-      const raw = Math.min(Math.round(scenarioScore + phraseScore), 100);
+      const parts = [scenarioPart, phrasePart].filter((p): p is number => p !== null);
+      const raw = parts.length ? Math.round(parts.reduce((a, b) => a + b, 0) / parts.length) : 0;
+
       return {
         ...sit,
         score: raw,
@@ -242,9 +262,6 @@ export function SituationalConfidence({
       alignItems: 'center',
       gap: 8,
     },
-    situationIcon: {
-      fontSize: 14,
-    },
     situationName: {
       fontFamily: FONT_LATIN_SEMI,
       fontSize: 13,
@@ -293,10 +310,10 @@ export function SituationalConfidence({
 
   function getLevelColors(level: ConfidenceLevel) {
     switch (level) {
-      case 'confident':   return { badge: 'rgba(0,255,149,0.12)', text: C.PRIMARY,       bar: [C.PRIMARY, C.JADE] as [string,string] };
-      case 'familiar':    return { badge: 'rgba(0,214,252,0.10)', text: C.TERTIARY,      bar: [C.TERTIARY, '#007dc0'] as [string,string] };
-      case 'learning':    return { badge: 'rgba(255,184,0,0.10)', text: C.CULTURAL_GOLD, bar: [C.CULTURAL_GOLD, '#cc8800'] as [string,string] };
-      case 'not-started': return { badge: 'rgba(255,255,255,0.06)', text: C.TEXT3,       bar: [C.SURFACE, C.SURFACE] as [string,string] };
+      case 'confident':   return { badge: `${C.JADE_ACCENT}33`,   text: C.PRIMARY,       bar: [C.PRIMARY, C.JADE] as [string,string] };
+      case 'familiar':    return { badge: C.JADE_DIM,             text: C.TERTIARY,      bar: [C.TERTIARY, C.JADE2] as [string,string] };
+      case 'learning':    return { badge: C.JADE_ACCENT_SURFACE,  text: C.CULTURAL_GOLD, bar: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string,string] };
+      case 'not-started': return { badge: C.SURFACE2,             text: C.TEXT3,         bar: [C.SURFACE, C.SURFACE] as [string,string] };
     }
   }
 
@@ -336,24 +353,27 @@ export function SituationalConfidence({
         }}>
           {/* Row of situation icons — gives user a preview of what they'll unlock */}
           <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
-            {SITUATIONS.slice(0, 5).map((sit) => (
-              <View
-                key={sit.id}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  backgroundColor: C.SURFACE,
-                  borderWidth: 1,
-                  borderColor: C.BORDER,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: 0.55,
-                }}
-              >
-                <Text style={{ fontSize: 18 }}>{sit.icon}</Text>
-              </View>
-            ))}
+            {SITUATIONS.slice(0, 5).map((sit) => {
+              const PreviewIcon = sit.icon;
+              return (
+                <View
+                  key={sit.id}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: C.SURFACE,
+                    borderWidth: 1,
+                    borderColor: C.BORDER,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.55,
+                  }}
+                >
+                  <PreviewIcon size={18} color={C.TEXT2} strokeWidth={1.75} />
+                </View>
+              );
+            })}
           </View>
 
           <View style={{ alignItems: 'center', gap: 4 }}>
@@ -380,19 +400,17 @@ export function SituationalConfidence({
       ) : (
         // ── Existing situations list ─────────────────────────────────────────────
         <View style={styles.situationsList}>
-          {displayed.map((sit, idx) => {
+          {displayed.map((sit) => {
             const colors = getLevelColors(sit.level);
+            const SitIcon = sit.icon;
             return (
-              <MotiView
+              <View
                 key={sit.id}
-                from={{ opacity: 0, translateY: 6 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 300, delay: idx * 50 }}
                 style={styles.situationRow}
               >
                 <View style={styles.situationTop}>
                   <View style={styles.situationLabel}>
-                    <Text style={styles.situationIcon}>{sit.icon}</Text>
+                    <SitIcon size={14} color={C.TEXT2} strokeWidth={1.75} />
                     <Text style={styles.situationName}>{sit.label}</Text>
                   </View>
                   <View style={[styles.levelBadge, { backgroundColor: colors.badge }]}>
@@ -402,21 +420,16 @@ export function SituationalConfidence({
                   </View>
                 </View>
                 <View style={styles.barTrack}>
-                  <MotiView
-                    from={{ width: '0%' }}
-                    animate={{ width: `${sit.score}%` as any }}
-                    transition={{ type: 'spring', stiffness: 150, damping: 20, delay: idx * 80 + 100 }}
-                    style={{ height: '100%' }}
-                  >
+                  <View style={{ width: `${sit.score}%` as any, height: '100%' }}>
                     <LinearGradient
                       colors={sit.level === 'not-started' ? [C.SURFACE, C.SURFACE] : colors.bar}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={{ flex: 1, borderRadius: 99 }}
                     />
-                  </MotiView>
+                  </View>
                 </View>
-              </MotiView>
+              </View>
             );
           })}
         </View>
