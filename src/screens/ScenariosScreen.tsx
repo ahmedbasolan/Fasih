@@ -1,31 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View, Text, Pressable, Platform,
-} from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
-  Heart, Search, CheckCircle2, Lock,
-  Coffee, Building2, Users, Briefcase, ShoppingBag, Moon,
-  Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
+  Heart, Search, CheckCircle2, Lock, Sparkles, Zap, Target, Rocket,
 } from '../components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
-import { getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import {
-  FONT_HEADING_EXTRA,
+  getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner,
+} from '../constants/scenarios';
+import {
   FONT_HEADING_SEMI,
   FONT_LATIN,
-  FONT_LATIN_SEMI,
+  FONT_LATIN_MEDIUM,
   SMOOTH,
 } from '../components/design/tokens';
-import type { ThemeColors } from '../components/design/tokens';
-import { GhostLetters, SheetPanel } from '../components/ui';
-import { ANGLE_135 } from '../components/design/gradients';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
-import type { UserProfile, Scenario, ImpactMetrics } from '../types';
+import type { UserProfile, Scenario } from '../types';
 
 interface Props {
   user: UserProfile | null;
@@ -38,41 +33,6 @@ interface Props {
 // which can never be true while the first three are free. Two tabs that each
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Coffee, Building2, Briefcase, Moon, Users, ShoppingBag, Sunrise, Dumbbell, Heart, Zap,
-};
-
-// Card palettes built from theme tokens — avoids hardcoded hex
-function getCardPalettes(C: ThemeColors) {
-  return [
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-    { bg: 'transparent', accent: C.PRIMARY, iconBg: C.JADE_SURFACE },
-  ];
-}
-
-// Bento height pattern — alternates for visual interest
-const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
-
-// Locked/coming-soon card scrim — intentionally theme-invariant near-black.
-// It must stay dark to gray out a light pastel card in BOTH light and dark
-// theme, so it can't be built from a themed token the way most colors are.
-const LOCK_SCRIM_STRONG = 'rgba(10,15,12,0.52)';
-const LOCK_SCRIM_SOFT = 'rgba(10,15,12,0.38)';
-// White chrome drawn on top of the scrim above — always safe since the
-// surface underneath is guaranteed dark regardless of app theme.
-const SCRIM_CHIP_BG = 'rgba(255,255,255,0.12)';
-const SCRIM_CHIP_BORDER = 'rgba(255,255,255,0.18)';
-const SCRIM_TEXT = 'rgba(255,255,255,0.75)';
-const SCRIM_BADGE_BG = 'rgba(255,255,255,0.10)';
-const SCRIM_BADGE_BORDER = 'rgba(255,255,255,0.14)';
-const SCRIM_ICON = 'rgba(255,255,255,0.45)';
 
 // ─── Random motivational headings ───────────────────────────────────────────
 
@@ -128,289 +88,16 @@ function useRandomHeading() {
   return { heading, funFact };
 }
 
-// ─── Impact preview pill strip ────────────────────────────────────────────────
-function ImpactPreviewStrip({
-  impactPreview,
-  mode,
-}: {
-  impactPreview: ImpactMetrics;
-  mode: 'career' | 'social';
-}) {
-  const { C } = useTheme();
-  const isCareer = mode === 'career';
-
-  const metrics = isCareer
-    ? [
-        { label: 'Trust',   value: impactPreview.trust,   color: C.CULTURAL_GOLD },
-        { label: 'Respect', value: impactPreview.respect, color: C.JADE },
-        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
-      ]
-    : [
-        { label: 'Vibe',    value: impactPreview.trust,   color: C.ERROR },
-        { label: 'Rapport', value: impactPreview.respect, color: C.JADE },
-        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
-      ];
-
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 14, paddingBottom: 12 }}>
-      {metrics.map(({ label, value, color }) => (
-        <View
-          key={label}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: 10,
-            backgroundColor: `${color}18`,
-            borderWidth: 1,
-            borderColor: `${color}30`,
-          }}
-        >
-          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{label}</Text>
-          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color }}>{value}%</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Card component ───────────────────────────────────────────────────────────
-
-
-function ScenarioCard({
-  scenario,
-  index,
-  isLeft,
-  onPress,
-}: {
-  scenario: Scenario;
-  index: number;
-  isLeft: boolean;
-  onPress: () => void;
-}) {
-  const { C } = useTheme();
-  const { iconName, title, phrases, locked, comingSoon, impactPreview, mode } = scenario;
-  const Icon = ICON_MAP[iconName] || Coffee;
-  const palette = getCardPalettes(C)[index % 6];
-  const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        paddingRight: isLeft ? 6 : 0,
-        paddingLeft: isLeft ? 0 : 6,
-        paddingBottom: 12,
-      }}
-    >
-      <Pressable
-        onPress={comingSoon ? undefined : onPress}
-        // Only genuinely unwritten scenarios are inert. A subscription-locked
-        // card stays tappable and routes to the paywall — the moment the user
-        // feels the limit is the only moment the upgrade is worth offering.
-        disabled={!!comingSoon}
-        accessibilityRole="button"
-        accessibilityLabel={locked ? `${title}, locked` : title}
-        accessibilityState={{ disabled: !!comingSoon }}
-        style={{
-          width: '100%',
-          borderRadius: 24,
-          backgroundColor: palette.bg,
-          height: cardHeight,
-          overflow: 'hidden',
-          ...Platform.select({
-            ios: {
-              shadowColor: palette.accent,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: locked ? 0.08 : 0.20,
-              shadowRadius: 14,
-            },
-            android: { elevation: locked ? 1 : 4 },
-          }),
-        }}
-      >
-        {/* ── Top: title + phrase count ── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
-          <Text
-            style={{
-              fontFamily: FONT_HEADING_SEMI,
-              fontSize: 15,
-              color: C.TEXT_ON_LIGHT,
-              lineHeight: 21,
-            }}
-            numberOfLines={2}
-          >
-            {title}
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: FONT_LATIN,
-              fontSize: 12,
-              color: C.TEXT_ON_LIGHT,
-              marginTop: 3,
-            }}
-          >
-            {phrases} Phrases
-          </Text>
-        </View>
-
-        {/* ── Bottom: icon + impact strip ── */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked && !comingSoon ? 4 : 14 }}>
-          <Icon
-            size={impactPreview && !locked && !comingSoon ? 40 : 56}
-            color={locked || comingSoon ? C.TEXT3 : palette.accent}
-            strokeWidth={1.5}
-          />
-        </View>
-        {impactPreview && !locked && !comingSoon && (
-          <ImpactPreviewStrip impactPreview={impactPreview} mode={mode} />
-        )}
-
-        {/* ── Coming Soon overlay ── */}
-        {comingSoon && (
-          <View style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: LOCK_SCRIM_STRONG,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <View style={{
-              paddingHorizontal: 12, paddingVertical: 5,
-              borderRadius: 10,
-              backgroundColor: SCRIM_CHIP_BG,
-              borderWidth: 1,
-              borderColor: SCRIM_CHIP_BORDER,
-            }}>
-              <Text style={{
-                fontFamily: FONT_HEADING_SEMI,
-                fontSize: 11,
-                color: SCRIM_TEXT,
-                letterSpacing: 0.8,
-                textTransform: 'uppercase',
-              }}>
-                Coming Soon
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── Locked overlay ── */}
-        {locked && !comingSoon && (
-          <View style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: LOCK_SCRIM_SOFT,
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
-            padding: 12,
-          }}>
-            <View style={{
-              width: 30, height: 30, borderRadius: 10,
-              backgroundColor: SCRIM_BADGE_BG,
-              borderWidth: 1,
-              borderColor: SCRIM_BADGE_BORDER,
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Lock size={14} color={SCRIM_ICON} strokeWidth={2} />
-            </View>
-          </View>
-        )}
-      </Pressable>
-    </View>
-  );
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
-function HeaderContent() {
-  const { C } = useTheme();
-  const { heading, funFact } = useRandomHeading();
-  const HeadingIcon = heading.icon;
-
-  return (
-    <View>
-      {/* Animated heading with icon */}
-      <MotiView
-        from={{ opacity: 0, translateY: 8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ ...SMOOTH }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}
-      >
-        <HeadingIcon size={24} color="rgba(255,255,255,0.9)" />
-        <Text
-          style={{
-            fontFamily: FONT_HEADING_EXTRA,
-            fontSize: 28,
-            color: C.WHITE,
-            lineHeight: 36,
-          }}
-        >
-          {heading.text}
-        </Text>
-      </MotiView>
-
-      {/* Subtitle */}
-      <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ ...SMOOTH, delay: 50 }}
-      >
-        <Text
-          style={{
-            fontFamily: FONT_LATIN,
-            fontSize: 14,
-            color: 'rgba(255,255,255,0.7)',
-            lineHeight: 20,
-            marginBottom: 12,
-          }}
-        >
-          {heading.sub}
-        </Text>
-      </MotiView>
-
-      {/* Fun fact - under 15 words */}
-      <MotiView
-        from={{ opacity: 0, translateX: -8 }}
-        animate={{ opacity: 1, translateX: 0 }}
-        transition={{ ...SMOOTH, delay: 100 }}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          backgroundColor: 'rgba(255,255,255,0.20)',
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 10,
-          alignSelf: 'flex-start',
-        }}
-      >
-        <Sparkles size={12} color="rgba(255,255,255,0.8)" />
-        <Text
-          style={{
-            fontFamily: FONT_LATIN,
-            fontSize: 12,
-            color: 'rgba(255,255,255,0.85)',
-          }}
-        >
-          {funFact}
-        </Text>
-      </MotiView>
-    </View>
-  );
-}
-
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
-  const { C, G, isDark } = useTheme();
+  const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const { heading, funFact } = useRandomHeading();
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
   // hasScenarioAccess is a store getter, so selecting it subscribes to the
   // function identity — which never changes. These two subscribe to the state
-  // it actually reads, so the grid re-locks/unlocks when the user subscribes or
+  // it actually reads, so the list re-locks/unlocks when the user subscribes or
   // finishes their third scenario instead of staying stale until remount.
   const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
   const completedCount = useScenariosCompletedCount();
@@ -458,230 +145,169 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const paywalledCount = displayScenarios.filter((s) => s.locked && !s.comingSoon).length;
   const comingSoonCount = displayScenarios.filter((s) => s.comingSoon).length;
 
-  // FlashList's 2-column grid leaves a dangling half-empty row when the count is
-  // odd — pad with an invisible filler so the trailing card doesn't look orphaned.
-  type GridItem = Scenario | { id: '__filler__'; filler: true };
-  const gridData: GridItem[] = displayScenarios.length % 2 === 0
-    ? displayScenarios
-    : [...displayScenarios, { id: '__filler__', filler: true }];
-
   const TABS: { id: FilterTab; label: string }[] = [
     { id: 'all', label: STRINGS.scenarios.tabAll },
     { id: 'saved', label: STRINGS.scenarios.tabFavourite },
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top }}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
-      {/* ── Deep warm header ── */}
-      <LinearGradient
-        colors={['#241C13', '#14100B', C.JADE] as [string, string, string]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* The eyebrow is the running head: it says which mode you are in on
+          every screen, rather than mode being a colour swap nobody reads. */}
+      <ScreenHeader
+        eyebrow={userMode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
+        title={heading.text}
+        subtitle={funFact}
+      />
+
+      {/* ── Tabs row ── */}
+      <View
         style={{
-          paddingTop: insets.top + 20,
-          paddingHorizontal: 24,
-          paddingBottom: 40,
-          overflow: 'hidden',
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingBottom: SPACE.md,
+          gap: SPACE.sm,
         }}
       >
-        {/* Decorative circles */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute', right: -50, top: -30,
-            width: 200, height: 200, borderRadius: 100,
-            backgroundColor: 'rgba(255,255,255,0.08)',
-          }}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute', left: -40, bottom: -40,
-            width: 140, height: 140, borderRadius: 70,
-            backgroundColor: 'rgba(255,255,255,0.05)',
-          }}
-        />
-
-        <HeaderContent />
-      </LinearGradient>
-
-      {/* ── Content panel ── */}
-      <SheetPanel radius={32} overlap={28} style={{ flex: 1, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
-        {/* ── Tabs row ── */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 12,
-            paddingTop: 24,
-            paddingBottom: 8,
-            gap: 8,
-          }}
-        >
-          {TABS.map(({ id, label }) => {
-            const active = filterTab === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setFilterTab(id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={label}
-                hitSlop={8}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 99,
-                  backgroundColor: active ? C.JADE_DIM : 'transparent',
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
-                    fontSize: 15,
-                    color: active ? C.PRIMARY : C.TEXT3,
-                  }}
-                >
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* ── Scenario grid ── */}
-        <FlashList
-          data={gridData}
-          numColumns={2}
-          keyExtractor={(item: GridItem) => item.id}
-          renderItem={({ item, index }: { item: GridItem; index: number }) =>
-            'filler' in item ? (
-              <View style={{ flex: 1 }} />
-            ) : (
-              <ScenarioCard
-                scenario={item}
-                index={index}
-                isLeft={index % 2 === 0}
-                onPress={() =>
-                  item.locked ? void presentPaywall() : onScenarioSelect(item.id)
-                }
-              />
-            )
-          }
-          {...({ estimatedItemSize: 222 } as any)}
-          contentContainerStyle={{
-            paddingHorizontal: 18,
-            paddingTop: 8,
-            paddingBottom: insets.bottom + 90,
-          }}
-          showsVerticalScrollIndicator={false}
-          // Fix black square flash on Android
-          removeClippedSubviews={false}
-          // Disable virtualization animations
-          disableAutoLayout={false}
-          ListEmptyComponent={() => (
-            <MotiView
-              from={{ opacity: 0, translateY: 12, scale: 0.95 }}
-              animate={{ opacity: 1, translateY: 0, scale: 1 }}
-              transition={{ ...SMOOTH }}
-              style={{ alignItems: 'center', paddingTop: 56, gap: 10 }}
+        {TABS.map(({ id, label }) => {
+          const active = filterTab === id;
+          return (
+            <Pressable
+              key={id}
+              onPress={() => setFilterTab(id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={label}
+              hitSlop={8}
+              style={{
+                paddingHorizontal: SPACE.md,
+                paddingVertical: SPACE.sm,
+                borderRadius: RADIUS.pill,
+                borderWidth: 1,
+                borderColor: active ? C.PRIMARY : 'transparent',
+              }}
             >
-              <View
-                style={{
-                  width: 54, height: 54, borderRadius: 16,
-                  backgroundColor: `${C.PRIMARY}12`,
-                  alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {filterTab === 'saved'
-                  ? <Heart size={24} color={C.PRIMARY} fill="transparent" />
-                  : <Search size={24} color={C.PRIMARY} />}
-              </View>
               <Text
                 style={{
-                  fontFamily: FONT_HEADING_SEMI,
+                  fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
                   fontSize: 14,
-                  color: C.TEXT2,
-                  textAlign: 'center',
-                  lineHeight: 20,
+                  color: active ? C.PRIMARY : C.TEXT3,
                 }}
               >
-                {filterTab === 'saved'
-                  ? STRINGS.scenarios.noFavourites
-                  : STRINGS.scenarios.noResults}
+                {label}
               </Text>
-            </MotiView>
-          )}
-          ListFooterComponent={
-            filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
-              ? () => (
-                  <MotiView
-                    from={{ opacity: 0, translateY: 16, scale: 0.95 }}
-                    animate={{ opacity: 1, translateY: 0, scale: 1 }}
-                    transition={{ ...SMOOTH, delay: 200 }}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* ── Scenario list ──
+          Single column. Entries are separated by their own hairline, so the
+          list has no gap and no card fills. */}
+      <FlashList
+        data={displayScenarios}
+        keyExtractor={(item: Scenario) => item.id}
+        renderItem={({ item, index }: { item: Scenario; index: number }) => (
+          <ScenarioEntry
+            scenario={item}
+            index={String(index + 1).padStart(2, '0')}
+            first={index === 0}
+            onPress={() =>
+              item.locked ? void presentPaywall() : onScenarioSelect(item.id)
+            }
+          />
+        )}
+        {...({ estimatedItemSize: 120 } as any)}
+        contentContainerStyle={{
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingBottom: insets.bottom + 90,
+        }}
+        showsVerticalScrollIndicator={false}
+        // Fix black square flash on Android
+        removeClippedSubviews={false}
+        ListEmptyComponent={() => (
+          <View style={{ alignItems: 'center', paddingTop: SPACE.xxxl, gap: SPACE.md }}>
+            {filterTab === 'saved'
+              ? <Heart size={24} strokeWidth={1.5} color={C.TEXT3} fill="transparent" />
+              : <Search size={24} strokeWidth={1.5} color={C.TEXT3} />}
+            <Text
+              style={{
+                fontFamily: FONT_HEADING_SEMI,
+                fontSize: 14,
+                color: C.TEXT2,
+                textAlign: 'center',
+                lineHeight: 20,
+              }}
+            >
+              {filterTab === 'saved'
+                ? STRINGS.scenarios.noFavourites
+                : STRINGS.scenarios.noResults}
+            </Text>
+          </View>
+        )}
+        ListFooterComponent={
+          filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
+            ? () => (
+                <MotiView
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ ...SMOOTH, delay: 120 }}
+                >
+                  {/* Paywalled scenarios are written and shipping — the row
+                      offers the upgrade. Unwritten ones say so and stay inert. */}
+                  <Pressable
+                    onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
+                    disabled={paywalledCount === 0}
+                    accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
+                    accessibilityLabel={
+                      paywalledCount > 0
+                        ? STRINGS.scenarios.lockedCount(paywalledCount)
+                        : undefined
+                    }
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: SPACE.md,
+                      paddingVertical: SPACE.xl,
+                    }}
                   >
-                    {/* Paywalled scenarios are written and shipping — the card
-                        offers the upgrade. Unwritten ones say so and stay inert. */}
-                    <Pressable
-                      onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
-                      disabled={paywalledCount === 0}
-                      accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
-                      accessibilityLabel={
-                        paywalledCount > 0
-                          ? STRINGS.scenarios.lockedCount(paywalledCount)
-                          : undefined
-                      }
-                      style={{
-                        borderRadius: 20, padding: 18,
-                        flexDirection: 'row', alignItems: 'center', gap: 14,
-                        backgroundColor: C.JADE_SURFACE,
-                        borderWidth: 1, borderColor: C.JADE_BORDER,
-                      }}
-                    >
-                      <LinearGradient
-                        colors={G.AVATAR_STOPS}
-                        start={ANGLE_135.start}
-                        end={ANGLE_135.end}
-                        style={{
-                          width: 44, height: 44, borderRadius: 14,
-                          alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
+                    {paywalledCount > 0
+                      ? <Lock size={20} strokeWidth={1.5} color={C.PRIMARY} />
+                      : <CheckCircle2 size={20} strokeWidth={1.5} color={C.TEXT3} />}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
                         {paywalledCount > 0
-                          ? <Lock size={20} color={C.BG} />
-                          : <CheckCircle2 size={20} color={C.BG} />}
-                      </LinearGradient>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
-                          {paywalledCount > 0
-                            ? STRINGS.scenarios.lockedCount(paywalledCount)
-                            : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
-                        </Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>
-                          {paywalledCount > 0
-                            ? STRINGS.scenarios.lockedSub
-                            : STRINGS.scenarios.writingNext}
-                        </Text>
-                      </View>
-                      <View
+                          ? STRINGS.scenarios.lockedCount(paywalledCount)
+                          : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
+                      </Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs }}>
+                        {paywalledCount > 0
+                          ? STRINGS.scenarios.lockedSub
+                          : STRINGS.scenarios.writingNext}
+                      </Text>
+                    </View>
+                    {paywalledCount > 0 ? (
+                      <Text
                         style={{
-                          paddingHorizontal: 14, paddingVertical: 9,
-                          borderRadius: 14, backgroundColor: C.JADE,
+                          fontFamily: FONT_LATIN_MEDIUM,
+                          fontSize: 10,
+                          letterSpacing: 1.6,
+                          textTransform: 'uppercase',
+                          color: C.PRIMARY,
                         }}
                       >
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.BG }}>
-                          {paywalledCount > 0 ? STRINGS.scenarios.unlock : STRINGS.common.soon}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </MotiView>
-                )
-              : null
-          }
-        />
-      </SheetPanel>
+                        {STRINGS.scenarios.unlock}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                </MotiView>
+              )
+            : null
+        }
+      />
     </View>
   );
 }
