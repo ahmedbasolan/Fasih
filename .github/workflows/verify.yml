@@ -1,0 +1,78 @@
+name: verify
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    # Weekly, so the non-blocking dialect check keeps reporting even when
+    # nobody has touched content.
+    - cron: '0 4 * * 1'
+
+jobs:
+  # ── Blocking: types and the content lints ──────────────────────────────────
+  typecheck-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tests (includes the language-authority lint)
+        run: npx jest --ci
+
+  # ── Non-blocking: real morphological MSA detection ─────────────────────────
+  #
+  # Separate job, and deliberately not required. Morphological analysis has
+  # false positives on proper nouns, loanwords, and Emirati forms CALIMA-GLF
+  # has not seen — a red build on every unknown word would train people to
+  # ignore it. The blocking MSA check is the curated blocklist in Jest.
+  dialect-check:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          # setup-python's pip cache hashes a dependency file; without this it
+          # fails outright with "No file matched to [**/requirements.txt ...]".
+          cache-dependency-path: tools/requirements.txt
+
+      - name: Install CAMeL Tools
+        run: pip install -r tools/requirements.txt
+
+      - name: Download morphology databases
+        # Package names are NOT the dataset names the analyser asks for:
+        #   morphology-db-glf-01  -> calima-glf-01   (CC BY 4.0, ~8 MB)
+        #   morphology-db-msa-r13 -> calima-msa-r13  (GPL v2, ~40 MB)
+        run: |
+          camel_data -i morphology-db-glf-01
+          camel_data -i morphology-db-msa-r13
+
+      - name: Analyse content
+        # --max-blocklist 0 gates on curated-blocklist hits ONLY. Those should
+        # always be zero, because the Jest lint already fails the build for
+        # them — a hit here means the two detectors disagree and something got
+        # through. The other two buckets are advisory by construction and never
+        # gate: CALIMA-GLF is a ~2,600-lemma verb database, so "not Gulf" mostly
+        # means "not a Gulf verb" rather than "is MSA".
+        run: python tools/dialect-check.py --json dialect-report.json --max-blocklist 0
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dialect-report
+          path: dialect-report.json
+          if-no-files-found: ignore

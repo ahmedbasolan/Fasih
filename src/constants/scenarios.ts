@@ -382,10 +382,10 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
       {
         id: 'scene2', charName: 'Ahmed', charGender: 'male', setting: 'Coffee corner — relaxed',
-        arabic: 'تريد قهوة عربية ولا نسكافيه؟', roman: "turiid gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?',
+        arabic: 'تبي قهوة عربية ولا نسكافيه؟', roman: "tabi gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?',
         charDialogue: {
-          warm: { arabic: 'يا هلا والله! تريد قهوة عربية ولا نسكافيه؟', roman: "ya hala wallah! turiid gahwa 'arabiyya willa nescafe?", english: "Now that's what I like to hear! Arabic coffee or Nescafé?" },
-          neutral: { arabic: 'تريد قهوة عربية ولا نسكافيه؟', roman: "turiid gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?' },
+          warm: { arabic: 'يا هلا والله! تبي قهوة عربية ولا نسكافيه؟', roman: "ya hala wallah! tabi gahwa 'arabiyya willa nescafe?", english: "Now that's what I like to hear! Arabic coffee or Nescafé?" },
+          neutral: { arabic: 'تبي قهوة عربية ولا نسكافيه؟', roman: "tabi gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?' },
           cold: { arabic: 'قهوة ولا نسكافيه؟', roman: "gahwa willa nescafe?", english: 'Coffee or Nescafé?' },
         },
         warmThreshold: 6, coldThreshold: 1,
@@ -485,7 +485,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         choices: [
           { id: 'a', text: 'I suggest three times per week. One day cardio, two days weights. And we start light', arabic: 'أقترح لك ثلاث مرات بالأسبوع. يوم كارديو، يومين حديد. ونبدا خفيف', roman: "agtarih lak thlath marraat bil-usbuu'. yoom kardyo, yoomayn hadiid. w-nibda khafiif", score: 8, impact: { trust: 2, respect: 3, culture: 3 }, note: 'You used أقترح respectfully, gave clear structure, and immediately added "we start light" for comfort.', outcome: 'excellent' },
           { id: 'b', text: 'Let\'s build a program based on your level. What do you like? Walking, machines, weights?', arabic: 'خلنا نسوي برنامج على حسب مستواك. شو تحب؟ مشي، أجهزة، حديد؟', roman: "khallina nisawwi barnaamij 'ala hasab mustawaak. shuu tihib? mashi, ajhiza, hadiid?", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'Giving Sultan choices shows respect. However, a beginner often needs a confident recommendation.', outcome: 'good' },
-          { id: 'c', text: 'Honestly, at your current level, I suggest five times per week', arabic: 'صَرَاحَة بِمُسْتَوَاك الْحِين، أَقْتَرِح خَمْس مَرَّات بِالأُسْبُوع', roman: "saraha bi-mustawaak al-hin, agtarih khams marraat bil-usbuu'", score: 3, impact: { trust: 3, respect: -1, culture: -1 }, note: '⚖️ You were blunt about what his body needs and Sultan does respect the directness — trust rises. But he told you three times a week and you overrode him, which in Gulf culture reads as not listening. Net effect: a wash. Honesty without empathy is just bluntness.', outcome: 'neutral' },
+          { id: 'c', text: 'Honestly, at your current level, I suggest five times per week', arabic: 'صراحة بمستواك الحين، أقترح خمس مرّات بالأسبوع', roman: "saraha bi-mustawaak al-hin, agtarih khams marraat bil-usbuu'", score: 3, impact: { trust: 3, respect: -1, culture: -1 }, note: '⚖️ You were blunt about what his body needs and Sultan does respect the directness — trust rises. But he told you three times a week and you overrode him, which in Gulf culture reads as not listening. Net effect: a wash. Honesty without empathy is just bluntness.', outcome: 'neutral' },
           { id: 'd', text: 'We\'ll do super sets, drop sets, and HIIT cardio to start', arabic: 'نسوي سوبر ستس، دروب ستس، وكارديو HIIT في البداية', roman: 'nisawwi super sets, drop sets, w-kardyo HIIT fil-bidaaya', score: -2, impact: { trust: -1, respect: -1, culture: 0 }, note: 'Throwing terms at someone who hasn\'t been in a gym in years makes him feel stupid.', outcome: 'bad' },
         ],
       },
@@ -997,7 +997,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Airport → Hotel, nighttime',
     kafIntro: 'You just landed in Dubai. Your driver Youssef is Egyptian — warm, chatty, and ready to talk. He speaks Egyptian; you answer in Gulf Arabic. Learning to hold that conversation is the whole point.',
     iconName: 'car',
-    difficulty: 'Level 2 (Elementary)',
     estimatedMinutes: 8,
     phrasesUnlocked: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'],
     primerPhrases: ['tx-1', 'tx-3', 'core-2'], // الله يحفظ عائلتك / شو يابك دبي؟ / شخبارك؟
@@ -1110,7 +1109,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Apartment building, evening',
     kafIntro: "You meet someone in your building elevator. Sami is Jordanian — reserved at first. This is Level 1: short phrases, simple choices. He speaks Levantine, you answer in Gulf Arabic. Noticing the difference is the lesson.",
     iconName: 'building',
-    difficulty: 'Level 1 (Beginner)',
     estimatedMinutes: 6,
     phrasesUnlocked: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'],
     primerPhrases: ['el-1', 'el-3', 'el-4'], // السلام عليكم / تعال على شاي / انت في أي دور؟
@@ -1252,7 +1250,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
-    difficulty: 'Beginner',
     estimatedMinutes: 5,
     phrasesUnlocked: ['e_new1'],
     scenes: [
@@ -1314,7 +1311,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
-    difficulty: 'Beginner',
     estimatedMinutes: 5,
     phrasesUnlocked: ['e_new1'],
     scenes: [

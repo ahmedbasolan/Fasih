@@ -174,7 +174,6 @@ export interface ScenarioScript {
   subtitle?: string;  // Setting description (e.g., "Airport → Hotel, nighttime")
   kafIntro?: string;  // Kaf's introduction text for this scenario
   iconName?: string;  // Icon identifier for the scenario card
-  difficulty?: string;  // Difficulty level display text
   estimatedMinutes?: number;  // Estimated completion time
   scenes: ScenarioScene[];
   endings: ScenarioEnding[];
@@ -200,7 +199,52 @@ export interface ScenarioEndingStats {
 }
 
 // ─── Phrases ─────────────────────────────────────────────────────────────────
-export type PhraseDifficulty = 'basic' | 'intermediate' | 'advanced';
+/**
+ * CEFR band a phrase or scenario sits in. Stops at A2 deliberately: Fasih's
+ * entire content is A1-A2, and labelling a seven-turn scripted scenario B1
+ * would overclaim what a learner can actually do. See curriculum.ts.
+ */
+export type CEFRBand = 'A1' | 'A1+' | 'A2';
+
+/** What kind of claim a citation supports. Grammar ages slowly, words fast. */
+export type SourceClaim = 'morphosyntax' | 'lexeme' | 'usage' | 'register';
+
+/** Publications Fasih may cite. The table lives in constants/curriculum.ts. */
+export type SourceId =
+  | 'leung-2024'
+  | 'routledge-comprehensive'
+  | 'alramsa'
+  | 'ramsa-corpus-2026'
+  | 'emirati-social-media-2024'
+  | 'qafisheh-1977'
+  | 'holes-1990'
+  | 'fasih-internal';
+
+/**
+ * Provenance for one Arabic string. 'unsourced' is a permitted, honest value —
+ * the lint counts them rather than letting the gap hide.
+ */
+export interface SourceRef {
+  ref: SourceId | 'unsourced';
+  locator: string;
+  claim: SourceClaim;
+}
+
+/**
+ * Is this still said? Younger Emiratis have shed much distinctly Emirati
+ * vocabulary for a pan-Gulf koine, so 'dated' is a real risk, not a nicety.
+ * 'heritage' is culturally valuable but not daily speech — it belongs in the
+ * cultural journal, not in a 'say this tomorrow' card.
+ */
+export type PhraseCurrency = 'current' | 'dated' | 'heritage' | 'unknown';
+
+/** Produce it, or only understand it when someone else says it. */
+export type PhraseUse = 'produce' | 'recognise' | 'unknown';
+
+export type PhraseOrigin = 'emirati' | 'gulf-koine' | 'non-gulf' | 'unknown';
+
+/** PROVISIONAL — pin against a source before hardening. */
+export type PhraseRegister = 'neutral' | 'deferential' | 'unknown';
 export type PhraseCategory = 'Greetings' | 'Gratitude' | 'Hospitality' | 'Workplace' | 'Social' | 'Everyday' | 'Food & Drink' | 'Family';
 export type PhraseType = 'vocab' | 'phrase' | 'expression';
 
@@ -211,7 +255,21 @@ export interface Phrase {
   english: string;
   category: PhraseCategory;
   culturalNote?: string;
-  difficulty: PhraseDifficulty;
+  /**
+   * CEFR band. Replaces the old 'basic'|'intermediate'|'advanced' scale so the
+   * app carries ONE difficulty vocabulary instead of three that disagreed.
+   */
+  cefr: CEFRBand;
+  /**
+   * Where this Arabic came from. Required, so a new phrase must declare its
+   * provenance at compile time — even when that declaration is honestly
+   * `UNSOURCED`. The project previously had zero provenance records anywhere.
+   */
+  source: SourceRef;
+  currency?: PhraseCurrency;
+  use?: PhraseUse;
+  origin?: PhraseOrigin;
+  register?: PhraseRegister;
   type: PhraseType;
   pronTip?: string;
   // Which scenario this phrase was introduced in (for end-screen traceability)

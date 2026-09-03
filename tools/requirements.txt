@@ -1,0 +1,12 @@
+# Dependencies for tools/dialect-check.py
+#
+# Pinned deliberately. This tool makes linguistic judgements about content, so a
+# silent analyser upgrade changing what counts as "analysable as Gulf" would move
+# the results without anyone deciding to.
+#
+# camel-tools 1.6.0 requires Python >= 3.11.
+#
+# The morphology databases are NOT pip packages — install them separately:
+#   camel_data -i morphology-db-glf-01   # -> calima-glf-01  (CC BY 4.0, ~8 MB)
+#   camel_data -i morphology-db-msa-r13  # -> calima-msa-r13 (GPL v2, ~40 MB)
+camel-tools==1.6.0
