@@ -62,7 +62,13 @@ jobs:
           camel_data -i morphology-db-msa-r13
 
       - name: Analyse content
-        run: python tools/dialect-check.py --json dialect-report.json
+        # --max-blocklist 0 gates on curated-blocklist hits ONLY. Those should
+        # always be zero, because the Jest lint already fails the build for
+        # them — a hit here means the two detectors disagree and something got
+        # through. The other two buckets are advisory by construction and never
+        # gate: CALIMA-GLF is a ~2,600-lemma verb database, so "not Gulf" mostly
+        # means "not a Gulf verb" rather than "is MSA".
+        run: python tools/dialect-check.py --json dialect-report.json --max-blocklist 0
 
       - uses: actions/upload-artifact@v4
         if: always()

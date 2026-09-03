@@ -112,7 +112,21 @@ phrase carries a `source`.
 | `languageContent.test.ts` | `npx jest` | Yes | Level gates, MSA blocklist, orthography, provenance |
 | `tools/dialect-check.py` | CI, nightly | No | Real morphological analysis via CALIMA-GLF; the true MSA detector |
 
-The Jest MSA blocklist is a cheap approximation of what the Python tool does
-properly. The blocklist catches known MSA function words; CALIMA-GLF catches any
-token that analyses under an MSA analyser but not a Gulf one, which is the general
-form of the same question.
+**The Jest blocklist is the better MSA detector**, and that is not a temporary
+state. The first run of `dialect-check.py` against real content produced 114
+"MSA-only" hits of which nearly all were false positives — ordinary shared nouns
+(`سعر`, `كيلو`), proper nouns (`رونالدو`), an English loanword (`أوكي`), and `هذي`,
+which is the *Gulf* feminine demonstrative the blocklist bans MSA `هذه` in favour of.
+
+The cause: **CALIMA-GLF is a verb database** (~2,600 verbal lemmas), not a full
+Gulf lexicon. "Does not analyse as Gulf" overwhelmingly means "is not a Gulf verb".
+
+So the tool sorts its output into three buckets, and only the first is actionable:
+
+| Bucket | Meaning | Act on it? |
+|---|---|---|
+| **Blocklist hit** | On `MSA_BLOCKLIST` (read straight from `curriculum.ts`) | **Yes** — should always be zero, since Jest fails the build on these. A hit means the detectors disagree. |
+| **Out of vocabulary** | Neither database analyses it | Review. Real Emirati forms (`يديد`, `صباطج`), deliberate other-dialect content (`بتاعك` is Youssef's Egyptian), loanwords. |
+| **Weak signal** | MSA yes, Gulf no | Skim only. Mostly shared nouns. Never action without a source. |
+
+CI gates on the first bucket alone (`--max-blocklist 0`).
