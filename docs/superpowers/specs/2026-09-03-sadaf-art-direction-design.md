@@ -103,22 +103,43 @@ Sadaf spends nothing on hue. One ground, one ink, one accent, one semantic red.
 
 **Light — the canonical Sadaf look**
 
-| Role | Value | Against ground | Verdict |
-|---|---|---|---|
-| `BG` — Sadaf ground | `#FBF6EC` | — | — |
-| `TEXT` — ink | `#1C150D` | **16.67:1** | AA / AAA |
-| `TEXT2` — secondary | `rgba(28,21,13,0.72)` | **7.14:1** | AA / AAA |
-| `TEXT3` — tertiary | `rgba(28,21,13,0.64)` | **5.28:1** | AA |
-| `PRIMARY` — Zafaran | `#8A5C1F` | **5.41:1** | AA |
-| `SURFACE` — sheet only | `#FFFFFF` | ink at **17.95:1** | AA / AAA |
+All figures below are machine-computed by `src/engine/contrast.ts` and asserted by
+`src/engine/__tests__/tokenContrast.test.ts`. They are not estimates — an earlier draft of
+this document carried hand-computed values that were wrong by up to 0.2 (see the note at the
+end of this section).
+
+| Role | Value | On `BG` | On `SURFACE` | Verdict |
+|---|---|---|---|---|
+| `BG` — Sadaf ground | `#FBF6EC` | — | — | — |
+| `SURFACE` — sheet only | `#FFFFFF` | — | — | — |
+| `TEXT` — ink | `#1C150D` | **16.77:1** | **18.07:1** | AA / AAA |
+| `TEXT2` — secondary | `rgba(28,21,13,0.72)` | **6.94:1** | **7.20:1** | AA / AAA |
+| `TEXT3` — tertiary | `rgba(28,21,13,0.64)` | **5.27:1** | — | AA |
+| `PRIMARY` — Zafaran | `#8A5C1F` | **5.37:1** | **5.78:1** | AA |
+| `ERROR` — Hinna | `#8A3F22` | **6.93:1** | — | AA / AAA |
+| `VIOLET` — Culture metric | `#6B4FA0` | **6.00:1** | — | AA / AAA |
 
 **Dark (night variant)**
 
-| Role | Value | Against ground | Verdict |
-|---|---|---|---|
-| `BG` — Layl ground | `#14100B` | — | — |
-| `TEXT` — ink | `rgba(243,233,214,0.96)` | **14.49:1** | AA / AAA |
-| `PRIMARY` — Zafaran | `#EAC57C` | **11.53:1** | AA / AAA |
+| Role | Value | On `BG` | On `SURFACE` | Verdict |
+|---|---|---|---|---|
+| `BG` — Layl ground | `#14100B` | — | — | — |
+| `SURFACE` — sheet only | `#1D1710` | — | — | — |
+| `TEXT` — ink | `rgba(243,233,214,0.96)` | **14.51:1** | **12.93:1** | AA / AAA |
+| `TEXT2` — secondary | `rgba(243,233,214,0.72)` | **8.44:1** | **7.79:1** | AA / AAA |
+| `TEXT3` — tertiary | `rgba(243,233,214,0.58)` | **5.83:1** | — | AA |
+| `PRIMARY` — Zafaran | `#EAC57C` | **11.52:1** | **10.22:1** | AA / AAA |
+| `ERROR` — Hinna | `#E38A63` | **7.29:1** | — | AA / AAA |
+| `VIOLET` — Culture metric | `#A688D6` | **6.42:1** | — | AA / AAA |
+
+> **Correction, 2026-09-03.** The first draft of this table carried figures computed by hand
+> (16.67, 7.14, 5.41, 17.95, 14.49, 11.53). Running the same pairings through the
+> implemented module gave 16.77, 6.94, 5.37, 18.07, 14.51 and 11.52 — the hand values were
+> wrong, mostly from rounding the composited colour to integers before taking luminance. No
+> verdict changed and no design decision depended on the difference, but the point of this
+> project's contrast rule is that numbers are measured rather than estimated, and a
+> hand-computed table in the spec was the same mistake in a different place. Every figure
+> here is now generated.
 
 All six values already exist in `tokens.ts`. Sadaf does not introduce a new palette — it
 deletes the one that was fighting this one.
