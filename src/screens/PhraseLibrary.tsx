@@ -9,10 +9,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
 import type { ThemeColors } from '../components/design/tokens';
+import type { CEFRBand } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
 import { CategoryCard } from '../components/features/CategoryCard';
-import { PHRASES, PHRASE_CATEGORIES, getCategoryColors, getDifficultyColors, TYPE_LABELS } from '../constants/phrases';
+import { PHRASES, PHRASE_CATEGORIES, getCategoryColors, getCefrColors, CEFR_LABELS, TYPE_LABELS } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
@@ -63,7 +64,7 @@ export function PhraseLibrary() {
     [unlockedPhraseIds, completedScenarios, secretEndingsEarned],
   );
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
-  const DIFFICULTY_COLORS = useMemo(() => getDifficultyColors(C), [C]);
+  const CEFR_COLORS = useMemo(() => getCefrColors(C), [C]);
   const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState<string>(STRINGS.phrases.filterAll);
@@ -98,7 +99,7 @@ export function PhraseLibrary() {
       || p.roman.toLowerCase().includes(q)
       || p.english.toLowerCase().includes(q);
     const matchCat = cat === STRINGS.phrases.filterAll || p.category === cat;
-    const matchDiff = diff === STRINGS.phrases.filterAll || p.difficulty === diff;
+    const matchDiff = diff === STRINGS.phrases.filterAll || p.cefr === diff;
     return matchSearch && matchCat && matchDiff;
   }), [search, cat, diff]);
 
@@ -176,7 +177,7 @@ export function PhraseLibrary() {
         }}
       >
         <View style={{ flexDirection: 'row' }}>
-          <View style={{ width: 4, backgroundColor: DIFFICULTY_COLORS[p.difficulty], borderTopLeftRadius: 16, borderBottomLeftRadius: isExpanded ? 0 : 16 }} />
+          <View style={{ width: 4, backgroundColor: CEFR_COLORS[p.cefr], borderTopLeftRadius: 16, borderBottomLeftRadius: isExpanded ? 0 : 16 }} />
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 18, color: C.TEXT, textAlign: 'right', marginBottom: 2 }}>{p.arabic}</Text>
@@ -246,8 +247,8 @@ export function PhraseLibrary() {
             )}
 
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${DIFFICULTY_COLORS[p.difficulty]}18` }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: DIFFICULTY_COLORS[p.difficulty], textTransform: 'capitalize' }}>{p.difficulty}</Text>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${CEFR_COLORS[p.cefr]}18` }}>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color: CEFR_COLORS[p.cefr] }}>{CEFR_LABELS[p.cefr]}</Text>
               </View>
               <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: `${color}14` }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 10, color }}>{p.category}</Text>
@@ -260,7 +261,7 @@ export function PhraseLibrary() {
         )}
       </Pressable>
     );
-  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, CATEGORY_COLORS, DIFFICULTY_COLORS, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
+  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, CATEGORY_COLORS, CEFR_COLORS, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
 
   // ── Category grid header component ──
   const CategoryGridHeader = useMemo(() => (
@@ -587,10 +588,10 @@ export function PhraseLibrary() {
               {STRINGS.phrases.levelFilterLabel}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {[STRINGS.phrases.filterAll, 'basic', 'intermediate', 'advanced'].map(d => {
+              {[STRINGS.phrases.filterAll, 'A1', 'A1+', 'A2'].map(d => {
                 const active = diff === d;
-                const color = d === STRINGS.phrases.filterAll ? C.PRIMARY : DIFFICULTY_COLORS[d];
-                const label = d === STRINGS.phrases.filterAll ? d : d === 'basic' ? STRINGS.common.levelBasic : d === 'intermediate' ? STRINGS.common.levelIntermediate : STRINGS.common.levelAdvanced;
+                const color = d === STRINGS.phrases.filterAll ? C.PRIMARY : CEFR_COLORS[d as CEFRBand];
+                const label = d === STRINGS.phrases.filterAll ? d : CEFR_LABELS[d as CEFRBand];
                 return (
                   <Pressable key={d} onPress={() => setDiff(d)} hitSlop={8} style={{
                     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,

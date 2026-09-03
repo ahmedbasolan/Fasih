@@ -16,23 +16,21 @@
  * `docs/language/`. See `docs/superpowers/specs/2026-09-03-language-authority-design.md`.
  */
 
-import type { DifficultyLevel } from '../types';
+import type { DifficultyLevel, CEFRBand, SourceClaim, SourceId, SourceRef } from '../types';
 
-// ─── CEFR anchoring ──────────────────────────────────────────────────────────
+// The language types live in ../types (CLAUDE.md: all shared types in one file),
+// which also keeps this module free of a circular import — types/index.ts must
+// not depend on constants.
+export type { CEFRBand, SourceClaim, SourceId, SourceRef };
 
 /**
- * The external anchor the tiers are pinned to.
+ * A citation for content nobody has traced to a published source yet.
  *
- * Deliberately stops at A2. An earlier draft mapped Advanced to B1, which
- * overclaims: CEFR B1 is "can describe experiences and events, and briefly give
- * reasons and explanations for opinions and plans." A learner who completes a
- * seven-turn scripted scenario cannot do that — they can complete a transaction,
- * which is A2. Al Ramsa Institute needs nine levels to reach B3; their beginner
- * block alone is three levels. Fasih's entire content sits inside A1–A2.
- *
- * B1 is roadmap, not a claim. Do not add it here until content supports it.
+ * Shorthand so a phrase line stays readable while still being forced to say
+ * something about its provenance. The lint counts these; driving the count down
+ * is tracked work, not a silent default.
  */
-export type CEFRBand = 'A1' | 'A1+' | 'A2';
+export const UNSOURCED: SourceRef = { ref: 'unsourced', locator: '', claim: 'lexeme' };
 
 /** Inclusive at both ends. */
 export interface Range {
@@ -134,27 +132,6 @@ export const LEVEL_EXEMPT_SCENARIOS: readonly string[] = [
 
 // ─── Sources ─────────────────────────────────────────────────────────────────
 
-/**
- * What kind of claim a citation is being used to support.
- *
- * This split is the whole point of the source model. Grammar changes slowly;
- * lexicon and pragmatics change fast. Research on generational change in the
- * UAE documents younger Emiratis shedding distinctly Emirati vocabulary for a
- * pan-Gulf koine, so a 1977 grammar is still sound on verb paradigms and
- * actively misleading on word choice.
- */
-export type SourceClaim = 'morphosyntax' | 'lexeme' | 'usage' | 'register';
-
-export type SourceId =
-  | 'leung-2024'
-  | 'routledge-comprehensive'
-  | 'alramsa'
-  | 'ramsa-corpus-2026'
-  | 'emirati-social-media-2024'
-  | 'qafisheh-1977'
-  | 'holes-1990'
-  | 'fasih-internal';
-
 export interface SourceEntry {
   readonly id: SourceId;
   readonly title: string;
@@ -163,21 +140,6 @@ export interface SourceEntry {
   /** Claim types this source may be cited for, on its own. */
   readonly validFor: readonly SourceClaim[];
   readonly note?: string;
-}
-
-/**
- * A citation for one Arabic string.
- *
- * `'unsourced'` is a permitted, honest value. Most of the existing library will
- * carry it until a backfill pass lands, and the lint reports that count rather
- * than hiding it. The alternative — omitting the field until someone can fill
- * it — is how the project arrived at zero provenance records in the first place.
- */
-export interface SourceRef {
-  readonly ref: SourceId | 'unsourced';
-  /** Page, unit, phrase number, corpus utterance id. Free text. */
-  readonly locator: string;
-  readonly claim: SourceClaim;
 }
 
 /**
