@@ -1,0 +1,64 @@
+name: verify
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    # Weekly, so the non-blocking dialect check keeps reporting even when
+    # nobody has touched content.
+    - cron: '0 4 * * 1'
+
+jobs:
+  # ── Blocking: types and the content lints ──────────────────────────────────
+  typecheck-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tests (includes the language-authority lint)
+        run: npx jest --ci
+
+  # ── Non-blocking: real morphological MSA detection ─────────────────────────
+  #
+  # Separate job, and deliberately not required. Morphological analysis has
+  # false positives on proper nouns, loanwords, and Emirati forms CALIMA-GLF
+  # has not seen — a red build on every unknown word would train people to
+  # ignore it. The blocking MSA check is the curated blocklist in Jest.
+  dialect-check:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install CAMeL Tools
+        run: |
+          pip install camel-tools
+          camel_data -i morphology-db-glf
+          camel_data -i morphology-db-msa-r13
+
+      - name: Analyse content
+        run: python tools/dialect-check.py --json dialect-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dialect-report
+          path: dialect-report.json
+          if-no-files-found: ignore

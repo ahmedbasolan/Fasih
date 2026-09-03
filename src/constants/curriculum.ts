@@ -130,6 +130,32 @@ export const LEVEL_EXEMPT_SCENARIOS: readonly string[] = [
   'onboarding-cafe-social',
 ];
 
+// ─── Impact tier bands ───────────────────────────────────────────────────────
+
+/**
+ * Allowed total impact (trust + respect + culture) per outcome tier.
+ *
+ * Lives here because two documents used to disagree about it: the
+ * `fasih-scenario-review` checklist said good +3..+6 and bad −3..−9, while
+ * `scenarioContent.test.ts` encoded good +3..+7 and bad −1..−9. The suite
+ * therefore passed with "bad" choices costing only −2.
+ *
+ * Reconciled per-band rather than by picking one document wholesale:
+ *
+ *   good  — the TEST was right. Adjacent tiers overlap on purpose: a +6 can be
+ *           a strong "good" or a modest "excellent", and forcing a hard boundary
+ *           would make authors round choices toward the tier edges.
+ *   bad   — the CHECKLIST was right. A "bad" choice that costs the learner one
+ *           point teaches nothing; the cultural lesson attached to it is a lie if
+ *           making the mistake is nearly free.
+ */
+export const TIER_BANDS: Readonly<Record<string, Range>> = {
+  excellent: { min: 6, max: 9 },
+  good: { min: 3, max: 7 },
+  neutral: { min: -2, max: 2 },
+  bad: { min: -9, max: -3 },
+};
+
 // ─── Sources ─────────────────────────────────────────────────────────────────
 
 export interface SourceEntry {
