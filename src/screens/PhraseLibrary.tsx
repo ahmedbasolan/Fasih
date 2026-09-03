@@ -1,19 +1,17 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Platform, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Search, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Trophy, ArrowRight } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
-import { GhostLetters, PhraseEntry } from '../components/ui';
+import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC_BLACK, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
+import { GhostLetters, PhraseEntry, Rule } from '../components/ui';
 import { SPACE } from '../components/design/spacing';
-import type { ThemeColors } from '../components/design/tokens';
 import type { CEFRBand } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
-import { CategoryCard } from '../components/features/CategoryCard';
 import { PHRASES, PHRASE_CATEGORIES, getCefrColors, CEFR_LABELS, TYPE_LABELS } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
@@ -23,32 +21,9 @@ import { arabicIncludes } from '../engine/arabic';
 
 type Phrase = typeof PHRASES[0];
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const GRID_GAP = 12;
 const GRID_PAD = 20;
-const COL_WIDTH = (SCREEN_WIDTH - GRID_PAD * 2 - GRID_GAP) / 2;
 
-// Category card configuration built from theme tokens — no hardcoded hex
-function getCategoryCardConfig(C: ThemeColors): Record<string, { bg: string; accent: string; darkBg: string }> {
-  return {
-    'Greetings':    { bg: 'transparent',  accent: C.VIOLET,             darkBg: C.VIOLET },
-    'Gratitude':    { bg: 'transparent',  accent: C.ERROR,              darkBg: C.ERROR },
-    'Hospitality':  { bg: 'transparent', accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
-    'Workplace':    { bg: 'transparent',  accent: C.JADE,               darkBg: C.JADE },
-    'Social':       { bg: 'transparent', accent: C.ERROR,              darkBg: C.ERROR },
-    'Everyday':     { bg: 'transparent',  accent: C.JADE,               darkBg: C.JADE2 },
-    'Food & Drink': { bg: 'transparent', accent: C.CULTURAL_GOLD_DARK, darkBg: C.CULTURAL_GOLD },
-    'Family':       { bg: 'transparent',  accent: C.VIOLET,             darkBg: C.VIOLET2 },
-  };
-}
 
-// Determines grid layout: alternating large/small per row pair
-function getCategoryVariant(index: number): 'large' | 'small' {
-  const row = Math.floor(index / 2);
-  const col = index % 2;
-  // Even rows: left=large, right=small. Odd rows: left=small, right=large.
-  return (row % 2 === 0) ? (col === 0 ? 'large' : 'small') : (col === 0 ? 'small' : 'large');
-}
 
 export function PhraseLibrary() {
   const { C, G, isDark } = useTheme();
@@ -65,7 +40,6 @@ export function PhraseLibrary() {
     [unlockedPhraseIds, completedScenarios, secretEndingsEarned],
   );
   const CEFR_COLORS = useMemo(() => getCefrColors(C), [C]);
-  const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState<string>(STRINGS.phrases.filterAll);
   const [diff, setDiff] = useState<string>(STRINGS.phrases.filterAll);
@@ -208,63 +182,76 @@ export function PhraseLibrary() {
   // ── Category grid header component ──
   const CategoryGridHeader = useMemo(() => (
     <View style={{ marginBottom: 20 }}>
-      {/* Hero section title */}
-      <MotiView
-        from={{ opacity: 0, translateY: 10 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 400, delay: 100 }}
-      >
-        <View style={{
+      {/* Section label. A rule and a count — no chip fills, no icon tile. */}
+      <View
+        style={{
           flexDirection: 'row',
-          alignItems: 'center',
+          alignItems: 'baseline',
           justifyContent: 'space-between',
-          marginBottom: 16,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{
-              width: 32,
-              height: 32,
-              borderRadius: 10,
-              backgroundColor: C.JADE_ACCENT_DIM,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Grid2x2 size={16} color={C.PRIMARY} />
-            </View>
-            <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT }}>
-              {STRINGS.phrases.categoriesTitle}
-            </Text>
-          </View>
-          <View style={{
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            borderRadius: 10,
-            backgroundColor: C.SURFACE,
-          }}>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.TEXT3 }}>
-              {STRINGS.phrases.topicsCount(PHRASE_CATEGORIES.length)}
-            </Text>
-          </View>
-        </View>
-      </MotiView>
+          marginBottom: SPACE.md,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: FONT_LATIN_MEDIUM,
+            fontSize: 10,
+            letterSpacing: 1.6,
+            textTransform: 'uppercase',
+            color: C.TEXT3,
+          }}
+        >
+          {STRINGS.phrases.categoriesTitle}
+        </Text>
+        <Text
+          style={{
+            fontFamily: FONT_LATIN,
+            fontSize: 12,
+            color: C.TEXT3,
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {STRINGS.phrases.topicsCount(PHRASE_CATEGORIES.length)}
+        </Text>
+      </View>
 
-      {/* Bento grid */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP }}>
-        {PHRASE_CATEGORIES.map((category, idx) => {
-          const config = CATEGORY_CARD_CONFIG[category] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
-          return (
-            <View key={category} style={{ width: COL_WIDTH }}>
-              <CategoryCard
-                category={category}
-                phraseCount={categoryCounts[category] || 0}
-                variant={getCategoryVariant(idx)}
-                bgColor={isDark ? config.darkBg : config.bg}
-                accentColor={isDark ? config.darkBg : config.accent}
-                onPress={() => handleCategorySelect(category)}
-              />
+      {/* Categories as ruled entries. The bento grid assigned each category a
+          pastel fill and a large/small variant by index — neither encoded
+          anything about the category. A name and a count do. */}
+      <View>
+        {PHRASE_CATEGORIES.map((category, idx) => (
+          <Rule
+            key={category}
+            first={idx === 0}
+            onPress={() => handleCategorySelect(category)}
+            accessibilityLabel={category}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: SPACE.md,
+              }}
+            >
+              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
+                {category}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
+                <Text
+                  style={{
+                    fontFamily: FONT_LATIN,
+                    fontSize: 12,
+                    color: C.TEXT3,
+                    fontVariant: ['tabular-nums'],
+                  }}
+                >
+                  {STRINGS.phrases.expressionCount(categoryCounts[category] || 0)}
+                </Text>
+                <ChevronRight size={16} strokeWidth={1.5} color={C.TEXT3} />
+              </View>
             </View>
-          );
-        })}
+          </Rule>
+        ))}
       </View>
 
       {/* Patterns strip */}
@@ -349,9 +336,8 @@ export function PhraseLibrary() {
   const CategoryFilterBanner = useMemo(() => {
     if (showGrid || cat === STRINGS.phrases.filterAll) return null;
 
-    const config = CATEGORY_CARD_CONFIG[cat] || { bg: C.SURFACE, accent: C.PRIMARY, darkBg: C.PRIMARY };
-    const accent = isDark ? config.darkBg : config.accent;
-    const bg = isDark ? `${config.darkBg}18` : config.bg;
+    // Sadaf: the banner is a rule and a label, not a tinted card. There is no
+    // per-category colour any more.
 
     return (
       <MotiView
@@ -363,34 +349,23 @@ export function PhraseLibrary() {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          borderRadius: 16,
-          backgroundColor: bg,
-          borderWidth: 1,
-          borderColor: `${accent}22`,
-          marginBottom: 14,
+          paddingVertical: SPACE.md,
+          borderBottomWidth: 1,
+          borderBottomColor: C.BORDER,
+          marginBottom: SPACE.md,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: accent,
-            }} />
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
               {cat}
             </Text>
-            <View style={{
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 8,
-              backgroundColor: `${accent}18`,
+            <Text style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 12,
+              color: C.TEXT3,
+              fontVariant: ['tabular-nums'],
             }}>
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: accent }}>
-                {filtered.length}
-              </Text>
-            </View>
+              {filtered.length}
+            </Text>
           </View>
           <Pressable
             hitSlop={8}
@@ -402,7 +377,8 @@ export function PhraseLibrary() {
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 10,
-              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
+              borderWidth: 1,
+              borderColor: C.BORDER,
             }}
           >
             <Grid2x2 size={12} color={C.TEXT3} />
@@ -537,9 +513,9 @@ export function PhraseLibrary() {
                 return (
                   <Pressable key={d} onPress={() => setDiff(d)} hitSlop={8} style={{
                     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
-                    backgroundColor: active ? `${color}18` : 'transparent',
+                    backgroundColor: 'transparent',
                     borderWidth: 1,
-                    borderColor: active ? `${color}40` : C.BORDER,
+                    borderColor: active ? color : C.BORDER,
                   }}>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: active ? color : C.TEXT3, textTransform: 'capitalize' }}>{label}</Text>
                   </Pressable>
