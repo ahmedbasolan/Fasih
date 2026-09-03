@@ -19,6 +19,43 @@
 
 import { supabase } from './supabase';
 import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
+import { DEFAULT_USER_STATS } from '../types';
+
+/**
+ * Coerce whatever the `stats` column holds into a complete UserStats.
+ *
+ * The column is `JSONB NOT NULL DEFAULT '{}'`, so `{}` is a perfectly ordinary
+ * value for a row that was created by anything other than pushProgress. The old
+ * code returned it as-is behind a `UserStats` annotation — supabase-js hands back
+ * `any`, so nothing type-checked it — and the store then wrote it straight over
+ * good local state. The next call after that is checkMilestones(), which reads
+ * `stats.scenariosCompleted.length` and threw on the first screen after sign-in.
+ *
+ * Every field is defaulted individually rather than by a single spread, because
+ * a present-but-null field (e.g. `{"scenariosCompleted": null}`) survives a
+ * spread and crashes exactly the same way.
+ */
+function normalizeStats(raw: unknown): UserStats {
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserStats>;
+  return {
+    daysActive: typeof s.daysActive === 'number' ? s.daysActive : DEFAULT_USER_STATS.daysActive,
+    currentStreak: typeof s.currentStreak === 'number' ? s.currentStreak : DEFAULT_USER_STATS.currentStreak,
+    phrasesMastered: typeof s.phrasesMastered === 'number' ? s.phrasesMastered : DEFAULT_USER_STATS.phrasesMastered,
+    phrasesStudied: typeof s.phrasesStudied === 'number' ? s.phrasesStudied : DEFAULT_USER_STATS.phrasesStudied,
+    scenariosCompleted: Array.isArray(s.scenariosCompleted) ? s.scenariosCompleted : [],
+    categoryMastery:
+      s.categoryMastery && typeof s.categoryMastery === 'object' ? s.categoryMastery : {},
+  };
+}
+
+/** Same reasoning as normalizeStats, for the collection-shaped columns. */
+function asRecord<T>(raw: unknown): Record<string, T> {
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, T>) : {};
+}
+
+function asArray<T>(raw: unknown): T[] {
+  return Array.isArray(raw) ? (raw as T[]) : [];
+}
 
 /**
  * Increment this when CloudUserData shape changes in a breaking way.
@@ -113,15 +150,18 @@ export async function pullProgress(
     data: {
       schema_version: cloudVersion,
       user_profile: data.user_profile ?? null,
-      stats: data.stats ?? {},
-      phrase_reviews: data.phrase_reviews ?? {},
-      completed_scenarios: data.completed_scenarios ?? {},
-      pattern_progress: data.pattern_progress ?? {},
-      secret_endings_earned: data.secret_endings_earned ?? {},
-      saved_phrases: data.saved_phrases ?? [],
-      unlocked_phrase_ids: data.unlocked_phrase_ids ?? [],
-      milestones: data.milestones ?? [],
-      journal: data.journal ?? [],
+      stats: normalizeStats(data.stats),
+      phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
+      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
+      // Grammar-engine columns get the same treatment as everything else here:
+      // `?? {}` only guards null, and these arrive from the same untyped
+      // supabase-js payload that made a bare `data.stats` crash the app.
+      pattern_progress: asRecord<PatternProgress>(data.pattern_progress),
+      secret_endings_earned: asRecord<string>(data.secret_endings_earned),
+      saved_phrases: asArray<string>(data.saved_phrases),
+      unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
+      milestones: asArray<LearningMilestone>(data.milestones),
+      journal: asArray<JournalEntry>(data.journal),
       last_active_date: data.last_active_date ?? null,
       subscription_status: data.subscription_status ?? 'free',
       trial_started_at: data.trial_started_at ?? null,
@@ -174,6 +214,43 @@ export async function deleteAccountData(): Promise<{ error: string | null }> {
     return { error: error?.message ?? null };
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Could not reach the server' };
+  }
+}
+
+/**
+ * Ask the database who it thinks is calling.
+ *
+ * This is the prerequisite check for enabling RLS. Running
+ * `select auth.jwt()->>'sub'` in the Supabase SQL editor always returns NULL —
+ * that connection carries no Clerk token — so the check is only meaningful made
+ * from the app, signed in, over this same client.
+ *
+ * Signed in and correctly configured: `{ clerkUserId: 'user_2abc…', jwtRole:
+ * 'authenticated' }`. A null clerkUserId means Clerk↔Supabase Third-Party Auth
+ * is not connected yet, and enabling RLS would break every write.
+ *
+ * Requires supabase/migrations/006_auth_check.sql.
+ */
+export async function checkAuthBridge(): Promise<{
+  clerkUserId: string | null;
+  jwtRole: string | null;
+  error: string | null;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('whoami').single();
+    if (error) return { clerkUserId: null, jwtRole: null, error: error.message };
+    const row = data as { clerk_user_id: string | null; jwt_role: string | null } | null;
+    return {
+      clerkUserId: row?.clerk_user_id ?? null,
+      jwtRole: row?.jwt_role ?? null,
+      error: null,
+    };
+  } catch (e) {
+    return {
+      clerkUserId: null,
+      jwtRole: null,
+      error: e instanceof Error ? e.message : 'Could not reach the server',
+    };
   }
 }
 
