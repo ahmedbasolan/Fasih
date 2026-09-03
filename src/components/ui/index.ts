@@ -13,3 +13,4 @@ export { SyncStatusBanner } from './SyncStatusBanner';
 export { SheetPanel } from './SheetPanel';
 export { Rule } from './Rule';
 export { PhraseEntry } from './PhraseEntry';
+export { ScenarioEntry } from './ScenarioEntry';
