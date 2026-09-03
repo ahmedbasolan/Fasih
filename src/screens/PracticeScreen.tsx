@@ -95,6 +95,7 @@ function FlashCard({
                 {phrase.arabic}
               </Text>
               <Pressable
+                hitSlop={8}
                 onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
               >
@@ -157,6 +158,7 @@ function FlashCard({
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
                 >
@@ -164,6 +166,7 @@ function FlashCard({
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeakSlow(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
                 >
@@ -294,59 +297,84 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
   const DECK_SIZE = 8;
 
+  /**
+   * SRS-aware deck: due cards first, topped up with fresh phrases.
+   *
+   * Shared by all three modes. Previously only flashcards used it — the two
+   * quizzes drew uniformly at random from the whole library while still
+   * calling onPhraseReview, so they rescheduled cards that were not due and
+   * churned the very schedule the flashcard deck was maintaining.
+   */
+  const buildSrsDeck = useCallback((source: Phrase[] = PHRASES) => {
+    const dueIds = new Set(getDueReviews().map((r) => r.phraseId));
+    const due = shuffle(source.filter((p) => dueIds.has(p.id)));
+    const rest = shuffle(source.filter((p) => !dueIds.has(p.id)));
+    return [...due, ...rest].slice(0, DECK_SIZE);
+  }, [getDueReviews]);
+
   const startFlashcards = useCallback(() => {
-    // SRS-aware deck: due cards first, filled up with fresh phrases.
-    // This ensures the spaced-repetition schedule is actually honoured.
-    const dueIds = new Set(getDueReviews().map(r => r.phraseId));
-    const due = shuffle(PHRASES.filter(p => dueIds.has(p.id)));
-    const rest = shuffle(PHRASES.filter(p => !dueIds.has(p.id)));
-    const pool = [...due, ...rest].slice(0, DECK_SIZE);
-    setDeck(pool);
+    setDeck(buildSrsDeck());
     setCurrent(0);
     setFlipped(false);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('flashcard');
-  }, [getDueReviews]);
+  }, [buildSrsDeck]);
+
+  /**
+   * Build a multiple-choice set for one question.
+   *
+   * Distractors are excluded by the VALUE the answer is checked against, not by
+   * id. The library contains genuine duplicates — seven phrases share an
+   * `arabic` string and several share a `roman` one — so filtering by id alone
+   * let a phrase's twin be drawn as a "wrong" option identical to the right
+   * one. The learner then saw the same answer twice with no way to choose
+   * correctly, and the string comparison scored either tap as correct.
+   *
+   * Options are also de-duplicated after selection, so a question never renders
+   * two identical rows even if the pool is small.
+   */
+  const buildOptions = useCallback((correct: Phrase, field: 'roman' | 'arabic') => {
+    const answer = correct[field];
+    const pool = PHRASES.filter((p) => p[field] !== answer);
+    const wrong: string[] = [];
+    for (const p of shuffle(pool)) {
+      if (wrong.length >= 3) break;
+      if (!wrong.includes(p[field])) wrong.push(p[field]);
+    }
+    return shuffle([answer, ...wrong]);
+  }, []);
 
   // Arabic → Transliteration options (standard quiz — no English)
   const generateQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
-    setQuizOptions(options);
+    setQuizOptions(buildOptions(phrases[idx], 'roman'));
     setQuizAnswer(null);
-  }, []);
+  }, [buildOptions]);
 
   // English → Arabic options (reverse quiz)
   const generateReverseQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
-    setQuizOptions(options);
+    setQuizOptions(buildOptions(phrases[idx], 'arabic'));
     setQuizAnswer(null);
-  }, []);
+  }, [buildOptions]);
 
   const startQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateQuizOptions(shuffled, 0);
+    generateQuizOptions(deckCards, 0);
     setMode('quiz');
-  }, [generateQuizOptions]);
+  }, [buildSrsDeck, generateQuizOptions]);
 
   const startReverseQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateReverseQuizOptions(shuffled, 0);
+    generateReverseQuizOptions(deckCards, 0);
     setMode('reverse-quiz');
-  }, [generateReverseQuizOptions]);
+  }, [buildSrsDeck, generateReverseQuizOptions]);
 
   // Phrase Builder only works on phrases that ship word-tile breakdowns.
   const PHRASES_WITH_TILES = useMemo(
@@ -355,13 +383,11 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   );
 
   const startPhraseBuilder = useCallback(() => {
-    const pool = shuffle(PHRASES_WITH_TILES);
-    const shuffled = pool.slice(0, Math.min(DECK_SIZE, pool.length));
-    setDeck(shuffled);
+    setDeck(buildSrsDeck(PHRASES_WITH_TILES));
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('phrase-builder');
-  }, [PHRASES_WITH_TILES]);
+  }, [buildSrsDeck, PHRASES_WITH_TILES]);
 
   // Flashcard navigation — calls 3-tier rating for real SRS scheduling
   const rateCard = useCallback((rating: 'knew' | 'learning' | 'new') => {
@@ -372,10 +398,15 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     else if (rating === 'new') setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
     else setScore((s) => ({ ...s, skipped: s.skipped + 1 }));
 
-    // 3-tier SRS scheduling (1/3/7 days)
+    // 3-tier SRS scheduling (1/3/7 days).
+    // Deliberately the ONLY write for this card. recordPhraseRating already
+    // recomputes phrasesStudied / phrasesMastered / categoryMastery via
+    // computeMastery(), so there is nothing for a second binary write to add —
+    // and adding one is actively destructive: updateReviewCard would read the
+    // card this call just wrote and overwrite the interval, e.g. turning a
+    // 'learning' (3 days, no counters) into a wrong answer (1 day, ease -0.2,
+    // incorrect +1). See docs/code-quality-review.md, Batch 6b.
     onPhraseRating?.(deck[current].id, rating);
-    // Also record binary for backward compat (milestones, category mastery)
-    onPhraseReview?.(deck[current].id, rating === 'knew');
 
     if (current + 1 >= deck.length) {
       onSessionComplete?.();
@@ -384,7 +415,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       setCurrent((c) => c + 1);
       setFlipped(false);
     }
-  }, [current, deck, onPhraseRating, onPhraseReview, onSessionComplete]);
+  }, [current, deck, onPhraseRating, onSessionComplete]);
 
   const fireAnswerHaptic = useCallback((correct: boolean) => {
     void Haptics.notificationAsync(
@@ -697,6 +728,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   {phrase.arabic}
                 </Text>
                 <Pressable
+                  hitSlop={8}
                   onPress={() => speak(phrase.arabic)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                 >
@@ -759,10 +791,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -823,6 +855,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Pressable
+                    hitSlop={8}
                     onPress={() => speak(phrase.arabic)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                   >
@@ -843,10 +876,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -880,7 +913,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                    onPhraseRating?.(deck[current].id, 'knew');
                 } else {
                    setScore(s => ({ ...s, wrong: s.wrong + 1 }));
-                   onPhraseRating?.(deck[current].id, 'learning');
+                   // A failed build is 'new' (1 day), not 'learning' (3 days) —
+                   // getting it wrong must not schedule the card further out
+                   // than admitting you are still learning it.
+                   onPhraseRating?.(deck[current].id, 'new');
                 }
                 if (current + 1 >= deck.length) {
                    setMode('result');
@@ -1002,7 +1038,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.WHITE }}>{STRINGS.common.done}</Text>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.BG }}>{STRINGS.common.done}</Text>
                   </LinearGradient>
                 </Pressable>
               </View>

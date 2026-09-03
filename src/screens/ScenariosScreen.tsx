@@ -11,7 +11,7 @@ import {
   Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
 } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import { getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import {
   FONT_HEADING_EXTRA,
@@ -24,6 +24,7 @@ import type { ThemeColors } from '../components/design/tokens';
 import { GhostLetters, SheetPanel } from '../components/ui';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
+import { STRINGS } from '../constants/strings';
 import type { UserProfile, Scenario, ImpactMetrics } from '../types';
 
 interface Props {
@@ -31,7 +32,12 @@ interface Props {
   onScenarioSelect: (id: string) => void;
 }
 
-type FilterTab = 'all' | 'saved' | 'recommended';
+// Hick's law / Occam's razor: 'Recommended' was defined as !s.locked — i.e.
+// 'All, minus the locked ones'. It recommended nothing, duplicated a view the
+// user already had, and its empty state claimed 'All scenarios coming soon!',
+// which can never be true while the first three are free. Two tabs that each
+// mean something distinct beat three where one is noise.
+type FilterTab = 'all' | 'saved';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -53,6 +59,20 @@ function getCardPalettes(C: ThemeColors) {
 
 // Bento height pattern — alternates for visual interest
 const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
+
+// Locked/coming-soon card scrim — intentionally theme-invariant near-black.
+// It must stay dark to gray out a light pastel card in BOTH light and dark
+// theme, so it can't be built from a themed token the way most colors are.
+const LOCK_SCRIM_STRONG = 'rgba(10,15,12,0.52)';
+const LOCK_SCRIM_SOFT = 'rgba(10,15,12,0.38)';
+// White chrome drawn on top of the scrim above — always safe since the
+// surface underneath is guaranteed dark regardless of app theme.
+const SCRIM_CHIP_BG = 'rgba(255,255,255,0.12)';
+const SCRIM_CHIP_BORDER = 'rgba(255,255,255,0.18)';
+const SCRIM_TEXT = 'rgba(255,255,255,0.75)';
+const SCRIM_BADGE_BG = 'rgba(255,255,255,0.10)';
+const SCRIM_BADGE_BORDER = 'rgba(255,255,255,0.14)';
+const SCRIM_ICON = 'rgba(255,255,255,0.45)';
 
 // ─── Random motivational headings ───────────────────────────────────────────
 
@@ -178,22 +198,23 @@ function ScenarioCard({
   const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{ ...SMOOTH, delay: index * 40 }}
+    <View
       style={{
         flex: 1,
         paddingRight: isLeft ? 6 : 0,
         paddingLeft: isLeft ? 0 : 6,
         paddingBottom: 12,
-        // Ensure no black flash by setting initial background
-        backgroundColor: 'transparent',
       }}
     >
       <Pressable
         onPress={comingSoon ? undefined : onPress}
-        disabled={locked || !!comingSoon}
+        // Only genuinely unwritten scenarios are inert. A subscription-locked
+        // card stays tappable and routes to the paywall — the moment the user
+        // feels the limit is the only moment the upgrade is worth offering.
+        disabled={!!comingSoon}
+        accessibilityRole="button"
+        accessibilityLabel={locked ? `${title}, locked` : title}
+        accessibilityState={{ disabled: !!comingSoon }}
         style={{
           width: '100%',
           borderRadius: 24,
@@ -217,7 +238,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_HEADING_SEMI,
               fontSize: 15,
-              color: locked ? C.TEXT3 : C.TEXT,
+              color: C.TEXT_ON_LIGHT,
               lineHeight: 21,
             }}
             numberOfLines={2}
@@ -229,7 +250,7 @@ function ScenarioCard({
             style={{
               fontFamily: FONT_LATIN,
               fontSize: 12,
-              color: locked ? C.TEXT3 : C.TEXT2,
+              color: C.TEXT_ON_LIGHT,
               marginTop: 3,
             }}
           >
@@ -253,21 +274,21 @@ function ScenarioCard({
         {comingSoon && (
           <View style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10,15,12,0.52)',
+            backgroundColor: LOCK_SCRIM_STRONG,
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <View style={{
               paddingHorizontal: 12, paddingVertical: 5,
               borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.12)',
+              backgroundColor: SCRIM_CHIP_BG,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.18)',
+              borderColor: SCRIM_CHIP_BORDER,
             }}>
               <Text style={{
                 fontFamily: FONT_HEADING_SEMI,
                 fontSize: 11,
-                color: 'rgba(255,255,255,0.75)',
+                color: SCRIM_TEXT,
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
               }}>
@@ -281,24 +302,24 @@ function ScenarioCard({
         {locked && !comingSoon && (
           <View style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10,15,12,0.38)',
+            backgroundColor: LOCK_SCRIM_SOFT,
             alignItems: 'flex-end',
             justifyContent: 'flex-end',
             padding: 12,
           }}>
             <View style={{
               width: 30, height: 30, borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.10)',
+              backgroundColor: SCRIM_BADGE_BG,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.14)',
+              borderColor: SCRIM_BADGE_BORDER,
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Lock size={14} color="rgba(255,255,255,0.45)" strokeWidth={2} />
+              <Lock size={14} color={SCRIM_ICON} strokeWidth={2} />
             </View>
           </View>
         )}
       </Pressable>
-    </MotiView>
+    </View>
   );
 }
 
@@ -387,6 +408,13 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
+  // hasScenarioAccess is a store getter, so selecting it subscribes to the
+  // function identity — which never changes. These two subscribe to the state
+  // it actually reads, so the grid re-locks/unlocks when the user subscribes or
+  // finishes their third scenario instead of staying stale until remount.
+  const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
+  const completedCount = useScenariosCompletedCount();
+  const presentPaywall = useAppStore((s) => s.presentPaywall);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
   const userGender = useAppStore((s) => s.user?.gender);
 
@@ -415,28 +443,40 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
     }));
     const filtered = withAccess.filter((s) => {
       if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
-      if (filterTab === 'recommended') return !s.locked;
       return true;
     });
     // unlocked first, locked at the bottom
     return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
-  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess]);
+    // subscriptionStatus and completedCount are what hasScenarioAccess reads —
+    // they are the real dependencies. hasScenarioAccess itself is a stable ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess, subscriptionStatus, completedCount]);
 
-  const lockedCount = displayScenarios.filter((s) => s.locked).length;
+  // Paywalled and unwritten are different states and get different copy.
+  // `locked` is assigned above from hasScenarioAccess (subscription); `comingSoon`
+  // is authored content metadata.
+  const paywalledCount = displayScenarios.filter((s) => s.locked && !s.comingSoon).length;
+  const comingSoonCount = displayScenarios.filter((s) => s.comingSoon).length;
+
+  // FlashList's 2-column grid leaves a dangling half-empty row when the count is
+  // odd — pad with an invisible filler so the trailing card doesn't look orphaned.
+  type GridItem = Scenario | { id: '__filler__'; filler: true };
+  const gridData: GridItem[] = displayScenarios.length % 2 === 0
+    ? displayScenarios
+    : [...displayScenarios, { id: '__filler__', filler: true }];
 
   const TABS: { id: FilterTab; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'saved', label: 'Favourite' },
-    { id: 'recommended', label: 'Recommended' },
+    { id: 'all', label: STRINGS.scenarios.tabAll },
+    { id: 'saved', label: STRINGS.scenarios.tabFavourite },
   ];
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
-      {/* ── Deep green header ── */}
+      {/* ── Deep warm header ── */}
       <LinearGradient
-        colors={['#071A10', '#0C2B1A', C.JADE] as [string, string, string]}
+        colors={['#241C13', '#14100B', C.JADE] as [string, string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -474,10 +514,10 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: 20,
+            paddingHorizontal: 12,
             paddingTop: 24,
             paddingBottom: 8,
-            gap: 22,
+            gap: 8,
           }}
         >
           {TABS.map(({ id, label }) => {
@@ -490,12 +530,18 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={label}
                 hitSlop={8}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 99,
+                  backgroundColor: active ? C.JADE_DIM : 'transparent',
+                }}
               >
                 <Text
                   style={{
                     fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
                     fontSize: 15,
-                    color: active ? C.TEXT : C.TEXT3,
+                    color: active ? C.PRIMARY : C.TEXT3,
                   }}
                 >
                   {label}
@@ -507,17 +553,23 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
         {/* ── Scenario grid ── */}
         <FlashList
-          data={displayScenarios}
+          data={gridData}
           numColumns={2}
-          keyExtractor={(item: Scenario) => item.id}
-          renderItem={({ item, index }: { item: Scenario; index: number }) => (
-            <ScenarioCard
-              scenario={item}
-              index={index}
-              isLeft={index % 2 === 0}
-              onPress={() => onScenarioSelect(item.id)}
-            />
-          )}
+          keyExtractor={(item: GridItem) => item.id}
+          renderItem={({ item, index }: { item: GridItem; index: number }) =>
+            'filler' in item ? (
+              <View style={{ flex: 1 }} />
+            ) : (
+              <ScenarioCard
+                scenario={item}
+                index={index}
+                isLeft={index % 2 === 0}
+                onPress={() =>
+                  item.locked ? void presentPaywall() : onScenarioSelect(item.id)
+                }
+              />
+            )
+          }
           {...({ estimatedItemSize: 222 } as any)}
           contentContainerStyle={{
             paddingHorizontal: 18,
@@ -545,10 +597,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
               >
                 {filterTab === 'saved'
                   ? <Heart size={24} color={C.PRIMARY} fill="transparent" />
-                  : filterTab === 'recommended'
-                    ? <CheckCircle2 size={24} color={C.PRIMARY} />
-                    : <Search size={24} color={C.PRIMARY} />
-                }
+                  : <Search size={24} color={C.PRIMARY} />}
               </View>
               <Text
                 style={{
@@ -560,22 +609,30 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 }}
               >
                 {filterTab === 'saved'
-                  ? 'No favourites yet\nTap the heart on any card'
-                  : filterTab === 'recommended'
-                    ? 'No recommendations yet\nAll scenarios coming soon!'
-                    : 'No results found'}
+                  ? STRINGS.scenarios.noFavourites
+                  : STRINGS.scenarios.noResults}
               </Text>
             </MotiView>
           )}
           ListFooterComponent={
-            filterTab === 'all' && lockedCount > 0
+            filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
               ? () => (
                   <MotiView
                     from={{ opacity: 0, translateY: 16, scale: 0.95 }}
                     animate={{ opacity: 1, translateY: 0, scale: 1 }}
                     transition={{ ...SMOOTH, delay: 200 }}
                   >
-                    <View
+                    {/* Paywalled scenarios are written and shipping — the card
+                        offers the upgrade. Unwritten ones say so and stay inert. */}
+                    <Pressable
+                      onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
+                      disabled={paywalledCount === 0}
+                      accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
+                      accessibilityLabel={
+                        paywalledCount > 0
+                          ? STRINGS.scenarios.lockedCount(paywalledCount)
+                          : undefined
+                      }
                       style={{
                         borderRadius: 20, padding: 18,
                         flexDirection: 'row', alignItems: 'center', gap: 14,
@@ -592,14 +649,20 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                           alignItems: 'center', justifyContent: 'center',
                         }}
                       >
-                        <CheckCircle2 size={20} color={C.WHITE} />
+                        {paywalledCount > 0
+                          ? <Lock size={20} color={C.BG} />
+                          : <CheckCircle2 size={20} color={C.BG} />}
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
-                          {lockedCount} more scenarios coming soon
+                          {paywalledCount > 0
+                            ? STRINGS.scenarios.lockedCount(paywalledCount)
+                            : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
                         </Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>
-                          We are writing the next conversations now.
+                          {paywalledCount > 0
+                            ? STRINGS.scenarios.lockedSub
+                            : STRINGS.scenarios.writingNext}
                         </Text>
                       </View>
                       <View
@@ -608,11 +671,11 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                           borderRadius: 14, backgroundColor: C.JADE,
                         }}
                       >
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.WHITE }}>
-                          Soon
+                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.BG }}>
+                          {paywalledCount > 0 ? STRINGS.scenarios.unlock : STRINGS.common.soon}
                         </Text>
                       </View>
-                    </View>
+                    </Pressable>
                   </MotiView>
                 )
               : null

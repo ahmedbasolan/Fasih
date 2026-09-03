@@ -1,6 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, LinearGradient, Stop, Path, Ellipse } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -33,10 +32,7 @@ export function LiquidFillMeter({
   const liquidPath = `M${strokeWidth},${size - liquidHeight} L${size - strokeWidth},${size - liquidHeight} L${size - strokeWidth},${size} L${strokeWidth},${size} Z`;
   
   return (
-    <MotiView
-      from={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', damping: 15, stiffness: 100 }}
+    <View
       style={[styles.container, { width: size, height: size }]}
     >
       <Svg width={size} height={size} style={styles.svg}>
@@ -71,39 +67,26 @@ export function LiquidFillMeter({
         />
         
         {/* Liquid fill */}
-        <MotiView
-          from={{ height: 0 }}
-          animate={{ height: liquidHeight }}
-          transition={{ type: 'spring', damping: 20, stiffness: 80 }}
+        <View
+          style={{ height: liquidHeight }}
         >
           <Path
             d={liquidPath}
             fill="url(#liquid)"
             clipPath="url(#meterClip)"
           />
-          
-          {/* Crest highlight */}
+
+          {/* Crest highlight — static */}
           {showCrest && percentage > 5 && (
-            <MotiView
-              from={{ translateX: -20, opacity: 0 }}
-              animate={{ translateX: size + 20, opacity: [0, 0.6, 0] }}
-              transition={{ 
-                type: 'timing', 
-                duration: 2000, 
-                loop: true,
-                repeatReverse: false 
-              }}
-            >
-              <Ellipse
-                cx={size / 2}
-                cy={size - liquidHeight - 5}
-                rx={15}
-                ry={3}
-                fill="url(#crest)"
-              />
-            </MotiView>
+            <Ellipse
+              cx={size / 2}
+              cy={size - liquidHeight - 5}
+              rx={15}
+              ry={3}
+              fill="url(#crest)"
+            />
           )}
-        </MotiView>
+        </View>
         
         {/* Progress ring */}
         <Circle
@@ -119,7 +102,7 @@ export function LiquidFillMeter({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-    </MotiView>
+    </View>
   );
 }
 

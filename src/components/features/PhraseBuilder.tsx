@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTheme } from '../../hooks/useTheme';
+import { arabicAnswerMatches } from '../../engine/arabic';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../design/tokens';
 
 interface PhraseBuilderProps {
@@ -107,11 +108,16 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
   };
 
   const handleCheck = () => {
-    // Reconstruct Arabic string from placed tiles in order
-    // Because Arabic is RTL, when they place words [A, B], it renders A B visually 
-    // Wait, array order: 0th element should be the first word (rightmost in Arabic).
+    // Tiles are held in reading order — placed[0] is the first word of the
+    // phrase, which in Arabic renders rightmost. Joining with a single space
+    // reconstructs the sentence; RTL layout handles the visual direction.
     const constructed = placed.map(t => t.word).join(' ');
-    const correct = constructed === arabic;
+    // Postel's law: judge the answer, not the typography. `constructed ===
+    // arabic` marked a correct arrangement wrong over a double space or a
+    // vowel mark stored on the phrase but absent from the tiles. Letter
+    // identity is still compared strictly — this is a teaching exercise, so
+    // accepting the wrong letter would be worse than rejecting the right one.
+    const correct = arabicAnswerMatches(constructed, arabic);
     setIsCorrect(correct);
     setHasChecked(true);
   };
