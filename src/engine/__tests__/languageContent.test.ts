@@ -393,7 +393,7 @@ describe('provenance', () => {
    * The assertion is one-directional on purpose: it may fall, never rise. Lower
    * it when you source a batch.
    */
-  const MAX_UNSOURCED = 136;
+  const MAX_UNSOURCED = 134;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

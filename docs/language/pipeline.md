@@ -48,10 +48,20 @@ highest-value piece of language work available.
 
 **Procedure for a batch:**
 
+**This is currently blocked on buying a book.** Research corpora (Ramsa, Mixat,
+Casablanca, ZAEBUC-Spoken) are released for *noncommercial research use* and Fasih
+is a paid app — see the warning in [`authority.md`](./authority.md). The practical
+sources are purchasable references: Leung/Ntelitheos/Al Kaabi (Routledge 2024) and
+the Al Ramsa Institute set. Citing a book is not redistribution and carries no
+licence condition.
+
+Two phrases are sourced so far, from the printed examples in the Ramsa *paper*
+(CC BY 4.0, unlike its data): `e1` زين and `w2` ما شاء الله.
+
 1. Pick a category (`Greetings`, `Gratitude`, …) so you are looking things up in one
    coherent sweep rather than at random.
 2. For each phrase, find it in a source from `SOURCES` that is valid for the claim
-   you are making. The Ramsa corpus is free and contemporary — start there.
+   you are making.
 3. Record the locator precisely enough that someone else can find it again: a page,
    a unit, a corpus utterance id. `'p.42'` is fine; `''` is not, and the lint
    rejects it.

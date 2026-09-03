@@ -102,14 +102,63 @@ Qafisheh (1977), Holes (1990).
 speech from before the UAE's population multiplied roughly twentyfold. Use, in
 order of preference:
 
-1. **Ramsa corpus (2026)** — attested contemporary speech, CC BY 4.0, and the only
-   free source in this tier. Start here.
-2. **Al Ramsa Institute materials** — current, taught to expats in Dubai now
-3. **Leung, Ntelitheos & Al Kaabi (2024)**
-4. **Emirati social-media corpora** — contemporary written Emirati
+1. **Leung, Ntelitheos & Al Kaabi (2024)** — purchasable, Emirati-specific
+2. **Al Ramsa Institute materials** — purchasable, taught to expats in Dubai now
+3. **Ramsa *paper*** (arXiv:2603.08125) — CC BY 4.0. Cite its printed example
+   utterances and its documented phonological substitutions. **Not the corpus** —
+   see the warning below.
 
 The lint enforces this: a non-`morphosyntax` claim requires a source published
 2020 or later. `SOURCES` in `curriculum.ts` is the authoritative table.
+
+### ⚠ Research corpora are not available to this project
+
+An earlier version of this document told you to start sourcing from the Ramsa
+corpus, described it as CC BY 4.0, and called it "the only free source in this
+tier." **That was wrong**, and the error is recorded here because it is the trap
+any similar project will fall into.
+
+The CC BY 4.0 licence covers the *paper*. The *data* is governed by the paper's
+§9: the interview recordings are available "on request to qualified researchers
+for **noncommercial scholarly use**, subject to an institutional Data Use
+Agreement," and the broadcast portion "**[is] not distributed**" at all, for
+copyright reasons.
+
+**Fasih is a paid app.** The noncommercial condition rules the corpus out even if
+a Data Use Agreement were granted. The same applies to the other Emirati corpora
+in the literature — Mixat, Casablanca, ZAEBUC-Spoken, Alsanaa, ADI17 — all
+released for research use.
+
+So the practical sourcing path for a commercial product is **books you buy**, not
+corpora you download. Citing a book to verify a form is not redistribution and
+carries no licence condition. The two purchases that would unblock the backfill
+are Leung/Ntelitheos/Al Kaabi (Routledge) and the Al Ramsa Institute set.
+
+*(Aside: ZAEBUC-Spoken would be a poor lexical source regardless — its
+transcriptions are CODA-normalised toward MSA, the opposite of what this app
+needs. Ramsa deliberately went the other way, transcribing "as produced" rather
+than approximating MSA spelling. That is the right instinct for Fasih too.)*
+
+### ⚠ Open question: the 2nd-person feminine suffix
+
+Fasih writes this suffix as **ـج** throughout — عندج, شلونج, صباطج. The one
+contemporary Emirati source actually read for this project documents the
+substitution as **/k/ → /ʃ/**, spelled **ـش**: عرفتك → عرفتش (Ramsa §4.2.2).
+
+Both realisations are attested across the Gulf. Which one urban Emirati speakers
+actually use — and therefore which one this app should teach — cannot be settled
+by citation-chasing. **It needs a native speaker.** Until then ـج stays, flagged
+in `DIALECT_FEATURES`, and it belongs near the top of the first review pass.
+
+The same source documents four other substitutions that Fasih already teaches, and
+these *are* now cited in `DIALECT_FEATURES`:
+
+| Substitution | Example | Status |
+|---|---|---|
+| /j/ → /y/ | جديد → يديد | cited, matches Fasih |
+| /q/ → /g/ | عقب → ugub, قهوة → gahwa | cited, matches Fasih |
+| glottal stop dropped | شيء → شي | matches Fasih |
+| /ð/ → /ḍ/ | بياضة → بياظة | not currently taught |
 
 ---
 

@@ -214,7 +214,7 @@ export type SourceId =
   | 'leung-2024'
   | 'routledge-comprehensive'
   | 'alramsa'
-  | 'ramsa-corpus-2026'
+  | 'ramsa-paper-2026'
   | 'emirati-social-media-2024'
   | 'qafisheh-1977'
   | 'holes-1990'
