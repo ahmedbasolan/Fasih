@@ -129,9 +129,15 @@ export function PhraseEntry({
         <Text style={styles.label}>{phrase.category}</Text>
         <Text style={styles.label}>{phrase.cefr}</Text>
 
+        {/* These sit inside Rule's Pressable, so the press has to be stopped
+            here or it reaches the row and toggles expand as a side effect.
+            React Native's responder system already gives the press to the
+            innermost view, but React Native Web dispatches real DOM events that
+            bubble — without this, tapping Play on web also collapses the phrase
+            the user just asked to hear. */}
         <View style={styles.actions}>
           <Pressable
-            onPress={() => onPlay(phrase)}
+            onPress={(e) => { e.stopPropagation?.(); onPlay(phrase); }}
             style={styles.hit}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.phrases.play}
@@ -139,7 +145,7 @@ export function PhraseEntry({
             <Volume2 size={20} strokeWidth={1.5} color={playing ? C.PRIMARY : C.TEXT3} />
           </Pressable>
           <Pressable
-            onPress={() => onToggleSave(phrase.id)}
+            onPress={(e) => { e.stopPropagation?.(); onToggleSave(phrase.id); }}
             style={styles.hit}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.phrases.save}

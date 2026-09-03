@@ -65,7 +65,19 @@ export function Rule({ children, index, onPress, first, accessibilityLabel }: Ru
   );
 
   if (!onPress) {
-    return <View style={[styles.row, first && styles.first]}>{content}</View>;
+    // The label has to be applied here too. It was previously only passed on
+    // the Pressable branch, so a caller that set it on a non-pressable row —
+    // exactly the rows that most need explaining, like a coming-soon scenario —
+    // had it silently dropped, and the prop looked like it worked.
+    return (
+      <View
+        style={[styles.row, first && styles.first]}
+        accessible={accessibilityLabel ? true : undefined}
+        accessibilityLabel={accessibilityLabel}
+      >
+        {content}
+      </View>
+    );
   }
 
   return (

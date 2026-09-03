@@ -11,6 +11,7 @@ import {
 import { SPACE } from '../design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
+import { Lock } from '../icons';
 import { Rule } from './Rule';
 
 interface ScenarioEntryProps {
@@ -37,7 +38,18 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
   } = scenario;
 
   const headline = impactPreview?.trust;
-  const unavailable = locked || comingSoon;
+
+  // Two different things that must not be conflated:
+  //
+  //   `dimmed`   — the row is not playable right now, so it reads quieter.
+  //   `inert`    — the row does nothing at all when tapped.
+  //
+  // Only `comingSoon` is inert: that content is not written yet, so there is
+  // nothing to open. A `locked` scenario IS written and IS shipping — tapping
+  // it opens the paywall, and that is the app's primary conversion gesture.
+  // Treating the two as one state silently killed it.
+  const dimmed = locked || comingSoon;
+  const inert = comingSoon === true;
 
   // The Career/Social vocabulary split is a product differentiator, not a
   // cosmetic label swap — see spec §5.1. The same underlying metric is called
@@ -52,7 +64,7 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
         title: {
           fontFamily: FONT_HEADING_SEMI,
           fontSize: 16,
-          color: unavailable ? C.TEXT3 : C.TEXT,
+          color: dimmed ? C.TEXT3 : C.TEXT,
         },
         arabic: {
           fontFamily: FONT_ARABIC_SEMI,
@@ -104,17 +116,31 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
           textTransform: 'uppercase',
           color: C.TEXT3,
         },
+        lockedBadge: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: SPACE.xs,
+        },
+        lockedLabel: {
+          fontFamily: FONT_LATIN_MEDIUM,
+          fontSize: 10,
+          letterSpacing: 1.6,
+          textTransform: 'uppercase',
+          // Accent, not TEXT3: this row is actionable, and the accent is what
+          // separates "tap to unlock" from "nothing here yet".
+          color: C.PRIMARY,
+        },
       }),
-    [C, unavailable],
+    [C, dimmed],
   );
 
-  const showMetric = headline !== undefined && !unavailable;
+  const showMetric = headline !== undefined && !dimmed;
 
   return (
     <Rule
       index={index}
       first={first}
-      onPress={unavailable ? undefined : () => onPress(id)}
+      onPress={inert ? undefined : () => onPress(id)}
       accessibilityLabel={title}
     >
       <Text style={styles.title}>{title}</Text>
@@ -124,7 +150,20 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
 
       <View style={styles.meta}>
         <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>
-        {comingSoon ? <Text style={styles.label}>{STRINGS.scenarios.comingSoonBadge}</Text> : null}
+
+        {/* Locked and coming-soon are different promises and say so. Locked
+            content exists and is one tap from the paywall; coming-soon content
+            is not written yet. Both were previously indistinguishable dimmed
+            rows. */}
+        {comingSoon ? (
+          <Text style={styles.label}>{STRINGS.scenarios.comingSoonBadge}</Text>
+        ) : locked ? (
+          <View style={styles.lockedBadge}>
+            <Lock size={12} strokeWidth={1.5} color={C.PRIMARY} />
+            <Text style={styles.lockedLabel}>{STRINGS.scenarios.lockedBadge}</Text>
+          </View>
+        ) : null}
+
         {showMetric ? (
           <Text style={styles.metricValue}>{`${headlineLabel} ${headline}%`}</Text>
         ) : null}
