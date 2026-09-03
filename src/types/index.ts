@@ -101,6 +101,17 @@ export interface Scenario {
   kafIntro: string;
   mode: ScenarioMode;
   impactPreview?: ImpactMetrics;
+  /**
+   * The scenario's signature Arabic line, shown in the browse list so the
+   * learner sees Arabic before opening anything. Bare script, no tashkeel —
+   * see docs/language/authority.md.
+   *
+   * Deliberately unpopulated for now: writing these is content work that goes
+   * through docs/language/pipeline.md, not a design task.
+   */
+  keyLine?: string;
+  /** Romanisation of `keyLine`. Required whenever `keyLine` is set. */
+  keyLineRoman?: string;
 }
 
 export type ChoiceOutcome = 'excellent' | 'good' | 'neutral' | 'bad';
