@@ -11,6 +11,32 @@ about tashkeel is the specific failure this whole system exists to prevent.
 
 ---
 
+## 0. The project owner does not read or speak Arabic — at all
+
+Not "isn't fluent in the dialect." **Ahmed cannot read Arabic script, cannot judge a
+romanisation, and cannot tell whether a translation is plausible.** This is not the
+usual "no native speaker has reviewed this" caveat — there is currently **no human
+anywhere in the loop** who can catch a wrong Arabic string by looking at it. Every
+claim of correctness in this codebase rests entirely on citable sources and automated
+analysis, with nothing behind that as a backstop.
+
+Two consequences that are not optional:
+
+1. **Never invent a citation.** A page number, section number, or corpus id that
+   sounds right but wasn't checked is worse than `UNSOURCED`, because it looks
+   verified to a reader who has no way to catch the fabrication either.
+2. **Never present Ahmed's approval, or the absence of a bug report, as linguistic
+   validation.** He approving a feature is a product decision. It says nothing about
+   whether the Arabic in it is correct, and no amount of his sign-off changes that.
+
+A real mistake already happened under this exact condition: an earlier version of
+this file cited the Ramsa speech corpus as freely usable (§3, below) when its data is
+in fact restricted to noncommercial research. Nobody in this project — human or
+otherwise — was positioned to catch that by inspection. Only re-reading the primary
+source did. That is the standing risk this section exists to name.
+
+---
+
 ## 1. No MSA. Anywhere.
 
 Fasih contains no Modern Standard Arabic. Not in choice cards, NPC dialogue, the
@@ -102,14 +128,64 @@ Qafisheh (1977), Holes (1990).
 speech from before the UAE's population multiplied roughly twentyfold. Use, in
 order of preference:
 
-1. **Leung, Ntelitheos & Al Kaabi (2024)** — purchasable, Emirati-specific
-2. **Al Ramsa Institute materials** — purchasable, taught to expats in Dubai now
-3. **Ramsa *paper*** (arXiv:2603.08125) — CC BY 4.0. Cite its printed example
+1. **Ramsa *paper*** (arXiv:2603.08125, 2026) — CC BY 4.0. Cite its printed example
    utterances and its documented phonological substitutions. **Not the corpus** —
-   see the warning below.
+   see the warning below. **Actually read, cover to cover, 2026-09-03.**
+2. **Szreder & Derrick (2024)**, JIPA 54(1) — peer-reviewed, open bibliographic
+   record read (not the paywalled full text). Phonology only (see below).
+3. **Leung, Ntelitheos & Al Kaabi (2024)** — purchasable, Emirati-specific.
+   **NOT YET READ** — no preview accessible. Every existing citation to it is
+   flagged unverified in `curriculum.ts`.
+4. **Al Ramsa Institute materials** — purchasable, taught to expats in Dubai now.
+   **NOT YET READ.** The one specific work independently identified (Al Fardan
+   2016, *Spoken Emirati*) predates the 2020 cutoff below and is unread besides.
 
 The lint enforces this: a non-`morphosyntax` claim requires a source published
-2020 or later. `SOURCES` in `curriculum.ts` is the authoritative table.
+2020 or later. `SOURCES` in `curriculum.ts` is the authoritative table — and as of
+2026-09-03, **two entries in it have actually been read**
+(`ramsa-paper-2026`, `ntelitheos-idrissi-2017`; the latter is `morphosyntax`-only)
+and one has been read at abstract depth (`szreder-derrick-2024`). Every other
+entry — `leung-2024`, `routledge-comprehensive`, `alramsa`, `qafisheh-1977`,
+`holes-1990` — is a description of a real, purchasable book, **not a verified
+citation**. Each says so in its own `note`. Treat any DIALECT_FEATURES entry or
+`Phrase.source` pointing at one of the unread entries as **not actually checked**,
+regardless of how confidently it reads — see §0.
+
+### What was verified, and how (2026-09-03 research pass)
+
+Two open-access academic sources were located, downloaded, and read directly —
+not summarised secondhand:
+
+- **Ntelitheos & Idrissi (2017)**, "Language Growth in Child Emirati Arabic," in
+  *Perspectives on Arabic Linguistics XXIX* [Studies in Arabic Linguistics 5],
+  John Benjamins, pp. 229–248. Freely hosted by the author:
+  `faculty.uaeu.ac.ae/dimitrios_n/lang_growth.pdf`. A child-language-acquisition
+  study, not a phrasebook — restricted here to `morphosyntax` because most of its
+  Arabic content is documented as **children's error forms**, not attested adult
+  usage. It does state two clean adult targets directly: بيت *bait/bayt* "house"
+  (its worked example transcribes البيت as `DET#bajt`) and the pair أبيض *abyad* /
+  بيضة *beeda* "white" (masc/fem), with `bayda` → `beeda` monophthongisation
+  documented as a real, non-error Emirati process.
+- **Szreder & Derrick (2024)**, "Phonological conditioning of affricate
+  variability in Emirati Arabic," *Journal of the International Phonetic
+  Association* 54(1), 146–164. Paywalled in full; read at the abstract/
+  repository-record level. Establishes that **/k/ → [tʃ] ("ch") affrication is "a
+  completed phonemic change" in Emirati Arabic**, elicited from 20 native
+  speakers — see the open question below for why this matters.
+
+Also checked and found **not usable**, so the next pass doesn't repeat the work:
+a publisher preview PDF for *Basic Emirati Arabic* (403 Forbidden), Google Books
+previews for both Leung/Ntelitheos/Al Kaabi titles (no accessible preview text),
+the co-author's own UAEU faculty page (describes the books, contains no excerpt),
+and Al Ramsa's website (403 Forbidden to automated fetch).
+
+Wikipedia's *Emirati Arabic* article was read and is a genuinely useful **index**
+to primary sources (it names, with page numbers in one case, exactly which claims
+come from which book) — but it is not itself a citable source in this project's
+sense, and nothing here treats it as one. Where it pointed at a specific claim in
+Leung/Ntelitheos/Al Kaabi that has NOT been independently read, that fact is
+recorded as a lead for a future pass, not written into `curriculum.ts` as if
+verified.
 
 ### ⚠ Research corpora are not available to this project
 
@@ -141,14 +217,29 @@ than approximating MSA spelling. That is the right instinct for Fasih too.)*
 
 ### ⚠ Open question: the 2nd-person feminine suffix
 
-Fasih writes this suffix as **ـج** throughout — عندج, شلونج, صباطج. The one
-contemporary Emirati source actually read for this project documents the
-substitution as **/k/ → /ʃ/**, spelled **ـش**: عرفتك → عرفتش (Ramsa §4.2.2).
+Fasih writes this suffix as **ـج** throughout — عندج, شلونج, صباطج — and its OWN
+romanisation calls it **"-ich"**, an affricate ("ch" as in "chair"), e.g.
+`عندج` → `'indich` in `scenarios.ts`. Two things are now known about it that
+weren't when this question was first raised:
 
-Both realisations are attested across the Gulf. Which one urban Emirati speakers
-actually use — and therefore which one this app should teach — cannot be settled
-by citation-chasing. **It needs a native speaker.** Until then ـج stays, flagged
-in `DIALECT_FEATURES`, and it belongs near the top of the first review pass.
+1. The Ramsa paper documents a **different word** undergoing **/k/ → /ʃ/** (plain
+   "sh", not an affricate): عرفتك → عرفتش (§4.2.2).
+2. Szreder & Derrick (2024, peer-reviewed, actually read) independently establish
+   that **/k/ → [tʃ] ("ch") is "a completed phonemic change"** in Emirati Arabic
+   generally, in speech following a front vowel — which is exactly the phonetic
+   environment of this suffix (`i` + `k`).
+
+Read together, these are **not a contradiction** — they describe two different
+processes ([tʃ] from general k-affrication vs. [ʃ] in the Ramsa example, which
+may be a different word, a different speaker, or genuine free variation) and
+neither confirms nor denies this specific morpheme. What they do give: Fasih's
+own **"-ich" choice is phonologically well-motivated** by a real peer-reviewed
+finding, not an arbitrary pick — that's new, useful information this project
+didn't have before. What remains unconfirmed: whether contemporary urban Emirati
+speakers realise **this exact suffix** as -ich, as -ish, or as both depending on
+speaker/context. **That still needs a native speaker**, and it belongs near the
+top of the first review pass — but it is now a narrower, better-informed question
+than "which spelling is right," which was where this stood before.
 
 The same source documents four other substitutions that Fasih already teaches, and
 these *are* now cited in `DIALECT_FEATURES`:
@@ -159,6 +250,24 @@ these *are* now cited in `DIALECT_FEATURES`:
 | /q/ → /g/ | عقب → ugub, قهوة → gahwa | cited, matches Fasih |
 | glottal stop dropped | شيء → شي | matches Fasih |
 | /ð/ → /ḍ/ | بياضة → بياظة | not currently taught |
+
+### Leads for the next research pass (found, not yet verified)
+
+Located via Wikipedia's *Emirati Arabic* article, each with a specific primary-
+source pointer, but **none independently read** — do not cite these into
+`curriculum.ts` without reading the actual page:
+
+- **مب negation has regional variants**: مب (Northern Emirates), مش (Abu Dhabi),
+  ما (East Coast). Pointer: Leung/Ntelitheos/Al Kaabi *Comprehensive Grammar*, and
+  Al Fardan (2016) *Spoken Emirati*, pp. 8–10. If true, Fasih's `neg-mub` dialect
+  feature — which treats مب as one undifferentiated Gulf form — is oversimplified
+  for a product that specifically targets Dubai *and* Abu Dhabi as one variety.
+  Worth resolving before adding more negation content.
+- **fish, chicken**: attested Emirati forms سمچ *simach* (MSA سمك), دياي *diyaay*
+  (MSA دجاج) — general vocabulary, not currently in Fasih's phrase list.
+- **Loanwords**: دريشة *dariisha* "window" (Persian), خاشوگة *khaashuuga* "spoon"
+  (Turkish) — not currently in Fasih's phrase list, but useful colour for future
+  content and evidence of the pan-Gulf substrate pattern §2 describes.
 
 ---
 

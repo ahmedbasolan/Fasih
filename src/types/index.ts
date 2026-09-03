@@ -218,6 +218,8 @@ export type SourceId =
   | 'emirati-social-media-2024'
   | 'qafisheh-1977'
   | 'holes-1990'
+  | 'ntelitheos-idrissi-2017'
+  | 'szreder-derrick-2024'
   | 'fasih-internal';
 
 /**
