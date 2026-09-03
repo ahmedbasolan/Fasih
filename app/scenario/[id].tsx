@@ -16,9 +16,12 @@ export default function ScenarioRoute() {
   const handleComplete = (_scenarioId: string, _endingType: string) => {
     // finalizeScenario (called inside ScenarioPlayer) already wrote completedScenarios,
     // and ScenarioPlayer already fires trackScenarioCompleted itself with the real
-    // title/scene count — this route only needs to check milestones and dismiss the player.
+    // title/scene count — this route only needs to check milestones.
+    // Do NOT dismiss the player here: onComplete fires the instant the result
+    // phase is reached, before the learner has seen their ending. Dismissal
+    // happens only when they leave via the result screen's own Exit/Restart
+    // controls, which call the onExit prop below.
     checkMilestones();
-    setShowPlayer(false);
   };
 
   const handleJournal = (arabic: string, english: string, insight: string) => {

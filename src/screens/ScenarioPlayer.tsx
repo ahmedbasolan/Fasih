@@ -281,8 +281,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const [toneHistory, setToneHistory] = useState<{ sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[]>([]);
   // lastResolvedNextSceneId holds the branch target from the most recent choice (for next())
   const [lastResolvedNextSceneId, setLastResolvedNextSceneId] = useState<string | null>(null);
-  // finalizedEnding locks the evaluated ending before finalizeScenario() nulls activeScenarioState
+  // finalizedEnding/finalizedImpact lock the evaluated ending and T/R/C totals before
+  // finalizeScenario() nulls activeScenarioState — otherwise the result screen would
+  // render with a zeroed-out score the instant it appears.
   const [finalizedEnding, setFinalizedEnding] = useState<ScenarioEnding | null>(null);
+  const [finalizedImpact, setFinalizedImpact] = useState<{ trust: number; respect: number; culture: number } | null>(null);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -322,6 +325,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
     const currEnding = evaluateEnding(activeScenarioState, scriptData);
     setFinalizedEnding(currEnding);
+    setFinalizedImpact(Object.values(activeScenarioState.impactByNpc).reduce(
+      (acc, d) => ({
+        trust:   acc.trust   + d.trust,
+        respect: acc.respect + d.respect,
+        culture: acc.culture + d.culture,
+      }),
+      { trust: 0, respect: 0, culture: 0 }
+    ));
     setCompletionFired(true);
     finalizeScenario(currEnding);
     // Actually unlock the phrases the result screen is about to present as
@@ -505,6 +516,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setToneHistory([]);
     setLastResolvedNextSceneId(null);
     setFinalizedEnding(null);
+    setFinalizedImpact(null);
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
@@ -526,17 +538,20 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     );
   }
 
-  // Derive total T/R/C for ImpactBar by summing all NPCs
-  const impact = activeScenarioState
-    ? Object.values(activeScenarioState.impactByNpc).reduce(
-        (acc, d) => ({
-          trust:   acc.trust   + d.trust,
-          respect: acc.respect + d.respect,
-          culture: acc.culture + d.culture,
-        }),
-        { trust: 0, respect: 0, culture: 0 }
-      )
-    : { trust: 0, respect: 0, culture: 0 };
+  // Derive total T/R/C for ImpactBar by summing all NPCs. finalizedImpact takes
+  // priority once locked, for the same reason as `ending` below — activeScenarioState
+  // goes null right as the result screen appears.
+  const impact = finalizedImpact
+    ?? (activeScenarioState
+      ? Object.values(activeScenarioState.impactByNpc).reduce(
+          (acc, d) => ({
+            trust:   acc.trust   + d.trust,
+            respect: acc.respect + d.respect,
+            culture: acc.culture + d.culture,
+          }),
+          { trust: 0, respect: 0, culture: 0 }
+        )
+      : { trust: 0, respect: 0, culture: 0 });
 
   // Butterfly effect: NPC tone from engine (driven by the trust/respect/culture
   // meters shown in the ImpactBar, so the bar and the NPC's demeanour agree)
