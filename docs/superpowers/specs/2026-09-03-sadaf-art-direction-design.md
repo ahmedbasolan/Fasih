@@ -155,15 +155,48 @@ against Latin both stay as they are.
 that shows a phrase. The Scenarios browse grid currently shows *no Arabic at all*; under
 Sadaf every entry carries its key line.
 
-### 4.3 Depth
+### 4.3 Spacing
+
+Sadaf has no fills or shadows to hide drift, so the scale is fixed here rather than left to
+each screen. Every margin, padding and gap is one of these:
+
+`4 · 8 · 12 · 16 · 24 · 32 · 48 · 64`
+
+Fixed applications, so screens cannot each invent their own:
+
+| Slot | Value |
+|---|---|
+| Screen horizontal margin | 20 (the one off-scale value, matching the existing safe-area gutter) |
+| Gap between entries | 0 — entries are separated by their hairline, not by space |
+| Entry vertical padding | 16 |
+| Gap between a title and its Arabic line | 8 |
+| Gap between Arabic and romanisation | 4 |
+| Gap between an entry's text block and its meta row | 12 |
+| Section spacing | 32 |
+| Above a section heading | 48 |
+
+### 4.4 Chrome — tab bar and sheet
+
+The tab bar is the most persistent surface in the app and needs stating explicitly.
+
+- Ground `BG`, not a separate `TAB_BG` — the bar is the page, not a tray on top of it.
+- The existing iOS/Android shadow block is **removed**; the bar separates with a single
+  hairline at `BORDER`.
+- Active tint `PRIMARY`, inactive `TEXT3` (replacing the cool `NEUTRAL_500`).
+- The active-tab filled rounded-square behind the icon is removed. Active state is weight and
+  colour, consistent with §4.3's radius budget.
+- Icons: Lucide at 1.5 px stroke, 22 px, round caps.
+- `SheetPanel` keeps `SURFACE` and the app's only shadow, per §4.5.
+
+### 4.5 Depth
 
 The whole app gets **one** elevated surface: the bottom sheet (`SheetPanel`). Nothing else
 takes a shadow. Everything else separates with a 1px hairline at `BORDER` and space.
 
-Radius budget: `SheetPanel` 24, interactive pills 999, everything else **0**. A rounded
+Radius budget (referenced by §4.4): `SheetPanel` 24, interactive pills 999, everything else **0**. A rounded
 rectangle around every block is what flattens hierarchy; removing it is most of the work.
 
-### 4.4 The watermark
+### 4.6 The watermark
 
 `GhostLetters` is promoted from invisible decoration to the identity device.
 
