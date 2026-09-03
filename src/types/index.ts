@@ -220,6 +220,52 @@ export interface Phrase {
   wordTiles?: string[];
 }
 
+// ─── Generative Grammar ─────────────────────────────────────────────────────
+export type SoftSkill = 'offer' | 'request' | 'suggest' | 'confirm' | 'reassure' | 'question' | 'identity' | 'action';
+
+export interface GrammarSlot {
+  id: string;
+  label: string;                 // e.g. "verb you want to do"
+  accepts: 'verb' | 'noun' | 'adjective' | 'questionWord' | 'phrase';
+  /** Phrase IDs that may fill this slot. All must exist in phrases.ts or be flagged needsNativeReview. */
+  options: string[];
+}
+
+export interface GrammarPattern {
+  id: string;
+  title: string;                 // e.g. "أبي ___ — I want to ___"
+  titleFeminine?: string;        // rendered when user.gender === 'female'
+  unlockedByScenario: string;    // scenario ID; empty string = available from library basics
+  secretUnlock?: boolean;        // true = requires the scenario's secret ending (one per scenario)
+  softSkill: SoftSkill;
+  goodImpressionNote: string;    // the cultural "impression" lesson
+  examples: { phraseId: string }[];       // 2-3 already-unlocked phrases that reveal the slot
+  slots: GrammarSlot[];
+  needsNativeReview?: boolean;   // true = listed in REVIEW_QUEUE
+  source?: string;               // provenance for derived patterns
+  /**
+   * Assembly frame for buildSentence — fixed words plus `{slotId}` placeholders
+   * in Arabic-reading order. One placeholder per slot, IDs must match slot ids.
+   */
+  template: {
+    arabic: string[];
+    roman: string[];
+    english: string[];
+  };
+}
+
+export interface SentenceResult {
+  arabic: string;
+  roman: string;
+  english: string;
+  valid: boolean;
+}
+
+export interface PatternProgress {
+  correctBuilds: number;         // pattern "masters" at 3 correct builds
+  lastBuilt?: string;            // ISO date
+}
+
 // ─── Navigation ──────────────────────────────────────────────────────────────
 export type MainTab = 'home' | 'scenarios' | 'library' | 'profile';
 
