@@ -59,6 +59,52 @@ describe.each([
   });
 });
 
+/**
+ * The shape the original defect actually had.
+ *
+ * Every pairing above is token-against-token, and both sides of a token pairing
+ * move together when the theme flips — so a token pairing can be wrong, but it
+ * cannot be wrong *by construction* the way the meter labels were. Those put a
+ * themed ink token on a **theme-invariant literal fill**: near-white `TEXT2` in
+ * the dark theme, composited over the near-white pastel `#E0FFF0`, measured
+ * ~1.0:1 while the same pair in light theme looked fine.
+ *
+ * This block pins that the maths catches that shape, using the real deleted
+ * pastel as the fill. It is a proof about the measurement, not a scan of the
+ * codebase.
+ *
+ * What the guard as a whole covers: every token pairing the app renders, in
+ * both themes, plus the 22 tokens staying deleted.
+ *
+ * What it does NOT cover: a hardcoded colour literal introduced somewhere in a
+ * component. Nothing here reads the component tree, so a new `#E0FFF0` written
+ * inline under themed text would still ship. Closing that gap is the hex lint
+ * in spec §8.4 (step 8), not this file.
+ */
+describe('themed ink on a theme-invariant literal fill', () => {
+  // The dark-theme value of the deleted CATEGORY_MINT, kept as a fixture.
+  const PASTEL = '#E0FFF0';
+
+  it('fails AA in the dark theme — the ~1.0:1 meter-label bug', () => {
+    const ratio = contrastRatio(darkTheme.TEXT2, PASTEL);
+    expect(ratio).toBeLessThan(AA_TEXT);
+    // Not just "below AA" — near-invisible. Stated so a change that merely
+    // nudges it over 4.5 cannot be read as having fixed anything.
+    expect(ratio).toBeLessThan(1.2);
+  });
+
+  it('also fails AA for the primary ink token, not only the secondary one', () => {
+    expect(contrastRatio(darkTheme.TEXT, PASTEL)).toBeLessThan(AA_TEXT);
+  });
+
+  it('passes in the light theme, which is why eyeballing one theme missed it', () => {
+    // The same literal fill under the light theme's ink is fine. A fill that is
+    // safe in the theme the developer happened to be running is exactly how the
+    // pairing survived review.
+    expect(contrastRatio(lightTheme.TEXT2, PASTEL)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+});
+
 describe('deleted tokens stay deleted', () => {
   // Sadaf removes these. A future edit that reintroduces one should fail here
   // with an explanation, not silently restore the pastel layer.
