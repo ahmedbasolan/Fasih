@@ -3,12 +3,13 @@ import {
   View,
   ScrollView,
   Text,
-  Pressable,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IMAGES } from '../constants/images';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, PrimaryButton } from '../components/ui';
 import { MotiView } from 'moti';
 import {
   HomeHeader,
@@ -17,14 +18,12 @@ import {
   QuickChallenge,
   MissionCard,
   DailyPhrase,
-  CommunityBar,
   SituationalConfidence,
 } from '../components/home';
 import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
-import { ChevronRight } from '../components/icons';
 import { STRINGS } from '../constants/strings';
 import { todayISO, addDays } from '../engine/srsEngine';
 import { isStreakAtRisk } from '../engine/streakEngine';
@@ -38,7 +37,6 @@ interface HomeScreenNewProps {
 // Derive week-day status from streak + lastActiveDate
 function getWeekDays(streak: number, lastActiveDate: string | null): { label: string; status: 'done' | 'today' | 'future' }[] {
   const todayIso = todayISO();
-  const todayJsDay = new Date().getDay(); // 0=Sun ... 6=Sat
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // Consecutive streak window ending at the last active day (yesterday if the
@@ -47,15 +45,20 @@ function getWeekDays(streak: number, lastActiveDate: string | null): { label: st
   const streakEnd = lastActiveDate ?? todayIso;
   const streakStart = addDays(streakEnd, -(Math.max(streak, 1) - 1));
 
+  // Index of today within a Monday-first week: Mon=0 … Sun=6.
+  // Deriving each cell's date from the Monday of *this* week is what makes the
+  // Sunday column correct. The previous version compared JS day numbers
+  // (Sun=0) against today's, so Sunday always tested as "in the past" and its
+  // date was computed as a negative offset — i.e. last week's Sunday — which
+  // rendered a checkmark for a day that had not happened yet.
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const monday = addDays(todayIso, -todayIdx);
+
   return days.map((label, idx) => {
-    // JS getDay(): Mon=1 ... Sat=6, Sun=0. Mon-first array index → (idx + 1) % 7.
-    const jsDay = (idx + 1) % 7;
-    const date = addDays(todayIso, jsDay - todayJsDay); // calendar date of this weekday
-    if (jsDay < todayJsDay) {
-      return { label, status: date >= streakStart && date <= streakEnd ? 'done' : 'future' };
-    }
-    if (jsDay === todayJsDay) return { label, status: 'today' };
-    return { label, status: 'future' };
+    if (idx > todayIdx) return { label, status: 'future' };
+    if (idx === todayIdx) return { label, status: 'today' };
+    const date = addDays(monday, idx);
+    return { label, status: date >= streakStart && date <= streakEnd ? 'done' : 'future' };
   });
 }
 
@@ -64,6 +67,14 @@ function getPhraseOfTheDay() {
   const today = new Date();
   const dayIndex = today.getDate() + today.getMonth() * 31;
   return PHRASES[dayIndex % PHRASES.length];
+}
+
+/** A different phrase each day for the recall challenge, offset from the
+ *  phrase of the day so the two home cards never coincide. */
+function getChallengePhrase() {
+  const today = new Date();
+  const dayIndex = today.getDate() + today.getMonth() * 31;
+  return PHRASES[(dayIndex + Math.floor(PHRASES.length / 2)) % PHRASES.length];
 }
 
 export function HomeScreenNew({
@@ -81,6 +92,7 @@ export function HomeScreenNew({
   const lastActiveDate = useAppStore((s) => s.lastActiveDate);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
   const streakFreezes = useAppStore((s) => s.streakFreezes);
+  const dailyXP = useAppStore((s) => s.dailyXP);
   const spendStreakFreeze = useAppStore((s) => s.spendStreakFreeze);
 
   const { speak } = useArabicTTS();
@@ -89,7 +101,11 @@ export function HomeScreenNew({
 
   // Derived data
   const streakDays = stats.currentStreak;
-  const totalXP = stats.scenariosCompleted.length * 50;
+  // XP earned *today*, against today's goal. This used to be
+  // scenariosCompleted.length * 50 — a lifetime total measured against a
+  // per-day target, so the ring filled permanently after about ten scenarios
+  // and never reset at midnight.
+  const todayXP = dailyXP.date === todayISO() ? dailyXP.xp : 0;
   const goalXP = user?.dailyGoalXP ?? 500;
   const isNewUser = stats.daysActive === 0;
   const checklistTotal = 5;
@@ -117,6 +133,9 @@ export function HomeScreenNew({
 
   // Phrase of the day
   const phraseOfTheDay = getPhraseOfTheDay();
+  // A second, different phrase for the recall challenge — offset so the two
+  // home cards never show the same phrase on the same day.
+  const challengePhrase = getChallengePhrase();
 
   const styles = useMemo(() => StyleSheet.create({
     scrollView: {
@@ -156,6 +175,10 @@ export function HomeScreenNew({
       shadowRadius: 4,
       elevation: 2,
     },
+    emptyMascot: {
+      width: 48,
+      height: 48,
+    },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
       fontSize: 15,
@@ -168,23 +191,6 @@ export function HomeScreenNew({
       color: C.TEXT2,
       textAlign: 'center',
       lineHeight: 18,
-    },
-    emptyButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 12,
-      backgroundColor: C.JADE_DIM,
-      borderWidth: 1,
-      borderColor: C.PRIMARY,
-    },
-    emptyButtonText: {
-      fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
-      color: C.PRIMARY,
-      fontWeight: '600',
     },
   }), [C, insets.bottom]);
 
@@ -213,7 +219,7 @@ export function HomeScreenNew({
       )}
 
       {/* HERO SECTION: Today's Mission (Primary CTA) */}
-      <Text style={[styles.sectionLabel, { marginTop: 10 }]}>Today&apos;s Mission</Text>
+      <Text style={[styles.sectionLabel, { marginTop: 10 }]}>{STRINGS.homeSections.todaysMission}</Text>
       <View style={styles.sectionContent}>
         {isNewUser ? (
           <MotiView
@@ -222,18 +228,16 @@ export function HomeScreenNew({
             transition={{ type: 'timing', duration: 400 }}
           >
             <View style={styles.emptyCard}>
-              <Text style={{ fontSize: 40 }}>🦊</Text>
+              <Image source={IMAGES.foxyMale} style={styles.emptyMascot} resizeMode="contain" />
               <Text style={styles.emptyTitle}>{STRINGS.home.noProgressYet}</Text>
               <Text style={styles.emptySubtitle}>{STRINGS.home.newUserTip}</Text>
-              <Pressable
+              <PrimaryButton
                 onPress={() => onMissionPress?.(featured.id)}
-                style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Begin your first scenario"
+                accessibilityLabel={STRINGS.homeSections.beginFirstScenario}
+                style={{ alignSelf: 'stretch', marginTop: 4 }}
               >
-                <Text style={styles.emptyButtonText}>{STRINGS.home.beginScenario}</Text>
-                <ChevronRight size={16} color={C.PRIMARY} />
-              </Pressable>
+                {STRINGS.home.beginScenario}
+              </PrimaryButton>
             </View>
           </MotiView>
         ) : (
@@ -251,7 +255,7 @@ export function HomeScreenNew({
       <View style={{ marginTop: 6 }}>
         <StreakWidget
           streakDays={streakDays}
-          currentXP={totalXP}
+          currentXP={todayXP}
           goalXP={goalXP}
           weekDays={weekDays}
           mood={streakMood}
@@ -265,37 +269,42 @@ export function HomeScreenNew({
       </View>
 
       {/* Quick Challenge Section */}
-      <Text style={styles.sectionLabel}>Quick Challenge</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.quickChallenge}</Text>
       <View style={styles.sectionContent}>
-        <QuickChallenge 
-          onRevealed={() => setStreakMood('excited')} 
+        <QuickChallenge
+          prompt={challengePhrase.english}
+          answer={challengePhrase.arabic}
+          roman={challengePhrase.roman}
+          onRevealed={() => setStreakMood('excited')}
         />
       </View>
 
       {/* Daily Phrase Section */}
-      <Text style={styles.sectionLabel}>Daily Phrase</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.dailyPhrase}</Text>
       <View style={styles.sectionContent}>
         <DailyPhrase
           arabic={phraseOfTheDay.arabic}
           phonetic={phraseOfTheDay.roman}
           english={phraseOfTheDay.english}
           onPlay={() => speak(phraseOfTheDay.arabic)}
+          category={phraseOfTheDay.category}
           onSave={() => toggleSavedPhrase(phraseOfTheDay.id)}
         />
       </View>
 
       {/* Situational Confidence Section */}
-      <Text style={styles.sectionLabel}>Your Confidence</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.yourConfidence}</Text>
       <View style={styles.sectionContent}>
         <SituationalConfidence limit={5} />
       </View>
 
-      {/* Community Section */}
-      <Text style={styles.sectionLabel}>Community</Text>
-      <View style={styles.sectionContent}>
-        {/* TODO: Replace with real count from API */}
-        <CommunityBar count={47} location="Dubai" />
-      </View>
+      {/* Community section intentionally not rendered.
+          It read "47 expats in Dubai completed a scenario today" — an invented
+          count and an invented city, shown to every user regardless of where
+          they are, behind a "TODO: replace with real count from API" comment.
+          There is no such API yet, so the card stated something false as fact.
+          CommunityBar is still available and now requires real values; render
+          it again once a genuine count exists. */}
     </ScrollView>
     </View>
   );
