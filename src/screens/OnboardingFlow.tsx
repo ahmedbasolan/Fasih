@@ -1180,7 +1180,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                   { Icon: Zap,      fill: true,  gradientColors: [C.JADE,          C.PRIMARY_DARK]         as [string, string] },
                   { Icon: Sparkles, fill: false, gradientColors: [C.JADE2,         C.JADE]                 as [string, string] },
                   { Icon: Flame,    fill: true,  gradientColors: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK]   as [string, string] },
-                  { Icon: Lock,     fill: false, gradientColors: [C.NEUTRAL_600,   C.NEUTRAL_700]          as [string, string] },
+                  { Icon: Lock,     fill: false, gradientColors: [C.BORDER2, C.BORDER] as [string, string] },
                 ][i];
                 const labelColor = i === 0 ? C.JADE_ACCENT : i === 1 ? C.JADE2 : i === 2 ? C.CULTURAL_GOLD : C.TEXT3;
                 return (

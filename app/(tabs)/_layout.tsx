@@ -41,7 +41,7 @@ export default function TabsLayout() {
           }),
         },
         tabBarActiveTintColor: C.JADE_ACCENT,
-        tabBarInactiveTintColor: C.NEUTRAL_500,
+        tabBarInactiveTintColor: C.TEXT3,
         tabBarLabelStyle: {
           fontFamily: FONT_HEADING_SEMI,
           fontSize: 11,
