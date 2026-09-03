@@ -197,12 +197,20 @@ export const SOURCES: Readonly<Record<SourceId, SourceEntry>> = {
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
     note: 'Nine levels, A1–B3, scenario-organised. Taught to expats in Dubai now.',
   },
-  'ramsa-corpus-2026': {
-    id: 'ramsa-corpus-2026',
-    title: 'Ramsa: Emirati Arabic Speech Corpus (arXiv:2603.08125), CC BY 4.0',
+  'ramsa-paper-2026': {
+    id: 'ramsa-paper-2026',
+    title: 'Al-Sabbagh, Ramsa: A Sociolinguistically Rich Emirati Arabic Speech Corpus (arXiv:2603.08125)',
     year: 2026,
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
-    note: '41h, 157 speakers, Urban/Bedouin/Shihhi. Attested contemporary speech, and the only free source in the contemporary tier.',
+    note:
+      'THE PAPER ONLY, which is CC BY 4.0 — cite its printed example utterances and ' +
+      'its documented phonological substitutions. The CORPUS ITSELF IS NOT USABLE HERE: ' +
+      'per its §9, interview data is restricted to "qualified researchers for ' +
+      'noncommercial scholarly use" under an institutional Data Use Agreement, and the ' +
+      'broadcast portion is not distributed at all for copyright reasons. Fasih is a ' +
+      'paid app, so the noncommercial condition rules it out even with a DUA. An earlier ' +
+      'version of this file wrongly described the corpus as CC BY 4.0 and free; that ' +
+      'licence covers the paper.',
   },
   'emirati-social-media-2024': {
     id: 'emirati-social-media-2024',
@@ -279,6 +287,13 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'ـج — Emirati 2nd person feminine suffix (عندج، لج)',
     pattern: /(?:لج|عندج|بيتج|شلونج|عليج|منج|حالج|أسألج|يعافيج)(?![؀-ۿ])/,
     claim: 'morphosyntax',
+    // ⚠ UNRESOLVED — needs a native ruling, see docs/language/authority.md.
+    // Fasih writes this suffix as ـج throughout (عندج، شلونج، صباطج). The one
+    // contemporary Emirati source actually read documents the substitution as
+    // /k/ → /ʃ/, spelling it ـش (عرفتك → عرفتش, Ramsa §4.2.2). Both realisations
+    // are attested in the Gulf, and which one urban Emirati speakers actually
+    // use is exactly the kind of question this project cannot answer without a
+    // speaker. The citation below is NOT verified — leung-2024 has not been read.
     source: 'leung-2024',
   },
   {
@@ -286,7 +301,16 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'الحين — Gulf "now" (vs MSA الآن)',
     pattern: /الحين/,
     claim: 'lexeme',
-    source: 'alramsa',
+    // Ramsa §4.2.3 attests it with realisations il-heen / il-heena.
+    source: 'ramsa-paper-2026',
+  },
+  {
+    id: 'q-to-g-shift',
+    label: 'ق → g (عقب → عگب/ugub، قهوة → gahwa)',
+    pattern: /(?:عقب|قهوة|گهوة|جدام|يقدر)/,
+    claim: 'morphosyntax',
+    // Ramsa §4.2.2 lists /q/ → /g/ among Emirati phonological substitutions.
+    source: 'ramsa-paper-2026',
   },
   {
     id: 'intensifier-waayid',
@@ -307,7 +331,8 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'ج → ي shift (يديد for جديد، ياب for جاب)',
     pattern: /(?:يديد|يديدة|ياب|يابت|يايب)/,
     claim: 'morphosyntax',
-    source: 'leung-2024',
+    // Ramsa §4.2.2 gives this exact example: جديد (jadiid) → يديد (yadiid).
+    source: 'ramsa-paper-2026',
   },
   {
     id: 'want-abi',
