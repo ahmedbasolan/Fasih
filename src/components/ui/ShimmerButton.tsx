@@ -1,36 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Pressable,
   View,
   Text,
   StyleSheet,
-  LayoutChangeEvent,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  cancelAnimation,
-} from 'react-native-reanimated';
 import type { LucideIcon } from '../icons';
 import { LinearGradient as ExpoGradient } from 'expo-linear-gradient';
 import { ANGLE_135 } from '../design/gradients';
 import { FONT_HEADING_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-const SHIMMER_W   = 100; // Width of the moving gradient block
-const OVERSHOOT   = 160; // How far it travels past the edges
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface Props {
   children: React.ReactNode;
   onPress?: () => void;
   style?: any;
-  /** Full L→R sweep duration in ms. Default 2400ms. */
-  duration?: number;
   disabled?: boolean;
   /** Optional Lucide icon rendered to the right of the label */
   Icon?: LucideIcon;
@@ -40,41 +25,15 @@ interface Props {
  * ShimmerButton
  * 
  * Adapts to the app's primary theme gradient.
- * Uses a smooth, realistic glass-like shimmer effect.
  */
 export function ShimmerButton({
   children,
   onPress,
   style,
-  duration = 2400,
   disabled = false,
   Icon,
 }: Props) {
   const { C, G } = useTheme();
-  const [dims, setDims] = useState({ w: 0, h: 0 });
-  const tx = useSharedValue(-OVERSHOOT);
-
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) setDims({ w: width, h: height });
-  };
-
-  useEffect(() => {
-    if (dims.w <= 0) return;
-    tx.value = -OVERSHOOT;
-    tx.value = withRepeat(
-      withTiming(dims.w + OVERSHOOT, { duration, easing: Easing.linear }),
-      -1,
-      false,
-    );
-    return () => cancelAnimation(tx);
-    // tx is a stable Reanimated shared value — intentionally omitted from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dims.w, duration]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.value }],
-  }));
 
   const label = typeof children === 'string' ? children : null;
   const isStringChild = label !== null;
@@ -92,7 +51,7 @@ export function ShimmerButton({
         style,
       ]}
     >
-      <View style={styles.container} onLayout={onLayout}>
+      <View style={styles.container}>
         {/* ── Layer 1: App Theme Background Gradient ── */}
         <ExpoGradient
           colors={G.GOLD_STOPS as any}
@@ -113,25 +72,6 @@ export function ShimmerButton({
             <View style={styles.childWrapper}>{children}</View>
           )}
         </View>
-
-        {/* ── Layer 3: Realistic Shimmer Overlay ── */}
-        {dims.w > 0 && dims.h > 0 && (
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <Animated.View
-              style={[
-                { position: 'absolute', top: 0, bottom: 0, left: 0, width: SHIMMER_W },
-                animatedStyle,
-              ]}
-            >
-              <ExpoGradient
-                colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[StyleSheet.absoluteFill, { transform: [{ skewX: '-20deg' }] }]}
-              />
-            </Animated.View>
-          </View>
-        )}
       </View>
     </Pressable>
   );

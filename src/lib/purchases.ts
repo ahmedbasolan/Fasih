@@ -158,6 +158,14 @@ export interface PurchaseResult {
   status: SubscriptionStatus;
   cancelled: boolean;
   error: string | null;
+  /**
+   * True when `status` came from a dev-only simulation rather than a real
+   * store transaction. The caller must not persist or cloud-sync a simulated
+   * entitlement: doing so wrote `subscription_status = 'subscribed'` to the
+   * real Supabase row for that Clerk user, and a later release build pulled it
+   * back down and granted permanent free Pro.
+   */
+  simulated?: boolean;
 }
 
 /**
@@ -173,9 +181,10 @@ export async function purchasePlan(plan: Plan): Promise<PurchaseResult> {
       :                       offerings.monthly;
 
     if (!pkg) {
-      // In dev/simulator (no App Store products configured yet), simulate a successful purchase
-      // so the app is usable for testing. In production this is a real error.
-      if (__DEV__) return { status: 'subscribed', cancelled: false, error: null };
+      // In dev/simulator (no App Store products configured yet), simulate a
+      // successful purchase so the app is usable for testing — flagged so the
+      // store keeps it local instead of syncing it to the real cloud row.
+      if (__DEV__) return { status: 'subscribed', cancelled: false, error: null, simulated: true };
       return { status: 'free', cancelled: false, error: 'Product not available' };
     }
 
@@ -225,17 +234,26 @@ export async function presentPaywallIfNeeded(): Promise<PaywallResult> {
       case PAYWALL_RESULT.RESTORED:
         return { purchased: false, restored: true, cancelled: false };
       case PAYWALL_RESULT.NOT_PRESENTED:
-        // User already has entitlement — treat as "purchased"
-        return { purchased: true, restored: false, cancelled: false };
+        // "Not presented" means only that no paywall was shown. Already having
+        // the entitlement is one reason; a missing or misconfigured paywall on
+        // the offering is another. This used to return purchased: true for
+        // both, so a dashboard misconfiguration granted — and cloud-synced —
+        // free Pro access. Ask RevenueCat what the entitlement actually is.
+        return {
+          purchased: (await getEntitlementStatus()) === 'subscribed',
+          restored: false,
+          cancelled: false,
+        };
       case PAYWALL_RESULT.CANCELLED:
       case PAYWALL_RESULT.ERROR:
       default:
         return { purchased: false, restored: false, cancelled: true };
     }
   } catch {
-    // RevenueCat unreachable/misconfigured — let the caller's own
-    // purchase-flow fallback handle it instead of throwing an
-    // unhandled rejection.
+    // configurePurchases() deliberately skips configure() when no API key is
+    // set, which is exactly when this rejects. Every other function in this
+    // file already treats "not configured" as a normal, catchable case; these
+    // two did not, so the caller's documented fallback chain never ran.
     return { purchased: false, restored: false, cancelled: true };
   }
 }
@@ -259,9 +277,8 @@ export async function presentPaywall(): Promise<PaywallResult> {
         return { purchased: false, restored: false, cancelled: true };
     }
   } catch {
-    // RevenueCat unreachable/misconfigured — let the caller's own
-    // purchase-flow fallback handle it instead of throwing an
-    // unhandled rejection.
+    // See presentPaywallIfNeeded — rejecting here used to take out the whole
+    // fallback chain in the onboarding trial handler.
     return { purchased: false, restored: false, cancelled: true };
   }
 }
