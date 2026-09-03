@@ -6,7 +6,6 @@ import { useAppStore } from '../../src/store/useAppStore';
 import { ProfileScreen } from '../../src/screens/ProfileScreen';
 import { SyncStatusBanner } from '../../src/components/ui/SyncStatusBanner';
 import { STRINGS } from '../../src/constants/strings';
-import { TabSlideTransition } from './_layout';
 
 export default function ProfileTab() {
   const user = useAppStore((s) => s.user);
@@ -94,23 +93,21 @@ export default function ProfileTab() {
   };
 
   return (
-    <TabSlideTransition tabKey="profile">
-      <View style={{ flex: 1 }}>
-        <SyncStatusBanner />
-        <ProfileScreen
-          user={user}
-          stats={stats}
-          milestones={milestones}
-          journal={journal}
-          subscriptionStatus={subscriptionStatus}
-          onSignOut={handleSignOut}
-          onManageSubscription={openCustomerCenter}
-          onUpgrade={async () => { await presentPaywall(); }}
-          onRestorePurchases={async () => { await restorePurchases(); }}
-          onDeleteAccount={handleDeleteAccount}
-          isDeletingAccount={isDeletingAccount}
-        />
-      </View>
-    </TabSlideTransition>
+    <View style={{ flex: 1 }}>
+      <SyncStatusBanner />
+      <ProfileScreen
+        user={user}
+        stats={stats}
+        milestones={milestones}
+        journal={journal}
+        subscriptionStatus={subscriptionStatus}
+        onSignOut={handleSignOut}
+        onManageSubscription={openCustomerCenter}
+        onUpgrade={async () => { await presentPaywall(); }}
+        onRestorePurchases={async () => { await restorePurchases(); }}
+        onDeleteAccount={handleDeleteAccount}
+        isDeletingAccount={isDeletingAccount}
+      />
+    </View>
   );
 }
