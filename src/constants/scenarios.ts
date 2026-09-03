@@ -997,7 +997,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Airport → Hotel, nighttime',
     kafIntro: 'You just landed in Dubai. Your driver Youssef is Egyptian — warm, chatty, and ready to talk. He speaks Egyptian; you answer in Gulf Arabic. Learning to hold that conversation is the whole point.',
     iconName: 'car',
-    difficulty: 'Level 2 (Elementary)',
     estimatedMinutes: 8,
     phrasesUnlocked: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'],
     primerPhrases: ['tx-1', 'tx-3', 'core-2'], // الله يحفظ عائلتك / شو يابك دبي؟ / شخبارك؟
@@ -1110,7 +1109,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Apartment building, evening',
     kafIntro: "You meet someone in your building elevator. Sami is Jordanian — reserved at first. This is Level 1: short phrases, simple choices. He speaks Levantine, you answer in Gulf Arabic. Noticing the difference is the lesson.",
     iconName: 'building',
-    difficulty: 'Level 1 (Beginner)',
     estimatedMinutes: 6,
     phrasesUnlocked: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'],
     primerPhrases: ['el-1', 'el-3', 'el-4'], // السلام عليكم / تعال على شاي / انت في أي دور؟
@@ -1252,7 +1250,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
-    difficulty: 'Beginner',
     estimatedMinutes: 5,
     phrasesUnlocked: ['e_new1'],
     scenes: [
@@ -1314,7 +1311,6 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
-    difficulty: 'Beginner',
     estimatedMinutes: 5,
     phrasesUnlocked: ['e_new1'],
     scenes: [

@@ -381,6 +381,55 @@ describe('dialect presence', () => {
   });
 });
 
+describe('provenance', () => {
+  /**
+   * How many phrases still have no traced source.
+   *
+   * This number is the honest state of the library, not a target that has been
+   * met. It starts at the full 136 because the project had zero provenance
+   * records of any kind, and no one has yet checked the content against the
+   * published references in SOURCES. Driving it down is tracked work.
+   *
+   * The assertion is one-directional on purpose: it may fall, never rise. Lower
+   * it when you source a batch.
+   */
+  const MAX_UNSOURCED = 136;
+
+  const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
+
+  it('every phrase declares a source', () => {
+    expect(PHRASES.filter(p => !p.source).map(p => p.id)).toEqual([]);
+  });
+
+  it('the unsourced count does not grow', () => {
+    expect(unsourced().length).toBeLessThanOrEqual(MAX_UNSOURCED);
+  });
+
+  it('MAX_UNSOURCED is not stale', () => {
+    // If a sourcing batch landed without lowering the cap, this catches it.
+    expect(MAX_UNSOURCED).toBe(unsourced().length);
+  });
+
+  it('every non-unsourced citation is valid for the claim it makes', () => {
+    const bad = PHRASES
+      .filter(p => p.source.ref !== 'unsourced' && !isValidCitation(p.source))
+      .map(p => `${p.id} cites ${p.source.ref} for ${p.source.claim}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('every sourced phrase names a locator', () => {
+    const vague = PHRASES
+      .filter(p => p.source.ref !== 'unsourced' && !p.source.locator.trim())
+      .map(p => p.id);
+    expect(vague).toEqual([]);
+  });
+
+  it('phrase ids are unique', () => {
+    const ids = PHRASES.map(p => p.id);
+    expect(ids.length).toBe(new Set(ids).size);
+  });
+});
+
 describe('arabic metrics', () => {
   it('counts clitics as morphemes', () => {
     expect(countMorphemes('بالأسبوع')).toBe(3); // bi + al + usbuu3
