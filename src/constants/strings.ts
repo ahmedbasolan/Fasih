@@ -190,6 +190,8 @@ export const STRINGS = {
     browseAllTitle: 'Browse All Phrases',
     browseAllSub: (phraseCount: number, categoryCount: number) => `${phraseCount} expressions across ${categoryCount} categories`,
     fromFirstScenario: 'From your first scenario',
+    play: 'Play pronunciation',
+    save: 'Save phrase',
   },
   sentenceBuilder: {
     title: 'Sentence Builder',
@@ -283,6 +285,13 @@ export const STRINGS = {
   },
   scenarios: {
     title: 'Scenarios',
+    // Social's name for the same metric Career calls 'trust' (see below).
+    // Two strings, not one conditional: the vocabulary split is content, and
+    // it is the most visible expression of the mode differentiator.
+    vibe: 'Vibe',
+    // Distinct from comingSoon() above, which is a sentence about how much
+    // content is pending. This is the badge on a single entry.
+    comingSoonBadge: 'Coming soon',
     subtitle: 'Choose a situation to practice',
     career: 'Career',
     social: 'Social',
@@ -529,6 +538,7 @@ export const STRINGS = {
     },
   },
   ui: {
+    back: 'Go back',
     emptyState: {
       title: 'Nothing here yet',
       subtitle: 'Try starting a new activity to see progress',
