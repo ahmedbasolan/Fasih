@@ -251,6 +251,58 @@ these *are* now cited in `DIALECT_FEATURES`:
 | glottal stop dropped | شيء → شي | matches Fasih |
 | /ð/ → /ḍ/ | بياضة → بياظة | not currently taught |
 
+### A second source tier: Wiktionary (2026-09-03, following a real budget constraint)
+
+The purchases named above are money Ahmed does not have. Buying the reference books
+is **not** the plan; it never should have been presented as *the* unblock. What
+follows is what free sourcing actually looks like once real book purchases are off
+the table.
+
+Every corpus in this space — Mixat, Casablanca — turned out to be commercially
+restricted on inspection, the same as Ramsa (checked directly: Mixat's own repo
+states CC BY-NC-SA 4.0 on the data; Casablanca states "exclusively for research
+purposes" and is sourced from copyrighted YouTube video it doesn't even redistribute
+itself). Their *papers* were checked too, the way Ramsa's worked — but neither
+renders Arabic script through any extraction method available here (likely
+image-embedded tables), so that route produced nothing.
+
+**English Wiktionary carries 682 Gulf Arabic lemmas**, and is genuinely free,
+genuinely checkable by anyone at the same URL, and was actually read entry-by-entry
+rather than assumed. It is a **different, lower tier** from the peer-reviewed and
+CC-BY-paper sources above — community-maintained, not academically reviewed — and
+three conditions gate every citation to it (spelled out in its `SOURCES` note):
+the entry must carry an explicit **Gulf Arabic** language header (plain "Arabic" is
+MSA; other dialect headers showed up as false leads while checking this); its
+"Gulf Arabic" is **pan-Gulf**, not Emirati-specific (`origin: 'gulf-koine'`, not
+`'emirati'`, unless something else confirms the narrower claim); and an **absent**
+entry is never evidence a word is wrong — coverage is real but patchy.
+
+Checked and confirmed (now cited in `curriculum.ts`): **وايد** *wāyid* "very"
+(sources `e6` and `intensifier-waayid`), **شلون** *šlōn* "how" (sources `g3` and
+`how-shloon`), **هني** *hni* "here" (sources `here-hini`, though its example was
+tagged Kuwait specifically, not UAE).
+
+Checked and **not found** — recorded so the next pass doesn't repeat the search:
+**أبي** (only unrelated MSA senses on Wiktionary — "my father," a passive verb
+form — nothing matching "I want"), **أبغى** (only a Hijazi Arabic section),
+**مشكور** (MSA only), **شو** (Levantine and Tunisian sections exist; no Gulf one).
+None of this means these Fasih forms are wrong — it means Wiktionary's coverage
+didn't reach them. They remain on the unverified `alramsa` placeholder, tracked
+honestly in `KNOWN_UNVERIFIED_CITATIONS`, not silently dropped or falsely cleared.
+
+**A genuinely new finding, not just a citation upgrade:** the Gulf Arabic entry for
+شلون spells its feminine form **شلونچ** — with **چ**, the dedicated Gulf letter for
+the affricate [tʃ] ("ch"), not plain **ج** (jiim) and not **ش** (shin). That is the
+same 2nd-person-feminine suffix this project already had an open question about
+(§ above). Combined with Fasih's own "-ich" romanisation and Szreder & Derrick's
+peer-reviewed finding that /k/→[tʃ] is a completed sound change, three independent
+signals now point the same way. **This is a real, actionable finding — Fasih's
+Arabic script may be using the wrong letter (ج) for a sound it already romanises
+correctly — but it rests on one dictionary entry for one word pair, and nobody has
+checked whether چ renders correctly across the app's fonts.** It has not been
+mass-applied. It needs a native speaker's confirmation, or a second real source,
+before ~10 files' worth of ج get changed to چ.
+
 ### Leads for the next research pass (found, not yet verified)
 
 Located via Wikipedia's *Emirati Arabic* article, each with a specific primary-

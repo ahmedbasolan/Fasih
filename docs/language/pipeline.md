@@ -43,38 +43,40 @@ Everything above, plus:
 
 ## The `unsourced` backfill
 
-133 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
-highest-value piece of language work available — but it is genuinely slow, because
-almost every real source that could confirm a form is either paywalled (research
-corpora — see the warning in [`authority.md`](./authority.md)) or a book nobody has
-read yet for this project.
+131 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
+highest-value piece of language work available. **Buying a reference book is not
+the plan** — that was floated in an earlier pass and is money Ahmed does not have.
+Sourcing here runs entirely on what's genuinely free.
 
-**Sourced so far, from things actually read (2026-09-03 research pass):**
+**Sourced so far, from things actually read (2026-09-03, two research passes):**
 
 - `e1` زين, `w2` ما شاء الله, `h3` البيت بيتك — from the Ramsa paper's printed
   examples (CC BY 4.0, unlike its restricted data) and an open-access UAEU paper
-  on child Emirati Arabic. Three phrases in one research pass, from real reading,
-  not from guessing plausible page numbers.
-- Two `DIALECT_FEATURES` entries (`good-zain`, and the affrication note on
-  `fem-2sg-ch`) upgraded from an unverified placeholder to an actual citation.
-- Four more `DIALECT_FEATURES` entries (`intensifier-waayid`, `want-abi`,
-  `what-shu`, `how-shloon`) were found to have **never actually been sourced** —
-  they cited `alramsa` with an invented "current" year. Dated honestly, that
-  citation no longer passes for a `lexeme` claim, and the gap is now tracked in
-  `KNOWN_UNVERIFIED_CITATIONS` in the lint rather than hidden behind a citation
-  that looked valid but wasn't checked.
+  on child Emirati Arabic.
+- `e6` وايد, `g3` شلونك؟ — from English Wiktionary's Gulf Arabic entries, checked
+  individually (see the tier explanation in [`authority.md`](./authority.md); it is
+  a lower-confidence tier than the academic sources above, but genuinely checked).
+- Five `DIALECT_FEATURES` entries upgraded from an unverified placeholder to a real
+  citation: `good-zain`, `intensifier-waayid`, `how-shloon`, `here-hini`, and the
+  affrication note on `fem-2sg-ch` — the last of which turned up a real, unresolved
+  finding worth reading in full: Fasih may be writing the wrong Arabic *letter*
+  (ج instead of چ) for a sound its own romanisation already gets right.
+- Two entries (`want-abi`, `what-shu`) were checked against Wiktionary and **not
+  found** — recorded honestly as still-unverified rather than either silently
+  cleared or wrongly marked disproven. Coverage gaps aren't refutations.
 
-**What this pass could NOT do:** find a legitimately free, checkable source for
-the bulk of ordinary vocabulary. Open-access academic papers about Emirati Arabic
-exist, but they are studies of specific phenomena (child language acquisition,
-consonant affrication), not phrasebooks — they yield a handful of words each, not
-a category at a time. **The real unblock is a purchase**: Leung/Ntelitheos/Al Kaabi
-(*Basic Emirati Arabic*, Routledge 2024) or the Al Ramsa Institute phrasebook.
-Citing a book to verify a form is not redistribution and carries no licence
-condition — see [`authority.md`](./authority.md) for what was checked and ruled
-out before landing on that conclusion.
+**What free sourcing cannot do:** reach volume. Every research corpus in this space
+(Ramsa, Mixat, Casablanca) turned out to be commercially restricted on inspection —
+checked directly each time, not assumed — and open-access academic papers are
+studies of narrow phenomena, not phrasebooks; each yields a handful of words, not a
+category. Wiktionary is real but patchy: for every hit (وايد، شلون، هني) there was a
+miss (أبي، أبغى، مشكور، شو) on words no less basic. **There is currently no free path
+to sourcing this library at volume.** The honest options from here: keep harvesting
+one paper and one dictionary entry at a time (slow, free, what this pipeline
+describes below), or wait for a native speaker who can confirm forms directly
+without needing a citation trail at all.
 
-**Procedure for a batch, once a source is in hand:**
+**Procedure for a batch:**
 
 1. Pick a category (`Greetings`, `Gratitude`, …) so you are looking things up in one
    coherent sweep rather than at random.
