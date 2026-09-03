@@ -244,7 +244,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
   const finalizeScenario = useAppStore((s) => s.finalizeScenario);
-  const unlockPhrase = useAppStore((s) => s.unlockPhrase);
+  const unlockPhrases = useAppStore((s) => s.unlockPhrases);
   const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
   const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
 
@@ -327,10 +327,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // Actually unlock the phrases the result screen is about to present as
     // unlocked. Without this, unlockPhrase() was only ever called from
     // onboarding, so every phrase earned by finishing a scenario stayed
-    // un-unlocked in the library and the two screens disagreed.
-    for (const phraseId of resolveUnlockedPhraseIds(scriptData, scenarioId)) {
-      unlockPhrase(phraseId);
-    }
+    // un-unlocked in the library and the two screens disagreed. One bulk write
+    // rather than one per phrase — this fires as the result screen animates in.
+    unlockPhrases(resolveUnlockedPhraseIds(scriptData, scenarioId));
     trackScenarioCompleted({
       scenarioId,
       title: scriptData.title,
@@ -345,7 +344,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario]);
+  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
