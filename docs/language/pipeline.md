@@ -43,20 +43,38 @@ Everything above, plus:
 
 ## The `unsourced` backfill
 
-136 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
-highest-value piece of language work available.
+133 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
+highest-value piece of language work available — but it is genuinely slow, because
+almost every real source that could confirm a form is either paywalled (research
+corpora — see the warning in [`authority.md`](./authority.md)) or a book nobody has
+read yet for this project.
 
-**Procedure for a batch:**
+**Sourced so far, from things actually read (2026-09-03 research pass):**
 
-**This is currently blocked on buying a book.** Research corpora (Ramsa, Mixat,
-Casablanca, ZAEBUC-Spoken) are released for *noncommercial research use* and Fasih
-is a paid app — see the warning in [`authority.md`](./authority.md). The practical
-sources are purchasable references: Leung/Ntelitheos/Al Kaabi (Routledge 2024) and
-the Al Ramsa Institute set. Citing a book is not redistribution and carries no
-licence condition.
+- `e1` زين, `w2` ما شاء الله, `h3` البيت بيتك — from the Ramsa paper's printed
+  examples (CC BY 4.0, unlike its restricted data) and an open-access UAEU paper
+  on child Emirati Arabic. Three phrases in one research pass, from real reading,
+  not from guessing plausible page numbers.
+- Two `DIALECT_FEATURES` entries (`good-zain`, and the affrication note on
+  `fem-2sg-ch`) upgraded from an unverified placeholder to an actual citation.
+- Four more `DIALECT_FEATURES` entries (`intensifier-waayid`, `want-abi`,
+  `what-shu`, `how-shloon`) were found to have **never actually been sourced** —
+  they cited `alramsa` with an invented "current" year. Dated honestly, that
+  citation no longer passes for a `lexeme` claim, and the gap is now tracked in
+  `KNOWN_UNVERIFIED_CITATIONS` in the lint rather than hidden behind a citation
+  that looked valid but wasn't checked.
 
-Two phrases are sourced so far, from the printed examples in the Ramsa *paper*
-(CC BY 4.0, unlike its data): `e1` زين and `w2` ما شاء الله.
+**What this pass could NOT do:** find a legitimately free, checkable source for
+the bulk of ordinary vocabulary. Open-access academic papers about Emirati Arabic
+exist, but they are studies of specific phenomena (child language acquisition,
+consonant affrication), not phrasebooks — they yield a handful of words each, not
+a category at a time. **The real unblock is a purchase**: Leung/Ntelitheos/Al Kaabi
+(*Basic Emirati Arabic*, Routledge 2024) or the Al Ramsa Institute phrasebook.
+Citing a book to verify a form is not redistribution and carries no licence
+condition — see [`authority.md`](./authority.md) for what was checked and ruled
+out before landing on that conclusion.
+
+**Procedure for a batch, once a source is in hand:**
 
 1. Pick a category (`Greetings`, `Gratitude`, …) so you are looking things up in one
    coherent sweep rather than at random.
