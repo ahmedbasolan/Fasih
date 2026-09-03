@@ -9,6 +9,14 @@ interface Props {
   children: React.ReactNode;
   fallbackTitle?: string;
   fallbackSubtitle?: string;
+  /**
+   * Change this to clear the error and remount the subtree — pass the current
+   * route, for example. Without it "Try again" only clears the boundary's own
+   * flag, so a deterministic error (a bad cloud payload, a malformed script)
+   * re-throws on the very next render and the user is stuck on the error
+   * screen until they force-quit.
+   */
+  resetKey?: string | number;
   C: ThemeColors;
 }
 
@@ -34,6 +42,12 @@ class ErrorBoundaryInner extends Component<Props, State> {
     });
   }
 
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
   handleReset = () => {
     this.setState({ hasError: false, error: null });
   };
@@ -45,9 +59,18 @@ class ErrorBoundaryInner extends Component<Props, State> {
         <View style={[styles.root, { backgroundColor: this.props.C.BG }]}>
           <Text style={styles.arabic}>عفواً</Text>
           <Text style={[styles.title, { color: this.props.C.TEXT }]}>{this.props.fallbackTitle || STRINGS.ui.errorBoundary.title}</Text>
+          {/* The raw exception message used to come first here, so a user hitting
+              a crash was shown text like "Cannot read property 'length' of
+              undefined" as the app's entire explanation. The message goes to
+              Sentry in componentDidCatch; the user gets the written copy. */}
           <Text style={[styles.subtitle, { color: this.props.C.TEXT3 }]}>
-            {this.state.error?.message || this.props.fallbackSubtitle || STRINGS.ui.errorBoundary.subtitle}
+            {this.props.fallbackSubtitle || STRINGS.ui.errorBoundary.subtitle}
           </Text>
+          {__DEV__ && this.state.error?.message ? (
+            <Text style={[styles.subtitle, { color: this.props.C.ERROR }]}>
+              {this.state.error.message}
+            </Text>
+          ) : null}
           <Pressable
             onPress={this.handleReset}
             accessibilityRole="button"

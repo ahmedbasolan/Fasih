@@ -94,6 +94,25 @@ describe('applyRatingToCard', () => {
     expect(result.ease).toBe(2.2);
   });
 
+  // Guards the fix in PracticeScreen.rateCard: a rating is a COMPLETE write.
+  // "learning" deliberately records neither a correct nor an incorrect, so
+  // nothing downstream needs to "top it up" with a binary updateReviewCard()
+  // call — doing so re-reads this card and rewrites it as a wrong answer
+  // (1-day interval, ease -0.2, incorrect +1), which is the bug that shipped.
+  it('a rating is a complete write — "learning" leaves both counters untouched', () => {
+    const card = { ...baseCard, correct: 4, incorrect: 1, ease: 2.2 };
+    const rated = applyRatingToCard(card, 'learning');
+
+    expect(rated.correct).toBe(4);
+    expect(rated.incorrect).toBe(1);
+
+    // Chaining a binary review after the rating is destructive, not additive.
+    const chained = updateReviewCard(rated, false);
+    expect(chained.interval).not.toBe(rated.interval);
+    expect(chained.incorrect).toBe(rated.incorrect + 1);
+    expect(chained.ease).toBeLessThan(rated.ease);
+  });
+
   it('"knew" on first review uses 7-day base interval', () => {
     const card = { ...baseCard, interval: 0 };
     const result = applyRatingToCard(card, 'knew');

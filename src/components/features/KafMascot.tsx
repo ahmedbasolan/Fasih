@@ -1,22 +1,16 @@
 import React from 'react';
-import { MotiView } from 'moti';
+import { View } from 'react-native';
 import Svg, { Circle, Path, Defs, RadialGradient, Stop, G, Ellipse } from 'react-native-svg';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface KafMascotProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  animate?: boolean;
-  tapCount?: number;
   mood?: 'idle' | 'happy' | 'thinking';
 }
 
 const S = { xs: 48, sm: 68, md: 98, lg: 138, xl: 184 };
 
-export function KafMascot({ size = 'md', animate = true, tapCount = 0, mood = 'idle' }: KafMascotProps) {
-  const reducedMotion = useReducedMotion();
-  const shouldAnimate = animate && !reducedMotion;
+export function KafMascot({ size = 'md', mood = 'idle' }: KafMascotProps) {
   const s = S[size];
-  const excited = tapCount > 3;
   const showFace = size !== 'xs';
 
   // Colors based on mood
@@ -27,21 +21,9 @@ export function KafMascot({ size = 'md', animate = true, tapCount = 0, mood = 'i
   const cheekColor = mood === 'happy' ? '#2EA87A' : '#5FFFB8';
 
   return (
-    <MotiView
-      style={{ width: s, height: s }}
-      animate={shouldAnimate ? {
-        translateY: excited ? [0, -10, 2, -6, 0] : [0, -4, 0],
-        scale: excited ? [1, 1.05, 0.97, 1.03, 1] : 1,
-      } : {}}
-      transition={shouldAnimate
-        ? (excited
-          ? { type: 'timing', duration: 900, loop: true }
-          : { type: 'timing', duration: 4500, loop: true })
-        : { type: 'timing', duration: 0 }
-      }
-    >
+    <View style={{ width: s, height: s }}>
       {/* Outer glow */}
-      <MotiView
+      <View
         style={{
           position: 'absolute',
           top: -s * 0.12,
@@ -50,15 +32,7 @@ export function KafMascot({ size = 'md', animate = true, tapCount = 0, mood = 'i
           bottom: -s * 0.12,
           borderRadius: s * 0.42,
           backgroundColor: bodyPrimary,
-          opacity: reducedMotion ? (mood === 'happy' ? 0.22 : 0.13) : undefined,
-        }}
-        animate={reducedMotion ? undefined : {
-          opacity: mood === 'happy' ? [0.15, 0.3, 0.15] : [0.08, 0.18, 0.08],
-        }}
-        transition={reducedMotion ? undefined : {
-          type: 'timing',
-          duration: mood === 'happy' ? 1800 : 3000,
-          loop: true,
+          opacity: mood === 'happy' ? 0.22 : 0.13,
         }}
       />
 
@@ -261,54 +235,20 @@ export function KafMascot({ size = 'md', animate = true, tapCount = 0, mood = 'i
         )}
       </Svg>
 
-      {/* Happy sparkle particles */}
-      {mood === 'happy' && showFace && !reducedMotion && (
+      {/* Happy sparkle particles — static, no pulse */}
+      {mood === 'happy' && showFace && (
         <>
-          <MotiView
-            from={{ opacity: 0, scale: 0.3 }}
-            animate={{ opacity: [0, 0.9, 0], scale: [0.3, 1, 0.3] }}
-            transition={{ type: 'timing', duration: 1400, loop: true, delay: 0 }}
+          <View
             style={{ position: 'absolute', top: -s * 0.06, right: s * 0.06, width: s * 0.06, height: s * 0.06, borderRadius: s * 0.03, backgroundColor: accentColor }}
           />
-          <MotiView
-            from={{ opacity: 0, scale: 0.3 }}
-            animate={{ opacity: [0, 0.8, 0], scale: [0.3, 1, 0.3] }}
-            transition={{ type: 'timing', duration: 1400, loop: true, delay: 400 }}
+          <View
             style={{ position: 'absolute', top: s * 0.15, left: -s * 0.05, width: s * 0.05, height: s * 0.05, borderRadius: s * 0.025, backgroundColor: '#3BD4A0' }}
           />
-          <MotiView
-            from={{ opacity: 0, scale: 0.3 }}
-            animate={{ opacity: [0, 0.85, 0], scale: [0.3, 1, 0.3] }}
-            transition={{ type: 'timing', duration: 1400, loop: true, delay: 800 }}
+          <View
             style={{ position: 'absolute', bottom: s * 0.02, right: -s * 0.03, width: s * 0.055, height: s * 0.055, borderRadius: s * 0.028, backgroundColor: accentColor }}
           />
         </>
       )}
-
-      {/* Excited pulse ring */}
-      {excited && !reducedMotion && (
-        <MotiView
-          style={{
-            position: 'absolute',
-            top: -4,
-            left: -4,
-            right: -4,
-            bottom: -4,
-            borderRadius: s * 0.32,
-            borderWidth: 1.5,
-            borderColor: accentColor,
-          }}
-          animate={{
-            scale: [1, 1.35],
-            opacity: [0.7, 0],
-          }}
-          transition={{
-            type: 'timing',
-            duration: 800,
-            loop: true,
-          }}
-        />
-      )}
-    </MotiView>
+    </View>
   );
 }

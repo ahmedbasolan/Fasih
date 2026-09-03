@@ -13,6 +13,8 @@ import { StatCard } from '../components/features/StatCard';
 import { getCategoryColors } from '../constants/phrases';
 import { STRINGS } from '../constants/strings';
 import { getNotificationPermissionStatus } from '../lib/notifications';
+import { checkAuthBridge } from '../lib/syncService';
+import * as Application from 'expo-application';
 import { isLegalUrlSet, openLegal } from '../constants/legal';
 import type { UserProfile, UserStats, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
 import { useAppStore } from '../store/useAppStore';
@@ -30,6 +32,11 @@ interface Props {
   onDeleteAccount?: () => void;
   isDeletingAccount?: boolean;
 }
+
+// Read from the build rather than hardcoded. This was '1.0' in two places,
+// so the About row reported 1.0 through every release and support could not
+// tell which build a user was on.
+const APP_VERSION = Application.nativeApplicationVersion ?? '—';
 
 const roleIcons: Record<string, React.ElementType> = {
   barista: Coffee, hotel: Building2, retail: ShoppingBag, restaurant: Utensils,
@@ -100,9 +107,39 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
     }] : []),
     {
       label: STRINGS.profile.aboutFasih,
-      value: STRINGS.profile.version('1.0'),
-      onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version('1.0')),
+      value: STRINGS.profile.version(APP_VERSION),
+      onPress: () => Alert.alert(STRINGS.profile.aboutFasih, STRINGS.profile.version(APP_VERSION)),
     },
+    // Dev-only. This is the prerequisite check for enabling Row Level Security:
+    // running `select auth.jwt()->>'sub'` in the Supabase SQL editor always
+    // returns NULL because that connection carries no Clerk token, so the
+    // check is only meaningful made from the signed-in app. Remove this row
+    // once RLS is enabled and confirmed working.
+    ...(__DEV__ ? [{
+      label: 'Check database connection',
+      value: 'Dev only',
+      onPress: async () => {
+        const { clerkUserId, jwtRole, error } = await checkAuthBridge();
+        if (error) {
+          Alert.alert(
+            'Check failed',
+            `${error}\n\nIf this says the function does not exist, run supabase/migrations/006_auth_check.sql first.`,
+          );
+          return;
+        }
+        if (!clerkUserId) {
+          Alert.alert(
+            'Not connected',
+            'Supabase cannot see your Clerk identity, so it is not safe to enable Row Level Security yet.\n\nFinish steps 1 and 2 of the runbook (Clerk → Connect with Supabase, then Supabase → Third-Party Auth → Clerk) and check again.',
+          );
+          return;
+        }
+        Alert.alert(
+          'Connected',
+          `Supabase sees you as:\n\n${clerkUserId}\nrole: ${jwtRole ?? 'unknown'}\n\nThis is what needs to be true before enabling Row Level Security.`,
+        );
+      },
+    }] : []),
   ], [notificationsEnabled]);
 
   return (
@@ -131,7 +168,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               end={ANGLE_135.end}
               style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
             >
-              <RoleIcon size={26} color={C.WHITE} />
+              <RoleIcon size={26} color={C.BG} />
             </LinearGradient>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.PRIMARY_DARK }}>{name}</Text>
@@ -418,7 +455,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             {/* Active badge */}
             <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}>
               <LinearGradient colors={G.AVATAR_STOPS} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                <Star size={16} color={C.WHITE} />
+                <Star size={16} color={C.BG} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.proName}</Text>
@@ -459,7 +496,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.BORDER }}
             >
               <LinearGradient colors={[C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                <Star size={16} color={C.WHITE} />
+                <Star size={16} color={C.BG} />
               </LinearGradient>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{STRINGS.profile.subscription.upgradeTitle}</Text>
