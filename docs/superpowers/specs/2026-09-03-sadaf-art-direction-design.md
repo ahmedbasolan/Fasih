@@ -59,7 +59,8 @@ Chosen over two alternatives presented at
 
 | Question | Decision |
 |---|---|
-| Dark mode | **Kept.** Light becomes the default. Dark is a night variant of the *same* ruled-paper language — identical structure and spacing, inverted material. Not a separate visual system. |
+| Dark mode | **Kept.** Sadaf is the *canonical* look — designed first, and what store screenshots and marketing show. It is **not** a runtime default change: `themePreference` already defaults to `'system'` (`useAppStore.ts:361`), so the OS decides and that stays true. Dark is a night variant of the *same* ruled-paper language — identical structure and spacing, inverted material. Not a separate visual system. |
+| Theme migration | **None. One rule for every user.** An explicit `'light'`/`'dark'` choice is honoured; everyone else follows the OS. No grandfathering, no reset of anyone's stored preference, no signup-date special cases — which also means zero migration code. |
 | Character art | **Retired from use, not deleted.** The six `KafMascot` call sites and seven `IMAGES.foxy*` / mode-image sites collapse into one `<Companion />` slot. Ahmed may reintroduce characters later; that must cost one component, not six screens. |
 | Avatar | **Monogram.** The `foxyMale`/`foxyFemale` selection at `OnboardingFlow.tsx:343` is a real feature, not decoration. It becomes a typographic avatar on the Zafaran ramp — scales to any user, and drops the gendered two-fox framing. |
 | Emphasis budget | **Mode and consequence.** See §5. |
@@ -100,7 +101,7 @@ The design does not depend on them.
 
 Sadaf spends nothing on hue. One ground, one ink, one accent, one semantic red.
 
-**Light (default)**
+**Light — the canonical Sadaf look**
 
 | Role | Value | Against ground | Verdict |
 |---|---|---|---|
@@ -243,6 +244,26 @@ The scenario player gains a **margin rail** down the leading edge of the page:
   had, in order, with the turn visible. This replaces the current three-bar readout as the
   emotional payload of the result phase.
 
+**The rail is slotted, so it cannot overflow.** Every scenario declares `decisions` upfront
+(`Scenario.decisions`), and the shipped range is **3 to 12** — four scenarios at 3, three at 4,
+and single scenarios at 5, 6, 8, 10 and 12, with two at 7. The rail is therefore drawn as a
+fixed-height track divided into exactly `decisions` slots at mount, and marks fill slots as
+choices are made.
+
+This is deliberately better than an accumulating list:
+
+- It can never overflow or need scrolling — 12 slots over the usable margin height is ~35 px
+  per slot, comfortable at the largest real scenario.
+- Empty slots communicate how much of the conversation is left, so the rail doubles as the
+  progress indicator and the screen needs no separate one.
+- The track length is constant, so the *shape* of two different runs of the same scenario is
+  directly comparable.
+
+Bonus scenes (`ScenarioScene.bonus`, shown only on the secret-ending path) are the one case
+where the realised count can exceed the declared one. They append a visually distinct
+appended slot rather than resizing the track — resizing mid-run would animate the whole rail
+and destroy the comparability above.
+
 The engine already computes everything this needs. `src/engine/` stays pure — the rail reads
 state, and no rendering concern moves into the engine.
 
@@ -259,7 +280,9 @@ scenario detail screen, where the user has asked for detail.
 
 | Component | Purpose |
 |---|---|
-| `ui/Entry.tsx` | The ruled entry. Replaces every card in browse contexts. Slots: index, title, Arabic, romanisation, meta row, one progress rule. |
+| `ui/Rule.tsx` | The layout primitive, and the only one of the three that is shared: hairline, vertical padding from §4.3, press behaviour, optional leading index. Knows nothing about content. |
+| `ui/PhraseEntry.tsx` | Arabic-first, composed on `Rule`. Arabic → romanisation → English, category and CEFR labels, save state, and the expand-to-`pronTip`/`culturalNote` behaviour the Phrase Library already has. |
+| `ui/ScenarioEntry.tsx` | Title-first, composed on `Rule`. Title, phrase count, key Arabic line, one headline metric per §5.3. |
 | `ui/RunningHead.tsx` | Mode + section label, top of every screen. §5.1. |
 | `ui/Monogram.tsx` | Typographic avatar on the Zafaran ramp. Replaces the two fox PNGs. |
 | `ui/Companion.tsx` | The mascot seam. Renders the monogram today; one file to change when characters return. |
@@ -281,7 +304,7 @@ role/goal steps). It should be split as part of this work, not after.
 `KafMascot` (6 sites) · `IMAGES.foxyMale` (5) · `IMAGES.foxyFemale` (1) ·
 `IMAGES.careerMode` / `IMAGES.socialMode` (1) · `CategoryIllustrations` (512 lines,
 130 hex, single consumer) · `CategoryCard` (its only consumer — `PhraseLibrary` moves to
-`Entry`) · `SceneIllustrations` (465 lines, 107 hex, single consumer —
+`PhraseEntry`) · `SceneIllustrations` (465 lines, 107 hex, single consumer —
 `ScenarioDetailScreen`'s `HeroSceneBg`).
 
 Two different dispositions, deliberately:
@@ -333,7 +356,7 @@ Each step ends compiling and usable; none depends on a later one.
 
 1. **Token surgery** — delete the 22 dead/wrong tokens, migrate the 2 live `NEUTRAL_` uses,
    add the contrast test. No visual change beyond the tab bar's inactive tint warming up.
-2. **Primitives** — `Entry`, `ScreenHeader`, `RunningHead`, `Monogram`, `Companion`.
+2. **Primitives** — `Rule`, `PhraseEntry`, `ScenarioEntry`, `ScreenHeader`, `RunningHead`, `Monogram`, `Companion`. `Rule` lands first; the spacing scale in §4.3 is established here and everything after inherits it.
 3. **Browse surfaces** — Scenarios, Phrase Library, Profile. This is where the pastels die and
    the ≈1.0:1 bug goes with them.
 4. **`GhostLetters` promotion** + `EmptyState` rebuild.
@@ -368,7 +391,9 @@ Two optional calls, neither of which holds up the build:
 
 - **Sadaf is unforgiving.** With no fills or shadows, every spacing and baseline error is
   visible. Step 2 must establish the spacing scale properly or steps 3–7 inherit the drift.
-- **Light-first flips the app's default mood** for existing users. Dark remains one toggle away
-  and is a first-class variant, not an afterthought.
+- **Sadaf is the canonical look, but most users will never be asked.** `themePreference`
+  defaults to `'system'`, so which variant a user actually sees is decided by their phone, not
+  by us. That makes the night variant load-bearing rather than secondary: it must be designed
+  to the same standard, not signed off as an inversion. Budget for it accordingly.
 - **The margin rail is new interaction design**, not a restyle. It is scheduled last so it
   builds on settled primitives, and it is the one item that may need its own iteration.
