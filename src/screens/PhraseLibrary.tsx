@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Platform, Dimensions } from 'react-native';
+import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2 } from '../components/icons';
+import { Search, Volume2, BookmarkPlus, Info, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Trophy, ArrowRight } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters } from '../components/ui';
@@ -15,6 +16,7 @@ import { PHRASES, PHRASE_CATEGORIES, getCategoryColors, getDifficultyColors, TYP
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
+import { getAvailablePatterns } from '../engine/sentenceBuilder';
 import { arabicIncludes } from '../engine/arabic';
 
 type Phrase = typeof PHRASES[0];
@@ -52,6 +54,14 @@ export function PhraseLibrary() {
   const savedPhrases = useAppStore((s) => s.savedPhrases);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
   const isPhraseUnlocked = useAppStore((s) => s.isPhraseUnlocked);
+  const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
+  const completedScenarios = useAppStore((s) => s.completedScenarios);
+  const secretEndingsEarned = useAppStore((s) => s.secretEndingsEarned);
+  const patternProgress = useAppStore((s) => s.patternProgress);
+  const availablePatterns = useMemo(
+    () => getAvailablePatterns(unlockedPhraseIds, completedScenarios, secretEndingsEarned),
+    [unlockedPhraseIds, completedScenarios, secretEndingsEarned],
+  );
   const CATEGORY_COLORS = useMemo(() => getCategoryColors(C), [C]);
   const DIFFICULTY_COLORS = useMemo(() => getDifficultyColors(C), [C]);
   const CATEGORY_CARD_CONFIG = useMemo(() => getCategoryCardConfig(C), [C]);
@@ -313,6 +323,80 @@ export function PhraseLibrary() {
           );
         })}
       </View>
+
+      {/* Patterns strip */}
+      {availablePatterns.length > 0 && (
+        <View style={{ marginTop: 24 }}>
+          <MotiView
+            from={{ opacity: 0, translateY: 8 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 380, delay: 500 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
+                  <Blocks size={15} color={C.CULTURAL_GOLD_DARK} />
+                </View>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
+                  {STRINGS.sentenceBuilder.patternsTitle}
+                </Text>
+              </View>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
+                {STRINGS.sentenceBuilder.patternsSubtitle}
+              </Text>
+            </View>
+          </MotiView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {availablePatterns.map((p, idx) => {
+              const mastered = (patternProgress[p.id]?.correctBuilds ?? 0) >= 3;
+              return (
+                <MotiView
+                  key={p.id}
+                  from={{ opacity: 0, translateX: 12 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  transition={{ type: 'timing', duration: 340, delay: 560 + idx * 60 }}
+                >
+                  <Pressable
+                    onPress={() => router.push(`/sentence-builder?pattern=${p.id}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={p.title}
+                    style={{
+                      width: 168,
+                      borderRadius: 18,
+                      padding: 14,
+                      backgroundColor: `${C.CULTURAL_GOLD}0F`,
+                      borderWidth: 1,
+                      borderColor: `${C.CULTURAL_GOLD}2E`,
+                    }}
+                  >
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: 6, textAlign: 'right' }}>
+                      {p.title.split(' — ')[0]}
+                    </Text>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, lineHeight: 15 }}>
+                      {p.title.split(' — ')[1] ?? ''}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                      <View style={{ flexDirection: 'row', gap: 4 }}>
+                        {[0, 1, 2].map((i) => (
+                          <View key={i} style={{
+                            width: 6, height: 6, borderRadius: 3,
+                            backgroundColor: (patternProgress[p.id]?.correctBuilds ?? 0) > i ? C.CULTURAL_GOLD : C.BORDER2,
+                          }} />
+                        ))}
+                      </View>
+                      {mastered ? (
+                        <Trophy size={13} color={C.CULTURAL_GOLD} />
+                      ) : (
+                        <ArrowRight size={13} color={C.CULTURAL_GOLD_DARK} />
+                      )}
+                    </View>
+                  </Pressable>
+                </MotiView>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
     </View>
   // CATEGORY_CARD_CONFIG is a module-level constant — stable, safe to omit
   // eslint-disable-next-line react-hooks/exhaustive-deps
