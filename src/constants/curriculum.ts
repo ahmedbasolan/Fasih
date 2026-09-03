@@ -284,6 +284,26 @@ export const SOURCES: Readonly<Record<SourceId, SourceEntry>> = {
       'speakers), distinct from the still-variable /dʒ/ → [j] alternation. Does NOT confirm this ' +
       'for any specific morpheme (e.g. the 2fs suffix) — see fem-2sg-ch below.',
   },
+  'wiktionary-gulf-arabic': {
+    id: 'wiktionary-gulf-arabic',
+    title: 'English Wiktionary, entries carrying an explicit "Gulf Arabic" language header',
+    year: 2026, // access-dated, not publication-dated — a live wiki has no fixed edition.
+                // Treat as "current as checked on the date in the citing locator."
+    validFor: ['lexeme', 'usage'],
+    note:
+      'DIFFERENT TIER from every other entry in this table: community-maintained, not ' +
+      'peer-reviewed. Genuinely checked (fetched and read), not guessed — the load-bearing ' +
+      'rule is different from why leung-2024/alramsa are flagged unverified above. Three ' +
+      'conditions before citing it: (1) the page must carry an explicit "Gulf Arabic" ' +
+      'language section — NOT bare "Arabic" (=MSA), and not a neighbouring dialect (Iraqi, ' +
+      'Hijazi, Levantine all showed up as false leads while checking this on 2026-09-03); ' +
+      '(2) "Gulf Arabic" on Wiktionary is PAN-GULF (its one confirmed pronunciation example ' +
+      'was tagged Kuwait specifically) — cite `origin: \'gulf-koine\'`, never `\'emirati\'`, ' +
+      'unless something else independently ties the form to Emirati specifically; ' +
+      '(3) an ABSENT entry proves nothing — coverage is patchy (أبي, أبغى, مشكور, شو all had ' +
+      'no Gulf Arabic section when checked, which is a documentation gap, not a sign any of ' +
+      'those words are wrong) and must never be cited as evidence against a form.',
+  },
   'fasih-internal': {
     id: 'fasih-internal',
     title: "Fasih's own already-cited content (grammar.ts patterns, existing sourced phrases)",
@@ -350,11 +370,20 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     // That is genuine, real corroboration for Fasih's -ich choice, from a source actually
     // read, not just a plausible guess.
     //
-    // What is still NOT established: the Szreder & Derrick abstract does not specifically
-    // discuss this pronoun/possessive suffix, only /k/ affrication in general. Whether the
-    // SAME morpheme is realised -ich (affricate) vs -ish (fricative, per Ramsa's different
-    // example) by contemporary urban Emirati speakers is not settled by anything read so
-    // far. The underlying source citation (leung-2024) remains UNVERIFIED — not read.
+    // A THIRD data point, added 2026-09-03: Wiktionary's Gulf Arabic entry for شلون spells
+    // the feminine "how are you" as شلونچ — using چ (the dedicated affricate letter, /tʃ/),
+    // NOT plain ج (jiim) and NOT ش (shin). That is the parallel word to this exact suffix.
+    //
+    // Net effect of all three points together: the weight of evidence now leans toward
+    // [tʃ]/"-ich" as the correct SOUND (matching Fasih's own romanisation), and toward چ —
+    // not the plain ج Fasih currently writes throughout scenarios.ts/phrases.ts — as the
+    // correct SCRIPT LETTER for it. That would be a real, actionable finding (Fasih's
+    // Arabic script may be using the wrong letter for a sound it already gets right in
+    // romanisation) — but it is NOT something to silently mass-replace: it rests on one
+    // Wiktionary entry for one word, "chi" availability/readability across the app's fonts
+    // hasn't been checked, and it should be confirmed by a native speaker or a genuinely
+    // read academic source before touching the ~10 scenario/phrase files that use ج here.
+    // The underlying source citation (leung-2024) remains UNVERIFIED — not read.
     source: 'leung-2024',
   },
   {
@@ -378,13 +407,11 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'وايد — Gulf intensifier (vs MSA جداً/كثيراً)',
     pattern: /وايد/,
     claim: 'lexeme',
-    // ⚠ UNVERIFIED. Placed on 'alramsa' as a plausible guess, never checked against a real
-    // Al Ramsa publication — see that SOURCES entry's note. This word did not appear in
-    // anything actually read for this project (the Ramsa paper's printed examples, or the
-    // Ntelitheos/Idrissi paper). It is an extremely common, basic Gulf word and the risk of
-    // it being wrong is low, but "low risk" is not the same as "checked" and it is recorded
-    // here as unverified rather than silently trusted.
-    source: 'alramsa',
+    // Confirmed 2026-09-03: Wiktionary carries an explicit Gulf Arabic entry for وايد
+    // (wāyid), IPA /waː.jɪd/, glossed "very / a lot of / too much", with an example
+    // sentence. Pan-Gulf per that entry, not Emirati-specific — hence origin left at
+    // gulf-koine on the phrase this now sources (e6), not emirati.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'recent-taw',
@@ -424,15 +451,23 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'هني — Emirati "here" (vs pan-Arabic هنا)',
     pattern: /(^|[^؀-ۿ])هني([^؀-ۿ]|$)/,
     claim: 'lexeme',
-    // ⚠ UNVERIFIED — leung-2024 has not been read. See that SOURCES entry's note.
-    source: 'leung-2024',
+    // Confirmed 2026-09-03: Wiktionary carries a Gulf Arabic entry for هني, "here" — but
+    // its pronunciation example is tagged Kuwait specifically, so this label's "Emirati"
+    // framing is pan-Gulf-confirmed, not Emirati-confirmed. leung-2024 (still unverified)
+    // remains the citation actually claiming the Emirati-specific point.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'what-shu',
     label: 'شو / وش — Gulf "what" (vs MSA ماذا)',
     pattern: /(^|[^؀-ۿ])(?:شو|وش|شنو)([^؀-ۿ]|$)/,
     claim: 'lexeme',
-    // ⚠ UNVERIFIED — see intensifier-waayid above for what that means.
+    // ⚠ STILL UNVERIFIED. Checked Wiktionary 2026-09-03 specifically for this — شو has
+    // entries for North/South Levantine and Tunisian Arabic, but NO Gulf Arabic section.
+    // Per the wiktionary-gulf-arabic SOURCES note, an absence proves nothing (coverage
+    // gap, not refutation) — so this stays on the unverified alramsa placeholder rather
+    // than being marked wrong. Genuinely checked and still open, which is different from
+    // never having been checked.
     source: 'alramsa',
   },
   {
@@ -440,8 +475,12 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'شلون — Gulf "how" (vs MSA كيف)',
     pattern: /شلون/,
     claim: 'lexeme',
-    // ⚠ UNVERIFIED — see intensifier-waayid above for what that means.
-    source: 'alramsa',
+    // Confirmed 2026-09-03: Wiktionary's Gulf Arabic entry gives شلونك؟ (šlōnik, to a
+    // male) and شلونچ؟ (šlōnič, to a female) "how are you?" verbatim — matching Fasih's
+    // own g3 phrase and its pronTip ("For a female: shloonich") exactly, spelling the
+    // feminine form with چ (the affricate letter), which bears on the fem-2sg-ch question
+    // above.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'relative-illi',

@@ -202,10 +202,8 @@ const KNOWN_DIALECT_GAPS: readonly string[] = ['hotel-guest'];
  * entry here requires an actual post-2020 citation, not a re-guessed year.
  */
 const KNOWN_UNVERIFIED_CITATIONS: readonly string[] = [
-  'intensifier-waayid cites alramsa for lexeme',
   'want-abi cites alramsa for lexeme',
   'what-shu cites alramsa for lexeme',
-  'how-shloon cites alramsa for lexeme',
 ];
 
 describe('curriculum spec is internally consistent', () => {
@@ -423,7 +421,7 @@ describe('provenance', () => {
    * The assertion is one-directional on purpose: it may fall, never rise. Lower
    * it when you source a batch.
    */
-  const MAX_UNSOURCED = 133;
+  const MAX_UNSOURCED = 131;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

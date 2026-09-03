@@ -220,6 +220,7 @@ export type SourceId =
   | 'holes-1990'
   | 'ntelitheos-idrissi-2017'
   | 'szreder-derrick-2024'
+  | 'wiktionary-gulf-arabic'
   | 'fasih-internal';
 
 /**
