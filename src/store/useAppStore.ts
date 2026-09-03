@@ -307,6 +307,10 @@ interface AppState {
   toggleSavedPhrase: (phraseId: string) => void;
   isPhraseSaved: (phraseId: string) => boolean;
   unlockPhrase: (phraseId: string) => void;
+  /** Unlock several phrases in one state update. Prefer this over looping
+   *  unlockPhrase — a scenario grants up to eight at once, and one set() per
+   *  phrase means eight re-renders while the result screen is animating in. */
+  unlockPhrases: (phraseIds: string[]) => void;
   isPhraseUnlocked: (phraseId: string) => boolean;
 
   // Scenario favourites
@@ -407,16 +411,23 @@ export const useAppStore = create<AppState>()(
         set({ isSyncing: false, lastSyncError: null });
         if (!data) return;
 
+        // Re-read local state AFTER the network round-trip. `s` above is a
+        // snapshot taken before the await; the app navigates to the tabs
+        // immediately and this runs in the background, so a learner can finish
+        // a card while the request is in flight. Merging against the stale
+        // snapshot would drop exactly the write we are here to protect.
+        const local = get();
+
         // Merge strategy: never lose a record. See src/engine/syncMerge.ts —
         // the rules are pure and unit-tested there. The old code let the cloud
         // win outright for phraseReviews and completedScenarios, so anything
         // studied offline, or on a second device since its last push, was
         // silently erased the next time this ran.
-        const mergedMilestones = mergeMilestones(s.milestones, data.milestones);
-        const mergedUnlocked = mergeIds(s.unlockedPhraseIds, data.unlocked_phrase_ids);
-        const mergedJournal = mergeJournal(s.journal, data.journal);
-        const mergedReviews = mergeReviews(s.phraseReviews, data.phrase_reviews);
-        const mergedCompleted = mergeCompletions(s.completedScenarios, data.completed_scenarios);
+        const mergedMilestones = mergeMilestones(local.milestones, data.milestones);
+        const mergedUnlocked = mergeIds(local.unlockedPhraseIds, data.unlocked_phrase_ids);
+        const mergedJournal = mergeJournal(local.journal, data.journal);
+        const mergedReviews = mergeReviews(local.phraseReviews, data.phrase_reviews);
+        const mergedCompleted = mergeCompletions(local.completedScenarios, data.completed_scenarios);
 
         // stats is derived from the two maps above, so recompute it rather than
         // trusting either side's snapshot. daysActive and currentStreak are the
@@ -424,27 +435,39 @@ export const useAppStore = create<AppState>()(
         // can legitimately go backwards on a merge.
         const { studied, mastered, categoryMastery } = computeMastery(mergedReviews);
         const mergedStats: UserStats = {
-          daysActive: Math.max(s.stats.daysActive, data.stats.daysActive),
-          currentStreak: Math.max(s.stats.currentStreak, data.stats.currentStreak),
+          daysActive: Math.max(local.stats.daysActive, data.stats.daysActive),
+          currentStreak: Math.max(local.stats.currentStreak, data.stats.currentStreak),
           phrasesStudied: studied,
           phrasesMastered: mastered,
           categoryMastery,
           scenariosCompleted: Object.keys(mergedCompleted),
         };
 
+        // lastActiveDate follows the same "cannot go backwards" rule as the two
+        // counters above. Taking the cloud's value outright would push the
+        // streak date back whenever the local device had practised more
+        // recently than its last successful push — which is precisely the
+        // offline case. ISO dates compare correctly as strings.
+        const mergedLastActive =
+          [local.lastActiveDate, data.last_active_date].filter(Boolean).sort().pop() ?? null;
+
         set({
-          user: data.user_profile ?? s.user,
+          user: data.user_profile ?? local.user,
           stats: mergedStats,
           phraseReviews: mergedReviews,
           completedScenarios: mergedCompleted,
-          savedPhrases: Array.from(new Set([...s.savedPhrases, ...data.saved_phrases])),
+          // Union, consistent with the rule above: a save made on either device
+          // survives. The trade-off is that un-saving while offline can be
+          // undone by a cloud copy that predates it — recoverable with one tap,
+          // where a lost save is silent.
+          savedPhrases: mergeIds(local.savedPhrases, data.saved_phrases),
           unlockedPhraseIds: mergedUnlocked,
           milestones: mergedMilestones,
           journal: mergedJournal,
-          lastActiveDate: data.last_active_date ?? s.lastActiveDate,
-          subscriptionStatus: data.subscription_status ?? s.subscriptionStatus,
-          trialStartedAt: data.trial_started_at ?? s.trialStartedAt,
-          trialPlan: data.trial_plan ?? s.trialPlan,
+          lastActiveDate: mergedLastActive,
+          subscriptionStatus: data.subscription_status ?? local.subscriptionStatus,
+          trialStartedAt: data.trial_started_at ?? local.trialStartedAt,
+          trialPlan: data.trial_plan ?? local.trialPlan,
           lastSyncedAt: new Date().toISOString(),
         });
       },
@@ -771,6 +794,16 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           const exists = s.unlockedPhraseIds.includes(phraseId);
           return { unlockedPhraseIds: exists ? s.unlockedPhraseIds : [...s.unlockedPhraseIds, phraseId] };
+        });
+        scheduleSync(() => get().syncToCloud());
+      },
+
+      unlockPhrases: (phraseIds) => {
+        set((s) => {
+          const merged = mergeIds(s.unlockedPhraseIds, phraseIds);
+          // Bail out of the update entirely when nothing is new, so replaying a
+          // completed scenario doesn't churn state or queue a pointless push.
+          return merged.length === s.unlockedPhraseIds.length ? {} : { unlockedPhraseIds: merged };
         });
         scheduleSync(() => get().syncToCloud());
       },

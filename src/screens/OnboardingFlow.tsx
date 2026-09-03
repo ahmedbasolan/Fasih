@@ -289,16 +289,26 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
         runOnJS(swipeNext)();
       });
 
+    // Mirrors swipeNext: a plain JS closure that dereferences the ref when it
+    // runs. `runOnJS(backRef.current)()` would read .current at the point the
+    // gesture callback is constructed rather than inside the JS-thread call,
+    // which is the kind of asymmetry that works until RNGH decides to treat
+    // this callback as a worklet.
+    const swipeBack = () => {
+      backRef.current();
+    };
+
     const rightFling = Gesture.Fling()
       .direction(Directions.RIGHT)
       .onEnd(() => {
-        runOnJS(backRef.current)();
+        runOnJS(swipeBack)();
       });
 
     return Gesture.Exclusive(leftFling, rightFling);
-    // Gesture object created once — back/next accessed via stable refs (nextRef/backRef)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only create once
+    // Created once on purpose: next/back are reached through nextRef/backRef,
+    // which are kept current by the effect above, so this closure never goes
+    // stale and has no reactive dependencies to declare.
+  }, []);
 
   const renderStep = () => {
     switch (step) {
