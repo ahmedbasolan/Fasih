@@ -26,6 +26,9 @@ export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: value }}
+      // The track is 32pt tall by design — hitSlop brings the tappable area up
+      // to the 44pt minimum without changing the visual size.
+      hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
       style={{
         flexDirection: 'row',
         width: 60,
