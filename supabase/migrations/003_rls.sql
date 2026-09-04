@@ -1,12 +1,32 @@
 -- ============================================================
 -- Fasih — Migration 003: Row Level Security
+--
+-- ⚠⚠ DO NOT RUN THIS FILE. It is a decision document, not a migration.
+--
+-- Option B was chosen, and 007_enable_rls.sql is its executable form. But
+-- Option A's SQL below is UNCOMMENTED AND LIVE while Option B's is commented
+-- out — so running this file does not offer the choice its text implies. It
+-- executes Option A:
+--
+--     ALTER TABLE user_data             DISABLE ROW LEVEL SECURITY;
+--     ALTER TABLE scenario_choice_stats DISABLE ROW LEVEL SECURITY;
+--     ALTER TABLE scenario_ending_stats DISABLE ROW LEVEL SECURITY;
+--
+-- That silently reverses 007 and reopens the security hole, with no error and
+-- no visible change in the app. If you actually want to roll RLS back, use
+-- 008_rollback_rls.sql, which is written for that and says what it costs.
+--
+-- Read this file to understand WHY the posture is what it is. Run 007.
+--
+-- ============================================================
 -- Run after 001_initial_schema.sql
 --
 -- IMPORTANT: This app uses Clerk for auth, NOT Supabase Auth.
 -- auth.uid() always returns NULL for Clerk users — any policy that
 -- uses auth.uid() will silently block all operations.
 --
--- Two options are provided below. Choose ONE and run it.
+-- Two options are described below. See the warning above before running
+-- either — the file is no longer a live choice between them.
 -- ============================================================
 
 -- ════════════════════════════════════════════════════════════

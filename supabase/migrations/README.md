@@ -32,19 +32,17 @@ renumbered, because renaming a file that has already been applied to production
 makes the history harder to reconcile, not easier. **The next migration is
 `010`.**
 
-## The file headers are misnumbered — trust this table, not them
+## The file headers used to be misnumbered
 
-Two comment headers disagree with their own filenames, and both cross-reference
-files that do not exist under those names. The SQL in each file is correct; only
-the prose is wrong.
+`007_enable_rls.sql` called itself "Migration 006" and pointed at a
+`007_rollback_rls.sql` that does not exist; `008_rollback_rls.sql` called itself
+"Migration 007" and claimed to roll back a `006_enable_rls.sql` that does not
+exist either. Each was off by one and pointed at the other's old name.
 
-| File | Its header says | Its cross-references say |
-|------|-----------------|--------------------------|
-| `007_enable_rls.sql` | "Migration 006" | "TO UNDO, see `007_rollback_rls.sql`" — it means `008` |
-| `008_rollback_rls.sql` | "Migration 007" | "ROLLBACK of `006_enable_rls.sql`" — it means `007` |
-
-This matters most in the case you would hit it: reaching for the rollback
-during a live sync outage and opening the wrong file.
+Both are corrected. The filenames were always right and the SQL was never
+affected — but the misdirection landed exactly where it would hurt most:
+reaching for the rollback during a live sync outage and opening the wrong file.
+If you have an older checkout open, trust the filename over the header.
 
 ## First-time setup
 
@@ -86,6 +84,11 @@ ALTER TABLE scenario_ending_stats DISABLE ROW LEVEL SECURITY;
 That silently reverses `007` and reopens the hole, with no error and no visible
 change in the app. Treat `003` as the document that explains the decision.
 `007_enable_rls.sql` is the executable form of the option that was chosen.
+
+The file now carries this warning in its own header too, so it is visible to
+anyone who opens it directly rather than arriving via this README. If you do
+want to roll RLS back deliberately, use `008_rollback_rls.sql` — it is written
+for that and says what it costs.
 
 ### Verify the bridge before running `007`
 
