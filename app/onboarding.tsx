@@ -17,11 +17,17 @@ export default function OnboardingRoute() {
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const startTrial = useAppStore((s) => s.startTrial);
   const skipTrial = useAppStore((s) => s.skipTrial);
+  const recordOnboardingAnalytics = useAppStore((s) => s.recordOnboardingAnalytics);
 
   const handleComplete = (profile: UserProfile) => {
     setUser(profile);
     setHasOnboarded(true);
     grantStreakFreeze(1);
+    // The anonymous aggregate, fired here and nowhere else. On COMPLETION only:
+    // a partially finished onboarding would contribute default selections and
+    // skew the distribution, which is worse than having no data. Synchronous
+    // and non-blocking — the store starts the write and returns immediately.
+    recordOnboardingAnalytics(profile);
     trackOnboardingCompleted({
       name: profile.name,
       mode: profile.mode,
