@@ -1,0 +1,96 @@
+import React, { useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
+import type { RailMark } from '../../engine/marginRail';
+import { SPACE } from '../design/spacing';
+import { useTheme } from '../../hooks/useTheme';
+
+interface Props {
+  marks: RailMark[];
+  /**
+   * Vertical in the player (a margin down the leading edge); horizontal on the
+   * ending screen, where the whole run is read at once.
+   *
+   * A prop rather than a rotate transform: rotation breaks layout measurement
+   * and reverses accessibility ordering.
+   */
+  orientation?: 'vertical' | 'horizontal';
+}
+
+const UNIT = 8;
+
+/**
+ * The margin rail — the scenario's consequence, made visible.
+ *
+ * One mark per decision, accreted in order. By the end you can see the shape of
+ * the conversation you had: where it ran warm, where it turned.
+ *
+ * Warm and cold marks differ in FILL and SIZE, not only in colour. A rail read
+ * by hue alone would be unreadable to a colour-blind learner, and this is the
+ * one surface in the app whose entire job is being read at a glance.
+ *
+ * Holds no logic — everything is decided in engine/marginRail, where it is
+ * tested.
+ */
+export function MarginRail({ marks, orientation = 'vertical' }: Props) {
+  const { C } = useTheme();
+  const vertical = orientation === 'vertical';
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        rail: {
+          flexDirection: vertical ? 'column' : 'row',
+          alignItems: 'center',
+          gap: SPACE.sm,
+          paddingVertical: vertical ? SPACE.md : 0,
+          paddingHorizontal: vertical ? 0 : SPACE.md,
+        },
+        track: {
+          position: 'absolute',
+          backgroundColor: C.BORDER,
+          ...(vertical
+            ? { top: 0, bottom: 0, width: StyleSheet.hairlineWidth }
+            : { left: 0, right: 0, height: StyleSheet.hairlineWidth }),
+        },
+        empty: {
+          width: UNIT,
+          height: UNIT,
+          borderWidth: 1,
+          borderColor: C.BORDER2,
+          backgroundColor: 'transparent',
+        },
+        // A strong choice is larger and solid; a weak one is hollow. Shape
+        // carries the reading, colour reinforces it.
+        excellent: { width: UNIT * 1.75, height: UNIT * 1.75, backgroundColor: C.PRIMARY },
+        good: { width: UNIT * 1.25, height: UNIT * 1.25, backgroundColor: C.PRIMARY },
+        neutral: { width: UNIT, height: UNIT, backgroundColor: C.TEXT3 },
+        bad: {
+          width: UNIT * 1.75,
+          height: UNIT * 1.75,
+          borderWidth: 1.5,
+          borderColor: C.ERROR,
+          backgroundColor: 'transparent',
+        },
+      }),
+    [C, vertical],
+  );
+
+  const styleFor = (m: RailMark) => {
+    if (m.state === 'empty') return styles.empty;
+    switch (m.outcome) {
+      case 'excellent': return styles.excellent;
+      case 'good': return styles.good;
+      case 'bad': return styles.bad;
+      default: return styles.neutral;
+    }
+  };
+
+  return (
+    <View style={styles.rail} accessibilityElementsHidden importantForAccessibility="no">
+      <View style={styles.track} />
+      {marks.map((m, i) => (
+        <View key={i} style={styleFor(m)} />
+      ))}
+    </View>
+  );
+}
