@@ -1,38 +1,57 @@
 import React from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
-import { FONT_HEADING, FONT_LATIN } from '../design/tokens';
+import { View, Text, Pressable } from 'react-native';
+import { FONT_HEADING_EXTRA, FONT_LATIN_MEDIUM } from '../design/tokens';
+import { SPACE } from '../design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 
 interface Props {
   icon: React.ReactNode;
   value: string | number;
   label: string;
-  color: string;
-  bg: string;
   onPress?: () => void;
 }
 
-export function StatCard({ icon, value, label, color, bg, onPress }: Props) {
+/**
+ * A stat, flat.
+ *
+ * Was a rounded card with a pastel fill and a coloured platform shadow. Sadaf
+ * gives the sheet the app's only shadow, so a stat is now the number and its
+ * label sitting on the page — the figure carries the emphasis, not a tile
+ * around it. The `bg` and `color` props are gone with the fills they set.
+ */
+export function StatCard({ icon, value, label, onPress }: Props) {
   const { C } = useTheme();
   const Container = onPress ? Pressable : View;
+
   return (
     <Container
       onPress={onPress}
-      style={{
-        flex: 1,
-        borderRadius: 18,
-        padding: 14,
-        backgroundColor: bg,
-        gap: 6,
-        ...Platform.select({
-          ios: { shadowColor: `${color}30`, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 8 },
-          android: { elevation: 2 },
-        }),
-      }}
+      style={{ flex: 1, gap: SPACE.sm }}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `${label}: ${value}` : undefined}
     >
       {icon}
-      <Text style={{ fontFamily: FONT_HEADING, fontSize: 20, color: C.PRIMARY_DARK }}>{value}</Text>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT_ON_LIGHT }}>{label}</Text>
+      <Text
+        style={{
+          fontFamily: FONT_HEADING_EXTRA,
+          fontSize: 24,
+          color: C.TEXT,
+          fontVariant: ['tabular-nums'],
+        }}
+      >
+        {value}
+      </Text>
+      <Text
+        style={{
+          fontFamily: FONT_LATIN_MEDIUM,
+          fontSize: 10,
+          letterSpacing: 1.6,
+          textTransform: 'uppercase',
+          color: C.TEXT3,
+        }}
+      >
+        {label}
+      </Text>
     </Container>
   );
 }

@@ -30,6 +30,14 @@ export const STRINGS = {
   onboarding: {
     welcomeTitle: 'Gulf Arabic, for Real Dubai Life',
     welcomeSubtitle: 'Learn through real stories, not textbooks',
+    // Step 0. These three were hardcoded in the JSX -- "Let's Begin Growing Our
+    // Skills." and the paragraph beneath it -- and are lifted here unchanged in
+    // meaning. `welcomeLead` splits so the second half can take the accent.
+    welcomeLead: 'Let’s begin',
+    welcomeLeadAccent: 'growing our skills.',
+    welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
+    getStarted: 'Get Started',
+    themeToggle: 'Switch between light and dark',
     helloKaf: 'Salam! I am Kaf.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
@@ -39,6 +47,19 @@ export const STRINGS = {
     freeToStart: 'Free to start • No credit card',
     stepXofY: (x: number, y: number) => `STEP ${x} OF ${y}`,
     choosePath: 'Choose your path',
+    // Was hardcoded as "Select your primary focus" in the JSX.
+    choosePathSub: 'Select your primary focus',
+    // Step 6. All of these were hardcoded in the JSX.
+    notifTitle: 'Never miss a day',
+    notifSub: 'Daily practice builds fluency 3× faster',
+    notifStreak: 'Daily streak reminders',
+    notifStreakSub: 'Keep your learning momentum going',
+    notifScenarios: 'New scenario alerts',
+    notifScenariosSub: 'Discover fresh cultural scenarios',
+    notifMilestones: 'Progress milestones',
+    notifMilestonesSub: 'Celebrate every achievement',
+    notifAllow: 'Allow Notifications',
+    notifLater: 'Maybe later',
     careerMode: 'Career Mode',
     careerSub: 'Hospitality · Retail · Office',
     careerDesc: 'Focus on business etiquette, formal greetings, and workplace culture.',
@@ -190,6 +211,8 @@ export const STRINGS = {
     browseAllTitle: 'Browse All Phrases',
     browseAllSub: (phraseCount: number, categoryCount: number) => `${phraseCount} expressions across ${categoryCount} categories`,
     fromFirstScenario: 'From your first scenario',
+    play: 'Play pronunciation',
+    save: 'Save phrase',
   },
   sentenceBuilder: {
     title: 'Sentence Builder',
@@ -283,6 +306,16 @@ export const STRINGS = {
   },
   scenarios: {
     title: 'Scenarios',
+    // Social's name for the same metric Career calls 'trust' (see below).
+    // Two strings, not one conditional: the vocabulary split is content, and
+    // it is the most visible expression of the mode differentiator.
+    vibe: 'Vibe',
+    // Distinct from comingSoon() above, which is a sentence about how much
+    // content is pending. This is the badge on a single entry.
+    comingSoonBadge: 'Coming soon',
+    // Distinct from comingSoonBadge: this content exists and is one tap from
+    // the paywall, so the row stays pressable and says so.
+    lockedBadge: 'Locked',
     subtitle: 'Choose a situation to practice',
     career: 'Career',
     social: 'Social',
@@ -358,6 +391,21 @@ export const STRINGS = {
     primerSub: 'Tap to listen — you\'ll hear them in the conversation.',
     primerListen: 'Tap to hear',
     culturalJourneyTitle: 'Your Cultural Journey',
+    // The margin rail's caption on the ending screen. The rail is the shape of
+    // the run; the three impact numbers beneath it are the totals. Two readings,
+    // so two labels.
+    railTitle: 'The path you took',
+    railSub: 'One mark per decision, in the order you made them.',
+    // The rail is a picture, so it is hidden from screen readers and its
+    // wrapper carries this instead — the same information as prose.
+    railWord: {
+      excellent: 'strong',
+      good: 'warm',
+      neutral: 'neutral',
+      bad: 'misstep',
+    } as const,
+    railSummary: (words: string[]) =>
+      `The path you took, decision by decision: ${words.join(', ')}.`,
     endingDiscovery: (total: number) => `1 of ${total} possible endings`,
     tryDifferentChoices: 'Play again with different choices to find another path',
     communityEnding: (pct: number) => pct > 0 ? `${pct}% of players reach this ending` : 'One of the first players to reach this ending',
@@ -438,6 +486,17 @@ export const STRINGS = {
     notifications: 'Notifications',
     enabled: 'Enabled',
     disabled: 'Disabled',
+    // The anonymous onboarding aggregate. This copy says what is actually
+    // collected rather than "help us improve your experience", and it says
+    // "from now on" because the toggle CANNOT be retroactive — an anonymous
+    // row cannot be found again to delete. Do not soften either of those.
+    analytics: {
+      title: 'Share anonymous setup answers',
+      body: 'Your mode, role and goals are counted with no name, email or account attached, so we can write scenarios for the people actually using Fasih.',
+      note: 'Turning this off stops future counts. Answers already counted carry no identifier, so they cannot be found or removed.',
+      on: 'Sharing',
+      off: 'Not sharing',
+    },
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
@@ -529,6 +588,7 @@ export const STRINGS = {
     },
   },
   ui: {
+    back: 'Go back',
     emptyState: {
       title: 'Nothing here yet',
       subtitle: 'Try starting a new activity to see progress',

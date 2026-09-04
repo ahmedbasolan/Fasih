@@ -99,7 +99,7 @@ function FlashCard({
                 onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
               >
-                <Volume2 size={14} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                <Volume2 size={14} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
               </Pressable>
               <Text
@@ -162,7 +162,7 @@ function FlashCard({
                   onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
                 >
-                  <Volume2 size={12} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                  <Volume2 size={12} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
                 <Pressable
@@ -260,8 +260,8 @@ function QuizOption({
           gap: 12,
         }}
       >
-        {state === 'correct' && <Check size={16} color={C.JADE2} />}
-        {state === 'wrong' && <X size={16} color={C.ERROR} />}
+        {state === 'correct' && <Check size={16} strokeWidth={1.5} color={C.JADE2} />}
+        {state === 'wrong' && <X size={16} strokeWidth={1.5} color={C.ERROR} />}
         <Text
           style={{
             fontFamily: isArabic ? FONT_ARABIC_BLACK : FONT_LATIN,
@@ -524,7 +524,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               justifyContent: 'center',
             }}
           >
-            <X size={15} color={C.TEXT2} />
+            <X size={15} strokeWidth={1.5} color={C.TEXT2} />
           </Pressable>
         </View>
 
@@ -585,7 +585,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Pressable onPress={startFlashcards} accessibilityRole="button" accessibilityLabel="Start flashcard practice">
                 <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_ACCENT_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-                    <RotateCcw size={20} color={C.JADE_ACCENT} />
+                    <RotateCcw size={20} strokeWidth={1.5} color={C.JADE_ACCENT} />
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.flashcards}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.flashcardDesc}</Text>
@@ -597,7 +597,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Pressable onPress={startQuiz} accessibilityRole="button" accessibilityLabel="Start translation quiz">
                 <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_DIM, borderWidth: 1.5, borderColor: C.JADE_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-                    <Trophy size={20} color={C.JADE2} />
+                    <Trophy size={20} strokeWidth={1.5} color={C.JADE2} />
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.quizTitle}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.quizDesc}</Text>
@@ -609,7 +609,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Pressable onPress={startReverseQuiz} accessibilityRole="button" accessibilityLabel="Start reverse quiz">
                 <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.VIOLET_DIM, borderWidth: 1.5, borderColor: C.VIOLET_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${C.VIOLET2}18`, alignItems: 'center', justifyContent: 'center' }}>
-                    <ArrowLeftRight size={20} color={C.VIOLET2} />
+                    <ArrowLeftRight size={20} strokeWidth={1.5} color={C.VIOLET2} />
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.reverseQuiz}</Text>
@@ -627,7 +627,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                 <Pressable onPress={startPhraseBuilder} accessibilityRole="button" accessibilityLabel="Start phrase builder">
                   <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_ACCENT_SURFACE, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, gap: 8 }}>
                     <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                      <Layers size={20} color={C.JADE_ACCENT} />
+                      <Layers size={20} strokeWidth={1.5} color={C.JADE_ACCENT} />
                     </View>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.phraseBuilder}</Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.phraseBuilderDesc}</Text>
@@ -732,7 +732,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   onPress={() => speak(phrase.arabic)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                 >
-                  <Volume2 size={16} color={isSpeaking ? C.JADE2 : C.TEXT3} />
+                  <Volume2 size={16} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
               </View>
@@ -794,7 +794,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.BG} />
+                    <ArrowRight size={17} strokeWidth={1.5} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -859,7 +859,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     onPress={() => speak(phrase.arabic)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                   >
-                    <Volume2 size={13} color={isSpeaking ? C.JADE2 : C.TEXT3} />
+                    <Volume2 size={13} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                   </Pressable>
                 </View>
@@ -879,7 +879,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.BG} />
+                    <ArrowRight size={17} strokeWidth={1.5} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -892,7 +892,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
           <View style={{ flex: 1, backgroundColor: C.BG }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 16 }}>
               <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" hitSlop={8} style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                <X size={15} color={C.TEXT2} />
+                <X size={15} strokeWidth={1.5} color={C.TEXT2} />
               </Pressable>
               
               {/* Progress bar */}
@@ -968,7 +968,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     justifyContent: 'center',
                   }}
                 >
-                  <Trophy size={28} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.JADE_ACCENT} />
+                  <Trophy size={28} strokeWidth={1.5} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.JADE_ACCENT} />
                 </View>
                 <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT }}>
                   {score.correct}/{deck.length}
@@ -996,7 +996,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
               {/* SRS schedule note */}
               <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <BookOpen size={16} color={C.JADE_ACCENT} />
+                <BookOpen size={16} strokeWidth={1.5} color={C.JADE_ACCENT} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>
                     {STRINGS.practice.phrasesReviewed(deck.length)}
@@ -1026,7 +1026,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     borderColor: C.BORDER,
                   }}
                 >
-                  <RotateCcw size={15} color={C.TEXT2} />
+                  <RotateCcw size={15} strokeWidth={1.5} color={C.TEXT2} />
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
                     {STRINGS.practice.practiceAgain}
                   </Text>

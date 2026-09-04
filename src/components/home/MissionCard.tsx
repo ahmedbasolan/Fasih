@@ -4,10 +4,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../ui/Companion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
 
@@ -72,7 +71,7 @@ export function MissionCard({
     contentArea: {
       padding: 14,
     },
-    foxImage: {
+    mascotSlot: {
       width: 48,
       height: 48,
       alignSelf: 'center',
@@ -201,12 +200,10 @@ export function MissionCard({
 
         {/* Content Area */}
         <View style={styles.contentArea}>
-          {/* Mascot Image */}
-          <Image
-            source={IMAGES.foxyMale}
-            style={styles.foxImage}
-            resizeMode="contain"
-          />
+          {/* Mascot */}
+          <View style={styles.mascotSlot}>
+            <Companion size={48} />
+          </View>
 
           {/* Tag + Timer Row */}
           <View style={styles.tagRow}>

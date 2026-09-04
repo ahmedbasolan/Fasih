@@ -24,6 +24,7 @@ export { default as Building2 } from 'lucide-react-native/icons/building-2';
 export { default as Calendar } from 'lucide-react-native/icons/calendar';
 export { default as Car } from 'lucide-react-native/icons/car';
 export { default as Check } from 'lucide-react-native/icons/check';
+export { default as Circle } from 'lucide-react-native/icons/circle';
 export { default as CheckCircle } from 'lucide-react-native/icons/circle-check-big';
 export { default as CheckCircle2 } from 'lucide-react-native/icons/circle-check';
 export { default as ChevronLeft } from 'lucide-react-native/icons/chevron-left';
