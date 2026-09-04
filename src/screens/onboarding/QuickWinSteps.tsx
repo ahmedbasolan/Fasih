@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
@@ -14,7 +14,7 @@ import { FadeIn, ShimmerButton } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../../components/ui/Companion';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
 
@@ -210,11 +210,9 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
         return (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
-            <Image
-              source={IMAGES.foxyMale}
-              style={{ width: 80, height: 80, marginBottom: 24 }}
-              resizeMode="contain"
-            />
+            <View style={{ marginBottom: 24 }}>
+              <Companion size={80} />
+            </View>
 
             <Text style={{
               fontFamily: FONT_LATIN_SEMI,

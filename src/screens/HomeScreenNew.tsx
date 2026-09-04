@@ -4,10 +4,9 @@ import {
   ScrollView,
   Text,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IMAGES } from '../constants/images';
+import { Companion } from '../components/ui/Companion';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
 import { GhostLetters, PrimaryButton } from '../components/ui';
 import { MotiView } from 'moti';
@@ -175,10 +174,6 @@ export function HomeScreenNew({
       shadowRadius: 4,
       elevation: 2,
     },
-    emptyMascot: {
-      width: 48,
-      height: 48,
-    },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
       fontSize: 15,
@@ -228,7 +223,7 @@ export function HomeScreenNew({
             transition={{ type: 'timing', duration: 400 }}
           >
             <View style={styles.emptyCard}>
-              <Image source={IMAGES.foxyMale} style={styles.emptyMascot} resizeMode="contain" />
+              <Companion size={48} />
               <Text style={styles.emptyTitle}>{STRINGS.home.noProgressYet}</Text>
               <Text style={styles.emptySubtitle}>{STRINGS.home.newUserTip}</Text>
               <PrimaryButton

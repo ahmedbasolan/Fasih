@@ -1,92 +1,185 @@
-import React from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MotiView, AnimatePresence } from 'moti';
-import { Briefcase, Users, Check } from '../../components/icons';
-import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../../components/design/tokens';
+import { MotiView } from 'moti';
+import { Briefcase, Users } from '../../components/icons';
+import {
+  FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM,
+  FONT_HEADING_SEMI, FONT_HEADING_EXTRA, FONT_ARABIC_BLACK,
+} from '../../components/design/tokens';
+import { SPACE, SCREEN_MARGIN } from '../../components/design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
-import { IMAGES } from '../../constants/images';
+import { FadeIn, PrimaryButton } from '../../components/ui';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
 
 /**
+ * Proposed, unverified. See the art-direction spec §3 -- isolated consonantal
+ * roots plausibly do not engage the no-MSA rule, but "plausibly" is not this
+ * project's standard, and Ahmed's approval is a product decision, never a
+ * linguistic one (docs/language/authority.md).
+ *
+ * Set to true only after a check against that document by someone who reads
+ * Gulf Arabic. Shipping the English-only plates is the correct default, not a
+ * fallback.
+ */
+const MODE_ROOTS_APPROVED = false;
+const MODE_ROOTS: Record<'career' | 'social', string> = {
+  career: 'ع م ل',
+  social: 'ص ح ب',
+};
+
+/**
  * Step 1: Career or Social.
  *
- * The fork that shapes every scenario, phrase and metric label afterwards --
- * the differentiator, and the one screen in the app that earns a full-bleed
- * treatment.
+ * This forks the whole product -- which scenarios exist, which phrases are
+ * taught, and what the relationship metric is even called. It is the
+ * differentiator, so it is the one screen where Sadaf's ruled-page logic
+ * breaks: two full-width plates, edge to edge, separated by a single hairline.
+ *
+ * Selection is carried by TYPE, not by fill: the chosen plate's title takes
+ * C.PRIMARY and its body stays at full strength, while the other plate's text
+ * drops to C.TEXT3. Nothing gains a border or a background.
  */
 export function ModeStep({ next, draft }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const { mode, setMode } = draft;
 
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: C.BG, paddingTop: insets.top + SPACE.huge },
+        header: { paddingHorizontal: SCREEN_MARGIN, marginBottom: SPACE.xl },
+        title: {
+          fontFamily: FONT_HEADING_EXTRA,
+          fontSize: 28,
+          letterSpacing: -0.5,
+          color: C.TEXT,
+          marginBottom: SPACE.xs,
+        },
+        headerSub: { fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 },
+        plates: { flex: 1 },
+        plate: {
+          flex: 1,
+          justifyContent: 'center',
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingVertical: SPACE.xl,
+          overflow: 'hidden',
+        },
+        // The only separator on the screen. No cards, no radius, no fills.
+        divider: { height: StyleSheet.hairlineWidth, backgroundColor: C.BORDER },
+        watermark: {
+          position: 'absolute',
+          right: -SPACE.xl,
+          bottom: -SPACE.xl,
+          fontFamily: FONT_ARABIC_BLACK,
+          fontSize: 150,
+          lineHeight: 150,
+          color: C.TEXT,
+          includeFontPadding: false,
+        },
+        plateTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 30, letterSpacing: -0.4 },
+        plateSub: {
+          fontFamily: FONT_LATIN_SEMI,
+          fontSize: 12,
+          letterSpacing: 1.2,
+          textTransform: 'uppercase',
+          marginBottom: SPACE.sm,
+        },
+        plateDesc: { fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, maxWidth: 420 },
+        footer: {
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingTop: SPACE.lg,
+          paddingBottom: insets.bottom + SPACE.xl,
+        },
+      }),
+    [C, insets.top, insets.bottom],
+  );
+
+  const plates = [
+    {
+      id: 'career' as const,
+      Icon: Briefcase,
+      title: STRINGS.onboarding.careerMode,
+      sub: STRINGS.onboarding.careerSub,
+      desc: STRINGS.onboarding.careerDesc,
+    },
+    {
+      id: 'social' as const,
+      Icon: Users,
+      title: STRINGS.onboarding.socialMode,
+      sub: STRINGS.onboarding.socialSub,
+      desc: STRINGS.onboarding.socialDesc,
+    },
+  ];
+
   return (
-          <View style={{ flex: 1, paddingTop: insets.top + 80 }}>
-            <FadeIn delay={100}>
-              <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePath}</Text>
-                <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 }}>Select your primary focus</Text>
-              </View>
-            </FadeIn>
+    <View style={styles.root}>
+      <FadeIn delay={100}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{STRINGS.onboarding.choosePath}</Text>
+          <Text style={styles.headerSub}>{STRINGS.onboarding.choosePathSub}</Text>
+        </View>
+      </FadeIn>
 
-            <View style={{ flex: 1, paddingHorizontal: 24, gap: 16 }}>
-              {[
-                { id: 'career' as const, image: IMAGES.careerMode, Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.JADE_ACCENT },
-                { id: 'social' as const, image: IMAGES.socialMode, Icon: Users, title: STRINGS.onboarding.socialMode, sub: STRINGS.onboarding.socialSub, desc: STRINGS.onboarding.socialDesc, color: C.VIOLET2 },
-              ].map(({ id, image, Icon, title, sub, desc, color }, idx) => {
-                const selected = mode === id;
-                return (
-                  <FadeIn key={id} delay={200 + idx * 100} style={{ flex: 1 }}>
-                    <Pressable
-                    onPress={() => { haptic.selection(); setMode(id); }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={title}
-                    style={{ flex: 1, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: selected ? color : C.BORDER }}
+      <View style={styles.plates}>
+        {plates.map(({ id, Icon, title, sub, desc }, i) => {
+          const selected = mode === id;
+          return (
+            <React.Fragment key={id}>
+              {i > 0 && <View style={styles.divider} />}
+              <Pressable
+                onPress={() => { haptic.selection(); setMode(id); }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${title}. ${sub}. ${desc}`}
+                style={styles.plate}
+              >
+                {MODE_ROOTS_APPROVED && (
+                  <Text
+                    style={[styles.watermark, { opacity: selected ? 0.08 : 0.03 }]}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
                   >
-                      <Image source={image} style={{ position: 'absolute', width: '100%', height: '100%', opacity: selected ? 0.95 : 0.65 }} resizeMode="cover" accessibilityElementsHidden />
-                      <LinearGradient colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.95)', C.BG] as [string,string,string,string]} locations={[0, 0.4, 0.7, 1]} style={{ position: 'absolute', width: '100%', height: '100%' }} />
-                      
-                      <View style={{ flex: 1, padding: 24, justifyContent: 'flex-end' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', position: 'absolute', top: 20, left: 20, right: 20 }}>
-                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                            <Icon size={20} color={selected ? color : C.WHITE} />
-                          </View>
-                          <AnimatePresence>
-                            {selected && (
-                              <MotiView
-                                from={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ type: 'timing', duration: 220 }}
-                              >
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-                                  <Check size={16} color={C.INVERTED} />
-                                </View>
-                              </MotiView>
-                            )}
-                          </AnimatePresence>
-                        </View>
-                        
-                        <MotiView animate={{ translateY: selected ? -4 : 0 }} transition={{ type: 'timing', duration: 220 }}>
-                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : C.WHITE, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.95)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }}>{title}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 8, letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{sub}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 20 }}>{desc}</Text>
-                        </MotiView>
-                      </View>
-                    </Pressable>
-                  </FadeIn>
-                );
-              })}
-            </View>
+                    {MODE_ROOTS[id]}
+                  </Text>
+                )}
 
-            <FadeIn delay={400} style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: insets.bottom + 24 }}>
-              <ShimmerButton onPress={next}>{STRINGS.common.continue}</ShimmerButton>
-            </FadeIn>
-          </View>
+                <MotiView
+                  animate={{ translateX: selected ? 4 : 0 }}
+                  transition={{ type: 'timing', duration: 220 }}
+                >
+                  <Icon
+                    size={22}
+                    strokeWidth={1.5}
+                    color={selected ? C.PRIMARY : C.TEXT3}
+                    style={{ marginBottom: SPACE.md }}
+                  />
+                  <Text style={[styles.plateSub, { color: selected ? C.PRIMARY : C.TEXT3 }]}>
+                    {sub}
+                  </Text>
+                  <Text style={[styles.plateTitle, { color: selected ? C.PRIMARY : C.TEXT3 }]}>
+                    {title}
+                  </Text>
+                  <Text style={[styles.plateDesc, { color: selected ? C.TEXT2 : C.TEXT3, marginTop: SPACE.sm }]}>
+                    {desc}
+                  </Text>
+                </MotiView>
+              </Pressable>
+            </React.Fragment>
+          );
+        })}
+      </View>
+
+      <View style={styles.footer}>
+        <FadeIn delay={400}>
+          <PrimaryButton onPress={next} accessibilityLabel={STRINGS.common.continue}>
+            {STRINGS.common.continue}
+          </PrimaryButton>
+        </FadeIn>
+      </View>
+    </View>
   );
 }

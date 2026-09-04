@@ -47,6 +47,8 @@ export const STRINGS = {
     freeToStart: 'Free to start • No credit card',
     stepXofY: (x: number, y: number) => `STEP ${x} OF ${y}`,
     choosePath: 'Choose your path',
+    // Was hardcoded as "Select your primary focus" in the JSX.
+    choosePathSub: 'Select your primary focus',
     careerMode: 'Career Mode',
     careerSub: 'Hospitality · Retail · Office',
     careerDesc: 'Focus on business etiquette, formal greetings, and workplace culture.',
