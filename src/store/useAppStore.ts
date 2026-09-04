@@ -46,6 +46,7 @@ import { recordOnboardingSelection } from '../lib/onboardingAnalytics';
 import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
+  mergePatternProgress, mergeSecretEndings,
 } from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
@@ -469,6 +470,18 @@ export const useAppStore = create<AppState>()(
         set({ isSyncing: false, lastSyncError: null });
         if (!data) return;
 
+        // Additive-only changes (a new column defaulting via asRecord/asArray)
+        // merge safely even from a stale row. A future shape-changing migration
+        // will not — this warning exists so that stops being a silent surprise.
+        // See supabase/migrations/README.md's schema version table.
+        if (data.schema_version < CURRENT_SCHEMA_VERSION) {
+          console.warn(
+            `[sync] Cloud row is schema_version ${data.schema_version}, current is ` +
+            `${CURRENT_SCHEMA_VERSION}. Merging anyway — this is safe only as long as every ` +
+            'version bump so far has been purely additive.',
+          );
+        }
+
         // Re-read local state AFTER the network round-trip. `s` above is a
         // snapshot taken before the await; the app navigates to the tabs
         // immediately and this runs in the background, so a learner can finish
@@ -509,29 +522,15 @@ export const useAppStore = create<AppState>()(
         const mergedLastActive =
           [local.lastActiveDate, data.last_active_date].filter(Boolean).sort().pop() ?? null;
 
-        // Merge patternProgress: per pattern, the higher correctBuilds wins
-        // (progress on one device must never regress the other).
+        // patternProgress/secretEndingsEarned merges: see src/engine/syncMerge.ts —
+        // pulled out of this file (and unit-tested there) alongside their five
+        // siblings above, rather than staying the two hand-written exceptions.
         // Reads from `local`, not `s` — `s` is the snapshot taken before the
         // network round-trip, so seeding from it would discard any pattern
         // practised while the request was in flight. Same reason every other
         // merge on this path was moved off `s`.
-        const cloudProgress = data.pattern_progress ?? {};
-        const mergedPatternProgress: Record<string, PatternProgress> = { ...local.patternProgress };
-        for (const [id, cloud] of Object.entries(cloudProgress)) {
-          // Named localEntry rather than local: the outer `local` is the
-          // post-await state snapshot, and shadowing it here would be an easy
-          // way for a later edit to read the wrong thing.
-          const localEntry = mergedPatternProgress[id];
-          if (!localEntry || (cloud.correctBuilds ?? 0) > (localEntry.correctBuilds ?? 0)) {
-            mergedPatternProgress[id] = cloud;
-          }
-        }
-
-        // Merge secretEndingsEarned: union — a secret earned on any device is kept.
-        const mergedSecrets = {
-          ...(data.secret_endings_earned ?? {}),
-          ...local.secretEndingsEarned,
-        };
+        const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
+        const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
 
         set({
           user: data.user_profile ?? local.user,
