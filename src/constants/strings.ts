@@ -30,6 +30,14 @@ export const STRINGS = {
   onboarding: {
     welcomeTitle: 'Gulf Arabic, for Real Dubai Life',
     welcomeSubtitle: 'Learn through real stories, not textbooks',
+    // Step 0. These three were hardcoded in the JSX -- "Let's Begin Growing Our
+    // Skills." and the paragraph beneath it -- and are lifted here unchanged in
+    // meaning. `welcomeLead` splits so the second half can take the accent.
+    welcomeLead: 'Let’s begin',
+    welcomeLeadAccent: 'growing our skills.',
+    welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
+    getStarted: 'Get Started',
+    themeToggle: 'Switch between light and dark',
     helloKaf: 'Salam! I am Kaf.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
@@ -39,6 +47,19 @@ export const STRINGS = {
     freeToStart: 'Free to start • No credit card',
     stepXofY: (x: number, y: number) => `STEP ${x} OF ${y}`,
     choosePath: 'Choose your path',
+    // Was hardcoded as "Select your primary focus" in the JSX.
+    choosePathSub: 'Select your primary focus',
+    // Step 6. All of these were hardcoded in the JSX.
+    notifTitle: 'Never miss a day',
+    notifSub: 'Daily practice builds fluency 3× faster',
+    notifStreak: 'Daily streak reminders',
+    notifStreakSub: 'Keep your learning momentum going',
+    notifScenarios: 'New scenario alerts',
+    notifScenariosSub: 'Discover fresh cultural scenarios',
+    notifMilestones: 'Progress milestones',
+    notifMilestonesSub: 'Celebrate every achievement',
+    notifAllow: 'Allow Notifications',
+    notifLater: 'Maybe later',
     careerMode: 'Career Mode',
     careerSub: 'Hospitality · Retail · Office',
     careerDesc: 'Focus on business etiquette, formal greetings, and workplace culture.',
@@ -465,6 +486,17 @@ export const STRINGS = {
     notifications: 'Notifications',
     enabled: 'Enabled',
     disabled: 'Disabled',
+    // The anonymous onboarding aggregate. This copy says what is actually
+    // collected rather than "help us improve your experience", and it says
+    // "from now on" because the toggle CANNOT be retroactive — an anonymous
+    // row cannot be found again to delete. Do not soften either of those.
+    analytics: {
+      title: 'Share anonymous setup answers',
+      body: 'Your mode, role and goals are counted with no name, email or account attached, so we can write scenarios for the people actually using Fasih.',
+      note: 'Turning this off stops future counts. Answers already counted carry no identifier, so they cannot be found or removed.',
+      on: 'Sharing',
+      off: 'Not sharing',
+    },
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,

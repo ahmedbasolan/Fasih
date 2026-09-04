@@ -51,6 +51,8 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
   const streakCount = useCountUp(stats.currentStreak, 900, 100);
   const phrasesMastered = useCountUp(stats.phrasesMastered, 900, 200);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const analyticsEnabled = useAppStore((s) => s.analyticsEnabled);
+  const setAnalyticsEnabled = useAppStore((s) => s.setAnalyticsEnabled);
 
   useEffect(() => {
     getNotificationPermissionStatus().then((status) => setNotificationsEnabled(status === 'granted'));
@@ -554,6 +556,39 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
               </View>
             </Rule>
           ))}
+
+          {/* The anonymous onboarding aggregate opt-out.
+              Not a `Rule`: Rule hardcodes accessibilityRole="button", and a
+              control whose state is the point has to announce as a switch with
+              that state. It carries its own hairline instead. */}
+          <Pressable
+            onPress={() => setAnalyticsEnabled(!analyticsEnabled)}
+            accessibilityRole="switch"
+            accessibilityLabel={STRINGS.profile.analytics.title}
+            accessibilityHint={STRINGS.profile.analytics.body}
+            accessibilityState={{ checked: analyticsEnabled }}
+            style={{
+              paddingVertical: SPACE.lg,
+              borderBottomWidth: 1,
+              borderBottomColor: C.BORDER,
+              gap: SPACE.sm,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACE.md }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT, flex: 1 }}>
+                {STRINGS.profile.analytics.title}
+              </Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: analyticsEnabled ? C.PRIMARY : C.TEXT3 }}>
+                {analyticsEnabled ? STRINGS.profile.analytics.on : STRINGS.profile.analytics.off}
+              </Text>
+            </View>
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, lineHeight: 18, color: C.TEXT2 }}>
+              {STRINGS.profile.analytics.body}
+            </Text>
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, lineHeight: 18, color: C.TEXT3 }}>
+              {STRINGS.profile.analytics.note}
+            </Text>
+          </Pressable>
         </View>
       </MotiView>
 

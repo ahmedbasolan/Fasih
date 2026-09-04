@@ -42,6 +42,8 @@ import {
   derivePreferredHour,
 } from '../lib/notifications';
 import { shouldGrantStreakFreeze, applyStreakFreeze } from '../engine/streakEngine';
+import { recordOnboardingSelection } from '../lib/onboardingAnalytics';
+import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
 } from '../engine/syncMerge';
@@ -265,6 +267,38 @@ interface AppState {
   /** Request permission and schedule initial notifications. Call after sign-in. */
   initNotifications: () => Promise<void>;
 
+  // Anonymous onboarding analytics
+  // See docs/superpowers/specs/2026-09-03-onboarding-analytics-design.md
+  /**
+   * Opt-out state for the anonymous onboarding aggregate. On by default; the
+   * Profile toggle turns it off. It can only stop FUTURE writes — an anonymous
+   * row cannot be found again to delete, and the toggle copy must not imply
+   * otherwise.
+   */
+  analyticsEnabled: boolean;
+  /**
+   * Fire-once guard, so a row is written at most once per install. Rows carry
+   * no identifier, so uniqueness cannot be enforced in the database and a
+   * reinstall produces a second row. Not tamper-proof and not meant to be:
+   * these counts inform authoring decisions, not billing.
+   */
+  analyticsOnboardingSent: boolean;
+  /**
+   * Both fields deliberately survive `signOut` and `deleteAccount` — neither
+   * reset block lists them. `analyticsEnabled` is a device preference like the
+   * theme, and `analyticsOnboardingSent` guards the install, not the account.
+   * Nor is there anything for `deleteAccount` to erase: the row carries no
+   * identifier, which is the whole point and the basis for not honouring
+   * erasure against that table.
+   */
+  setAnalyticsEnabled: (value: boolean) => void;
+  /**
+   * Write the anonymous onboarding row, at most once, if collection is on.
+   * Fire-and-forget: never throws, never blocks the transition out of
+   * onboarding, never retries.
+   */
+  recordOnboardingAnalytics: (profile: UserProfile) => void;
+
   // Auth actions
   setUser: (user: UserProfile) => void;
   setUserMode: (mode: 'career' | 'social') => void;
@@ -378,6 +412,10 @@ export const useAppStore = create<AppState>()(
       // Notifications
       recentSessionHours: [],
       notificationsEnabled: false,
+
+      // Anonymous onboarding analytics
+      analyticsEnabled: true,
+      analyticsOnboardingSent: false,
 
       // Sync state
       isSyncing: false,
@@ -524,6 +562,27 @@ export const useAppStore = create<AppState>()(
       setUserGender: (gender) => set((state) => ({ user: state.user ? { ...state.user, gender } : null })),
       setDailyGoalXP: (xp) => set((state) => ({ user: state.user ? { ...state.user, dailyGoalXP: xp } : null })),
       setHasOnboarded: (value) => set({ hasOnboarded: value }),
+
+      setAnalyticsEnabled: (value) => set({ analyticsEnabled: value }),
+
+      recordOnboardingAnalytics: (profile) => {
+        const { analyticsEnabled, analyticsOnboardingSent } = get();
+        // The guard order lives in engine/onboardingAnalytics so it is testable
+        // without a store or a network.
+        if (!shouldRecordOnboarding({ analyticsEnabled, analyticsOnboardingSent }, profile)) return;
+
+        // Flag set BEFORE the write, not after. The write is fire-and-forget
+        // with no error path, so there is no moment at which "did it land?" is
+        // knowable — and a flag set on success would re-fire on every launch
+        // for anyone permanently offline.
+        set({ analyticsOnboardingSent: true });
+
+        void recordOnboardingSelection({
+          mode: profile.mode,
+          role: profile.role,
+          goals: profile.goals,
+        });
+      },
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
@@ -989,6 +1048,8 @@ export const useAppStore = create<AppState>()(
         milestones: state.milestones,
         recentSessionHours: state.recentSessionHours,
         notificationsEnabled: state.notificationsEnabled,
+        analyticsEnabled: state.analyticsEnabled,
+        analyticsOnboardingSent: state.analyticsOnboardingSent,
       }),
     }
   )

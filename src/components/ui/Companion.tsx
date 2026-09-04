@@ -14,9 +14,9 @@ interface CompanionProps {
  * character back is a change to THIS FILE ONLY — not to six screens.
  *
  * That seam, not any surviving artefact, is what makes the reintroduction
- * cheap. `SceneIllustrations.tsx` is already deleted and recoverable from git
- * history; `KafMascot.tsx` is still on disk only because onboarding has not
- * been migrated yet (step 5), and goes the same way when it is.
+ * cheap. `KafMascot.tsx`, `SceneIllustrations.tsx` and the four mascot/mode
+ * PNGs are all deleted and all recoverable from git history. Nine call sites
+ * now route through this one function.
  */
 export function Companion({ size = 64 }: CompanionProps) {
   const name = useAppStore((s) => s.user?.name) ?? '';
