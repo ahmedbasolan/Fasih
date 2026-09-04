@@ -23,11 +23,19 @@ interface Props {
   milestones: LearningMilestone[];
   journal: JournalEntry[];
   subscriptionStatus?: SubscriptionStatus;
+  // Optional, and guarded at their render sites: the whole block is omitted
+  // when the handler is absent.
   onSignOut?: () => void;
-  onManageSubscription?: () => void;
-  onUpgrade?: () => void;
-  onRestorePurchases?: () => void;
   onDeleteAccount?: () => void;
+  // Required. The subscription section always renders, and its rows draw a
+  // chevron unconditionally. `Rule` degrades to a non-pressable View when it
+  // gets no handler, so an optional callback here produces a row that looks
+  // tappable and does nothing — the same failure the paywall had in c5520ac.
+  // Making them required moves that from a silent runtime dud to a compile
+  // error, which is the only place it can be caught reliably.
+  onManageSubscription: () => void;
+  onUpgrade: () => void;
+  onRestorePurchases: () => void;
   isDeletingAccount?: boolean;
 }
 
@@ -242,25 +250,27 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
       {user?.goals && user.goals.length > 0 && (
         <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 400, delay: 200 }}>
           <Text style={{ fontFamily: FONT_HEADING, fontSize: 17, color: C.TEXT, marginBottom: 12 }}>{STRINGS.profile.yourGoals}</Text>
-          {/* Labels, not chips. These are read-only facts about the user, and
-              a goal is not a control — the same call PhraseEntry makes for
-              CEFR and type. A box around each one bought nothing. */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: SPACE.lg, marginBottom: SPACE.xl }}>
-            {user.goals.map(g => (
-              <Text
-                key={g}
-                style={{
-                  fontFamily: FONT_LATIN_MEDIUM,
-                  fontSize: 10,
-                  letterSpacing: 1.6,
-                  textTransform: 'uppercase',
-                  color: C.TEXT2,
-                }}
-              >
-                {getGoalLabel(g)}
-              </Text>
-            ))}
-          </View>
+          {/* Labels, not chips — a goal is a read-only fact, not a control, so
+              it gets no box. But the labels are multi-word ("Professional
+              Growth", "Connect with Friends"), and set uppercase with wide
+              tracking and only a gap between them they read as one run-on
+              string. A middot does the delimiting the chip border used to,
+              without spending a fill on it. This is why CEFR and type can be
+              bare labels in PhraseEntry and these cannot: those are single
+              words. */}
+          <Text
+            style={{
+              fontFamily: FONT_LATIN_MEDIUM,
+              fontSize: 10,
+              letterSpacing: 1.6,
+              lineHeight: 18,
+              textTransform: 'uppercase',
+              color: C.TEXT2,
+              marginBottom: SPACE.xl,
+            }}
+          >
+            {user.goals.map(getGoalLabel).join('  ·  ')}
+          </Text>
         </MotiView>
       )}
 
@@ -352,7 +362,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 }}
               >
                 <Icon size={18} strokeWidth={1.5} color={active ? C.PRIMARY : C.TEXT3} />
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: active ? FONT_HEADING_EXTRA : FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
               </Pressable>
             );
           })}
@@ -386,7 +396,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                 }}
               >
                 <Icon size={18} strokeWidth={1.5} color={active ? C.PRIMARY : C.TEXT3} />
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: active ? FONT_HEADING_EXTRA : FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: active ? C.TEXT2 : C.TEXT3 }}>{desc}</Text>
               </Pressable>
             );
@@ -422,7 +432,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   gap: SPACE.xs,
                 }}
               >
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: active ? FONT_HEADING_EXTRA : FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
                 <Text style={{ fontFamily: FONT_ARABIC, fontSize: 12, color: active ? C.TEXT2 : C.TEXT3 }}>{example}</Text>
               </Pressable>
             );
@@ -457,7 +467,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
                   gap: SPACE.xs,
                 }}
               >
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
+                <Text style={{ fontFamily: active ? FONT_HEADING_EXTRA : FONT_HEADING_SEMI, fontSize: 12, color: active ? C.PRIMARY : C.TEXT3 }}>{label}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: active ? C.TEXT2 : C.TEXT3 }}>{sub}</Text>
               </Pressable>
             );

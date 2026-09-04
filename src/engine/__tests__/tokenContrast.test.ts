@@ -82,7 +82,10 @@ describe.each([
  * in spec §8.4 (step 8), not this file.
  */
 describe('themed ink on a theme-invariant literal fill', () => {
-  // The dark-theme value of the deleted CATEGORY_MINT, kept as a fixture.
+  // The deleted CATEGORY_MINT, kept as a fixture. Both theme objects carried a
+  // near-white value for it — '#D5F5EC' in dark and '#E0FFF0' in light — and
+  // that is the whole point: the fill did not move when the theme did, so the
+  // ink landed on a near-white ground in dark mode no matter which one shipped.
   const PASTEL = '#E0FFF0';
 
   it('fails AA in the dark theme — the ~1.0:1 meter-label bug', () => {
