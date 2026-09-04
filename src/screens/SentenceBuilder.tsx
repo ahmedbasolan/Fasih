@@ -5,10 +5,11 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft, Blocks, Check, ChevronRight, Lock, RotateCcw,
-  Sparkles, Trophy, Volume2, Wand2, X,
+  Sparkles, Trophy, Volume2, X,
 } from '../components/icons';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { GeoPattern } from '../components/design/GeoPattern';
 import { ANGLE_135 } from '../components/design/gradients';
 import {
@@ -576,26 +577,25 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     const lockedPatterns = GRAMMAR_PATTERNS.filter((p) => !available.some((a) => a.id === p.id));
     return (
       <View style={styles.screen}>
-        <LinearGradient
-          colors={[...G.GOLD_STOPS]}
-          start={ANGLE_135.start}
-          end={ANGLE_135.end}
-          style={styles.hero}
-        >
-          <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
-          <View style={styles.heroRow}>
-            <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-              <ArrowLeft size={18} color={C.WHITE} />
-            </Pressable>
-            <View style={{ alignItems: 'flex-end' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Wand2 size={22} color={C.WHITE} />
-                <Text style={styles.heroArabic}>كوّن</Text>
-              </View>
-              <Text style={styles.heroSub}>{STRINGS.sentenceBuilder.subtitle}</Text>
-            </View>
-          </View>
-        </LinearGradient>
+        {/* The subtitle used to sit in the same row as the back button, in a
+            right-aligned block, and ran underneath it. ScreenHeader gives back,
+            title and subtitle their own rows, so that arrangement is not
+            expressible rather than merely corrected.
+
+            The three builder-step heroes below keep their gradient: they put a
+            SHORT step label beside the back button and stack their content
+            underneath, so they never collided, and they carry a step indicator
+            ScreenHeader does not model. Converting them is a restyle of the
+            builder flow, not this fix.
+
+            The Arabic wordmark كوّن is dropped rather than moved — GhostLetters
+            already carries this screen's Arabic identity, and ScreenHeader's
+            title slot is Latin-styled. */}
+        <ScreenHeader
+          onBack={onExit}
+          title={STRINGS.sentenceBuilder.title}
+          subtitle={STRINGS.sentenceBuilder.subtitle}
+        />
 
         <ScrollView style={styles.content} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Text style={[styles.sectionLabel, { color: C.TEXT2 }]}>{STRINGS.sentenceBuilder.patternsTitle}</Text>
