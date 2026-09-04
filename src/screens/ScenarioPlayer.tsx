@@ -324,10 +324,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [speak]);
 
   // ─── Effects must be declared before any early return (Rules of Hooks) ───────
+  // Only schedules the reveal delay — choicesVisible/selectedChoiceId are reset
+  // synchronously in next() (in the same batch as setStep/setPhase) rather than
+  // here. This effect runs one render AFTER the new scene's key change already
+  // remounted the scene subtree, so resetting choicesVisible here let the
+  // previous scene's choices flash fully visible for one frame before this
+  // caught up and hid them again.
   useEffect(() => {
     if (phase === 'scene') {
-      setChoicesVisible(false);
-      setSelectedChoiceId(null);
       const t = setTimeout(() => setChoicesVisible(true), 1100);
       return () => clearTimeout(t);
     }
@@ -464,6 +468,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   const next = useCallback(() => {
     setSelectedChoiceId(null);
+    // Reset synchronously, in the same batch as setStep/setPhase below — the
+    // scene subtree remounts via key={`scene-${step}`}, but choicesVisible
+    // lives in this parent and does not reset on its own, so resetting it a
+    // render late (as the [phase, step] effect used to) let the new scene's
+    // choices flash visible for one frame using the previous scene's value.
+    setChoicesVisible(false);
 
     // Handle explicit branch from most recent choice
     if (lastResolvedNextSceneId) {
