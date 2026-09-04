@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Linking, Alert, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Calendar, BookOpen, Circle, ChevronRight, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
@@ -162,7 +162,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
         <View style={{
           paddingBottom: SPACE.xl,
           marginBottom: SPACE.xl,
-          borderBottomWidth: 1,
+          borderBottomWidth: StyleSheet.hairlineWidth,
           borderBottomColor: C.BORDER,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.lg, marginBottom: SPACE.xl }}>
@@ -569,7 +569,7 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
             accessibilityState={{ checked: analyticsEnabled }}
             style={{
               paddingVertical: SPACE.lg,
-              borderBottomWidth: 1,
+              borderBottomWidth: StyleSheet.hairlineWidth,
               borderBottomColor: C.BORDER,
               gap: SPACE.sm,
             }}

@@ -70,7 +70,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ح', 'و', 'ا']} />
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + 40 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Header ──
