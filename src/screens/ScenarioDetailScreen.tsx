@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
+import { RADIUS } from '../components/design/spacing';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters, SheetPanel, PrimaryButton } from '../components/ui';
-import { HeroSceneBg } from '../components/features/SceneIllustrations';
+import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader } from '../components/ui';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -21,7 +20,6 @@ interface Props {
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const { width: screenW } = useWindowDimensions();
   
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
   // the whole scenario corpus on every call, and calling them in the render
@@ -72,59 +70,41 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ح', 'و', 'ا']} />
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header Image Section ── */}
-        <View style={{ height: 450, width: '100%', backgroundColor: C.PRIMARY }}>
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-             <HeroSceneBg width={screenW} height={450} />
-             <LinearGradient
-                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)']}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-             />
-          </View>
-
-          {/* Navigation Controls */}
-          <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Pressable 
-              onPress={onBack}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <ChevronLeft size={24} color={C.WHITE} />
-            </Pressable>
-            <Pressable
-              onPress={() => toggleFavoriteScenario(scenarioId)}
-              accessibilityRole="button"
-              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
-              accessibilityState={{ selected: isSaved }}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Bookmark size={20} color={isSaved ? C.PRIMARY : C.WHITE} fill={isSaved ? C.PRIMARY : 'none'} />
-            </Pressable>
-          </View>
-
-          {/* Title Overlay */}
-          <View style={{ position: 'absolute', bottom: 40, left: 24, right: 24 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 36, color: C.WHITE, marginBottom: 8 }}>
-              {scenario.title}
-            </Text>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              {STRINGS.home.featuredAuthor}
-            </Text>
-          </View>
-        </View>
+        {/* ── Header ──
+            Was a 450pt illustrated hero with white text over a black scrim.
+            Sadaf has no photographic ground to write on, and the illustration
+            was the last consumer of SceneIllustrations. Type on paper instead:
+            the title carries the screen. */}
+        <ScreenHeader
+          eyebrow={scenario.level}
+          title={scenario.title}
+          subtitle={scenario.subtitle}
+          onBack={onBack}
+        />
 
         {/* ── Content Section ── */}
-        <SheetPanel radius={40} overlap={30} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
-          {/* Metadata Row */}
+        <SheetPanel radius={RADIUS.sheet} overlap={0} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
+          {/* Metadata Row.
+              The save toggle used to live as a translucent circle on the hero.
+              With the hero gone it sits here, beside the scene count, where it
+              is on the paper rather than floating over an image. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 24, color: C.TEXT }}>
               {script.scenes.length} Scenes
             </Text>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.PRIMARY }}>
-              {scenario.level}
-            </Text>
+            <Pressable
+              onPress={() => toggleFavoriteScenario(scenarioId)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
+              accessibilityState={{ selected: isSaved }}
+              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
+            </Pressable>
           </View>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
             {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, script.scenes.length * 2))}

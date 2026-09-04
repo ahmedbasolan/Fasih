@@ -20,6 +20,8 @@ import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
+import { railMarks } from '../engine/marginRail';
+import type { RailMark } from '../engine/marginRail';
 import {
   trackScenarioStarted,
   trackScenarioChoiceMade,
@@ -29,6 +31,7 @@ import {
 import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
+import { MarginRail } from '../components/scenario/MarginRail';
 import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioScript } from '../types';
 
 interface Props {
@@ -233,13 +236,22 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scriptData = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
-
   const { speak, isSpeaking } = useArabicTTS();
   const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
   const user = useAppStore((s) => s.user);
   const activeScenarioState = useAppStore((s) => s.activeScenarioState);
+
+  // Track length is the scenario's authored decision count, not one derived from
+  // the script — scripts branch, so the script's choice-scene count is an upper
+  // bound on a run rather than the length of one.
+  const railMarksForRun = useMemo(
+    () => (activeScenarioState && scriptData
+      ? railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0)
+      : []),
+    [activeScenarioState, scriptData, scenario],
+  );
   const startScenario = useAppStore((s) => s.startScenario);
   const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
@@ -286,6 +298,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // render with a zeroed-out score the instant it appears.
   const [finalizedEnding, setFinalizedEnding] = useState<ScenarioEnding | null>(null);
   const [finalizedImpact, setFinalizedImpact] = useState<{ trust: number; respect: number; culture: number } | null>(null);
+  // Same lock, same reason: the ending screen shows the completed rail, and
+  // finalizeScenario() nulls the state the rail is derived from. Without this
+  // the rail empties itself the instant the result appears.
+  const [finalizedRail, setFinalizedRail] = useState<RailMark[] | null>(null);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -333,6 +349,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       }),
       { trust: 0, respect: 0, culture: 0 }
     ));
+    setFinalizedRail(railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0));
     setCompletionFired(true);
     finalizeScenario(currEnding);
     // Actually unlock the phrases the result screen is about to present as
@@ -355,7 +372,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
+  }, [phase, completionFired, scenarioId, scriptData, scenario, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
@@ -647,7 +664,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             animate={{ opacity: 1, translateX: 0 }}
             transition={{ type: 'timing', duration: sceneTone === 'warm' ? 380 : sceneTone === 'cold' ? 180 : 260 }}
           >
-            <DialogueBubble scene={scene} tone={sceneTone} />
+            {/* The rail runs down the leading edge and accretes a mark per
+                choice, so the run's shape is visible while it is still being
+                made. The engine has tracked this since it was written and
+                nothing rendered it. */}
+            <View style={{ flexDirection: 'row' }}>
+              <MarginRail marks={railMarksForRun} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <DialogueBubble scene={scene} tone={sceneTone} />
 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
@@ -738,6 +762,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 </View>
               </MotiView>
             )}
+              </View>
+            </View>
           </MotiView>
         )}
 
@@ -766,6 +792,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             total={total}
             scenarioId={scenarioId}
             scriptData={scriptData}
+            railMarks={finalizedRail ?? railMarksForRun}
             unlockedPhrases={unlockedPhrases}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
