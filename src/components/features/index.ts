@@ -1,6 +1,4 @@
 export { KafMascot } from './KafMascot';
-export { CategoryCard } from './CategoryCard';
-export { CATEGORY_ILLUSTRATIONS } from './CategoryIllustrations';
 export { PhraseBuilder } from './PhraseBuilder';
 export { HeroSceneBg, FirstMorningScene, CoffeeInvitationScene, HotelLobbyScene, CafeScene, EidScene, WelcomeScene } from './SceneIllustrations';
 export { StatCard } from './StatCard';
