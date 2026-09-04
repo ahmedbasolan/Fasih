@@ -17,6 +17,7 @@ import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getAvailablePatterns } from '../engine/sentenceBuilder';
 import { arabicIncludes } from '../engine/arabic';
+import { splitBilingualTitle } from '../engine/text';
 
 type Phrase = typeof PHRASES[0];
 
@@ -295,11 +296,11 @@ export function PhraseLibrary() {
                       borderColor: C.BORDER,
                     }}
                   >
-                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: SPACE.sm, textAlign: 'right' }}>
-                      {p.title.split(' — ')[0]}
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: SPACE.sm, textAlign: 'right', writingDirection: 'rtl' }}>
+                      {splitBilingualTitle(p.title).arabic}
                     </Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, lineHeight: 15 }}>
-                      {p.title.split(' — ')[1] ?? ''}
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, lineHeight: 15, writingDirection: 'ltr' }}>
+                      {splitBilingualTitle(p.title).english}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: SPACE.md }}>
                       {/* Circular by intent — a dot is the degenerate pill, and
@@ -448,7 +449,7 @@ export function PhraseLibrary() {
                 setSearch('');
                 if (cat === STRINGS.phrases.filterAll) setShowGrid(true);
               }}>
-                <X size={14} color={C.TEXT3} />
+                <X size={14} strokeWidth={1.5} color={C.TEXT3} />
               </Pressable>
             )}
           </View>
