@@ -31,7 +31,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.local
 .env*.local
+
+# Sentry build-time auth token (never commit — used only for source map upload)
+.env.sentry-build-plugin
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +44,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Git worktrees for isolated feature work
+.worktrees/
+
+# Python (tools/dialect-check.py)
+__pycache__/
+*.pyc

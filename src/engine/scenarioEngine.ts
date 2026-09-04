@@ -8,13 +8,39 @@ import type {
   ImpactDelta,
 } from '../types';
 
+// ─── Relationship scoring ────────────────────────────────────────────────────
+// The three meters the learner sees (trust / respect / culture) ARE the currency.
+// Tone and endings are both derived from them, so the bar on screen and the
+// outcome the learner earns can never disagree.
+//
+// `choice.score` is retained only as an XP / analytics figure. It is never read
+// by getTone or evaluateEnding — a choice that costs trust must actually cost
+// the learner something, or the cultural lesson attached to it is a lie.
+
+const ZERO_IMPACT: ImpactDelta = { trust: 0, respect: 0, culture: 0 };
+
+/** Sum of a single relationship delta. */
+export function impactTotal(delta: ImpactDelta): number {
+  return delta.trust + delta.respect + delta.culture;
+}
+
+/** Accumulated relationship standing with one specific NPC. */
+export function npcRelationship(state: ScenarioState, npcId: string): number {
+  return impactTotal(state.impactByNpc[npcId] ?? ZERO_IMPACT);
+}
+
+/** Accumulated relationship standing across every NPC met in this run. */
+export function relationshipScore(state: ScenarioState): number {
+  return Object.values(state.impactByNpc).reduce((sum, d) => sum + impactTotal(d), 0);
+}
+
 // ─── applyChoice ─────────────────────────────────────────────────────────────
 /**
  * Given the current run state and a choice the user just made, returns a new
  * ScenarioState with:
  *  - the choice's flag added to flags (if it has one)
- *  - the choice's impact merged into impactByNpc[npcId]
- *  - choice.score added to totalScore
+ *  - the choice's impact merged into impactByNpc[npcId]  ← drives tone + endings
+ *  - choice.score added to totalScore                    ← XP / analytics only
  *  - a new record appended to choiceHistory
  *
  * Pure: does not mutate state.
@@ -25,8 +51,8 @@ export function applyChoice(
   npcId: string,
   now: string = new Date().toISOString(),
 ): ScenarioState {
-  const prev: ImpactDelta = state.impactByNpc[npcId] ?? { trust: 0, respect: 0, culture: 0 };
-  const delta = choice.impact ?? { trust: 0, respect: 0, culture: 0 };
+  const prev: ImpactDelta = state.impactByNpc[npcId] ?? ZERO_IMPACT;
+  const delta = choice.impact ?? ZERO_IMPACT;
 
   const newFlags = new Set(state.flags);
   if (choice.flag) newFlags.add(choice.flag);
@@ -35,6 +61,10 @@ export function applyChoice(
     ...state,
     flags: newFlags,
     totalScore: state.totalScore + choice.score,
+    scoreByNpc: {
+      ...state.scoreByNpc,
+      [npcId]: (state.scoreByNpc[npcId] ?? 0) + choice.score,
+    },
     impactByNpc: {
       ...state.impactByNpc,
       [npcId]: {
@@ -57,21 +87,20 @@ export function applyChoice(
 
 // ─── getTone ─────────────────────────────────────────────────────────────────
 /**
- * Determines NPC warmth for a scene based on accumulated totalScore.
- * totalScore (sum of choice.score) is used — not the T/R/C impact sum —
- * because script authors write warmThreshold/coldThreshold against choice.score.
+ * Determines NPC warmth for a scene from the learner's standing with THAT NPC
+ * (trust + respect + culture accumulated so far), so a character you have
+ * treated well greets you warmly even if another character in the same run
+ * has been alienated.
  *
  * Returns 'neutral' if the scene has no charDialogue variants defined.
  */
 export function getTone(
   state: ScenarioState,
-  _npcId: string,
+  npcId: string,
   scene: ScenarioScene,
 ): Tone {
-  // _npcId is accepted for future per-NPC tone support. Currently totalScore is a
-  // global accumulator and drives warmth for all NPCs — not per-NPC.
   if (!scene.charDialogue) return 'neutral';
-  const score = state.totalScore;
+  const score = npcRelationship(state, npcId);
   if (scene.warmThreshold !== undefined && score >= scene.warmThreshold) return 'warm';
   if (scene.coldThreshold !== undefined && score < scene.coldThreshold) return 'cold';
   return 'neutral';
@@ -94,7 +123,8 @@ export function resolveNextScene(
 
 // ─── evaluateEnding ───────────────────────────────────────────────────────────
 /**
- * Determines which ending the player earned.
+ * Determines which ending the player earned, from their total relationship
+ * standing across all NPCs.
  * Secret endings are checked first (most restrictive).
  * Standard endings are checked in descending min-score order.
  * Falls back to the last ending in the array if nothing matches.
@@ -103,7 +133,7 @@ export function evaluateEnding(
   state: ScenarioState,
   script: ScenarioScript,
 ): ScenarioEnding {
-  const score = state.totalScore;
+  const score = relationshipScore(state);
 
   // Check secret endings first
   for (const ending of script.endings.filter(e => e.secret)) {
@@ -123,13 +153,18 @@ export function evaluateEnding(
 
 // ─── isChoiceVisible ─────────────────────────────────────────────────────────
 /**
- * All choices are visible in the current build.
- * Butterfly effect is expressed through consequences, not by hiding options.
- * Reserved for flag-gated choices in a future iteration.
+ * Returns true if this choice should be rendered for the player.
+ *
+ * A choice with requiredFlag is only shown when that flag has already been set
+ * by a previous choice. This enables branching dialogue paths where an option
+ * only appears after a specific cultural action has been taken earlier.
+ *
+ * Choices without a requiredFlag are always visible.
  */
 export function isChoiceVisible(
-  _choice: ScenarioChoice,
-  _state: ScenarioState,
+  choice: ScenarioChoice,
+  state: ScenarioState,
 ): boolean {
-  return true;
+  if (!choice.requiredFlag) return true;
+  return state.flags.has(choice.requiredFlag);
 }

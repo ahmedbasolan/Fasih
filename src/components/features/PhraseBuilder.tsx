@@ -3,7 +3,9 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, FadeIn } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTheme } from '../../hooks/useTheme';
+import { arabicAnswerMatches } from '../../engine/arabic';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../design/tokens';
+import { STRINGS } from '../../constants/strings';
 
 interface PhraseBuilderProps {
   english: string;
@@ -57,9 +59,9 @@ function DraggableTile({ word, id, isPlaced, onTap, colorPrimary, colorBg }: Til
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={animatedStyle}>
-        <Pressable 
+        <Pressable
           onPress={() => onTap(id)}
-          style={[styles.tile, { backgroundColor: colorBg, borderColor: colorPrimary }]}
+          style={[styles.tile, { backgroundColor: colorBg, borderColor: colorPrimary, shadowColor: colorPrimary }]}
         >
           <Text style={[styles.tileText, { color: colorPrimary }]}>{word}</Text>
         </Pressable>
@@ -107,11 +109,16 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
   };
 
   const handleCheck = () => {
-    // Reconstruct Arabic string from placed tiles in order
-    // Because Arabic is RTL, when they place words [A, B], it renders A B visually 
-    // Wait, array order: 0th element should be the first word (rightmost in Arabic).
+    // Tiles are held in reading order — placed[0] is the first word of the
+    // phrase, which in Arabic renders rightmost. Joining with a single space
+    // reconstructs the sentence; RTL layout handles the visual direction.
     const constructed = placed.map(t => t.word).join(' ');
-    const correct = constructed === arabic;
+    // Postel's law: judge the answer, not the typography. `constructed ===
+    // arabic` marked a correct arrangement wrong over a double space or a
+    // vowel mark stored on the phrase but absent from the tiles. Letter
+    // identity is still compared strictly — this is a teaching exercise, so
+    // accepting the wrong letter would be worse than rejecting the right one.
+    const correct = arabicAnswerMatches(constructed, arabic);
     setIsCorrect(correct);
     setHasChecked(true);
   };
@@ -119,11 +126,11 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.promptContainer}>
-        <Text style={[styles.promptLabel, { color: C.TEXT3 }]}>Translate this phrase</Text>
+        <Text style={[styles.promptLabel, { color: C.TEXT3 }]}>{STRINGS.practice.translateThis}</Text>
         <Text style={[styles.promptText, { color: C.TEXT }]}>{english}</Text>
       </View>
 
-      <Text style={[styles.instruction, { color: C.TEXT3 }]}>Support Drag & Drop or Tap</Text>
+      <Text style={[styles.instruction, { color: C.TEXT3 }]}>{STRINGS.practice.phraseBuilderInstruction}</Text>
 
       {/* Answer Area */}
       <View style={[styles.answerArea, { backgroundColor: C.SURFACE2, borderColor: C.BORDER }]}>
@@ -133,8 +140,8 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
               {...t} 
               isPlaced={true} 
               onTap={handleTileTap} 
-              colorPrimary={C.GOLD} 
-              colorBg={C.GOLD_SURFACE} 
+              colorPrimary={C.JADE_ACCENT} 
+              colorBg={C.JADE_ACCENT_SURFACE} 
             />
           </Animated.View>
         ))}
@@ -163,21 +170,21 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
             disabled={placed.length !== initialTiles.length}
             style={[styles.checkBtn, { backgroundColor: placed.length === initialTiles.length ? C.JADE2 : C.SURFACE, borderColor: placed.length === initialTiles.length ? C.JADE2 : C.BORDER }]}
           >
-            <Text style={[styles.checkBtnText, { color: placed.length === initialTiles.length ? C.BG : C.TEXT3 }]}>Check</Text>
+            <Text style={[styles.checkBtnText, { color: placed.length === initialTiles.length ? C.BG : C.TEXT3 }]}>{STRINGS.practice.check}</Text>
           </Pressable>
         ) : (
           <View style={[styles.resultCard, { backgroundColor: isCorrect ? C.JADE_SURFACE : C.ERROR_SURFACE }]}>
              <Text style={[styles.resultText, { color: isCorrect ? C.JADE2 : C.ERROR }]}>
-               {isCorrect ? 'Excellent!' : 'Correct solution:'}
+               {isCorrect ? STRINGS.practice.phraseBuilderCorrect : STRINGS.practice.phraseBuilderIncorrect}
              </Text>
              {!isCorrect && (
                <Text style={[styles.correctArabic, { color: C.ERROR }]}>{arabic}</Text>
              )}
-             <Pressable 
+             <Pressable
                onPress={() => onComplete(isCorrect)}
                style={[styles.nextBtn, { backgroundColor: isCorrect ? C.JADE2 : C.ERROR }]}
              >
-               <Text style={styles.nextBtnText}>Continue</Text>
+               <Text style={[styles.nextBtnText, { color: C.BG }]}>{STRINGS.common.continue}</Text>
              </Pressable>
           </View>
         )}
@@ -199,23 +206,21 @@ const styles = StyleSheet.create({
     borderRadius: 20, 
     borderWidth: 2, 
     borderStyle: 'dashed',
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
     alignItems: 'center',
     alignContent: 'center',
     justifyContent: 'center',
-    padding: 16, 
+    padding: 16,
     gap: 12,
     marginBottom: 32,
-    direction: 'rtl'
   },
-  
-  bankArea: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'center', 
+
+  bankArea: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 12,
-    direction: 'rtl'
   },
   
   tile: {
@@ -224,7 +229,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     elevation: 2,
-    shadowColor: '#02B986',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
@@ -239,5 +243,5 @@ const styles = StyleSheet.create({
   resultText: { fontFamily: FONT_LATIN_BOLD, fontSize: 16 },
   correctArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 24, textAlign: 'right' },
   nextBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  nextBtnText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: '#fff' }
+  nextBtnText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16 }
 });

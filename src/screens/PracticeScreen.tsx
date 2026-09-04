@@ -2,13 +2,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { X, Check, ArrowRight, RotateCcw, Trophy, BookOpen, Volume2, ArrowLeftRight, Layers } from 'lucide-react-native';
+import { X, Check, ArrowRight, RotateCcw, Trophy, BookOpen, Volume2, ArrowLeftRight, Layers } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { PHRASES } from '../constants/phrases';
+import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { PhraseBuilder } from '../components/features/PhraseBuilder';
@@ -73,9 +74,9 @@ function FlashCard({
             borderRadius: 24,
             padding: 28,
             minHeight: 260,
-            backgroundColor: flipped ? C.JADE_SURFACE : C.GOLD_SURFACE,
+            backgroundColor: flipped ? C.JADE_SURFACE : C.JADE_ACCENT_SURFACE,
             borderWidth: 1.5,
-            borderColor: flipped ? C.JADE_BORDER : C.GOLD_BORDER,
+            borderColor: flipped ? C.JADE_BORDER : C.JADE_ACCENT_BORDER,
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -86,7 +87,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_ARABIC_BLACK,
                   fontSize: 36,
-                  color: C.GOLD,
+                  color: C.JADE_ACCENT,
                   textAlign: 'center',
                   lineHeight: 52,
                 }}
@@ -94,10 +95,11 @@ function FlashCard({
                 {phrase.arabic}
               </Text>
               <Pressable
+                hitSlop={8}
                 onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
               >
-                <Volume2 size={14} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                <Volume2 size={14} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
               </Pressable>
               <Text
@@ -119,7 +121,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_ARABIC_BLACK,
                   fontSize: 28,
-                  color: C.GOLD,
+                  color: C.JADE_ACCENT,
                   textAlign: 'center',
                   marginBottom: 4,
                 }}
@@ -130,7 +132,7 @@ function FlashCard({
                 style={{
                   fontFamily: FONT_LATIN,
                   fontSize: 14,
-                  color: `${C.GOLD}90`,
+                  color: `${C.JADE_ACCENT}90`,
                   fontStyle: 'italic',
                 }}
               >
@@ -156,13 +158,15 @@ function FlashCard({
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
                 >
-                  <Volume2 size={12} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                  <Volume2 size={12} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
                 <Pressable
+                  hitSlop={8}
                   onPress={(e) => { e.stopPropagation?.(); onSpeakSlow(); }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
                 >
@@ -230,6 +234,8 @@ function QuizOption({
       : C.BORDER;
   const textColor =
     state === 'correct' ? C.JADE2 : state === 'wrong' ? C.ERROR : C.TEXT2;
+  const stateLabel =
+    state === 'correct' ? ', correct answer' : state === 'wrong' ? ', your answer, incorrect' : '';
 
   return (
     <MotiView
@@ -240,6 +246,9 @@ function QuizOption({
       <Pressable
         onPress={onPress}
         disabled={state !== 'idle'}
+        accessibilityRole="button"
+        accessibilityLabel={`${text}${stateLabel}`}
+        accessibilityState={{ disabled: state !== 'idle' }}
         style={{
           borderRadius: 16,
           padding: 16,
@@ -251,8 +260,8 @@ function QuizOption({
           gap: 12,
         }}
       >
-        {state === 'correct' && <Check size={16} color={C.JADE2} />}
-        {state === 'wrong' && <X size={16} color={C.ERROR} />}
+        {state === 'correct' && <Check size={16} strokeWidth={1.5} color={C.JADE2} />}
+        {state === 'wrong' && <X size={16} strokeWidth={1.5} color={C.ERROR} />}
         <Text
           style={{
             fontFamily: isArabic ? FONT_ARABIC_BLACK : FONT_LATIN,
@@ -275,6 +284,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const { speak, speakSlow, isSpeaking } = useArabicTTS();
+  const getDueReviews = useAppStore((s) => s.getDueReviews);
+  const phraseReviews = useAppStore((s) => s.phraseReviews);
+  const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
   const [mode, setMode] = useState<PracticeMode>('menu');
   const [deck, setDeck] = useState<Phrase[]>([]);
   const [current, setCurrent] = useState(0);
@@ -285,34 +297,84 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
   const DECK_SIZE = 8;
 
+  /**
+   * SRS-aware deck: due cards first, topped up with fresh phrases.
+   *
+   * Shared by all three modes. Previously only flashcards used it — the two
+   * quizzes drew uniformly at random from the whole library while still
+   * calling onPhraseReview, so they rescheduled cards that were not due and
+   * churned the very schedule the flashcard deck was maintaining.
+   */
+  const buildSrsDeck = useCallback((source: Phrase[] = PHRASES) => {
+    const dueIds = new Set(getDueReviews().map((r) => r.phraseId));
+    const due = shuffle(source.filter((p) => dueIds.has(p.id)));
+    const rest = shuffle(source.filter((p) => !dueIds.has(p.id)));
+    return [...due, ...rest].slice(0, DECK_SIZE);
+  }, [getDueReviews]);
+
   const startFlashcards = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    setDeck(buildSrsDeck());
     setCurrent(0);
     setFlipped(false);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('flashcard');
+  }, [buildSrsDeck]);
+
+  /**
+   * Build a multiple-choice set for one question.
+   *
+   * Distractors are excluded by the VALUE the answer is checked against, not by
+   * id. The library contains genuine duplicates — seven phrases share an
+   * `arabic` string and several share a `roman` one — so filtering by id alone
+   * let a phrase's twin be drawn as a "wrong" option identical to the right
+   * one. The learner then saw the same answer twice with no way to choose
+   * correctly, and the string comparison scored either tap as correct.
+   *
+   * Options are also de-duplicated after selection, so a question never renders
+   * two identical rows even if the pool is small.
+   */
+  const buildOptions = useCallback((correct: Phrase, field: 'roman' | 'arabic') => {
+    const answer = correct[field];
+    const pool = PHRASES.filter((p) => p[field] !== answer);
+    const wrong: string[] = [];
+    for (const p of shuffle(pool)) {
+      if (wrong.length >= 3) break;
+      if (!wrong.includes(p[field])) wrong.push(p[field]);
+    }
+    return shuffle([answer, ...wrong]);
   }, []);
+
+  // Arabic → Transliteration options (standard quiz — no English)
+  const generateQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    setQuizOptions(buildOptions(phrases[idx], 'roman'));
+    setQuizAnswer(null);
+  }, [buildOptions]);
+
+  // English → Arabic options (reverse quiz)
+  const generateReverseQuizOptions = useCallback((phrases: Phrase[], idx: number) => {
+    setQuizOptions(buildOptions(phrases[idx], 'arabic'));
+    setQuizAnswer(null);
+  }, [buildOptions]);
 
   const startQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateQuizOptions(shuffled, 0);
+    generateQuizOptions(deckCards, 0);
     setMode('quiz');
-  }, []);
+  }, [buildSrsDeck, generateQuizOptions]);
 
   const startReverseQuiz = useCallback(() => {
-    const shuffled = shuffle(PHRASES).slice(0, DECK_SIZE);
-    setDeck(shuffled);
+    const deckCards = buildSrsDeck();
+    setDeck(deckCards);
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setQuizAnswer(null);
-    generateReverseQuizOptions(shuffled, 0);
+    generateReverseQuizOptions(deckCards, 0);
     setMode('reverse-quiz');
-  }, []);
+  }, [buildSrsDeck, generateReverseQuizOptions]);
 
   // Phrase Builder only works on phrases that ship word-tile breakdowns.
   const PHRASES_WITH_TILES = useMemo(
@@ -321,33 +383,11 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   );
 
   const startPhraseBuilder = useCallback(() => {
-    const pool = shuffle(PHRASES_WITH_TILES);
-    const shuffled = pool.slice(0, Math.min(DECK_SIZE, pool.length));
-    setDeck(shuffled);
+    setDeck(buildSrsDeck(PHRASES_WITH_TILES));
     setCurrent(0);
     setScore({ correct: 0, wrong: 0, skipped: 0 });
     setMode('phrase-builder');
-  }, [PHRASES_WITH_TILES]);
-
-  // Arabic → Transliteration options (standard quiz — no English)
-  const generateQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.roman, ...wrong.map((w) => w.roman)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
-
-  // English → Arabic options (reverse quiz)
-  const generateReverseQuizOptions = (phrases: Phrase[], idx: number) => {
-    const correct = phrases[idx];
-    const others = PHRASES.filter((p) => p.id !== correct.id);
-    const wrong = shuffle(others).slice(0, 3);
-    const options = shuffle([correct.arabic, ...wrong.map((w) => w.arabic)]);
-    setQuizOptions(options);
-    setQuizAnswer(null);
-  };
+  }, [buildSrsDeck, PHRASES_WITH_TILES]);
 
   // Flashcard navigation — calls 3-tier rating for real SRS scheduling
   const rateCard = useCallback((rating: 'knew' | 'learning' | 'new') => {
@@ -358,10 +398,15 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     else if (rating === 'new') setScore((s) => ({ ...s, wrong: s.wrong + 1 }));
     else setScore((s) => ({ ...s, skipped: s.skipped + 1 }));
 
-    // 3-tier SRS scheduling (1/3/7 days)
+    // 3-tier SRS scheduling (1/3/7 days).
+    // Deliberately the ONLY write for this card. recordPhraseRating already
+    // recomputes phrasesStudied / phrasesMastered / categoryMastery via
+    // computeMastery(), so there is nothing for a second binary write to add —
+    // and adding one is actively destructive: updateReviewCard would read the
+    // card this call just wrote and overwrite the interval, e.g. turning a
+    // 'learning' (3 days, no counters) into a wrong answer (1 day, ease -0.2,
+    // incorrect +1). See docs/code-quality-review.md, Batch 6b.
     onPhraseRating?.(deck[current].id, rating);
-    // Also record binary for backward compat (milestones, category mastery)
-    onPhraseReview?.(deck[current].id, rating === 'knew');
 
     if (current + 1 >= deck.length) {
       onSessionComplete?.();
@@ -370,7 +415,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       setCurrent((c) => c + 1);
       setFlipped(false);
     }
-  }, [current, deck, onPhraseRating, onPhraseReview, onSessionComplete]);
+  }, [current, deck, onPhraseRating, onSessionComplete]);
 
   const fireAnswerHaptic = useCallback((correct: boolean) => {
     void Haptics.notificationAsync(
@@ -410,7 +455,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       if (mode === 'reverse-quiz') generateReverseQuizOptions(deck, next);
       else generateQuizOptions(deck, next);
     }
-  }, [current, deck, mode, onSessionComplete]);
+  }, [current, deck, mode, onSessionComplete, generateQuizOptions, generateReverseQuizOptions]);
 
   const phrase = deck[current];
   const progress = deck.length > 0 ? ((current + 1) / deck.length) * 100 : 0;
@@ -419,7 +464,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
   // Must be before any early return to satisfy Rules of Hooks
   const resultStats = useMemo(() => [
     { label: STRINGS.practice.correctCount(score.correct).split(' ')[1], value: score.correct, color: C.JADE2 },
-    { label: STRINGS.practice.learning, value: score.skipped, color: C.GOLD },
+    { label: STRINGS.practice.learning, value: score.skipped, color: C.JADE_ACCENT },
     { label: STRINGS.practice.missed, value: score.wrong, color: C.ERROR },
   ], [score, C]);
 
@@ -427,9 +472,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
     return (
       <View style={{ flex: 1, backgroundColor: C.BG, justifyContent: 'center' }}>
         <EmptyState
-          arabic="لا يوجد"
-          title="No phrases to practice"
-          subtitle="Add phrases to your library first"
+          title={STRINGS.practice.noCardsTitle}
+          subtitle={STRINGS.practice.noCardsSub}
         />
       </View>
     );
@@ -466,6 +510,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
           </Text>
           <Pressable
             onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel="Close practice"
+            hitSlop={8}
             style={{
               width: 32,
               height: 32,
@@ -477,7 +524,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               justifyContent: 'center',
             }}
           >
-            <X size={15} color={C.TEXT2} />
+            <X size={15} strokeWidth={1.5} color={C.TEXT2} />
           </Pressable>
         </View>
 
@@ -488,7 +535,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>
                 {STRINGS.practice.xOfY(current + 1, deck.length)}
               </Text>
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>
                 {STRINGS.practice.correctCount(score.correct)}
               </Text>
             </View>
@@ -527,7 +574,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             transition={{ type: 'timing', duration: 350 }}
           >
             <View style={{ gap: 14, paddingTop: 20 }}>
-              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 40, color: C.GOLD, textAlign: 'center', opacity: 0.15 }}>
+              <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 40, color: C.JADE_ACCENT, textAlign: 'center', opacity: 0.15 }}>
                 تدريب
               </Text>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', marginBottom: 8 }}>
@@ -536,13 +583,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
               {/* 1: Flashcards */}
               <Pressable onPress={startFlashcards} accessibilityRole="button" accessibilityLabel="Start flashcard practice">
-                <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, gap: 8 }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.GOLD_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-                    <RotateCcw size={20} color={C.GOLD} />
+                <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, gap: 8 }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_ACCENT_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
+                    <RotateCcw size={20} strokeWidth={1.5} color={C.JADE_ACCENT} />
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.flashcards}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.flashcardDesc}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>{STRINGS.practice.flashcardMeta(DECK_SIZE)}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>{STRINGS.practice.flashcardMeta(dueCount)}</Text>
                 </View>
               </Pressable>
 
@@ -550,7 +597,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Pressable onPress={startQuiz} accessibilityRole="button" accessibilityLabel="Start translation quiz">
                 <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_DIM, borderWidth: 1.5, borderColor: C.JADE_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-                    <Trophy size={20} color={C.JADE2} />
+                    <Trophy size={20} strokeWidth={1.5} color={C.JADE2} />
                   </View>
                   <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.quizTitle}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.quizDesc}</Text>
@@ -562,12 +609,12 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               <Pressable onPress={startReverseQuiz} accessibilityRole="button" accessibilityLabel="Start reverse quiz">
                 <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.VIOLET_DIM, borderWidth: 1.5, borderColor: C.VIOLET_BORDER, gap: 8 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${C.VIOLET2}18`, alignItems: 'center', justifyContent: 'center' }}>
-                    <ArrowLeftRight size={20} color={C.VIOLET2} />
+                    <ArrowLeftRight size={20} strokeWidth={1.5} color={C.VIOLET2} />
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.reverseQuiz}</Text>
                     <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: C.VIOLET2 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 9, color: '#fff', letterSpacing: 0.5 }}>NEW</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 9, color: C.BG, letterSpacing: 0.5 }}>NEW</Text>
                     </View>
                   </View>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.reverseQuizDesc}</Text>
@@ -578,13 +625,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               {/* 4: Phrase Builder — only enabled if there are phrases with word tiles */}
               {PHRASES_WITH_TILES.length > 0 ? (
                 <Pressable onPress={startPhraseBuilder} accessibilityRole="button" accessibilityLabel="Start phrase builder">
-                  <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.GOLD_SURFACE, borderWidth: 1.5, borderColor: C.GOLD_BORDER, gap: 8 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.GOLD_DIM, alignItems: 'center', justifyContent: 'center' }}>
-                      <Layers size={20} color={C.GOLD} />
+                  <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.JADE_ACCENT_SURFACE, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, gap: 8 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.JADE_ACCENT_DIM, alignItems: 'center', justifyContent: 'center' }}>
+                      <Layers size={20} strokeWidth={1.5} color={C.JADE_ACCENT} />
                     </View>
                     <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 17, color: C.TEXT }}>{STRINGS.practice.phraseBuilder}</Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{STRINGS.practice.phraseBuilderDesc}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.GOLD }}>
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.JADE_ACCENT }}>
                       {STRINGS.practice.phraseBuilderMeta(Math.min(DECK_SIZE, PHRASES_WITH_TILES.length))}
                     </Text>
                   </View>
@@ -642,10 +689,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     onPress={() => rateCard('learning')}
                     accessibilityRole="button"
                     accessibilityLabel="Learning - schedule review in 3 days"
-                    style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 2 }}
+                    style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', gap: 2 }}
                   >
-                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.GOLD }}>{STRINGS.practice.learning}</Text>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: `${C.GOLD}80` }}>{STRINGS.practice.learningSub}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.JADE_ACCENT }}>{STRINGS.practice.learning}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: `${C.JADE_ACCENT}80` }}>{STRINGS.practice.learningSub}</Text>
                   </Pressable>
                   {/* Knew it — 7 days */}
                   <Pressable
@@ -673,18 +720,19 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               animate={{ opacity: 1, translateX: 0 }}
               transition={{ type: 'timing', duration: 260 }}
             >
-              <View style={{ borderRadius: 24, padding: 28, backgroundColor: C.GOLD_SURFACE, borderWidth: 1.5, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 8 }}>
+              <View style={{ borderRadius: 24, padding: 28, backgroundColor: C.JADE_ACCENT_SURFACE, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>
                   {STRINGS.practice.matchPronunciation || 'Match the pronunciation'}
                 </Text>
-                <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 32, color: C.GOLD, textAlign: 'center', lineHeight: 48, marginVertical: 8 }}>
+                <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 32, color: C.JADE_ACCENT, textAlign: 'center', lineHeight: 48, marginVertical: 8 }}>
                   {phrase.arabic}
                 </Text>
                 <Pressable
+                  hitSlop={8}
                   onPress={() => speak(phrase.arabic)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                 >
-                  <Volume2 size={16} color={isSpeaking ? C.JADE2 : C.TEXT3} />
+                  <Volume2 size={16} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                 </Pressable>
               </View>
@@ -713,9 +761,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {/* Show Arabic + meaning after answer */}
             {quizAnswer && (
               <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
-                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 4 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 20, color: C.GOLD }}>{phrase.arabic}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
+                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 20, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT2, marginTop: 2 }}>{phrase.english}</Text>
                 </View>
               </MotiView>
@@ -743,10 +791,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} strokeWidth={1.5} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -803,14 +851,15 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
             {/* Show romanization of correct answer after answering */}
             {quizAnswer && (
               <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 250 }}>
-                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.GOLD_SURFACE, borderWidth: 1, borderColor: C.GOLD_BORDER, alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.GOLD }}>{phrase.arabic}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.GOLD}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
+                <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.JADE_ACCENT_SURFACE, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
                   <Pressable
+                    hitSlop={8}
                     onPress={() => speak(phrase.arabic)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
                   >
-                    <Volume2 size={13} color={isSpeaking ? C.JADE2 : C.TEXT3} />
+                    <Volume2 size={13} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
                   </Pressable>
                 </View>
@@ -827,10 +876,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.WHITE }}>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
                       {current + 1 >= deck.length ? STRINGS.practice.seeResults : STRINGS.practice.next}
                     </Text>
-                    <ArrowRight size={17} color={C.WHITE} />
+                    <ArrowRight size={17} strokeWidth={1.5} color={C.BG} />
                   </LinearGradient>
                 </Pressable>
               </MotiView>
@@ -842,13 +891,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {mode === 'phrase-builder' && deck[current] && (
           <View style={{ flex: 1, backgroundColor: C.BG }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 16 }}>
-              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                <X size={15} color={C.TEXT2} />
+              <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" hitSlop={8} style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
+                <X size={15} strokeWidth={1.5} color={C.TEXT2} />
               </Pressable>
               
               {/* Progress bar */}
               <View style={{ flex: 1, marginHorizontal: 20, height: 6, borderRadius: 3, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
-                <MotiView from={{ width: '0%' }} animate={{ width: `${(current / deck.length) * 100}%` }} transition={{ type: 'timing', duration: 400 }} style={{ height: '100%', backgroundColor: C.GOLD, borderRadius: 3 }} />
+                <MotiView from={{ width: '0%' }} animate={{ width: `${(current / deck.length) * 100}%` }} transition={{ type: 'timing', duration: 400 }} style={{ height: '100%', backgroundColor: C.JADE_ACCENT, borderRadius: 3 }} />
               </View>
             </View>
 
@@ -864,7 +913,10 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                    onPhraseRating?.(deck[current].id, 'knew');
                 } else {
                    setScore(s => ({ ...s, wrong: s.wrong + 1 }));
-                   onPhraseRating?.(deck[current].id, 'learning');
+                   // A failed build is 'new' (1 day), not 'learning' (3 days) —
+                   // getting it wrong must not schedule the card further out
+                   // than admitting you are still learning it.
+                   onPhraseRating?.(deck[current].id, 'new');
                 }
                 if (current + 1 >= deck.length) {
                    setMode('result');
@@ -895,14 +947,14 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     score.correct >= deck.length * 0.75
                       ? C.JADE_SURFACE
                       : score.correct >= deck.length * 0.5
-                      ? C.GOLD_SURFACE
+                      ? C.JADE_ACCENT_SURFACE
                       : C.ERROR_SURFACE,
                   borderWidth: 1.5,
                   borderColor:
                     score.correct >= deck.length * 0.75
                       ? C.JADE_BORDER
                       : score.correct >= deck.length * 0.5
-                      ? C.GOLD_BORDER
+                      ? C.JADE_ACCENT_BORDER
                       : C.ERROR_BORDER,
                 }}
               >
@@ -911,12 +963,12 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     width: 64,
                     height: 64,
                     borderRadius: 32,
-                    backgroundColor: score.correct >= deck.length * 0.75 ? C.JADE_DIM : C.GOLD_DIM,
+                    backgroundColor: score.correct >= deck.length * 0.75 ? C.JADE_DIM : C.JADE_ACCENT_DIM,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Trophy size={28} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.GOLD} />
+                  <Trophy size={28} strokeWidth={1.5} color={score.correct >= deck.length * 0.75 ? C.JADE2 : C.JADE_ACCENT} />
                 </View>
                 <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT }}>
                   {score.correct}/{deck.length}
@@ -943,13 +995,13 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               </View>
 
               {/* SRS schedule note */}
-              <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.GOLD_DIM, borderWidth: 1, borderColor: C.GOLD_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <BookOpen size={16} color={C.GOLD} />
+              <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <BookOpen size={16} strokeWidth={1.5} color={C.JADE_ACCENT} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.GOLD }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>
                     {STRINGS.practice.phrasesReviewed(deck.length)}
                   </Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${C.GOLD}80`, marginTop: 2 }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE_ACCENT}80`, marginTop: 2 }}>
                     Your ratings schedule the next review — harder phrases come back sooner.
                   </Text>
                 </View>
@@ -974,7 +1026,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     borderColor: C.BORDER,
                   }}
                 >
-                  <RotateCcw size={15} color={C.TEXT2} />
+                  <RotateCcw size={15} strokeWidth={1.5} color={C.TEXT2} />
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
                     {STRINGS.practice.practiceAgain}
                   </Text>
@@ -986,7 +1038,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                     end={ANGLE_135.end}
                     style={{ paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   >
-                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.WHITE }}>{STRINGS.common.done}</Text>
+                    <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.BG }}>{STRINGS.common.done}</Text>
                   </LinearGradient>
                 </Pressable>
               </View>

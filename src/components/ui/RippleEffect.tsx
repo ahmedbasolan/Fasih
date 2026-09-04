@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, Pressable, AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -8,6 +8,10 @@ interface Props {
   onPress?: () => void;
   rippleColor?: string;
   disabled?: boolean;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 }
 
 interface RippleProps {
@@ -16,34 +20,61 @@ interface RippleProps {
   id: number;
 }
 
-export function RippleEffect({ 
-  children, 
-  onPress, 
+export function RippleEffect({
+  children,
+  onPress,
   rippleColor,
-  disabled = false 
+  disabled = false,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: Props) {
   const { C } = useTheme();
-  const effectColor = rippleColor || C.GOLD;
+  const effectColor = rippleColor || C.JADE_ACCENT;
   const [ripples, setRipples] = useState<RippleProps[]>([]);
+  // Ripple cleanup timers, cleared on unmount. The main consumer is the
+  // scenario choice button, whose own handler advances the phase after exactly
+  // 600ms — the same delay — so these used to fire into a torn-down tree on
+  // essentially every choice.
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Monotonic id: Date.now() collides when two ripples land in the same
+  // millisecond, which duplicates React keys on a fast double-tap.
+  const nextId = useRef(0);
 
-  const handlePress = (event: any) => {
+  useEffect(() => {
+    const pending = timers.current;
+    return () => { pending.forEach(clearTimeout); };
+  }, []);
+
+  const handlePress = (event: GestureResponderEvent) => {
     if (disabled) return;
-    
+
     const { locationX, locationY } = event.nativeEvent;
-    const newRipple = { x: locationX, y: locationY, id: Date.now() };
-    
+    const newRipple = { x: locationX, y: locationY, id: nextId.current++ };
+
     setRipples(prev => [...prev, newRipple]);
-    
+
     // Remove ripple after animation
-    setTimeout(() => {
+    const t = setTimeout(() => {
       setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+      timers.current = timers.current.filter(x => x !== t);
     }, 600);
-    
+    timers.current.push(t);
+
     onPress?.();
   };
 
   return (
-    <Pressable onPress={handlePress} disabled={disabled} style={styles.container}>
+    <Pressable
+      onPress={handlePress}
+      disabled={disabled}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled, ...accessibilityState }}
+      style={styles.container}
+    >
       <View style={styles.content}>
         {children}
       </View>

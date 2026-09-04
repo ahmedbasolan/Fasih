@@ -21,9 +21,33 @@ const PITCH_DEFAULT = 1.0;
 
 /**
  * Hook for Arabic text-to-speech using expo-speech.
- * Queries device for available Arabic voices and selects actual male/female
+ *
+ * Queries the device for available Arabic voices and selects actual male/female
  * voices when available. Falls back to pitch differentiation otherwise.
- * Uses ar-AE (UAE Arabic) locale for Khaleeji/Emirati accent.
+ *
+ * ─── This speaks MSA, not Khaleeji. Read before trusting it. ─────────────────
+ * An earlier version of this comment claimed `ar-AE` gives "a Khaleeji/Emirati
+ * accent." That is false, and it mattered: `ar-AE` is a LOCALE TAG, not a
+ * dialect model. Device Arabic voices are trained on Modern Standard Arabic
+ * whatever region tag they carry, so the synthesiser will say:
+ *
+ *   قهوة  as  *qahwa*   while the card teaches  gahwa
+ *   شلونك as  a mangled MSA reading — the word is not MSA
+ *   چ     not at all — it is absent from the MSA inventory
+ *
+ * Fasih's first rule is that it contains no MSA in any channel, so audio is
+ * currently a standing violation of that rule rather than a feature that works.
+ * We still request `ar-AE` first, because an Arabic voice mispronouncing a
+ * dialect word is closer than no Arabic voice at all — but it is a fallback,
+ * not the intended teaching channel.
+ *
+ * Romanisation is the authoritative pronunciation channel until real Emirati
+ * audio exists (see docs/language/authority.md). Phrases whose pronTip teaches a
+ * dialect-specific sound — g for ق, ch for ك, y for ج — need human recordings;
+ * synthesis actively contradicts the lesson on exactly those.
+ *
+ * Emirati TTS is a known open problem, not something a locale tag solved: the
+ * Ramsa corpus paper (arXiv:2603.08125) exists in part to benchmark it.
  */
 export function useArabicTTS(): UseTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -84,6 +108,12 @@ export function useArabicTTS(): UseTTSReturn {
           onError: () => setIsSpeaking(false),
           onStopped: () => setIsSpeaking(false),
         });
+        // Re-arm the safety timeout for the fallback speech so isSpeaking isn't
+        // cleared early by the original (longer) timeout while audio still plays.
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setIsSpeaking(false);
+        }, 15000);
       },
       onStopped: () => setIsSpeaking(false),
     };

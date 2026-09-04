@@ -1,82 +1,92 @@
 /**
  * Supabase progress sync service.
  *
- * Required Supabase table (run once in your Supabase SQL editor):
+ * Schema is managed via SQL migrations in supabase/migrations/.
  *
- *   CREATE TABLE user_data (
- *     user_id       UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
- *     user_profile  JSONB NOT NULL DEFAULT '{}',
- *     stats         JSONB NOT NULL DEFAULT '{}',
- *     phrase_reviews        JSONB NOT NULL DEFAULT '{}',
- *     completed_scenarios   JSONB NOT NULL DEFAULT '{}',
- *     saved_phrases         TEXT[] NOT NULL DEFAULT '{}',
- *     milestones    JSONB NOT NULL DEFAULT '[]',
- *     journal       JSONB NOT NULL DEFAULT '[]',
- *     last_active_date      TEXT,
- *     subscription_status   TEXT NOT NULL DEFAULT 'free',
- *     trial_started_at      TEXT,
- *     trial_plan    TEXT,
- *     updated_at    TIMESTAMPTZ DEFAULT NOW()
- *   );
+ * ─── Architecture note ──────────────────────────────────────────────────────
+ * Fasih uses Clerk for authentication. Supabase is the database only — no
+ * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
  *
- *   ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+ * RLS is enabled (Option B, supabase/migrations/007_enable_rls.sql): the Clerk
+ * session JWT is forwarded as the Supabase access token (src/lib/supabase.ts),
+ * and Postgres policies read the caller's identity via auth.jwt()->>'sub'. See
+ * supabase/migrations/README.md for the full posture and how to verify it.
  *
- *   CREATE POLICY "Users own their data" ON user_data
- *     FOR ALL USING (auth.uid() = user_id);
+ * ─── Security posture ───────────────────────────────────────────────────────
+ * The Supabase anon key is public by design, but a request carrying it alone —
+ * no valid Clerk token — runs as `anon`, which the RLS policies on user_data
+ * deny outright. Do not reintroduce client-side user_id filtering as a
+ * substitute for this: 003_rls.sql documents why the disabled-RLS posture
+ * (Option A) it describes is not shippable.
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
+import { DEFAULT_USER_STATS } from '../types';
+
+/**
+ * Coerce whatever the `stats` column holds into a complete UserStats.
+ *
+ * The column is `JSONB NOT NULL DEFAULT '{}'`, so `{}` is a perfectly ordinary
+ * value for a row that was created by anything other than pushProgress. The old
+ * code returned it as-is behind a `UserStats` annotation — supabase-js hands back
+ * `any`, so nothing type-checked it — and the store then wrote it straight over
+ * good local state. The next call after that is checkMilestones(), which reads
+ * `stats.scenariosCompleted.length` and threw on the first screen after sign-in.
+ *
+ * Every field is defaulted individually rather than by a single spread, because
+ * a present-but-null field (e.g. `{"scenariosCompleted": null}`) survives a
+ * spread and crashes exactly the same way.
+ */
+function normalizeStats(raw: unknown): UserStats {
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserStats>;
+  return {
+    daysActive: typeof s.daysActive === 'number' ? s.daysActive : DEFAULT_USER_STATS.daysActive,
+    currentStreak: typeof s.currentStreak === 'number' ? s.currentStreak : DEFAULT_USER_STATS.currentStreak,
+    phrasesMastered: typeof s.phrasesMastered === 'number' ? s.phrasesMastered : DEFAULT_USER_STATS.phrasesMastered,
+    phrasesStudied: typeof s.phrasesStudied === 'number' ? s.phrasesStudied : DEFAULT_USER_STATS.phrasesStudied,
+    scenariosCompleted: Array.isArray(s.scenariosCompleted) ? s.scenariosCompleted : [],
+    categoryMastery:
+      s.categoryMastery && typeof s.categoryMastery === 'object' ? s.categoryMastery : {},
+  };
+}
+
+/** Same reasoning as normalizeStats, for the collection-shaped columns. */
+function asRecord<T>(raw: unknown): Record<string, T> {
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, T>) : {};
+}
+
+function asArray<T>(raw: unknown): T[] {
+  return Array.isArray(raw) ? (raw as T[]) : [];
+}
+
+/**
+ * Increment this when CloudUserData shape changes in a breaking way.
+ * pullProgress uses it to detect stale cloud rows.
+ * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
+ *          3 = added pattern_progress + secret_endings_earned (Sentence Builder)
+ */
+export const CURRENT_SCHEMA_VERSION = 3;
 
 // ─── Community stats ─────────────────────────────────────────────────────────
-//
-// Required Supabase tables + RPC functions (run once in SQL editor):
-//
-//   CREATE TABLE scenario_choice_stats (
-//     scenario_id TEXT NOT NULL,
-//     scene_id    TEXT NOT NULL,
-//     choice_id   TEXT NOT NULL,
-//     pick_count  BIGINT NOT NULL DEFAULT 1,
-//     PRIMARY KEY (scenario_id, scene_id, choice_id)
-//   );
-//   ALTER TABLE scenario_choice_stats ENABLE ROW LEVEL SECURITY;
-//   CREATE POLICY "Public read" ON scenario_choice_stats FOR SELECT USING (true);
-//   CREATE POLICY "Auth write" ON scenario_choice_stats FOR ALL USING (auth.uid() IS NOT NULL);
-//
-//   CREATE TABLE scenario_ending_stats (
-//     scenario_id TEXT NOT NULL,
-//     ending_type TEXT NOT NULL,
-//     reach_count BIGINT NOT NULL DEFAULT 1,
-//     PRIMARY KEY (scenario_id, ending_type)
-//   );
-//   ALTER TABLE scenario_ending_stats ENABLE ROW LEVEL SECURITY;
-//   CREATE POLICY "Public read" ON scenario_ending_stats FOR SELECT USING (true);
-//   CREATE POLICY "Auth write" ON scenario_ending_stats FOR ALL USING (auth.uid() IS NOT NULL);
-//
-//   CREATE OR REPLACE FUNCTION increment_choice_stat(
-//     p_scenario_id TEXT, p_scene_id TEXT, p_choice_id TEXT
-//   ) RETURNS void LANGUAGE sql AS $$
-//     INSERT INTO scenario_choice_stats(scenario_id, scene_id, choice_id, pick_count)
-//     VALUES (p_scenario_id, p_scene_id, p_choice_id, 1)
-//     ON CONFLICT (scenario_id, scene_id, choice_id)
-//     DO UPDATE SET pick_count = scenario_choice_stats.pick_count + 1;
-//   $$;
-//
-//   CREATE OR REPLACE FUNCTION increment_ending_stat(
-//     p_scenario_id TEXT, p_ending_type TEXT
-//   ) RETURNS void LANGUAGE sql AS $$
-//     INSERT INTO scenario_ending_stats(scenario_id, ending_type, reach_count)
-//     VALUES (p_scenario_id, p_ending_type, 1)
-//     ON CONFLICT (scenario_id, ending_type)
-//     DO UPDATE SET reach_count = scenario_ending_stats.reach_count + 1;
-//   $$;
+// Schema lives in supabase/migrations/001_initial_schema.sql.
+// These tables use RPC functions for atomic increments (SECURITY DEFINER).
+// RLS is enabled on both tables (007_enable_rls.sql): public SELECT, but
+// INSERT/UPDATE require `authenticated`. The RPCs themselves are additionally
+// restricted to `authenticated` callers (010_secure_stat_rpcs.sql) — being
+// SECURITY DEFINER, they bypass RLS entirely, so that restriction is the
+// actual gate, not the table policies.
 
 export interface CloudUserData {
+  schema_version: number;
   user_profile: UserProfile | null;
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
   completed_scenarios: Record<string, { endingType: string; date: string }>;
+  pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
+  secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
   saved_phrases: string[];
+  unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
   journal: JournalEntry[];
   last_active_date: string | null;
@@ -97,11 +107,15 @@ export async function pushProgress(
     .upsert(
       {
         user_id: userId,
+        schema_version: data.schema_version,
         user_profile: data.user_profile,
         stats: data.stats,
         phrase_reviews: data.phrase_reviews,
         completed_scenarios: data.completed_scenarios,
+        pattern_progress: data.pattern_progress,
+        secret_endings_earned: data.secret_endings_earned,
         saved_phrases: data.saved_phrases,
+        unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
         journal: data.journal,
         last_active_date: data.last_active_date,
@@ -134,15 +148,27 @@ export async function pullProgress(
     return { data: null, error: error.message };
   }
 
+  // Migration guard: rows written before schema_version was introduced will
+  // have schema_version = null (column DEFAULT 1 handles new inserts).
+  // We treat null as version 1 and let the caller decide what to do with it.
+  const cloudVersion: number = (data.schema_version as number | null) ?? 1;
+
   return {
     data: {
+      schema_version: cloudVersion,
       user_profile: data.user_profile ?? null,
-      stats: data.stats ?? {},
-      phrase_reviews: data.phrase_reviews ?? {},
-      completed_scenarios: data.completed_scenarios ?? {},
-      saved_phrases: data.saved_phrases ?? [],
-      milestones: data.milestones ?? [],
-      journal: data.journal ?? [],
+      stats: normalizeStats(data.stats),
+      phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
+      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
+      // Grammar-engine columns get the same treatment as everything else here:
+      // `?? {}` only guards null, and these arrive from the same untyped
+      // supabase-js payload that made a bare `data.stats` crash the app.
+      pattern_progress: asRecord<PatternProgress>(data.pattern_progress),
+      secret_endings_earned: asRecord<string>(data.secret_endings_earned),
+      saved_phrases: asArray<string>(data.saved_phrases),
+      unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
+      milestones: asArray<LearningMilestone>(data.milestones),
+      journal: asArray<JournalEntry>(data.journal),
       last_active_date: data.last_active_date ?? null,
       subscription_status: data.subscription_status ?? 'free',
       trial_started_at: data.trial_started_at ?? null,
@@ -172,6 +198,68 @@ const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
   'weekend-invite':     { exceptional: 25, success: 38, mixed: 25, failed: 12 },
   'neighborhood':       { exceptional: 29, success: 39, mixed: 22, failed: 10 },
 };
+
+/**
+ * Permanently delete the signed-in user's cloud row.
+ *
+ * Calls the delete_my_account() RPC (supabase/migrations/005_account_deletion.sql)
+ * rather than a plain .delete() — DELETE on user_data is revoked from the client
+ * roles on purpose, so the RPC is the only sanctioned path. It takes no arguments:
+ * the row to delete is derived from the Clerk session token server-side, so this
+ * cannot be pointed at another user's account.
+ *
+ * ⚠ Requires a live Clerk session. Deleting the Clerk user first would revoke the
+ * token this call authenticates with and strand the row permanently — always call
+ * this BEFORE removing the Clerk account.
+ *
+ * Unlike the fire-and-forget stat helpers, errors are surfaced: the caller must
+ * abort deletion rather than tell someone their data is gone when it isn't.
+ */
+export async function deleteAccountData(): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase.rpc('delete_my_account');
+    return { error: error?.message ?? null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Could not reach the server' };
+  }
+}
+
+/**
+ * Ask the database who it thinks is calling.
+ *
+ * This is the prerequisite check for enabling RLS. Running
+ * `select auth.jwt()->>'sub'` in the Supabase SQL editor always returns NULL —
+ * that connection carries no Clerk token — so the check is only meaningful made
+ * from the app, signed in, over this same client.
+ *
+ * Signed in and correctly configured: `{ clerkUserId: 'user_2abc…', jwtRole:
+ * 'authenticated' }`. A null clerkUserId means Clerk↔Supabase Third-Party Auth
+ * is not connected yet, and enabling RLS would break every write.
+ *
+ * Requires supabase/migrations/006_auth_check.sql.
+ */
+export async function checkAuthBridge(): Promise<{
+  clerkUserId: string | null;
+  jwtRole: string | null;
+  error: string | null;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('whoami').single();
+    if (error) return { clerkUserId: null, jwtRole: null, error: error.message };
+    const row = data as { clerk_user_id: string | null; jwt_role: string | null } | null;
+    return {
+      clerkUserId: row?.clerk_user_id ?? null,
+      jwtRole: row?.jwt_role ?? null,
+      error: null,
+    };
+  } catch (e) {
+    return {
+      clerkUserId: null,
+      jwtRole: null,
+      error: e instanceof Error ? e.message : 'Could not reach the server',
+    };
+  }
+}
 
 /** Atomically increment the pick count for one choice (fire-and-forget). */
 export async function recordChoiceStat(

@@ -1,0 +1,51 @@
+# pr-checks.yml
+#
+# Runs on every pull request targeting `dev` or `main`.
+#
+# Steps:
+#   1. TypeScript check     — zero errors required
+#   2. Unit tests           — all 25+ tests must pass
+#   3. Preview OTA update   — publishes to the `preview` channel so you can
+#                             immediately open the PR build on a device
+
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  # ─── TypeScript ──────────────────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript
+    runs_on: linux-medium
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Run tsc
+        run: npx tsc --noEmit
+
+  # ─── Tests ───────────────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs_on: linux-medium
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Run Jest
+        run: npm test -- --ci --forceExit
+
+  # ─── Preview OTA update ──────────────────────────────────────────────────────
+  # Publishes a JavaScript-only update to the `preview` channel.
+  # Internal testers can reload the app to see the PR changes without a new build.
+  # Only runs when both typecheck and tests pass.
+  preview_update:
+    name: Preview OTA Update
+    type: update
+    needs: [typecheck, test]
+    environment: preview
+    params:
+      channel: preview
+      message: "PR preview — ${{ github.event.pull_request.title }}"
