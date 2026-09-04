@@ -1,6 +1,5 @@
 export { KafMascot } from './KafMascot';
 export { PhraseBuilder } from './PhraseBuilder';
-export { HeroSceneBg, FirstMorningScene, CoffeeInvitationScene, HotelLobbyScene, CafeScene, EidScene, WelcomeScene } from './SceneIllustrations';
 export { StatCard } from './StatCard';
 export { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from './RoleGoalIcons';
 export { LiquidFillMeter } from './LiquidFillMeter';

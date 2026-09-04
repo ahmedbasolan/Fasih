@@ -13,7 +13,10 @@ interface CompanionProps {
  * former KafMascot / foxy* call site renders this instead, so bringing a
  * character back is a change to THIS FILE ONLY — not to six screens.
  *
- * KafMascot.tsx is deliberately left on disk, unimported, for that day.
+ * That seam, not any surviving artefact, is what makes the reintroduction
+ * cheap. `SceneIllustrations.tsx` is already deleted and recoverable from git
+ * history; `KafMascot.tsx` is still on disk only because onboarding has not
+ * been migrated yet (step 5), and goes the same way when it is.
  */
 export function Companion({ size = 64 }: CompanionProps) {
   const name = useAppStore((s) => s.user?.name) ?? '';
