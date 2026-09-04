@@ -686,7 +686,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     return (
       <View style={styles.screen}>
         <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={styles.hero}>
-          <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
+          <GeoPattern opacity={0.06} color={C.WHITE} size={44} />
           <View style={styles.heroRow}>
             <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
               <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
@@ -805,7 +805,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     return (
       <View style={styles.screen}>
       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={styles.hero}>
-        <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
+        <GeoPattern opacity={0.06} color={C.WHITE} size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
             <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
@@ -948,7 +948,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
   return (
     <View style={styles.screen}>
       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={styles.hero}>
-        <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
+        <GeoPattern opacity={0.06} color={C.WHITE} size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
             <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />

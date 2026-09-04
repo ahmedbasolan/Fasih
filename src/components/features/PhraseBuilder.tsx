@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useTheme } from '../../hooks/useTheme';
 import { arabicAnswerMatches } from '../../engine/arabic';
 import { FONT_ARABIC_BLACK, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../design/tokens';
+import { STRINGS } from '../../constants/strings';
 
 interface PhraseBuilderProps {
   english: string;
@@ -58,9 +59,9 @@ function DraggableTile({ word, id, isPlaced, onTap, colorPrimary, colorBg }: Til
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={animatedStyle}>
-        <Pressable 
+        <Pressable
           onPress={() => onTap(id)}
-          style={[styles.tile, { backgroundColor: colorBg, borderColor: colorPrimary }]}
+          style={[styles.tile, { backgroundColor: colorBg, borderColor: colorPrimary, shadowColor: colorPrimary }]}
         >
           <Text style={[styles.tileText, { color: colorPrimary }]}>{word}</Text>
         </Pressable>
@@ -125,11 +126,11 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.promptContainer}>
-        <Text style={[styles.promptLabel, { color: C.TEXT3 }]}>Translate this phrase</Text>
+        <Text style={[styles.promptLabel, { color: C.TEXT3 }]}>{STRINGS.practice.translateThis}</Text>
         <Text style={[styles.promptText, { color: C.TEXT }]}>{english}</Text>
       </View>
 
-      <Text style={[styles.instruction, { color: C.TEXT3 }]}>Support Drag & Drop or Tap</Text>
+      <Text style={[styles.instruction, { color: C.TEXT3 }]}>{STRINGS.practice.phraseBuilderInstruction}</Text>
 
       {/* Answer Area */}
       <View style={[styles.answerArea, { backgroundColor: C.SURFACE2, borderColor: C.BORDER }]}>
@@ -169,12 +170,12 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
             disabled={placed.length !== initialTiles.length}
             style={[styles.checkBtn, { backgroundColor: placed.length === initialTiles.length ? C.JADE2 : C.SURFACE, borderColor: placed.length === initialTiles.length ? C.JADE2 : C.BORDER }]}
           >
-            <Text style={[styles.checkBtnText, { color: placed.length === initialTiles.length ? C.BG : C.TEXT3 }]}>Check</Text>
+            <Text style={[styles.checkBtnText, { color: placed.length === initialTiles.length ? C.BG : C.TEXT3 }]}>{STRINGS.practice.check}</Text>
           </Pressable>
         ) : (
           <View style={[styles.resultCard, { backgroundColor: isCorrect ? C.JADE_SURFACE : C.ERROR_SURFACE }]}>
              <Text style={[styles.resultText, { color: isCorrect ? C.JADE2 : C.ERROR }]}>
-               {isCorrect ? 'Excellent!' : 'Correct solution:'}
+               {isCorrect ? STRINGS.practice.phraseBuilderCorrect : STRINGS.practice.phraseBuilderIncorrect}
              </Text>
              {!isCorrect && (
                <Text style={[styles.correctArabic, { color: C.ERROR }]}>{arabic}</Text>
@@ -183,7 +184,7 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
                onPress={() => onComplete(isCorrect)}
                style={[styles.nextBtn, { backgroundColor: isCorrect ? C.JADE2 : C.ERROR }]}
              >
-               <Text style={[styles.nextBtnText, { color: C.BG }]}>Continue</Text>
+               <Text style={[styles.nextBtnText, { color: C.BG }]}>{STRINGS.common.continue}</Text>
              </Pressable>
           </View>
         )}
@@ -228,7 +229,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     elevation: 2,
-    shadowColor: '#02B986',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
