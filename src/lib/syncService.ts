@@ -7,14 +7,17 @@
  * Fasih uses Clerk for authentication. Supabase is the database only — no
  * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
  *
- * RLS is currently DISABLED (Option A). All data access is filtered client-side
- * by user_id. Upgrade path: enable Option B in 003_rls.sql once a Clerk → JWT
- * integration is configured (see that file for instructions).
+ * RLS is enabled (Option B, supabase/migrations/007_enable_rls.sql): the Clerk
+ * session JWT is forwarded as the Supabase access token (src/lib/supabase.ts),
+ * and Postgres policies read the caller's identity via auth.jwt()->>'sub'. See
+ * supabase/migrations/README.md for the full posture and how to verify it.
  *
  * ─── Security posture ───────────────────────────────────────────────────────
- * The Supabase anon key is public by design. Without RLS, a malicious client
- * could read or write any row using a crafted user_id. Acceptable for launch;
- * schedule Option B before significant user growth.
+ * The Supabase anon key is public by design, but a request carrying it alone —
+ * no valid Clerk token — runs as `anon`, which the RLS policies on user_data
+ * deny outright. Do not reintroduce client-side user_id filtering as a
+ * substitute for this: 003_rls.sql documents why the disabled-RLS posture
+ * (Option A) it describes is not shippable.
  */
 
 import { supabase } from './supabase';
@@ -68,7 +71,11 @@ export const CURRENT_SCHEMA_VERSION = 3;
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
 // These tables use RPC functions for atomic increments (SECURITY DEFINER).
-// RLS is disabled — reads are open, writes go through the RPCs only.
+// RLS is enabled on both tables (007_enable_rls.sql): public SELECT, but
+// INSERT/UPDATE require `authenticated`. The RPCs themselves are additionally
+// restricted to `authenticated` callers (010_secure_stat_rpcs.sql) — being
+// SECURITY DEFINER, they bypass RLS entirely, so that restriction is the
+// actual gate, not the table policies.
 
 export interface CloudUserData {
   schema_version: number;
