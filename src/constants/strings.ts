@@ -486,6 +486,17 @@ export const STRINGS = {
     notifications: 'Notifications',
     enabled: 'Enabled',
     disabled: 'Disabled',
+    // The anonymous onboarding aggregate. This copy says what is actually
+    // collected rather than "help us improve your experience", and it says
+    // "from now on" because the toggle CANNOT be retroactive — an anonymous
+    // row cannot be found again to delete. Do not soften either of those.
+    analytics: {
+      title: 'Share anonymous setup answers',
+      body: 'Your mode, role and goals are counted with no name, email or account attached, so we can write scenarios for the people actually using Fasih.',
+      note: 'Turning this off stops future counts. Answers already counted carry no identifier, so they cannot be found or removed.',
+      on: 'Sharing',
+      off: 'Not sharing',
+    },
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
