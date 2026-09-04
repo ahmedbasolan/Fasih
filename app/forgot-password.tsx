@@ -87,7 +87,7 @@ export default function ForgotPasswordScreen() {
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <ChevronLeft size={28} color={C.TEXT3} />
+        <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -140,7 +140,7 @@ export default function ForgotPasswordScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Mail size={18} strokeWidth={1.5} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -205,7 +205,7 @@ export default function ForgotPasswordScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'code' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'code' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Mail size={18} strokeWidth={1.5} color={focused === 'code' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={code}
                     onChangeText={setCode}
@@ -226,7 +226,7 @@ export default function ForgotPasswordScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Lock size={18} strokeWidth={1.5} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={newPassword}
                     onChangeText={setNewPassword}
@@ -245,7 +245,7 @@ export default function ForgotPasswordScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
                   >
-                    {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
+                    {showPassword ? <EyeOff size={18} strokeWidth={1.5} color={C.TEXT3} /> : <Eye size={18} strokeWidth={1.5} color={C.TEXT3} />}
                   </Pressable>
                 </View>
               </View>

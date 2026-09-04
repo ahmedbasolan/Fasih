@@ -9,7 +9,7 @@ import {
 import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
-import { KafMascot } from '../features/KafMascot';
+import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { PHRASE_BY_ID } from '../../constants/phrases';
 import type { Scenario, ScenarioEnding, ScenarioScene, ScenarioScript, Phrase } from '../../types';
@@ -82,7 +82,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
 
         {/* Kaf's introduction */}
         <View style={{ width: '100%', borderRadius: 16, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', gap: 12 }}>
-          <KafMascot size="xs" />
+          <Companion size={32} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, marginBottom: 3 }}>
               {STRINGS.scenarios.kafSays}

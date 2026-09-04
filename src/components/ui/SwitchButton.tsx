@@ -9,14 +9,23 @@ type SwitchProps = {
   iconOn: ReactNode;
   iconOff: ReactNode;
   backgroundColor?: string;
+  /**
+   * Required. The icons inside are decorative and carry no accessible name, so
+   * without this the control announced as an unlabelled button. Making it
+   * optional would let the next call site ship the same gap.
+   */
+  accessibilityLabel: string;
 };
 
-export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor }: SwitchProps) {
+export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor, accessibilityLabel }: SwitchProps) {
   const { C } = useTheme();
 
   return (
     <Pressable
       onPress={onToggle}
+      accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ checked: value }}
       style={{
         flexDirection: 'row',
         width: 60,
@@ -47,11 +56,8 @@ export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor
           justifyContent: 'center',
           position: 'absolute',
           left: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-          elevation: 2,
+          // No shadow: SheetPanel is the app's only one. The knob reads as
+          // raised from its own fill against the coloured track.
           zIndex: 10,
         }}
       >

@@ -66,7 +66,7 @@ export function ShimmerButton({
           {isStringChild ? (
             <>
               <Text style={[styles.text, { color: C.BG }]}>{label}</Text>
-              {Icon && <Icon size={18} color={C.BG} style={{ marginLeft: 6 }} />}
+              {Icon && <Icon size={18} strokeWidth={1.5} color={C.BG} style={{ marginLeft: 6 }} />}
             </>
           ) : (
             <View style={styles.childWrapper}>{children}</View>

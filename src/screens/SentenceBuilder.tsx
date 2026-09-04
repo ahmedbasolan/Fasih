@@ -5,10 +5,11 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft, Blocks, Check, ChevronRight, Lock, RotateCcw,
-  Sparkles, Trophy, Volume2, Wand2, X,
+  Sparkles, Trophy, Volume2, X,
 } from '../components/icons';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
 import { GeoPattern } from '../components/design/GeoPattern';
 import { ANGLE_135 } from '../components/design/gradients';
 import {
@@ -25,6 +26,7 @@ import { useAppStore } from '../store/useAppStore';
 import {
   buildSentence, canonicalForms, getAvailablePatterns, validateBuild,
 } from '../engine/sentenceBuilder';
+import { splitBilingualTitle } from '../engine/text';
 import type { GrammarPattern } from '../types';
 
 type Step = 'list' | 'notice' | 'swap' | 'build';
@@ -250,7 +252,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     if (!pattern) return [] as string[];
     const fixed = pattern.template.arabic.filter((t) => !t.startsWith('{'));
     if (fixed.length > 0) return fixed;
-    const titleArabic = pattern.title.split(' — ')[0];
+    const titleArabic = splitBilingualTitle(pattern.title).arabic;
     return titleArabic
       .split(/[\s/]+/)
       .filter((t) => t.length > 0 && t !== '___' && /[\u0600-\u06FF]/.test(t));
@@ -285,12 +287,14 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       fontSize: 30,
       color: C.WHITE,
       textAlign: 'right' as const,
+      writingDirection: 'rtl' as const,
       marginBottom: 2,
     },
     heroSub: {
       fontFamily: FONT_LATIN_SEMI,
       fontSize: 12,
       color: 'rgba(255,255,255,0.85)',
+      writingDirection: 'ltr' as const,
       marginTop: 4,
     },
     stepRow: {
@@ -325,7 +329,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderWidth: 1,
       marginBottom: 14,
     },
-    patternCardArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 26, marginBottom: 6, textAlign: 'center' as const },
+    patternCardArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 26, marginBottom: 6, textAlign: 'center' as const, writingDirection: 'rtl' as const },
     patternCardSub: {
       fontFamily: FONT_LATIN,
       fontSize: 12,
@@ -551,8 +555,10 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     patternRowLocked: { opacity: 0.55 },
     patternRowText: { flex: 1 },
-    patternRowArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 19, marginBottom: 3, color: C.TEXT },
-    patternRowEnglish: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2 },
+    patternRowArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 19, marginBottom: 3, color: C.TEXT, writingDirection: 'rtl' as const },
+    // The gloss declares its own direction so it cannot inherit RTL from the
+    // Arabic half above it — the two runs are what the bidi fix is.
+    patternRowEnglish: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, writingDirection: 'ltr' as const },
     patternRowHint: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 6, lineHeight: 16 },
     masteryDots: { flexDirection: 'row' as const, gap: 4, marginTop: 8 },
     masteryDot: { width: 8, height: 8, borderRadius: 4 },
@@ -571,26 +577,25 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     const lockedPatterns = GRAMMAR_PATTERNS.filter((p) => !available.some((a) => a.id === p.id));
     return (
       <View style={styles.screen}>
-        <LinearGradient
-          colors={[...G.GOLD_STOPS]}
-          start={ANGLE_135.start}
-          end={ANGLE_135.end}
-          style={styles.hero}
-        >
-          <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
-          <View style={styles.heroRow}>
-            <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-              <ArrowLeft size={18} color={C.WHITE} />
-            </Pressable>
-            <View style={{ alignItems: 'flex-end' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Wand2 size={22} color={C.WHITE} />
-                <Text style={styles.heroArabic}>كوّن</Text>
-              </View>
-              <Text style={styles.heroSub}>{STRINGS.sentenceBuilder.subtitle}</Text>
-            </View>
-          </View>
-        </LinearGradient>
+        {/* The subtitle used to sit in the same row as the back button, in a
+            right-aligned block, and ran underneath it. ScreenHeader gives back,
+            title and subtitle their own rows, so that arrangement is not
+            expressible rather than merely corrected.
+
+            The three builder-step heroes below keep their gradient: they put a
+            SHORT step label beside the back button and stack their content
+            underneath, so they never collided, and they carry a step indicator
+            ScreenHeader does not model. Converting them is a restyle of the
+            builder flow, not this fix.
+
+            The Arabic wordmark كوّن is dropped rather than moved — GhostLetters
+            already carries this screen's Arabic identity, and ScreenHeader's
+            title slot is Latin-styled. */}
+        <ScreenHeader
+          onBack={onExit}
+          title={STRINGS.sentenceBuilder.title}
+          subtitle={STRINGS.sentenceBuilder.subtitle}
+        />
 
         <ScrollView style={styles.content} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Text style={[styles.sectionLabel, { color: C.TEXT2 }]}>{STRINGS.sentenceBuilder.patternsTitle}</Text>
@@ -610,7 +615,8 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                   style={[styles.patternRow, { backgroundColor: C.CARD_BG, borderColor: C.BORDER }]}
                 >
                   <View style={styles.patternRowText}>
-                    <Text style={styles.patternRowArabic}>{p.title}</Text>
+                    <Text style={styles.patternRowArabic}>{splitBilingualTitle(p.title).arabic}</Text>
+                    <Text style={styles.patternRowEnglish}>{splitBilingualTitle(p.title).english}</Text>
                     <View style={[styles.skillChip, { backgroundColor: `${C.JADE_ACCENT}18` }]}>
                       <Text style={[styles.skillChipText, { color: C.PRIMARY }]}>{STRINGS.sentenceBuilder.skillLabel}: {p.softSkill}</Text>
                     </View>
@@ -629,14 +635,14 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                     </View>
                   </View>
                   <View style={{ alignItems: 'center', gap: 6 }}>
-                    <Blocks size={20} color={mastered ? C.CULTURAL_GOLD : C.PRIMARY} />
+                    <Blocks size={20} strokeWidth={1.5} color={mastered ? C.CULTURAL_GOLD : C.PRIMARY} />
                     {mastered && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Trophy size={12} color={C.CULTURAL_GOLD} />
+                        <Trophy size={12} strokeWidth={1.5} color={C.CULTURAL_GOLD} />
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 9, color: C.CULTURAL_GOLD }}>{STRINGS.sentenceBuilder.mastered}</Text>
                       </View>
                     )}
-                    <ChevronRight size={16} color={C.TEXT3} />
+                    <ChevronRight size={16} strokeWidth={1.5} color={C.TEXT3} />
                   </View>
                 </Pressable>
               </MotiView>
@@ -649,12 +655,13 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
               {lockedPatterns.map((p) => (
                 <View key={p.id} style={[styles.patternRow, styles.patternRowLocked, { backgroundColor: C.SURFACE, borderColor: C.BORDER }]}>
                   <View style={styles.patternRowText}>
-                    <Text style={[styles.patternRowArabic, { color: C.TEXT3 }]}>{p.title}</Text>
+                    <Text style={[styles.patternRowArabic, { color: C.TEXT3 }]}>{splitBilingualTitle(p.title).arabic}</Text>
+                    <Text style={[styles.patternRowEnglish, { color: C.TEXT3 }]}>{splitBilingualTitle(p.title).english}</Text>
                     <Text style={styles.patternRowHint}>
                       {p.secretUnlock ? STRINGS.sentenceBuilder.secretPatternHint : STRINGS.sentenceBuilder.lockedPatternHint}
                     </Text>
                   </View>
-                  <Lock size={18} color={C.TEXT3} />
+                  <Lock size={18} strokeWidth={1.5} color={C.TEXT3} />
                 </View>
               ))}
             </>
@@ -682,14 +689,14 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
           <View style={styles.heroRow}>
             <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-              <ArrowLeft size={18} color={C.WHITE} />
+              <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
             </Pressable>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
               {STRINGS.sentenceBuilder.noticeStep}
             </Text>
           </View>
-          <Text style={styles.heroArabic}>{patternTitle.split(' — ')[0]}</Text>
-          <Text style={styles.heroSub}>{patternTitle.split(' — ')[1]}</Text>
+          <Text style={styles.heroArabic}>{splitBilingualTitle(patternTitle).arabic}</Text>
+          <Text style={styles.heroSub}>{splitBilingualTitle(patternTitle).english}</Text>
 
           <View style={styles.stepRow}>
             {(['notice', 'swap', 'build'] as Step[]).map((s) => {
@@ -720,12 +727,12 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         <ScrollView style={styles.content} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <MotiView from={{ opacity: 0, translateY: 12 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 380 }}>
             <View style={[styles.patternCard, { backgroundColor: C.CARD_BG, borderColor: C.BORDER }]}>
-              <Text style={[styles.patternCardArabic, { color: C.TEXT }]}>{patternTitle.split(' — ')[0]}</Text>
+              <Text style={[styles.patternCardArabic, { color: C.TEXT }]}>{splitBilingualTitle(patternTitle).arabic}</Text>
               <Text style={styles.patternCardSub}>{STRINGS.sentenceBuilder.noticeTitle}</Text>
             </View>
 
             <View style={[styles.noteCard, { backgroundColor: `${C.CULTURAL_GOLD}14`, borderColor: `${C.CULTURAL_GOLD}30` }]}>
-              <Sparkles size={16} color={C.CULTURAL_GOLD_DARK} style={{ marginTop: 2 }} />
+              <Sparkles size={16} strokeWidth={1.5} color={C.CULTURAL_GOLD_DARK} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.noteTitle, { color: C.CULTURAL_GOLD_DARK }]}>{STRINGS.sentenceBuilder.whyItMatters}</Text>
                 <Text style={[styles.noteText, { color: C.TEXT2 }]}>{pattern.goodImpressionNote}</Text>
@@ -767,7 +774,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                     <Text style={styles.exampleEnglish}>{phrase.english}</Text>
                     <View style={styles.playRow}>
                       <View style={[styles.playChip, { backgroundColor: playingId === ex.phraseId ? C.JADE_DIM : C.CARD_BG, borderColor: playingId === ex.phraseId ? C.JADE_ACCENT_BORDER : C.BORDER }]}>
-                        <Volume2 size={13} color={playingId === ex.phraseId ? C.JADE : C.PRIMARY} />
+                        <Volume2 size={13} strokeWidth={1.5} color={playingId === ex.phraseId ? C.JADE : C.PRIMARY} />
                         <Text style={[styles.playChipText, { color: playingId === ex.phraseId ? C.JADE : C.PRIMARY }]}>
                           {playingId === ex.phraseId ? STRINGS.scenarios.playing : STRINGS.sentenceBuilder.tapToHear}
                         </Text>
@@ -801,13 +808,13 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-            <ArrowLeft size={18} color={C.WHITE} />
+            <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
           </Pressable>
           <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
             {STRINGS.sentenceBuilder.swapStep}
           </Text>
         </View>
-        <Text style={styles.heroArabic}>{patternTitle.split(' — ')[0]}</Text>
+        <Text style={styles.heroArabic}>{splitBilingualTitle(patternTitle).arabic}</Text>
         <Text style={styles.heroSub}>{STRINGS.sentenceBuilder.swapTitle}</Text>
 
         <View style={styles.stepRow}>
@@ -916,7 +923,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                   accessibilityLabel={STRINGS.sentenceBuilder.tapToHear}
                   style={[styles.previewPlay, { backgroundColor: C.JADE_DIM }]}
                 >
-                  <Volume2 size={14} color={C.JADE} />
+                  <Volume2 size={14} strokeWidth={1.5} color={C.JADE} />
                 </Pressable>
                 <Text style={styles.previewArabic}>{assembled.arabic}</Text>
                 <Text style={styles.previewRoman}>{assembled.roman}</Text>
@@ -944,13 +951,13 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-            <ArrowLeft size={18} color={C.WHITE} />
+            <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
           </Pressable>
           <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
             {STRINGS.sentenceBuilder.buildStep}
           </Text>
         </View>
-        <Text style={styles.heroArabic}>{patternTitle.split(' — ')[0]}</Text>
+        <Text style={styles.heroArabic}>{splitBilingualTitle(patternTitle).arabic}</Text>
         <Text style={styles.heroSub}>{STRINGS.sentenceBuilder.buildTitle}</Text>
 
         <View style={styles.stepRow}>
@@ -981,7 +988,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         {showMastery && (
           <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', damping: 14, stiffness: 200 }}>
             <View style={[styles.masteryBadge, { backgroundColor: `${C.CULTURAL_GOLD}16`, borderColor: `${C.CULTURAL_GOLD}38` }]}>
-              <Trophy size={14} color={C.CULTURAL_GOLD_DARK} />
+              <Trophy size={14} strokeWidth={1.5} color={C.CULTURAL_GOLD_DARK} />
               <Text style={[styles.masteryText, { color: C.CULTURAL_GOLD_DARK }]}>
                 {STRINGS.sentenceBuilder.masteryToast(3)}
               </Text>
@@ -1026,7 +1033,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           {buildStatus === 'correct' && (
             <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
               <View style={[styles.resultCard, { backgroundColor: C.JADE_SURFACE, borderColor: C.JADE_BORDER }]}>
-                <Check size={18} color={C.JADE2} />
+                <Check size={18} strokeWidth={1.5} color={C.JADE2} />
                 <Text style={[styles.resultText, { color: C.JADE2 }]}>
                   {STRINGS.sentenceBuilder.correct} — {STRINGS.sentenceBuilder.buildYourOwn}
                 </Text>
@@ -1037,7 +1044,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           {buildStatus === 'wrong' && (
             <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
               <View style={[styles.resultCard, { backgroundColor: C.ERROR_SURFACE, borderColor: C.ERROR_BORDER }]}>
-                <X size={18} color={C.ERROR} />
+                <X size={18} strokeWidth={1.5} color={C.ERROR} />
                 <Text style={[styles.resultText, { color: C.ERROR }]}>{STRINGS.sentenceBuilder.incorrect}</Text>
               </View>
             </MotiView>
@@ -1076,7 +1083,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                 borderColor: C.BORDER,
               }}
             >
-              <RotateCcw size={14} color={C.TEXT2} />
+              <RotateCcw size={14} strokeWidth={1.5} color={C.TEXT2} />
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT2 }}>
                 {STRINGS.sentenceBuilder.buildDone}
               </Text>
