@@ -37,7 +37,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
 
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-            <Lock size={24} color={C.JADE_ACCENT} />
+            <Lock size={24} strokeWidth={1.5} color={C.JADE_ACCENT} />
           </View>
 
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: C.TEXT, textAlign: 'center', marginBottom: 8 }}>
@@ -61,7 +61,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
                 }}
               >
                 {i < scenariosCompleted ? (
-                  <Layers size={16} color={C.JADE_ACCENT} />
+                  <Layers size={16} strokeWidth={1.5} color={C.JADE_ACCENT} />
                 ) : (
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT3 }}>{i + 1}</Text>
                 )}
@@ -79,7 +79,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
               style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
             >
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG }}>{STRINGS.ui.featureGate.goToScenarios}</Text>
-              <ChevronRight size={16} color={C.BG} />
+              <ChevronRight size={16} strokeWidth={1.5} color={C.BG} />
             </LinearGradient>
           </Pressable>
         </View>
