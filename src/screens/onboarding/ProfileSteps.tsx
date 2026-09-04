@@ -9,7 +9,7 @@ import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_M
 import { ANGLE_135 } from '../../components/design/gradients';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
-import { KafMascot } from '../../components/features/KafMascot';
+import { Companion } from '../../components/ui/Companion';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 import { FadeIn, ShimmerButton } from '../../components/ui';
@@ -112,7 +112,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', marginTop: 40, gap: 24 }}>
               <FadeIn delay={100}>
-                <KafMascot size="md" mood="thinking" />
+                <Companion size={72} />
               </FadeIn>
               
               <FadeIn delay={200}>
@@ -449,7 +449,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
               <FadeIn delay={100} style={{ zIndex: 2 }}>
-                <KafMascot size="md" mood={holdComplete ? 'happy' : 'idle'} />
+                <Companion size={72} />
               </FadeIn>
 
               <FadeIn delay={200} style={{ zIndex: 2 }}>
