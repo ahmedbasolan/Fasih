@@ -370,6 +370,21 @@ export const STRINGS = {
     primerSub: 'Tap to listen — you\'ll hear them in the conversation.',
     primerListen: 'Tap to hear',
     culturalJourneyTitle: 'Your Cultural Journey',
+    // The margin rail's caption on the ending screen. The rail is the shape of
+    // the run; the three impact numbers beneath it are the totals. Two readings,
+    // so two labels.
+    railTitle: 'The path you took',
+    railSub: 'One mark per decision, in the order you made them.',
+    // The rail is a picture, so it is hidden from screen readers and its
+    // wrapper carries this instead — the same information as prose.
+    railWord: {
+      excellent: 'strong',
+      good: 'warm',
+      neutral: 'neutral',
+      bad: 'misstep',
+    } as const,
+    railSummary: (words: string[]) =>
+      `The path you took, decision by decision: ${words.join(', ')}.`,
     endingDiscovery: (total: number) => `1 of ${total} possible endings`,
     tryDifferentChoices: 'Play again with different choices to find another path',
     communityEnding: (pct: number) => pct > 0 ? `${pct}% of players reach this ending` : 'One of the first players to reach this ending',
