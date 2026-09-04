@@ -30,6 +30,14 @@ export const STRINGS = {
   onboarding: {
     welcomeTitle: 'Gulf Arabic, for Real Dubai Life',
     welcomeSubtitle: 'Learn through real stories, not textbooks',
+    // Step 0. These three were hardcoded in the JSX -- "Let's Begin Growing Our
+    // Skills." and the paragraph beneath it -- and are lifted here unchanged in
+    // meaning. `welcomeLead` splits so the second half can take the accent.
+    welcomeLead: 'Let’s begin',
+    welcomeLeadAccent: 'growing our skills.',
+    welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
+    getStarted: 'Get Started',
+    themeToggle: 'Switch between light and dark',
     helloKaf: 'Salam! I am Kaf.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
