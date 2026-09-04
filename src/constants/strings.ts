@@ -49,6 +49,17 @@ export const STRINGS = {
     choosePath: 'Choose your path',
     // Was hardcoded as "Select your primary focus" in the JSX.
     choosePathSub: 'Select your primary focus',
+    // Step 6. All of these were hardcoded in the JSX.
+    notifTitle: 'Never miss a day',
+    notifSub: 'Daily practice builds fluency 3× faster',
+    notifStreak: 'Daily streak reminders',
+    notifStreakSub: 'Keep your learning momentum going',
+    notifScenarios: 'New scenario alerts',
+    notifScenariosSub: 'Discover fresh cultural scenarios',
+    notifMilestones: 'Progress milestones',
+    notifMilestonesSub: 'Celebrate every achievement',
+    notifAllow: 'Allow Notifications',
+    notifLater: 'Maybe later',
     careerMode: 'Career Mode',
     careerSub: 'Hospitality · Retail · Office',
     careerDesc: 'Focus on business etiquette, formal greetings, and workplace culture.',

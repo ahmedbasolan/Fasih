@@ -1,16 +1,15 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import Svg, { Circle, Path, Rect, Defs, Stop, LinearGradient as SvgLinearGradient, G as SvgG } from 'react-native-svg';
 import { Bell, Star, TrendingUp } from '../../components/icons';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
-import { ANGLE_135 } from '../../components/design/gradients';
+import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, PrimaryButton } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
@@ -24,7 +23,7 @@ import type { OnboardingStepProps } from './types';
  * This is the quick win -- the learner speaks Arabic before being asked to pay.
  */
 export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepProps) {
-  const { C, G, isDark } = useTheme();
+  const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
@@ -35,177 +34,98 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
   } = quickWin;
 
   switch (step) {
-      // Step 6: Notifications
+      /* Step 6: notification opt-ins.
+         Was a skeuomorphic SVG phone -- metallic bezel, glass glare, a fake
+         drop-shadowed notification -- above three floating drop-shadowed cards.
+         Six hardcoded hex literals and two shadows, none of it telling the
+         learner anything. It is now three ruled rows. */
       case 6:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 60, paddingBottom: insets.bottom + 24 }}>
-            <View style={{ flex: 1, alignItems: 'center', gap: 20 }}>
+          <View style={{ flex: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.xxxl, paddingBottom: insets.bottom + SPACE.xl }}>
+            <FadeIn delay={100}>
+              <Bell size={24} strokeWidth={1.5} color={C.PRIMARY} style={{ marginBottom: SPACE.lg }} />
+              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, letterSpacing: -0.5, color: C.TEXT, marginBottom: SPACE.sm }}>
+                {STRINGS.onboarding.notifTitle}
+              </Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, color: C.TEXT2, marginBottom: SPACE.xl }}>
+                {STRINGS.onboarding.notifSub}
+              </Text>
+            </FadeIn>
 
-              {/* Animated bell with expanding rings - moved higher */}
-              <FadeIn delay={100}>
-                <View style={{ alignItems: 'center', justifyContent: 'center', width: 140, height: 140, marginTop: 20 }}>
-                  {/* Phone frame backdrop - smaller */}
-                  <View style={{ position: 'absolute', width: 110, height: 140, alignItems: 'center' }}>
-                    <Svg width={110} height={160} viewBox="0 0 160 230">
-                      <Defs>
-                        {/* Metallic bezel gradient */}
-                        <SvgLinearGradient id="phoneBezel" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <Stop offset="0" stopColor={C.BORDER} />
-                          <Stop offset="0.5" stopColor={C.SURFACE} />
-                          <Stop offset="1" stopColor={C.BORDER} />
-                        </SvgLinearGradient>
-                        {/* Screen glass gradient */}
-                        <SvgLinearGradient id="screenGlass" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <Stop offset="0" stopColor={C.BG} />
-                          <Stop offset="1" stopColor={C.SURFACE} />
-                        </SvgLinearGradient>
-                        {/* Notification glass effect */}
-                        <SvgLinearGradient id="notifGlass" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.9} />
-                          <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0.5} />
-                        </SvgLinearGradient>
-                      </Defs>
-
-                      {/* Phone body bezel */}
-                      <Rect x={10} y={0} width={140} height={230} rx={32} fill="url(#phoneBezel)" />
-                      <Rect x={12} y={2} width={136} height={226} rx={30} fill={C.TEXT3} opacity={0.1} />
-
-                      {/* Screen area */}
-                      <Rect x={18} y={10} width={124} height={210} rx={24} fill="url(#screenGlass)" />
-
-                      {/* Glass glare overlay */}
-                      <Path
-                        d="M18 60 L142 10 L142 50 L18 100 Z"
-                        fill="#FFFFFF"
-                        opacity={0.06}
-                        pointerEvents="none"
-                      />
-
-                      {/* Dynamic Notch */}
-                      <Rect x={55} y={18} width={50} height={6} rx={3} fill={C.TEXT3} opacity={0.6} />
-
-                      {/* Floating Glass Notification */}
-                      <SvgG transform="translate(14, 40)">
-                        {/* Shadow */}
-                        <Rect x={4} y={6} width={124} height={40} rx={12} fill="#000000" opacity={0.08} />
-                        {/* Glass Body */}
-                        <Rect x={0} y={0} width={132} height={40} rx={12} fill="url(#notifGlass)" />
-                        <Rect x={0} y={0} width={132} height={40} rx={12} stroke="#FFFFFF" strokeWidth={1} />
-
-                        {/* App Icon */}
-                        <Circle cx={16} cy={20} r={8} fill={C.JADE_ACCENT} />
-                        <Path d="M14 18 L18 22 M18 18 L14 22" stroke="#FFFFFF" strokeWidth={1.5} strokeLinecap="round" />
-
-                        {/* Text lines */}
-                        <Rect x={32} y={14} width={70} height={4} rx={2} fill={C.TEXT} opacity={0.8} />
-                        <Rect x={32} y={22} width={50} height={3} rx={1.5} fill={C.TEXT2} opacity={0.5} />
-
-                        {/* Time label */}
-                        <Rect x={110} y={14} width={12} height={3} rx={1} fill={C.TEXT3} opacity={0.4} />
-                      </SvgG>
-                    </Svg>
-                  </View>
-                  <View style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: C.JADE_ACCENT, opacity: 0.1 }} />
-                  {/* Bell */}
-                  <LinearGradient
-                    colors={[...G.GOLD_STOPS]}
-                    start={ANGLE_135.start}
-                    end={ANGLE_135.end}
-                    style={{ width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+            <View>
+              {([
+                { NotifIcon: Bell,       text: STRINGS.onboarding.notifStreak,     sub: STRINGS.onboarding.notifStreakSub },
+                { NotifIcon: Star,       text: STRINGS.onboarding.notifScenarios,  sub: STRINGS.onboarding.notifScenariosSub },
+                { NotifIcon: TrendingUp, text: STRINGS.onboarding.notifMilestones, sub: STRINGS.onboarding.notifMilestonesSub },
+              ] as const).map(({ NotifIcon, text, sub }, i) => (
+                <FadeIn key={text} delay={250 + i * 80}>
+                  <Pressable
+                    onPress={() => {
+                      haptic.selection();
+                      setToggleNotifs(prev => prev.map((v, idx) => idx === i ? !v : v));
+                    }}
+                    accessibilityRole="switch"
+                    accessibilityLabel={`${text}. ${sub}`}
+                    accessibilityState={{ checked: toggleNotifs[i] }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: SPACE.md,
+                      paddingVertical: SPACE.lg,
+                      borderTopWidth: i === 0 ? StyleSheet.hairlineWidth : 0,
+                      borderTopColor: C.BORDER,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: C.BORDER,
+                    }}
                   >
-                    <Bell size={28} color={C.BG} />
-                  </LinearGradient>
-                </View>
-              </FadeIn>
+                    <NotifIcon
+                      size={20}
+                      strokeWidth={1.5}
+                      color={toggleNotifs[i] ? C.PRIMARY : C.TEXT3}
+                    />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: toggleNotifs[i] ? C.TEXT : C.TEXT3 }}>{text}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
+                    </View>
+                    {/* The track is the only rounded thing on the screen, and it
+                        earns it: a pill is what a switch looks like.
 
-              {/* Title & subtitle - moved up */}
-              <FadeIn delay={200}>
-                <View style={{ alignItems: 'center', gap: 6, marginTop: 10 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, textAlign: 'center' }}>Never miss a day</Text>
-                  <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2, textAlign: 'center' }}>Daily practice builds fluency 3× faster</Text>
-                </View>
-              </FadeIn>
-
-              {/* Feature notification cards — elevated floating style */}
-              <View style={{ width: '100%', gap: 12, marginTop: 10 }}>
-                {([
-                  { NotifIcon: Bell, text: 'Daily streak reminders', sub: 'Keep your learning momentum going' },
-                  { NotifIcon: Star, text: 'New scenario alerts', sub: 'Discover fresh cultural scenarios' },
-                  { NotifIcon: TrendingUp, text: 'Progress milestones', sub: 'Celebrate every achievement' },
-                ] as const).map(({ NotifIcon, text, sub }, i) => (
-                  <FadeIn key={text} delay={350 + i * 100}>
-                    <Pressable
-                      onPress={() => {
-                        haptic.selection();
-                        setToggleNotifs(prev => prev.map((v, idx) => idx === i ? !v : v));
-                      }}
-                      style={[{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 14,
-                        borderRadius: 18,
-                        padding: 16,
-                        backgroundColor: isDark ? C.CARD_BG : C.WHITE,
-                        borderWidth: 1,
-                        borderColor: toggleNotifs[i] ? C.JADE_BORDER : C.BORDER,
-                      }, {
-                        shadowColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.07)',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 1,
-                        shadowRadius: 12,
-                        elevation: isDark ? 4 : 3,
-                      }]}
+                        Knob position is the state, so the knob has to be visible
+                        in BOTH states. C.BG on C.PRIMARY is 11.52 dark / 5.37
+                        light; C.BG on C.TEXT3 is 5.83 / 5.27. The obvious
+                        off-track, C.BORDER2, gives 1.97 / 1.76 -- a knob you
+                        cannot find is a switch you cannot read. */}
+                    <MotiView
+                      animate={{ backgroundColor: toggleNotifs[i] ? C.PRIMARY : C.TEXT3 }}
+                      transition={{ type: 'timing', duration: 200 }}
+                      style={{ width: 44, height: 26, borderRadius: RADIUS.pill, padding: 3, justifyContent: 'center' }}
                     >
-                      {/* Icon badge */}
-                      <View style={{
-                        width: 44, height: 44, borderRadius: 14,
-                        backgroundColor: toggleNotifs[i] ? C.JADE_ACCENT_DIM : C.SURFACE,
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <NotifIcon size={20} color={toggleNotifs[i] ? C.JADE_ACCENT : C.TEXT3} />
-                      </View>
-
-                      {/* Text block */}
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, marginBottom: 2 }}>{text}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 12, color: C.TEXT2 }}>{sub}</Text>
-                      </View>
-
-                      {/* Animated toggle switch */}
                       <MotiView
-                        animate={{ backgroundColor: toggleNotifs[i] ? C.JADE_ACCENT : C.BORDER }}
+                        animate={{ translateX: toggleNotifs[i] ? 18 : 0 }}
                         transition={{ type: 'timing', duration: 200 }}
-                        style={{ width: 44, height: 26, borderRadius: 13, padding: 3, justifyContent: 'center' }}
-                      >
-                        <MotiView
-                          animate={{ translateX: toggleNotifs[i] ? 18 : 0 }}
-                          transition={{ type: 'timing', duration: 200 }}
-                          style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.WHITE }}
-                        />
-                      </MotiView>
-                    </Pressable>
-                  </FadeIn>
-                ))}
-              </View>
+                        style={{ width: 20, height: 20, borderRadius: RADIUS.pill, backgroundColor: C.BG }}
+                      />
+                    </MotiView>
+                  </Pressable>
+                </FadeIn>
+              ))}
             </View>
 
-            {/* Buttons */}
-            <View style={{ gap: 12, marginTop: 'auto' }}>
-              <FadeIn delay={750}>
-                <ShimmerButton onPress={next} Icon={Bell}>
-                  Allow Notifications
-                </ShimmerButton>
+            <View style={{ gap: SPACE.md, marginTop: 'auto' }}>
+              <FadeIn delay={550}>
+                <PrimaryButton onPress={next} accessibilityLabel={STRINGS.onboarding.notifAllow}>
+                  {STRINGS.onboarding.notifAllow}
+                </PrimaryButton>
               </FadeIn>
-              <FadeIn delay={850}>
-                <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>Maybe later</Text>
+              <FadeIn delay={620}>
+                <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.notifLater}</Text>
                 </Pressable>
               </FadeIn>
             </View>
           </View>
         );
 
-      // Step 7: Your first Arabic phrase quick win
       case 7:
         return (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>

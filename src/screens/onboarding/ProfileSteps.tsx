@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView, AnimatePresence } from 'moti';
@@ -7,6 +7,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
+import { SPACE, RADIUS } from '../../components/design/spacing';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
 import { Companion } from '../../components/ui/Companion';
@@ -204,12 +205,17 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                       transition={{ type: 'timing', duration: 380 }}
                       style={{ width: '100%' }}
                     >
+                      {/* Was a glowing tile: accent fill, 1.5pt accent border,
+                          a coloured drop shadow AND a text-shadow halo on the
+                          Arabic. SheetPanel is the app's only shadow, and the
+                          learner's own name typed in Arabic does not need a
+                          glow to feel like an event. Hairline and space. */}
                       <View style={{
-                        width: '100%', borderRadius: 18, padding: 18,
-                        backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER,
-                        shadowColor: C.JADE_ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+                        width: '100%', borderRadius: RADIUS.flat, paddingVertical: SPACE.lg,
+                        borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.BORDER,
+                        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.BORDER,
                       }}>
-                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(28 * ARABIC_SCALE), color: C.JADE_ACCENT, textAlign: 'center', marginBottom: 4, textShadowColor: C.JADE_ACCENT_SURFACE, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 }}>{typedGreeting}</Text>
+                        <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(28 * ARABIC_SCALE), color: C.PRIMARY, textAlign: 'center', marginBottom: SPACE.xs }}>{typedGreeting}</Text>
                         <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 12, color: C.TEXT2, textAlign: 'center' }}>
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
