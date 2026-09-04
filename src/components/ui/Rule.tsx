@@ -12,13 +12,24 @@ interface RuleProps {
   /** Draws the top hairline. Set on the first row of a list so the group is bounded. */
   first?: boolean;
   accessibilityLabel?: string;
+  /**
+   * Set `false` when the row CONTAINS its own focusable controls.
+   *
+   * A Pressable defaults to `accessible`, which collapses its whole subtree
+   * into one accessibility element. `PhraseEntry` nests Play and Save buttons
+   * inside this row, and with the default they were not reachable by a screen
+   * reader at all — the two actions that screen exists for. Opting out here
+   * keeps the row tappable by touch while leaving its children focusable, so
+   * the row must then provide its own focusable affordance for `onPress`.
+   */
+  accessible?: boolean;
 }
 
 /**
  * The Sadaf list row. Owns the hairline, the vertical rhythm and the press
  * state; knows nothing about content. Entries compose on top of it.
  */
-export function Rule({ children, index, onPress, first, accessibilityLabel }: RuleProps) {
+export function Rule({ children, index, onPress, first, accessibilityLabel, accessible }: RuleProps) {
   const { C } = useTheme();
 
   const styles = useMemo(
@@ -80,11 +91,17 @@ export function Rule({ children, index, onPress, first, accessibilityLabel }: Ru
     );
   }
 
+  // With `accessible={false}` the row is still tappable but is no longer an
+  // accessibility element, so role and label would describe nothing. Omitting
+  // them keeps the tree honest — the caller supplies the focusable affordance.
+  const isAccessible = accessible !== false;
+
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessible={accessible}
+      accessibilityRole={isAccessible ? 'button' : undefined}
+      accessibilityLabel={isAccessible ? accessibilityLabel : undefined}
       style={({ pressed }) => [styles.row, first && styles.first, pressed && styles.pressed]}
     >
       {content}

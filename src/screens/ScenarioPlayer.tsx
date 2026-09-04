@@ -534,6 +534,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setLastResolvedNextSceneId(null);
     setFinalizedEnding(null);
     setFinalizedImpact(null);
+    // Must be cleared with its two siblings. The result screen reads
+    // `finalizedRail ?? railMarksForRun`, so a stale value never falls back —
+    // a replay's first painted frame showed the PREVIOUS run's rail, on the one
+    // screen whose whole job is "here is what you just did".
+    setFinalizedRail(null);
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────

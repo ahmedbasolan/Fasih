@@ -30,12 +30,29 @@ export function parseColor(value: string): Rgba {
 
   const rgb = trimmed.match(RGB);
   if (rgb) {
-    return {
+    const parsed = {
       r: Number(rgb[1]),
       g: Number(rgb[2]),
       b: Number(rgb[3]),
       a: rgb[4] === undefined ? 1 : Number(rgb[4]),
     };
+
+    // Shape is not enough — range matters for the same reason `1.2.3` did.
+    // `rgba(243,233,2140,0.72)` (a transposed digit) and `rgba(0,0,0,72)` (a
+    // percentage written as a fraction) both match the pattern, and `composite`
+    // would then blend with an out-of-gamut channel or an alpha above 1,
+    // producing a luminance outside [0,1] and a ratio that can land ABOVE 4.5
+    // and pass the token guard. This module's whole job is being the thing that
+    // cannot be fooled about contrast, so it throws rather than computes.
+    const inRange =
+      parsed.r <= 255 && parsed.g <= 255 && parsed.b <= 255 && parsed.a <= 1;
+    if (!inRange) {
+      throw new Error(
+        `Colour channel out of range (expected r/g/b 0-255 and alpha 0-1): ${value}`,
+      );
+    }
+
+    return parsed;
   }
 
   throw new Error(`Unsupported colour format: ${value}`);

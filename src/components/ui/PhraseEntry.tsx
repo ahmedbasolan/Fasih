@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Volume2, Bookmark } from 'lucide-react-native';
+import { Volume2, Bookmark } from '../icons';
 import type { Phrase } from '../../types';
 import {
   FONT_ARABIC_EXTRA,
@@ -116,14 +116,29 @@ export function PhraseEntry({
     <Rule
       first={first}
       onPress={() => onToggleExpand(phrase.id)}
-      accessibilityLabel={phrase.english}
+      // The row contains its own Play and Save buttons. Left accessible, the
+      // Pressable would collapse them into a single element and a screen-reader
+      // user could not reach either — so the row opts out and the text block
+      // below carries the focusable expand affordance instead.
+      accessible={false}
     >
       {/* writingDirection is set on the Arabic run itself so a mixed
           Arabic/Latin string cannot leak direction into the romanisation
           beneath it. */}
-      <Text style={styles.arabic}>{phrase.arabic}</Text>
-      <Text style={styles.roman}>{phrase.roman}</Text>
-      <Text style={styles.english}>{phrase.english}</Text>
+      <Pressable
+        onPress={() => onToggleExpand(phrase.id)}
+        accessible
+        accessibilityRole="button"
+        // Romanisation first, then the gloss: romanisation is the authoritative
+        // pronunciation channel, and the Arabic script is read by a voice that
+        // does not speak Khaleeji. See docs/language/authority.md.
+        accessibilityLabel={`${phrase.roman}. ${phrase.english}`}
+        accessibilityState={{ expanded }}
+      >
+        <Text style={styles.arabic}>{phrase.arabic}</Text>
+        <Text style={styles.roman}>{phrase.roman}</Text>
+        <Text style={styles.english}>{phrase.english}</Text>
+      </Pressable>
 
       <View style={styles.meta}>
         <Text style={styles.label}>{phrase.category}</Text>
@@ -140,7 +155,7 @@ export function PhraseEntry({
             onPress={(e) => { e.stopPropagation?.(); onPlay(phrase); }}
             style={styles.hit}
             accessibilityRole="button"
-            accessibilityLabel={STRINGS.phrases.play}
+            accessibilityLabel={`${STRINGS.phrases.play}: ${phrase.roman}`}
           >
             <Volume2 size={20} strokeWidth={1.5} color={playing ? C.PRIMARY : C.TEXT3} />
           </Pressable>
@@ -148,7 +163,7 @@ export function PhraseEntry({
             onPress={(e) => { e.stopPropagation?.(); onToggleSave(phrase.id); }}
             style={styles.hit}
             accessibilityRole="button"
-            accessibilityLabel={STRINGS.phrases.save}
+            accessibilityLabel={`${STRINGS.phrases.save}: ${phrase.roman}`}
             accessibilityState={{ selected: saved }}
           >
             <Bookmark
