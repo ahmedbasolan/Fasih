@@ -3,11 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -71,7 +70,7 @@ export function StreakWidget({
     return () => clearTimeout(t);
   }, [mood, screenW]);
 
-  const mascotSource = IMAGES.foxyMale;
+
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -100,10 +99,6 @@ export function StreakWidget({
       borderRightWidth: 1,
       borderRightColor: C.BORDER,
       paddingVertical: 8,
-    },
-    mascotImage: {
-      width: 42,
-      height: 42,
     },
     streakNumber: {
       fontFamily: FONT_HEADING_EXTRA,
@@ -197,11 +192,7 @@ export function StreakWidget({
       >
         {/* LEFT BLOCK - Mascot + Streak */}
         <View style={styles.leftBlock}>
-          <Image
-            source={mascotSource}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
+          <Companion size={42} />
           <Text style={styles.streakNumber}>{streakDays}</Text>
           <Text style={styles.daysLabel}>days</Text>
         </View>
