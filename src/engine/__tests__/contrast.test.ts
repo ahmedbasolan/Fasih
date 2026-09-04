@@ -23,6 +23,23 @@ describe('parseColor', () => {
     // compared false against every threshold. A typo'd token has to fail loudly.
     expect(() => parseColor('rgba(1.2.3,0,0,1)')).toThrow(/Unsupported/);
   });
+
+  it('throws on an out-of-range channel rather than computing with it', () => {
+    // Shape is not enough. A transposed digit — 214 becoming 2140 — matches the
+    // pattern, and compositing with it puts the luminance outside [0,1] and can
+    // produce a ratio ABOVE 4.5, so the token guard would pass on nonsense.
+    expect(() => parseColor('rgba(243,233,2140,0.72)')).toThrow(/out of range/);
+    expect(() => parseColor('rgb(300, 0, 0)')).toThrow(/out of range/);
+  });
+
+  it('throws on an alpha above 1 — a percentage written as a fraction', () => {
+    expect(() => parseColor('rgba(0,0,0,72)')).toThrow(/out of range/);
+  });
+
+  it('still accepts the boundary values', () => {
+    expect(parseColor('rgba(255,255,255,1)')).toEqual({ r: 255, g: 255, b: 255, a: 1 });
+    expect(parseColor('rgba(0,0,0,0)')).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+  });
 });
 
 describe('relativeLuminance', () => {

@@ -34,7 +34,7 @@ const ARABIC_SIZE = 20;
 export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntryProps) {
   const { C } = useTheme();
   const {
-    id, title, phrases, keyLine, keyLineRoman, impactPreview, locked, comingSoon, mode,
+    id, title, phrases, keyLine, impactPreview, locked, comingSoon, mode,
   } = scenario;
 
   const headline = impactPreview?.trust;
@@ -136,17 +136,37 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
 
   const showMetric = headline !== undefined && !dimmed;
 
+  // The badges and the metric are the row's state, and they were visual only:
+  // a paywalled row and a playable one announced identically as just their
+  // title, so a screen-reader user tapped one expecting to play and got the
+  // paywall. The comment below says these two states "were previously
+  // indistinguishable dimmed rows" — they still were, here.
+  const a11yLabel = [
+    title,
+    comingSoon ? STRINGS.scenarios.comingSoonBadge : locked ? STRINGS.scenarios.lockedBadge : null,
+    STRINGS.scenarios.phrases(phrases),
+    showMetric ? `${headlineLabel} ${headline}%` : null,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
   return (
     <Rule
       index={index}
       first={first}
       onPress={inert ? undefined : () => onPress(id)}
-      accessibilityLabel={title}
+      accessibilityLabel={a11yLabel}
     >
       <Text style={styles.title}>{title}</Text>
 
-      {keyLine ? <Text style={styles.arabic}>{keyLine}</Text> : null}
-      {keyLineRoman ? <Text style={styles.roman}>{keyLineRoman}</Text> : null}
+      {/* One conditional, not two: the pair is either present or absent, so an
+          Arabic line can no longer render without its romanisation. */}
+      {keyLine ? (
+        <>
+          <Text style={styles.arabic}>{keyLine.arabic}</Text>
+          <Text style={styles.roman}>{keyLine.roman}</Text>
+        </>
+      ) : null}
 
       <View style={styles.meta}>
         <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>

@@ -106,12 +106,16 @@ export interface Scenario {
    * learner sees Arabic before opening anything. Bare script, no tashkeel —
    * see docs/language/authority.md.
    *
+   * One optional PAIR rather than two independent optionals: romanisation is
+   * the authoritative pronunciation channel for an audience that mostly cannot
+   * read the script, so an Arabic line without one is the single combination
+   * that must not ship. As two optionals the type permitted exactly that, and
+   * the only thing forbidding it was a comment.
+   *
    * Deliberately unpopulated for now: writing these is content work that goes
    * through docs/language/pipeline.md, not a design task.
    */
-  keyLine?: string;
-  /** Romanisation of `keyLine`. Required whenever `keyLine` is set. */
-  keyLineRoman?: string;
+  keyLine?: { arabic: string; roman: string };
 }
 
 export type ChoiceOutcome = 'excellent' | 'good' | 'neutral' | 'bad';

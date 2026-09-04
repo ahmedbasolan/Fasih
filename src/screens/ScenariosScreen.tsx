@@ -151,7 +151,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
       {/* The eyebrow is the running head: it says which mode you are in on

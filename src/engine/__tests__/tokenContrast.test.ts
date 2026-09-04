@@ -7,13 +7,39 @@
  * theme-invariant fills, so a themed ink token on top of them fails in one
  * theme by construction.
  */
-import { contrastRatio } from '../contrast';
+import { contrastRatio, parseColor, composite } from '../contrast';
 import { lightTheme, darkTheme, type ThemeColors } from '../../components/design/tokens';
 
 const AA_TEXT = 4.5;
 const AA_LARGE = 3.0;
 
-type Pair = { fg: keyof ThemeColors; bg: keyof ThemeColors; min: number; note: string };
+type Pair = {
+  fg: keyof ThemeColors;
+  bg: keyof ThemeColors;
+  min: number;
+  note: string;
+  /**
+   * Composite `bg` over this token before measuring.
+   *
+   * Several fills are translucent ink (`TEXT3` is `rgba(...,0.58)`), and
+   * `contrastRatio` rightly refuses a translucent background — it has no
+   * defined luminance without knowing what is behind it. Naming the ground
+   * makes those pairings expressible instead of untestable, which is why the
+   * switch-knob pairs below were never asserted.
+   */
+  over?: keyof ThemeColors;
+};
+
+/** `fg` on `bg`, with `bg` first flattened over `over` when it is translucent. */
+function ratioFor(theme: ThemeColors, { fg, bg, over }: Pair): number {
+  if (!over) return contrastRatio(theme[fg], theme[bg]);
+  const ground = parseColor(theme[over]);
+  const flattened = composite(parseColor(theme[bg]), ground);
+  return contrastRatio(
+    theme[fg],
+    `rgb(${flattened.r}, ${flattened.g}, ${flattened.b})`,
+  );
+}
 
 /** Text pairings. Every one of these renders somewhere in the app. */
 const TEXT_PAIRS: Pair[] = [
@@ -42,20 +68,31 @@ const TEXT_PAIRS: Pair[] = [
  */
 const BOUNDARY_PAIRS: Pair[] = [
   { fg: 'PRIMARY', bg: 'BG', min: AA_LARGE, note: 'active-state border' },
+
+  // The notification switches on onboarding step 6. Knob POSITION is the state,
+  // so the knob has to be findable against the track in BOTH states — this is a
+  // UI component under WCAG 1.4.11, not decoration.
+  //
+  // These were verified by an ad-hoc calculation during development and not
+  // encoded here, which is exactly the gap this suite exists to close: the
+  // first draft put the knob on C.BORDER2, measuring 1.97:1 dark and 1.76:1
+  // light — an invisible knob on a control with no other state indicator.
+  // Without these two rows, retuning PRIMARY or TEXT3 reintroduces that with a
+  // green test run.
+  { fg: 'BG', bg: 'PRIMARY', min: AA_LARGE, note: 'switch knob on the on-track' },
+  { fg: 'BG', bg: 'TEXT3', over: 'BG', min: AA_LARGE, note: 'switch knob on the off-track' },
 ];
 
 describe.each([
   ['light', lightTheme],
   ['dark', darkTheme],
 ])('%s theme', (_name, theme) => {
-  it.each(TEXT_PAIRS)('$fg on $bg passes AA text — $note', ({ fg, bg, min }) => {
-    const ratio = contrastRatio(theme[fg], theme[bg]);
-    expect(ratio).toBeGreaterThanOrEqual(min);
+  it.each(TEXT_PAIRS)('$fg on $bg passes AA text — $note', (pair) => {
+    expect(ratioFor(theme, pair)).toBeGreaterThanOrEqual(pair.min);
   });
 
-  it.each(BOUNDARY_PAIRS)('$fg on $bg passes AA non-text — $note', ({ fg, bg, min }) => {
-    const ratio = contrastRatio(theme[fg], theme[bg]);
-    expect(ratio).toBeGreaterThanOrEqual(min);
+  it.each(BOUNDARY_PAIRS)('$fg on $bg passes AA non-text — $note', (pair) => {
+    expect(ratioFor(theme, pair)).toBeGreaterThanOrEqual(pair.min);
   });
 });
 
