@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN } from '../../theme';
 import { Settings } from '../icons';
+import { STRINGS } from '../../constants/strings';
 
 interface HomeHeaderProps {
   userName: string;
@@ -10,16 +11,10 @@ interface HomeHeaderProps {
 
 function getTimeGreeting() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) {
-    return { arabic: 'صباح الخير', english: 'Good morning' };
-  }
-  if (hour >= 12 && hour < 17) {
-    return { arabic: 'مرحبا', english: 'Hello' };
-  }
-  if (hour >= 17 && hour < 21) {
-    return { arabic: 'مساء الخير', english: 'Good evening' };
-  }
-  return { arabic: 'تصبح على خير', english: 'Good night' };
+  if (hour >= 5 && hour < 12) return STRINGS.home.greeting.morning;
+  if (hour >= 12 && hour < 17) return STRINGS.home.greeting.afternoon;
+  if (hour >= 17 && hour < 21) return STRINGS.home.greeting.evening;
+  return STRINGS.home.greeting.night;
 }
 
 export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
@@ -81,7 +76,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
           pressed && { opacity: 0.7 },
         ]}
         accessibilityRole="button"
-        accessibilityLabel="Settings"
+        accessibilityLabel={STRINGS.home.settingsA11y}
       >
         <Settings size={20} color={C.TEXT} />
       </Pressable>

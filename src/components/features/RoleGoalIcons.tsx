@@ -3,34 +3,21 @@ import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 
 interface IconProps {
   size?: number;
-  color?: string;
+  /**
+   * Required rather than defaulted. A hardcoded fallback here was invisible —
+   * every current call site passes an explicit C.TOKEN color, so a stray
+   * off-palette default sat unused until the next call site forgot to pass
+   * one. Same reasoning as accessibilityLabel in SwitchButton.tsx.
+   */
+  color: string;
 }
 
 /* ═══════════════════════════════════════════
    ROLE BADGES — Step 3 bento grid
    ═══════════════════════════════════════════ */
 
-/** Barista — coffee cup with steam wisps */
-export function BaristaIcon({ size = 20, color = '#02B986' }: IconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {/* Background glow */}
-      <Circle cx={12} cy={12} r={10} fill={color} opacity={0.11} />
-      {/* Cup body */}
-      <Path d="M7 10 L7 17 C7 18.1 7.9 19 9 19 L13 19 C14.1 19 15 18.1 15 17 L15 10 Z" stroke={color} strokeWidth={1.5} fill="none" strokeLinejoin="round" />
-      {/* Handle */}
-      <Path d="M15 12 L17 12 C18.1 12 19 12.9 19 14 C19 15.1 18.1 16 17 16 L15 16" stroke={color} strokeWidth={1.5} fill="none" strokeLinecap="round" />
-      {/* Saucer */}
-      <Path d="M5 19 L17 19" stroke={color} strokeWidth={1.5} strokeLinecap="round" opacity={0.3} />
-      {/* Steam */}
-      <Path d="M9 8 C9 6.5 10 6 9.5 4.5" stroke={color} strokeWidth={1} strokeLinecap="round" opacity={0.4} />
-      <Circle cx={12} cy={7} r={0.8} fill={color} opacity={0.3} />
-    </Svg>
-  );
-}
-
 /** Hotel — building with a key */
-export function HotelIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function HotelIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -49,7 +36,7 @@ export function HotelIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Retail — shopping bag with tag */
-export function RetailIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function RetailIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -64,7 +51,7 @@ export function RetailIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Restaurant — plate with fork and knife */
-export function RestaurantIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function RestaurantIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -80,7 +67,7 @@ export function RestaurantIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Office — briefcase with a star badge */
-export function OfficeIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function OfficeIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -95,7 +82,7 @@ export function OfficeIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Healthcare — heart with pulse line */
-export function HealthcareIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function HealthcareIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -109,7 +96,7 @@ export function HealthcareIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Driver — steering wheel */
-export function DriverIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function DriverIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -127,7 +114,7 @@ export function DriverIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Security — shield with checkmark */
-export function SecurityIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function SecurityIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -146,7 +133,7 @@ export function SecurityIcon({ size = 20, color = '#02B986' }: IconProps) {
    ═══════════════════════════════════════════ */
 
 /** Professional — ascending stairs */
-export function ProfessionalIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function ProfessionalIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -159,7 +146,7 @@ export function ProfessionalIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Friends — two connected people */
-export function FriendsIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function FriendsIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -179,7 +166,7 @@ export function FriendsIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Culture — mosque dome silhouette */
-export function CultureIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function CultureIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -194,7 +181,7 @@ export function CultureIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Daily Life — compass/navigation */
-export function DailyLifeIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function DailyLifeIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
@@ -209,7 +196,7 @@ export function DailyLifeIcon({ size = 20, color = '#02B986' }: IconProps) {
 }
 
 /** Career — trophy with rising arrow */
-export function CareerIcon({ size = 20, color = '#02B986' }: IconProps) {
+export function CareerIcon({ size = 20, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Background glow */}
