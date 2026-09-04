@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { ChevronLeft } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft } from '../icons';
 import { FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_MEDIUM } from '../design/tokens';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../design/spacing';
 import { useTheme } from '../../hooks/useTheme';
@@ -16,6 +17,12 @@ interface ScreenHeaderProps {
    */
   eyebrow?: string;
   onBack?: () => void;
+  /**
+   * Set when an ancestor has ALREADY applied the top safe-area inset, so this
+   * header does not add it twice. Prefer letting the header own it: see the
+   * note on `root` below.
+   */
+  insetApplied?: boolean;
 }
 
 /**
@@ -25,15 +32,24 @@ interface ScreenHeaderProps {
  * centred its subtitle across the full width, where it collided with the back
  * button; a shared primitive makes that arrangement unrepresentable.
  */
-export function ScreenHeader({ title, subtitle, eyebrow, onBack }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, eyebrow, onBack, insetApplied }: ScreenHeaderProps) {
   const { C } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
         root: {
           paddingHorizontal: SCREEN_MARGIN,
-          paddingTop: SPACE.lg,
+          // The header owns the top safe-area inset, because it is always the
+          // topmost thing on its screen and it is the thing that gets clipped.
+          //
+          // It used to be each caller's job, and Sentence Builder forgot: its
+          // 44pt back-button row started 16pt from the physical top, so on any
+          // notched device it sat under the status bar and was partly
+          // untappable. Two of three callers remembered; the third shipped the
+          // bug. A default that is right unless opted out of cannot do that.
+          paddingTop: (insetApplied ? 0 : insets.top) + SPACE.lg,
           paddingBottom: SPACE.xl,
           backgroundColor: C.BG,
         },
@@ -72,7 +88,7 @@ export function ScreenHeader({ title, subtitle, eyebrow, onBack }: ScreenHeaderP
           marginTop: SPACE.sm,
         },
       }),
-    [C],
+    [C, insets.top, insetApplied],
   );
 
   return (
