@@ -484,3 +484,17 @@ Before every feature:
 - Use `STRINGS` for all copy.
 - Match existing patterns in the codebase.
 - Run TypeScript check before finishing.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Label vocabulary for the five canonical triage roles. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout. See `docs/agents/domain.md`.
