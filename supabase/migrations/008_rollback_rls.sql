@@ -1,5 +1,5 @@
 -- ============================================================
--- Fasih — Migration 007: EMERGENCY ROLLBACK of 006_enable_rls.sql
+-- Fasih — Migration 008: EMERGENCY ROLLBACK of 007_enable_rls.sql
 --
 -- Run this ONLY if enabling RLS broke saving in the live app.
 --
@@ -8,7 +8,7 @@
 --     error, or Supabase → Table Editor → user_data stops gaining rows).
 --   • Supabase → Logs shows "new row violates row-level security policy".
 --
--- This returns the database to exactly the state it was in before 006 — the
+-- This returns the database to exactly the state it was in before 007 — the
 -- Option A posture described in 003_rls.sql. It does NOT delete any data.
 --
 -- ⚠ AFTER RUNNING THIS, THE ORIGINAL SECURITY HOLE IS BACK OPEN: anyone with
@@ -20,7 +20,7 @@
 --     select auth.jwt()->>'sub';     -- must return the Clerk user id, not NULL
 -- ============================================================
 
--- Drop the policies added by 006.
+-- Drop the policies added by 007.
 DROP POLICY IF EXISTS "Users read own data"   ON user_data;
 DROP POLICY IF EXISTS "Users write own data"  ON user_data;
 DROP POLICY IF EXISTS "Users update own data" ON user_data;
@@ -42,7 +42,7 @@ ALTER TABLE scenario_ending_stats DISABLE ROW LEVEL SECURITY;
 DROP TRIGGER  IF EXISTS lock_subscription_status ON user_data;
 DROP FUNCTION IF EXISTS prevent_client_subscription_write();
 
--- NOTE: the DELETE/TRUNCATE revokes from 006 are deliberately NOT restored.
+-- NOTE: the DELETE/TRUNCATE revokes from 007 are deliberately NOT restored.
 -- Granting DELETE back to `authenticated` would let any signed-in client wipe
 -- rows, which was never intended in either posture. Account deletion goes
 -- through the delete_my_account() RPC (005), which is SECURITY DEFINER and
