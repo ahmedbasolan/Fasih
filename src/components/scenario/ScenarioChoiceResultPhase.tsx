@@ -8,7 +8,7 @@ import {
 } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
-import { KafMascot } from '../features/KafMascot';
+import { Companion } from '../ui/Companion';
 import { getTone } from '../../engine/scenarioEngine';
 import type { ScenarioScene, ScenarioScript, ScenarioState } from '../../types';
 
@@ -95,7 +95,7 @@ export function ScenarioChoiceResultPhase({
         {/* Kaf's cultural insight */}
         <View style={{ borderRadius: 20, padding: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <KafMascot size="xs" />
+            <Companion size={32} />
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: violetColor }}>Cultural Insight</Text>
           </View>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, color: C.TEXT2, lineHeight: 24 }}>
