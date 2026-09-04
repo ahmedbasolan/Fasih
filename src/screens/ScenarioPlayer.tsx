@@ -21,6 +21,7 @@ import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
 import { railMarks } from '../engine/marginRail';
+import type { RailMark } from '../engine/marginRail';
 import {
   trackScenarioStarted,
   trackScenarioChoiceMade,
@@ -297,6 +298,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // render with a zeroed-out score the instant it appears.
   const [finalizedEnding, setFinalizedEnding] = useState<ScenarioEnding | null>(null);
   const [finalizedImpact, setFinalizedImpact] = useState<{ trust: number; respect: number; culture: number } | null>(null);
+  // Same lock, same reason: the ending screen shows the completed rail, and
+  // finalizeScenario() nulls the state the rail is derived from. Without this
+  // the rail empties itself the instant the result appears.
+  const [finalizedRail, setFinalizedRail] = useState<RailMark[] | null>(null);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -344,6 +349,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       }),
       { trust: 0, respect: 0, culture: 0 }
     ));
+    setFinalizedRail(railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0));
     setCompletionFired(true);
     finalizeScenario(currEnding);
     // Actually unlock the phrases the result screen is about to present as
@@ -366,7 +372,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
+  }, [phase, completionFired, scenarioId, scriptData, scenario, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
@@ -786,6 +792,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             total={total}
             scenarioId={scenarioId}
             scriptData={scriptData}
+            railMarks={finalizedRail ?? railMarksForRun}
             unlockedPhrases={unlockedPhrases}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}

@@ -42,8 +42,12 @@ export function MarginRail({ marks, orientation = 'vertical' }: Props) {
           flexDirection: vertical ? 'column' : 'row',
           alignItems: 'center',
           gap: SPACE.sm,
-          paddingVertical: vertical ? SPACE.md : 0,
+          paddingVertical: SPACE.md,
           paddingHorizontal: vertical ? 0 : SPACE.md,
+          // Horizontal reads as one span of time, so the marks distribute
+          // across the full width rather than clustering at the start. Vertical
+          // has no fixed height to distribute within, so it stays gap-spaced.
+          ...(vertical ? null : { alignSelf: 'stretch', justifyContent: 'space-between' }),
         },
         track: {
           position: 'absolute',
