@@ -1,5 +1,5 @@
 -- ============================================================
--- Fasih — Migration 006: Enable Row Level Security (Option B)
+-- Fasih — Migration 007: Enable Row Level Security (Option B)
 --
 -- This is the uncommented, ready-to-run form of the Option B block in
 -- 003_rls.sql. Run it as-is; nothing in this file needs editing.
@@ -24,7 +24,7 @@
 -- This script is safe to re-run: every policy is dropped before it is created,
 -- so a partial run can simply be run again.
 --
--- TO UNDO, see 007_rollback_rls.sql.
+-- TO UNDO, see 008_rollback_rls.sql.
 -- ============================================================
 
 -- ─── Table-level grants ──────────────────────────────────────────────────────

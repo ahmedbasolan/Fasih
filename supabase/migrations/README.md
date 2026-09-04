@@ -1,33 +1,144 @@
 # Fasih — Supabase Migrations
 
-Run these files **in order** in the Supabase SQL editor (Dashboard → SQL Editor).
+Run these files in the Supabase SQL editor (Dashboard → SQL Editor), in number
+order, **skipping the ones the Required column says to skip**. One file in here
+is a decision document rather than a migration, and running it does damage —
+see `003_rls.sql` below.
+
+Do **not** use `npx supabase db push`. These files are hand-numbered
+(`001_`, `002_`…) rather than in the CLI's `<timestamp>_name.sql` format, so the
+CLI does not recognise them as an applied history and will try to replay the
+whole directory — starting with `001_initial_schema.sql`.
 
 | File | What it does | Required |
 |------|-------------|----------|
 | `001_initial_schema.sql` | Creates all tables, triggers, RPC functions | Yes (first-time setup) |
 | `002_indexes.sql` | Performance indexes on all tables | Yes |
-| `003_rls.sql` | Row Level Security — read comments, choose Option A or B | Yes |
+| `003_rls.sql` | Row Level Security decision doc — ⚠ **do not run**, see below | Read only |
 | `004_schema_v2.sql` | Adds `schema_version` + `unlocked_phrase_ids` columns | Yes (if DB existed before v2) |
 | `005_account_deletion.sql` | Account deletion RPC + cleanup | Yes |
 | `006_schema_v3.sql` | Adds `pattern_progress` + `secret_endings_earned` columns (Sentence Builder) | Yes (if DB existed before v3) |
+| `006_auth_check.sql` | Adds `whoami()` so the Clerk↔Supabase bridge can actually be verified | Yes — before `007` |
+| `007_enable_rls.sql` | Enables RLS properly (the "Option B" posture) | Yes, once its check passes |
+| `008_rollback_rls.sql` | Emergency undo for `007` | Only if `007` breaks syncing |
+| `009_onboarding_selections.sql` | Anonymous onboarding aggregate — insert-only table | Yes, for onboarding analytics |
+
+## Two files are numbered 006
+
+`006_schema_v3.sql` and `006_auth_check.sql` are unrelated and were added
+independently. They do not conflict — one adds columns, the other adds a
+function — and either order works. The collision is recorded here rather than
+renumbered, because renaming a file that has already been applied to production
+makes the history harder to reconcile, not easier. **The next migration is
+`010`.**
+
+## The file headers used to be misnumbered
+
+`007_enable_rls.sql` called itself "Migration 006" and pointed at a
+`007_rollback_rls.sql` that does not exist; `008_rollback_rls.sql` called itself
+"Migration 007" and claimed to roll back a `006_enable_rls.sql` that does not
+exist either. Each was off by one and pointed at the other's old name.
+
+Both are corrected. The filenames were always right and the SQL was never
+affected — but the misdirection landed exactly where it would hurt most:
+reaching for the rollback during a live sync outage and opening the wrong file.
+If you have an older checkout open, trust the filename over the header.
 
 ## First-time setup
 
-Run `001`  `002`  `003` (Option A for now) in order. Done.
+Run `001` → `002` in order, then `006_auth_check` → `007_enable_rls`
+(see "RLS posture"), then `009` if you want onboarding analytics.
+
+**Do not run `003_rls.sql`.** See the warning below — it is not merely
+redundant, it is actively harmful now.
 
 ## Existing database (upgrading)
 
-Run `004_schema_v2.sql` to add the new columns. Already-existing rows will get default values.
-Run `005_account_deletion.sql` and `006_schema_v3.sql` to add the remaining columns.
+Run whichever of `004_schema_v2.sql`, `005_account_deletion.sql` and
+`006_schema_v3.sql` you have not already applied — each adds columns or
+functions and takes defaults for existing rows. Then `006_auth_check.sql`,
+then `007_enable_rls.sql`, then `009_onboarding_selections.sql`.
 
-## RLS - which option to choose
+## RLS posture
 
-**Option A (current):** RLS disabled. Simplest. Suitable until launch.
+`003_rls.sql` describes two options. **Option B is the one in force.**
 
-**Option B (recommended for production):** Proper Clerk JWT  Supabase RLS.
-Requires one-time Clerk dashboard configuration. See `003_rls.sql` for step-by-step instructions.
+- **Option A:** RLS disabled. Anyone with the app's public anon key can read or
+  write any user's row. It was the starting posture and is not shippable.
+- **Option B:** Clerk JWT → Supabase RLS. `007_enable_rls.sql` is the
+  ready-to-run form; nothing in it needs editing.
+
+### ⚠ Running `003_rls.sql` today would turn RLS back off
+
+This is the trap in following "run these in order" literally. `003` presents
+two options and says to choose one — but **Option A's SQL is uncommented and
+live at the top of the file**, while Option B's is commented out. So running
+`003` does not offer a choice; it executes Option A:
+
+```sql
+ALTER TABLE user_data             DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scenario_choice_stats DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scenario_ending_stats DISABLE ROW LEVEL SECURITY;
+```
+
+That silently reverses `007` and reopens the hole, with no error and no visible
+change in the app. Treat `003` as the document that explains the decision.
+`007_enable_rls.sql` is the executable form of the option that was chosen.
+
+The file now carries this warning in its own header too, so it is visible to
+anyone who opens it directly rather than arriving via this README. If you do
+want to roll RLS back deliberately, use `008_rollback_rls.sql` — it is written
+for that and says what it costs.
+
+### Verify the bridge before running `007`
+
+`007` requires two one-time dashboard steps (Clerk → "Connect with Supabase",
+and Supabase → Authentication → Third-Party Auth → add Clerk). Enabling RLS
+before both are done silently breaks every sync write — the app keeps working
+and saves nothing.
+
+The obvious check does not work from the SQL editor:
+
+```sql
+select auth.jwt()->>'sub';   -- always NULL here, whatever the truth is
+```
+
+The SQL editor connects as a privileged database user carrying no Clerk token,
+so it returns NULL whether or not the bridge is up. **The check is only
+meaningful made from the app while signed in**, which is what
+`006_auth_check.sql` exists for: it adds `whoami()`, and the app surfaces it at
+Profile → "Check database connection" (a dev-only row). That must return your
+Clerk user id and `role: authenticated` before you run `007`.
+
+If `007` does break syncing — the in-app sync banner errors, or Supabase → Logs
+shows "new row violates row-level security policy" — run
+`008_rollback_rls.sql`. It restores the pre-`007` state and deletes no data,
+but it reopens the security hole, so treat it as stopping the bleeding rather
+than a resting state.
+
+## `009` has its own gate
+
+`009_onboarding_selections.sql` creates an **insert-only** table: the client can
+write to it but must never read it. After running it, verify both of these from
+the app while signed in:
+
+1. an insert succeeds;
+2. `supabase.from('onboarding_selections').select('*')` returns an RLS error or
+   an empty set — **never data**.
+
+The second is the one that matters, and an empty result with no error is the
+failure mode to watch for, because it looks like success.
+
+The table is anonymous at rest and carries no user identifier, which is why
+`005_account_deletion.sql` deliberately does not touch it — there is nothing to
+delete. See
+[`docs/superpowers/specs/2026-09-03-onboarding-analytics-design.md`](../../docs/superpowers/specs/2026-09-03-onboarding-analytics-design.md).
 
 ## Schema version history
+
+`CURRENT_SCHEMA_VERSION` in `src/lib/syncService.ts` must match the highest
+version listed here. This tracks the shape of the synced `user_data` row only —
+`onboarding_selections` is not part of it and does not bump the version.
 
 | Version | Changes |
 |---------|---------|
