@@ -30,6 +30,11 @@ describe('isStreakAtRisk', () => {
   it('is not at risk when there is no active streak', () => {
     expect(isStreakAtRisk(0, '2026-07-03', '2026-07-04')).toBe(false);
   });
+
+  it('is not at risk when the streak has already lapsed for more than a day', () => {
+    // lastActiveDate is three weeks stale — the streak is already broken, not "at risk".
+    expect(isStreakAtRisk(12, '2026-08-01', '2026-09-04')).toBe(false);
+  });
 });
 
 describe('applyStreakFreeze', () => {
@@ -46,5 +51,12 @@ describe('applyStreakFreeze', () => {
   it('does not apply (and does not double-spend) when today is already logged', () => {
     const result = applyStreakFreeze({ streakFreezes: 2, lastActiveDate: '2026-07-04' }, '2026-07-04');
     expect(result).toEqual({ applied: false, streakFreezes: 2, lastActiveDate: '2026-07-04' });
+  });
+
+  it('does not apply — and does not resurrect a stale streak — when the gap is more than one day', () => {
+    // Regression: a freeze used to bridge any gap, so one freeze could revive
+    // a streak that had already been dead for weeks.
+    const result = applyStreakFreeze({ streakFreezes: 1, lastActiveDate: '2026-08-01' }, '2026-09-04');
+    expect(result).toEqual({ applied: false, streakFreezes: 1, lastActiveDate: '2026-08-01' });
   });
 });
