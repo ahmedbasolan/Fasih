@@ -1,79 +1,77 @@
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';
-import { supabase } from '../src/lib/supabase';
+import { loginPurchasesUser } from '../src/lib/purchases';
 import { useTheme } from '../src/hooks/useTheme';
+import { captureError } from '../src/lib/analytics';
 
 export default function Index() {
   const { C } = useTheme();
   const hydrated = useAppStore((s) => s._hydrated);
-  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
-
+  const setAuthenticated = useAppStore((s) => s.setAuthenticated);
+  const setClerkUserId = useAppStore((s) => s.setClerkUserId);
+  const syncFromCloud = useAppStore((s) => s.syncFromCloud);
   const recordDailyActivity = useAppStore((s) => s.recordDailyActivity);
   const checkMilestones = useAppStore((s) => s.checkMilestones);
-  const setAuthenticated = useAppStore((s) => s.setAuthenticated);
-  const setSupabaseUserId = useAppStore((s) => s.setSupabaseUserId);
+  const initNotifications = useAppStore((s) => s.initNotifications);
+  const recordSessionHour = useAppStore((s) => s.recordSessionHour);
+
+  const { isLoaded, isSignedIn, userId } = useAuth();
 
   useEffect(() => {
-    void (async () => {
-      if (!hydrated) return;
+    if (!isLoaded || !hydrated) return;
 
-      if (isAuthenticated) {
-        // Signed in users: onboarding -> home (if completed) or onboarding -> finish
-        if (!hasOnboarded) {
-          router.replace('/onboarding');
-        } else {
-          // Verify the stored session is still valid before routing to protected tabs.
-          // If it's expired, reset auth and send to sign-in instead of tabs.
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            setAuthenticated(false);
-            setSupabaseUserId(null);
-            router.replace('/sign-in');
-            return;
-          }
-          recordDailyActivity();
-          checkMilestones();
-          router.replace('/(tabs)');
-        }
+    if (isSignedIn && userId) {
+      setClerkUserId(userId);
+      setAuthenticated(true);
+
+      if (!hasOnboarded) {
+        router.replace('/onboarding');
       } else {
-        // Not signed in: check if they've onboarded before (returning user)
-        const hasCompletedOnboardingBefore = hasOnboarded;
-        if (hasCompletedOnboardingBefore) {
-          // Returning user who completed onboarding but not signed in
-          router.replace('/sign-in');
-        } else {
-          // New user: start with onboarding, sign up comes at the end
-          router.replace('/onboarding');
-        }
+        // Navigate immediately; cloud sync + daily tracking run in background.
+        // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves
+        // to prevent syncFromCloud from overwriting the streak/lastActiveDate they set.
+        router.replace('/(tabs)');
+        // recordDailyActivity and checkMilestones must run whether or not the
+        // network work above succeeds. Chained bare, a RevenueCat or Supabase
+        // failure (offline, simulator, expired token) rejected the promise and
+        // silently skipped them — the user opened the app, practised, and lost
+        // their streak. The catch reports the failure and still records the day.
+        void loginPurchasesUser(userId)
+          .then(() => syncFromCloud())
+          .catch((e: unknown) => {
+            captureError('Startup sync failed', {
+              reason: e instanceof Error ? e.message : String(e),
+            });
+          })
+          .finally(() => {
+            recordDailyActivity();
+            checkMilestones();
+          });
+        // Smart timing: record this session hour, re-schedule daily notification,
+        // and request permission if not yet granted (non-blocking)
+        void recordSessionHour();
+        void initNotifications();
       }
-    })();
-    // Zustand actions (setAuthenticated, setSupabaseUserId, checkMilestones, recordDailyActivity)
-    // are stable references — intentionally omitted from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, isAuthenticated, hasOnboarded]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setAuthenticated(true);
-        setSupabaseUserId(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setAuthenticated(false);
-        setSupabaseUserId(null);
+    } else {
+      setAuthenticated(false);
+      setClerkUserId(null);
+      if (hasOnboarded) {
+        router.replace('/sign-in');
+      } else {
+        router.replace('/onboarding');
       }
-    });
-
-    return () => subscription.unsubscribe();
-    // setAuthenticated / setSupabaseUserId are stable Zustand actions
+    }
+    // Zustand actions and Clerk state — stable references intentionally omitted
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded, isSignedIn, userId, hydrated, hasOnboarded]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG, alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator color={C.GOLD} />
+    <View className="flex-1 items-center justify-center" style={{ backgroundColor: C.BG }}>
+      <ActivityIndicator color={C.JADE_ACCENT} />
     </View>
   );
 }

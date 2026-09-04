@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '../../hooks/useTheme';
@@ -24,25 +24,28 @@ export function WaveBars({
 }: Props) {
   const { C } = useTheme();
   const themeColor = color || C.JADE2;
-  const [animationKey, setAnimationKey] = useState(0);
   const config = BAR_CONFIGS[size];
 
-  useEffect(() => {
-    if (isPlaying) {
-      setAnimationKey(prev => prev + 1);
-    }
-  }, [isPlaying]);
+  // Give each bar its own peak so the wave looks uneven. Math.random() must not
+  // run during render — that makes render impure and re-rolls the heights on
+  // every re-render (the bars visibly jitter). A lazy state initializer runs
+  // exactly once per mount, and unlike useMemo React will never discard it.
+  // Stored as fractions of the container height so a `size` change rescales
+  // them instead of leaving stale pixel values behind.
+  const [peakFractions] = useState(() =>
+    Array.from({ length: barCount }, () => 0.4 + Math.random() * 0.6),
+  );
 
   return (
     <View style={[styles.container, { height: config.height, gap: config.gap }]}>
       {Array.from({ length: barCount }, (_, i) => (
         <MotiView
-          key={`${animationKey}-${i}`}
+          key={`${isPlaying}-${i}`}
           from={{ height: config.height * 0.3, opacity: 0.4 }}
           animate={isPlaying ? {
             height: [
               config.height * 0.3,
-              config.height * (0.4 + Math.random() * 0.6),
+              config.height * (peakFractions[i] ?? 0.7),
               config.height * 0.3,
             ],
             opacity: [0.4, 1, 0.4],

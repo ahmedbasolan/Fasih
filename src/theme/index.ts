@@ -4,8 +4,6 @@
 export {
   darkTheme,
   lightTheme,
-  SPRING,
-  SPRING_SLOW,
   FONT_ARABIC,
   FONT_ARABIC_SEMI,
   FONT_ARABIC_EXTRA,
@@ -32,3 +30,5 @@ export {
 export type { ThemeGradients } from '../components/design/gradients';
 
 export { useTheme } from '../hooks/useTheme';
+
+export { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';

@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../ui/Companion';
+import { STRINGS } from '../../constants/strings';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -23,6 +23,9 @@ interface StreakWidgetProps {
   weekDays: DayStatus[];
   mood?: 'happy' | 'excited' | 'celebrating';
   onComplete?: () => void;
+  /** Day-one only: steps completed out of checklistTotal. When both are set, they drive the bar instead of currentXP/goalXP. */
+  checklistCompleted?: number;
+  checklistTotal?: number;
 }
 
 type ConfettiParticle = { id: number; x: number };
@@ -34,30 +37,40 @@ export function StreakWidget({
   weekDays,
   mood = 'happy',
   onComplete,
+  checklistCompleted,
+  checklistTotal,
 }: StreakWidgetProps) {
   const { C } = useTheme();
   const { width: screenW } = useWindowDimensions();
   const [confetti, setConfetti] = useState<ConfettiParticle[]>([]);
+  const prevMood = useRef(mood);
 
-  const progressPercent = Math.min((currentXP / goalXP) * 100, 100);
-  const isEmpty = streakDays === 0 && currentXP === 0;
+  const isChecklistMode = checklistTotal !== undefined && checklistCompleted !== undefined;
+  const progressPercent = isChecklistMode
+    ? Math.min((checklistCompleted! / checklistTotal!) * 100, 100)
+    : Math.min((currentXP / goalXP) * 100, 100);
 
+  // Fire a single confetti burst only when mood transitions INTO 'celebrating'.
+  // Clearing the timeout on cleanup prevents a setState after unmount, and not
+  // re-triggering on confetti state changes prevents an infinite respawn loop
+  // if the parent forgets to reset mood back to 'happy'.
   useEffect(() => {
-    if (mood === 'celebrating' && confetti.length === 0) {
-      const particles = Array.from({ length: 20 }, (_, i) => ({
-        id: i,
-        x: Math.random() * (screenW - 48),
-      }));
-      setConfetti(particles);
-      // Reset mood after celebration animation
-      setTimeout(() => {
-        setConfetti([]);
-        // Note: Parent component should reset mood to 'happy' after celebration
-      }, 900);
-    }
-  }, [mood, screenW, confetti.length]);
+    const justEnteredCelebrating = prevMood.current !== 'celebrating' && mood === 'celebrating';
+    prevMood.current = mood;
+    if (!justEnteredCelebrating) return;
 
-  const mascotSource = mood === 'excited' ? IMAGES.foxyMaleWaving : IMAGES.foxyMale;
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * (screenW - 48),
+    }));
+    setConfetti(particles);
+    const t = setTimeout(() => {
+      setConfetti([]);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [mood, screenW]);
+
+
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -68,7 +81,7 @@ export function StreakWidget({
       borderRadius: 20,
       backgroundColor: C.CARD_BG,
       borderWidth: 1,
-      borderColor: mood === 'celebrating' ? 'rgba(0,255,149,0.3)' : C.BORDER,
+      borderColor: mood === 'celebrating' ? C.JADE_ACCENT_BORDER : C.BORDER,
       overflow: 'hidden',
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
@@ -87,10 +100,6 @@ export function StreakWidget({
       borderRightColor: C.BORDER,
       paddingVertical: 8,
     },
-    mascotImage: {
-      width: 42,
-      height: 42,
-    },
     streakNumber: {
       fontFamily: FONT_HEADING_EXTRA,
       fontSize: 18,
@@ -101,15 +110,6 @@ export function StreakWidget({
       fontFamily: FONT_LATIN,
       fontSize: 10,
       color: C.TEXT2,
-    },
-    shimmer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      borderRadius: 20,
-      pointerEvents: 'none',
     },
     rightBlock: {
       flex: 1,
@@ -187,26 +187,12 @@ export function StreakWidget({
 
   return (
     <>
-      <MotiView
+      <View
         style={styles.container}
-        from={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
       >
         {/* LEFT BLOCK - Mascot + Streak */}
         <View style={styles.leftBlock}>
-          <MotiView
-            animate={{
-              scale: mood === 'celebrating' ? 1.12 : mood === 'excited' ? 1.08 : 1,
-            }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          >
-            <Image
-              source={mascotSource}
-              style={styles.mascotImage}
-              resizeMode="contain"
-            />
-          </MotiView>
+          <Companion size={42} />
           <Text style={styles.streakNumber}>{streakDays}</Text>
           <Text style={styles.daysLabel}>days</Text>
         </View>
@@ -215,48 +201,32 @@ export function StreakWidget({
         <View style={styles.rightBlock}>
           {/* Streak Info Row */}
           <View style={styles.streakInfoRow}>
-            <Text style={styles.daysTitle}>Learning Days</Text>
-            {!isEmpty && (
-              <Text style={styles.bestDays}>Best: {Math.max(streakDays, 1)}</Text>
-            )}
-            {isEmpty && (
-              <Text style={styles.emptyHint}>Start today</Text>
+            <Text style={styles.daysTitle}>
+              {isChecklistMode ? STRINGS.home.gettingStartedTitle : STRINGS.home.learningDaysTitle}
+            </Text>
+            {isChecklistMode ? (
+              <Text style={styles.emptyHint}>{STRINGS.home.checklistProgress(checklistCompleted!, checklistTotal!)}</Text>
+            ) : (
+              <Text style={styles.bestDays}>{STRINGS.home.streakWidgetBest(Math.max(streakDays, 1))}</Text>
             )}
           </View>
 
-          {/* Progress Bar - show empty state with 0% */}
+          {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
-            <MotiView
-              style={{ height: '100%' }}
-              animate={{
-                width: `${isEmpty ? 0 : progressPercent}%`,
-              }}
-              transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-            >
+            <View style={{ height: '100%', width: `${progressPercent}%` }}>
               <LinearGradient
                 colors={[C.PRIMARY, C.TERTIARY]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}
               />
-            </MotiView>
+            </View>
           </View>
 
           {/* Days Row - always show */}
           <View style={styles.daysRow}>
-            {weekDays.map((day, idx) => (
-              <MotiView
-                key={day.label}
-                from={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 250,
-                  damping: 15,
-                  delay: idx * 80,
-                }}
-                style={{ flex: 1, alignItems: 'center' }}
-              >
+            {weekDays.map((day) => (
+              <View key={day.label} style={{ flex: 1, alignItems: 'center' }}>
                 <View
                   style={[
                     styles.dayDot,
@@ -280,27 +250,11 @@ export function StreakWidget({
                     {day.status === 'done' ? '✓' : day.label[0]}
                   </Text>
                 </View>
-              </MotiView>
+              </View>
             ))}
           </View>
         </View>
-
-        {/* Shimmer sweep effect */}
-        <MotiView
-          style={styles.shimmer}
-          from={{ translateX: -320 }}
-          animate={{ translateX: 320 }}
-          transition={{ type: 'timing', duration: 1200, delay: 300 }}
-          pointerEvents="none"
-        >
-          <LinearGradient
-            colors={['transparent', 'rgba(255,255,255,0.3)', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ flex: 1 }}
-          />
-        </MotiView>
-      </MotiView>
+      </View>
 
       {/* Confetti particles for celebrating state */}
       {mood === 'celebrating' &&

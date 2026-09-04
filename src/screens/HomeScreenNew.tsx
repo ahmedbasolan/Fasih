@@ -3,47 +3,61 @@ import {
   View,
   ScrollView,
   Text,
-  Pressable,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Companion } from '../components/ui/Companion';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, PrimaryButton } from '../components/ui';
 import { MotiView } from 'moti';
 import {
   HomeHeader,
   StreakWidget,
+  StreakRiskBanner,
   QuickChallenge,
   MissionCard,
   DailyPhrase,
-  CommunityBar,
   SituationalConfidence,
 } from '../components/home';
 import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
-import { getFeaturedScenario, getAllScenarios } from '../constants/scenarios';
+import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
-import { ChevronRight } from 'lucide-react-native';
 import { STRINGS } from '../constants/strings';
+import { todayISO, addDays } from '../engine/srsEngine';
+import { isStreakAtRisk } from '../engine/streakEngine';
 
 interface HomeScreenNewProps {
   userName: string;
   onSettingsPress?: () => void;
   onMissionPress?: (missionId: string) => void;
-  onSeeAll?: () => void;
 }
 
 // Derive week-day status from streak + lastActiveDate
-function getWeekDays(streak: number, lastActiveDate: string | null) {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+function getWeekDays(streak: number, lastActiveDate: string | null): { label: string; status: 'done' | 'today' | 'future' }[] {
+  const todayIso = todayISO();
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Consecutive streak window ending at the last active day (yesterday if the
+  // user hasn't practiced today yet). Past days are only 'done' when they fall
+  // inside this window — never display unearned checkmarks.
+  const streakEnd = lastActiveDate ?? todayIso;
+  const streakStart = addDays(streakEnd, -(Math.max(streak, 1) - 1));
+
+  // Index of today within a Monday-first week: Mon=0 … Sun=6.
+  // Deriving each cell's date from the Monday of *this* week is what makes the
+  // Sunday column correct. The previous version compared JS day numbers
+  // (Sun=0) against today's, so Sunday always tested as "in the past" and its
+  // date was computed as a negative offset — i.e. last week's Sunday — which
+  // rendered a checkmark for a day that had not happened yet.
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const monday = addDays(todayIso, -todayIdx);
+
   return days.map((label, idx) => {
-    const dayIndex = idx === 0 ? 6 : idx - 1; // Map to Mon-Sun order
-    if (dayIndex < dayOfWeek) return { label, status: 'done' as const };
-    if (dayIndex === dayOfWeek) return { label, status: 'today' as const };
-    return { label, status: 'future' as const };
+    if (idx > todayIdx) return { label, status: 'future' };
+    if (idx === todayIdx) return { label, status: 'today' };
+    const date = addDays(monday, idx);
+    return { label, status: date >= streakStart && date <= streakEnd ? 'done' : 'future' };
   });
 }
 
@@ -54,20 +68,31 @@ function getPhraseOfTheDay() {
   return PHRASES[dayIndex % PHRASES.length];
 }
 
+/** A different phrase each day for the recall challenge, offset from the
+ *  phrase of the day so the two home cards never coincide. */
+function getChallengePhrase() {
+  const today = new Date();
+  const dayIndex = today.getDate() + today.getMonth() * 31;
+  return PHRASES[(dayIndex + Math.floor(PHRASES.length / 2)) % PHRASES.length];
+}
+
 export function HomeScreenNew({
   userName = 'there',
   onSettingsPress,
   onMissionPress,
-  onSeeAll,
 }: HomeScreenNewProps) {
-  const { C } = useTheme();
+  const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   // Real store data
+  const user = useAppStore((s) => s.user);
   const stats = useAppStore((s) => s.stats);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const lastActiveDate = useAppStore((s) => s.lastActiveDate);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
+  const streakFreezes = useAppStore((s) => s.streakFreezes);
+  const dailyXP = useAppStore((s) => s.dailyXP);
+  const spendStreakFreeze = useAppStore((s) => s.spendStreakFreeze);
 
   const { speak } = useArabicTTS();
 
@@ -75,27 +100,41 @@ export function HomeScreenNew({
 
   // Derived data
   const streakDays = stats.currentStreak;
-  const totalXP = stats.scenariosCompleted.length * 50;
-  const goalXP = 500;
+  // XP earned *today*, against today's goal. This used to be
+  // scenariosCompleted.length * 50 — a lifetime total measured against a
+  // per-day target, so the ring filled permanently after about ten scenarios
+  // and never reset at midnight.
+  const todayXP = dailyXP.date === todayISO() ? dailyXP.xp : 0;
+  const goalXP = user?.dailyGoalXP ?? 500;
   const isNewUser = stats.daysActive === 0;
+  const checklistTotal = 5;
+  const checklistCompleted = user?.onboardingChecklist?.length ?? 0;
+  const isStreakRisk = isStreakAtRisk(stats.currentStreak, lastActiveDate, todayISO()) && new Date().getHours() >= 18;
 
   const weekDays = useMemo(() => getWeekDays(streakDays, lastActiveDate), [streakDays, lastActiveDate]);
 
   // Featured scenario (first unlocked, uncompleted one for user's mode)
   const userMode = useAppStore((s) => s.user?.mode) || 'career';
+  const userGender = useAppStore((s) => s.user?.gender);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const featured = useMemo(() => {
-    const all = getAllScenarios(C);
+    const all = filterScenariosForLearner(getAllScenarios(C), userGender);
     const modeMatch = all.filter((s) => s.mode === userMode && !s.locked && !s.comingSoon);
     // Pick first one not yet completed
     const uncompleted = modeMatch.find((s) => !completedScenarios[s.id]);
     return uncompleted ?? modeMatch[0] ?? getFeaturedScenario(C);
-  }, [C, userMode, completedScenarios]);
+  // isDark is the stable bool that determines C — prevents recomputing on every render
+  // since C is a new object reference each render but isDark only changes on theme switch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDark, userMode, userGender, completedScenarios]);
 
   const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 
   // Phrase of the day
   const phraseOfTheDay = getPhraseOfTheDay();
+  // A second, different phrase for the recall challenge — offset so the two
+  // home cards never show the same phrase on the same day.
+  const challengePhrase = getChallengePhrase();
 
   const styles = useMemo(() => StyleSheet.create({
     scrollView: {
@@ -148,23 +187,6 @@ export function HomeScreenNew({
       textAlign: 'center',
       lineHeight: 18,
     },
-    emptyButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 12,
-      backgroundColor: C.JADE_DIM,
-      borderWidth: 1,
-      borderColor: C.PRIMARY,
-    },
-    emptyButtonText: {
-      fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
-      color: C.PRIMARY,
-      fontWeight: '600',
-    },
   }), [C, insets.bottom]);
 
   return (
@@ -181,32 +203,18 @@ export function HomeScreenNew({
         <HomeHeader userName={userName} onSettingsPress={onSettingsPress} />
       </View>
 
-      {/* Streak Widget */}
-      <View style={{ marginTop: 6 }}>
-        <StreakWidget
+      {/* Streak-at-risk banner */}
+      {isStreakRisk && (
+        <StreakRiskBanner
           streakDays={streakDays}
-          currentXP={totalXP}
-          goalXP={goalXP}
-          weekDays={weekDays}
-          mood={streakMood}
-          onComplete={() => {
-            setStreakMood('celebrating');
-            // Reset mood after celebration animation completes
-            setTimeout(() => setStreakMood('happy'), 3000);
-          }}
+          freezesLeft={streakFreezes}
+          onPracticeNow={() => onMissionPress?.(featured.id)}
+          onUseFreeze={() => spendStreakFreeze()}
         />
-      </View>
+      )}
 
-      {/* Quick Challenge Section */}
-      <Text style={styles.sectionLabel}>Quick Challenge</Text>
-      <View style={styles.sectionContent}>
-        <QuickChallenge 
-          onRevealed={() => setStreakMood('excited')} 
-        />
-      </View>
-
-      {/* Mission Section */}
-      <Text style={styles.sectionLabel}>Today&apos;s Mission</Text>
+      {/* HERO SECTION: Today's Mission (Primary CTA) */}
+      <Text style={[styles.sectionLabel, { marginTop: 10 }]}>{STRINGS.homeSections.todaysMission}</Text>
       <View style={styles.sectionContent}>
         {isNewUser ? (
           <MotiView
@@ -215,18 +223,16 @@ export function HomeScreenNew({
             transition={{ type: 'timing', duration: 400 }}
           >
             <View style={styles.emptyCard}>
-              <Text style={{ fontSize: 40 }}>🦊</Text>
+              <Companion size={48} />
               <Text style={styles.emptyTitle}>{STRINGS.home.noProgressYet}</Text>
               <Text style={styles.emptySubtitle}>{STRINGS.home.newUserTip}</Text>
-              <Pressable
+              <PrimaryButton
                 onPress={() => onMissionPress?.(featured.id)}
-                style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Begin your first scenario"
+                accessibilityLabel={STRINGS.homeSections.beginFirstScenario}
+                style={{ alignSelf: 'stretch', marginTop: 4 }}
               >
-                <Text style={styles.emptyButtonText}>{STRINGS.home.beginScenario}</Text>
-                <ChevronRight size={16} color={C.PRIMARY} />
-              </Pressable>
+                {STRINGS.home.beginScenario}
+              </PrimaryButton>
             </View>
           </MotiView>
         ) : (
@@ -240,33 +246,60 @@ export function HomeScreenNew({
         )}
       </View>
 
+      {/* Streak Widget */}
+      <View style={{ marginTop: 6 }}>
+        <StreakWidget
+          streakDays={streakDays}
+          currentXP={todayXP}
+          goalXP={goalXP}
+          weekDays={weekDays}
+          mood={streakMood}
+          checklistCompleted={isNewUser ? checklistCompleted : undefined}
+          checklistTotal={isNewUser ? checklistTotal : undefined}
+          onComplete={() => {
+            setStreakMood('celebrating');
+            setTimeout(() => setStreakMood('happy'), 3000);
+          }}
+        />
+      </View>
+
+      {/* Quick Challenge Section */}
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.quickChallenge}</Text>
+      <View style={styles.sectionContent}>
+        <QuickChallenge
+          prompt={challengePhrase.english}
+          answer={challengePhrase.arabic}
+          roman={challengePhrase.roman}
+          onRevealed={() => setStreakMood('excited')}
+        />
+      </View>
+
       {/* Daily Phrase Section */}
-      <Text style={styles.sectionLabel}>Daily Phrase</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.dailyPhrase}</Text>
       <View style={styles.sectionContent}>
         <DailyPhrase
           arabic={phraseOfTheDay.arabic}
           phonetic={phraseOfTheDay.roman}
           english={phraseOfTheDay.english}
           onPlay={() => speak(phraseOfTheDay.arabic)}
+          category={phraseOfTheDay.category}
           onSave={() => toggleSavedPhrase(phraseOfTheDay.id)}
         />
       </View>
 
       {/* Situational Confidence Section */}
-      <Text style={styles.sectionLabel}>Your Confidence</Text>
+      <Text style={styles.sectionLabel}>{STRINGS.homeSections.yourConfidence}</Text>
       <View style={styles.sectionContent}>
-        <SituationalConfidence
-          limit={5}
-          onSeeAll={onSeeAll}
-        />
+        <SituationalConfidence limit={5} />
       </View>
 
-      {/* Community Section */}
-      <Text style={styles.sectionLabel}>Community</Text>
-      <View style={styles.sectionContent}>
-        {/* TODO: Replace with real count from API */}
-        <CommunityBar count={47} location="Dubai" />
-      </View>
+      {/* Community section intentionally not rendered.
+          It read "47 expats in Dubai completed a scenario today" — an invented
+          count and an invented city, shown to every user regardless of where
+          they are, behind a "TODO: replace with real count from API" comment.
+          There is no such API yet, so the card stated something false as fact.
+          CommunityBar is still available and now requires real values; render
+          it again once a genuine count exists. */}
     </ScrollView>
     </View>
   );

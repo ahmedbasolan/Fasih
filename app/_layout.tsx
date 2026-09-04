@@ -1,12 +1,13 @@
 import '../global.css';
+import { Sentry } from '../src/lib/analytics'; // must load first — initializes Sentry as early as possible
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
-import { PostHogProvider } from 'posthog-react-native';
-import { posthog } from '../src/lib/analytics';
+import * as SecureStore from 'expo-secure-store';
+import { ClerkProvider } from '@clerk/expo';
 import {
   Tajawal_400Regular,
   Tajawal_500Medium,
@@ -26,10 +27,49 @@ import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 import { useTheme } from '../src/hooks/useTheme';
 import { useAppStore } from '../src/store/useAppStore';
+import { setupNotifications } from '../src/lib/notifications';
+
+const tokenCache = {
+  async getToken(key: string) {
+    return SecureStore.getItemAsync(key);
+  },
+  async saveToken(key: string, value: string) {
+    return SecureStore.setItemAsync(key, value);
+  },
+  async clearToken(key: string) {
+    return SecureStore.deleteItemAsync(key);
+  },
+};
+
+// A release build with a broken EAS secret must fail loudly rather than boot
+// against the development Clerk instance. The key itself is publishable and
+// safe to ship; the hazard is the silent fallback, which lets a misconfigured
+// production build authenticate real users against the wrong project.
+if (!process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY && !__DEV__) {
+  throw new Error(
+    'EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. Refusing to start a release build against the development Clerk instance.',
+  );
+}
+
+const clerkPublishableKey =
+  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  'pk_test_Y2xlcmsuZmFzaWgtbW9iaWxlLmRldiQ';
+
+if (!process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  console.warn(
+    '⚠️ Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in environment. Using development fallback key.',
+  );
+}
+
+
+
+// Configure notification handler and Android channel at module load time
+// (must happen before any scheduleNotificationAsync calls)
+setupNotifications();
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayout() {
   const initSubscription = useAppStore((s) => s.initSubscription);
 
   const [loaded, error] = useFonts({
@@ -59,18 +99,27 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <PostHogProvider client={posthog}>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      tokenCache={tokenCache}
+    >
       <ErrorBoundary>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
             <StatusBar style={isDark ? "light" : "dark"} />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.BG } }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: C.BG },
+                animationDuration: 300,
+              }}
+            >
+              <Stack.Screen name="index" options={{ animation: 'none' }} />
+              <Stack.Screen name="sign-in" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="onboarding" options={{ animation: 'fade_from_bottom' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade_from_bottom' }} />
               <Stack.Screen
                 name="scenario/[id]"
                 options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
@@ -79,10 +128,16 @@ export default function RootLayout() {
                 name="practice"
                 options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
               />
+              <Stack.Screen
+                name="sentence-builder"
+                options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }}
+              />
             </Stack>
           </SafeAreaProvider>
         </GestureHandlerRootView>
       </ErrorBoundary>
-    </PostHogProvider>
+    </ClerkProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

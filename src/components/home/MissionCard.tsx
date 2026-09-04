@@ -4,13 +4,12 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
-import { MotiView } from 'moti';
+import { Companion } from '../ui/Companion';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../icons';
+import { STRINGS } from '../../constants/strings';
 
 interface MissionCardProps {
   scenarioTitle: string;
@@ -73,7 +72,7 @@ export function MissionCard({
     contentArea: {
       padding: 14,
     },
-    foxImage: {
+    mascotSlot: {
       width: 48,
       height: 48,
       alignSelf: 'center',
@@ -155,20 +154,15 @@ export function MissionCard({
   }), [C]);
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.container,
+        pressed && { transform: [{ scale: 0.96 }] },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={STRINGS.home.missionCardA11y(scenarioTitle, scenesCurrent, scenesTotal)}
     >
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.container,
-          pressed && { transform: [{ scale: 0.98 }] },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`${scenarioTitle}. ${scenesCurrent} of ${scenesTotal} scenes complete.`}
-      >
         {/* Hero Area */}
         <View style={styles.heroArea}>
           <LinearGradient
@@ -178,23 +172,22 @@ export function MissionCard({
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Twinkling Stars */}
+          {/* Ambient Glow Backdrop */}
+          <LinearGradient
+            colors={[`${C.JADE_ACCENT}4D`, 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60 }}
+          />
+
+          {/* Static stars */}
           {[
             { top: 16, left: 24 },
             { top: 20, right: 32 },
             { bottom: 28, left: 16 },
             { bottom: 24, right: 20 },
           ].map((pos, idx) => (
-            <MotiView
-              key={idx}
-              style={[styles.starDot, pos]}
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{
-                type: 'timing',
-                duration: 2000 + idx * 200,
-                loop: true,
-              }}
-            />
+            <View key={idx} style={[styles.starDot, pos]} />
           ))}
 
           {/* Moon */}
@@ -208,23 +201,21 @@ export function MissionCard({
 
         {/* Content Area */}
         <View style={styles.contentArea}>
-          {/* Mascot Image */}
-          <Image
-            source={IMAGES.foxyMale}
-            style={styles.foxImage}
-            resizeMode="contain"
-          />
+          {/* Mascot */}
+          <View style={styles.mascotSlot}>
+            <Companion size={48} />
+          </View>
 
           {/* Tag + Timer Row */}
           <View style={styles.tagRow}>
             <View style={styles.sceneTag}>
               <Text style={styles.sceneTagText}>
                 {scenesCurrent > 0
-                  ? `Scene ${scenesCurrent} of ${scenesTotal}`
-                  : `${scenesTotal} scenes`}
+                  ? STRINGS.home.missionSceneOf(scenesCurrent, scenesTotal)
+                  : STRINGS.home.missionScenesTotal(scenesTotal)}
               </Text>
             </View>
-            <Text style={styles.timerLabel}>⏱ ~5 min</Text>
+            <Text style={styles.timerLabel}>{STRINGS.home.missionDuration}</Text>
           </View>
 
           {/* Title */}
@@ -237,22 +228,14 @@ export function MissionCard({
           <View style={styles.bottomRow}>
             <View style={styles.progressSection}>
               <View style={styles.progressBar}>
-                <MotiView
-                  style={{ height: '100%' }}
-                  animate={{ width: `${progressPercent}%` }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 150,
-                    damping: 20,
-                  }}
-                >
+                <View style={{ height: '100%', width: `${progressPercent}%` }}>
                   <LinearGradient
                     colors={[C.PRIMARY, C.TERTIARY]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={{ flex: 1 }}
                   />
-                </MotiView>
+                </View>
               </View>
               <Text style={styles.progressLabel}>
                 {scenesCurrent} of {scenesTotal} scenes
@@ -266,12 +249,11 @@ export function MissionCard({
               end={{ x: 1, y: 1 }}
               style={styles.continueButton}
             >
-              <Text style={styles.continueButtonText}>Continue</Text>
+              <Text style={styles.continueButtonText}>{STRINGS.common.continue}</Text>
               <ChevronRight size={16} color={C.BG} strokeWidth={2.5} />
             </LinearGradient>
           </View>
         </View>
       </Pressable>
-    </MotiView>
   );
 }

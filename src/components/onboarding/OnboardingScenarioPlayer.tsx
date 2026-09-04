@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_EXTRA } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from '../icons';
 import { FONT_HEADING_SEMI } from '../design/tokens';
 import type { ScenarioScript, ScenarioChoice, Phrase } from '../../types';
 import { PHRASES } from '../../constants/phrases';
@@ -252,7 +252,7 @@ export function OnboardingScenarioPlayer({
         phraseArabic: {
           fontFamily: FONT_ARABIC_EXTRA,
           fontSize: 28,
-          color: '#000',
+          color: C.TEXT,
           textAlign: 'right',
           writingDirection: 'rtl',
           marginBottom: 6,
@@ -261,16 +261,14 @@ export function OnboardingScenarioPlayer({
         phraseRoman: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 14,
-          color: '#000',
-          opacity: 0.8,
+          color: C.TEXT2,
           fontWeight: '600',
           marginBottom: 2,
         },
         phraseEnglish: {
           fontFamily: FONT_LATIN,
           fontSize: 13,
-          color: '#000',
-          opacity: 0.7,
+          color: C.TEXT2,
         },
         phraseUnlockedTag: {
           flexDirection: 'row',
@@ -281,13 +279,12 @@ export function OnboardingScenarioPlayer({
           paddingHorizontal: 8,
           paddingVertical: 4,
           borderRadius: 8,
-          backgroundColor: 'rgba(0,0,0,0.12)',
+          backgroundColor: C.BORDER,
         },
         phraseUnlockedTagText: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 10,
-          color: '#000',
-          opacity: 0.7,
+          color: C.TEXT2,
           fontWeight: '700',
           letterSpacing: 0.3,
         },
@@ -414,11 +411,7 @@ export function OnboardingScenarioPlayer({
     const emoji = OUTCOME_EMOJI[chosenChoice.outcome] ?? '💬';
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <MotiView
-          from={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-        >
+        <View>
           <Text style={styles.youSaidLabel}>You said</Text>
           <View style={styles.youSaidCard}>
             {chosenChoice.arabic !== '—' ? (
@@ -456,7 +449,7 @@ export function OnboardingScenarioPlayer({
               </Pressable>
             </LinearGradient>
           </View>
-        </MotiView>
+        </View>
       </ScrollView>
     );
   }
@@ -482,13 +475,8 @@ export function OnboardingScenarioPlayer({
             </View>
           </View>
         ) : (
-          unlockedPhrases.map((phrase, idx) => (
-            <MotiView
-              key={phrase.id}
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 150, damping: 15, delay: idx * 200 }}
-            >
+          unlockedPhrases.map((phrase) => (
+            <View key={phrase.id}>
               <View style={styles.phraseCard}>
                 <LinearGradient
                   colors={[C.PRIMARY, C.JADE]}
@@ -507,18 +495,12 @@ export function OnboardingScenarioPlayer({
               </View>
 
               {phrase.culturalNote ? (
-                <MotiView
-                  from={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ type: 'timing', duration: 350, delay: idx * 200 + 200 }}
-                >
-                  <View style={styles.culturalNoteCard}>
-                    <Text style={styles.culturalNoteLabel}>Cultural Note</Text>
-                    <Text style={styles.culturalNoteText}>{phrase.culturalNote}</Text>
-                  </View>
-                </MotiView>
+                <View style={styles.culturalNoteCard}>
+                  <Text style={styles.culturalNoteLabel}>Cultural Note</Text>
+                  <Text style={styles.culturalNoteText}>{phrase.culturalNote}</Text>
+                </View>
               ) : null}
-            </MotiView>
+            </View>
           ))
         )}
 

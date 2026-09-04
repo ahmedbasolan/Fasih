@@ -8,12 +8,19 @@ import {
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Volume2, Bookmark } from 'lucide-react-native';
+import { Volume2, Bookmark } from '../icons';
+import { STRINGS } from '../../constants/strings';
 
 interface DailyPhraseProps {
   arabic: string;
   phonetic: string;
   english: string;
+  /**
+   * The phrase's real category. The card used to hardcode "Everyday" while
+   * being fed a phrase drawn from all eight categories, so the badge was wrong
+   * roughly seven days out of eight.
+   */
+  category: string;
   onPlay?: () => void;
   onUsed?: () => void;
   onSave?: () => void;
@@ -23,6 +30,7 @@ export function DailyPhrase({
   arabic,
   phonetic,
   english,
+  category,
   onPlay,
   onUsed,
   onSave,
@@ -176,17 +184,9 @@ export function DailyPhrase({
       <View style={styles.content}>
         {/* Top row */}
         <View style={styles.topRow}>
-          <Text style={styles.topLabel}>Everyday</Text>
-          <MotiView
-            style={styles.liveDot}
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{
-              type: 'timing',
-              duration: 1500,
-              loop: true,
-            }}
-          />
-          <Text style={styles.newBadge}>New today</Text>
+          <Text style={styles.topLabel}>{category}</Text>
+          <View style={styles.liveDot} />
+          <Text style={styles.newBadge}>{STRINGS.home.newToday}</Text>
         </View>
 
         {/* Arabic Phrase */}
@@ -208,7 +208,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Play pronunciation"
+            accessibilityLabel={STRINGS.home.dailyPhrasePlayA11y}
           >
             {playingRipple && (
               <MotiView
@@ -225,7 +225,7 @@ export function DailyPhrase({
             )}
             <View style={styles.buttonContent}>
               <Volume2 size={14} color={C.PRIMARY} />
-              <Text style={styles.buttonText}>Play</Text>
+              <Text style={styles.buttonText}>{STRINGS.home.dailyPhrasePlay}</Text>
             </View>
           </Pressable>
 
@@ -238,7 +238,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Mark as used today"
+            accessibilityLabel={STRINGS.home.dailyPhraseUseTodayA11y}
           >
             <Text
               style={[
@@ -246,7 +246,7 @@ export function DailyPhrase({
                 usedToday && styles.buttonTextActive,
               ]}
             >
-              {usedToday ? '✓ Used' : 'Use today'}
+              {usedToday ? STRINGS.home.dailyPhraseUsed : STRINGS.home.dailyPhraseUseToday}
             </Text>
           </Pressable>
 
@@ -259,7 +259,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Save phrase"
+            accessibilityLabel={STRINGS.home.dailyPhraseSaveA11y}
           >
             <View style={styles.buttonContent}>
               <Bookmark
@@ -273,7 +273,7 @@ export function DailyPhrase({
                   saved && styles.buttonTextActive,
                 ]}
               >
-                Save
+                {STRINGS.common.save}
               </Text>
             </View>
           </Pressable>
