@@ -49,7 +49,7 @@ export function SyncStatusBanner() {
             marginHorizontal: 16,
             marginBottom: 8,
           }}>
-            <WifiOff size={14} color={C.ERROR} />
+            <WifiOff size={14} strokeWidth={1.5} color={C.ERROR} />
             <Text
               style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, flex: 1, lineHeight: 18 }}
               numberOfLines={2}

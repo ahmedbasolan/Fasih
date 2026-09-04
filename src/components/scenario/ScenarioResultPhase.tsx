@@ -9,9 +9,11 @@ import {
 } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
-import { KafMascot } from '../features/KafMascot';
+import { Companion } from '../ui/Companion';
+import { MarginRail } from './MarginRail';
 import { STRINGS } from '../../constants/strings';
 import { GRAMMAR_PATTERNS } from '../../constants/grammar';
+import type { RailMark } from '../../engine/marginRail';
 import type { Phrase, ScenarioEnding, ScenarioScript } from '../../types';
 
 // ─── PhraseCard ───────────────────────────────────────────────────────────────
@@ -54,6 +56,13 @@ interface Props {
   total: number;
   scenarioId: string;
   scriptData: ScenarioScript;
+  /**
+   * The completed run, one mark per decision. Locked by the player before
+   * `finalizeScenario()` nulls the live state — see `finalizedRail` there.
+   * Empty for a run whose state was already gone, in which case the section
+   * is not rendered at all.
+   */
+  railMarks: RailMark[];
   unlockedPhrases: Phrase[];
   toneHistory: { sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[];
   culturalJourneyNotes: string[];
@@ -70,7 +79,7 @@ interface Props {
 
 export function ScenarioResultPhase({
   ending, endings, impact, total, scenarioId, scriptData,
-  unlockedPhrases, toneHistory, culturalJourneyNotes,
+  railMarks, unlockedPhrases, toneHistory, culturalJourneyNotes,
   getCommunityEndingStat, isSpeaking, playingPhraseId,
   onPlayEndPhrase, onRestart, onExit, onShare,
 }: Props) {
@@ -189,6 +198,32 @@ export function ScenarioResultPhase({
           </View>
         </MotiView>
 
+        {/* The path you took — shape above totals. The rail says WHAT you did
+            and where it turned; the three numbers below say how much it added
+            up to. Different questions, so both stay. */}
+        {railMarks.some((m) => m.state === 'filled') && (
+          <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 100 }}>
+            <View
+              accessible
+              accessibilityRole="text"
+              accessibilityLabel={STRINGS.scenarios.railSummary(
+                railMarks
+                  .filter((m) => m.state === 'filled')
+                  .map((m) => STRINGS.scenarios.railWord[(m as Extract<RailMark, { state: 'filled' }>).outcome]),
+              )}
+              style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+            >
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 }}>
+                {STRINGS.scenarios.railTitle}
+              </Text>
+              <MarginRail marks={railMarks} orientation="horizontal" />
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, lineHeight: 17 }}>
+                {STRINGS.scenarios.railSub}
+              </Text>
+            </View>
+          </MotiView>
+        )}
+
         {/* Meter summary */}
         <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
@@ -223,7 +258,7 @@ export function ScenarioResultPhase({
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 200 }}>
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <KafMascot size="xs" />
+                <Companion size={32} />
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: violetColor }}>
                   {STRINGS.scenarios.culturalJourneyTitle}
                 </Text>

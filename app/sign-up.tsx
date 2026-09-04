@@ -116,7 +116,7 @@ export default function SignUpScreen() {
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <ChevronLeft size={28} color={C.TEXT3} />
+        <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -239,7 +239,7 @@ export default function SignUpScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <User size={18} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
+                  <User size={18} strokeWidth={1.5} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={fullName}
                     onChangeText={setFullName}
@@ -261,7 +261,7 @@ export default function SignUpScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Mail size={18} strokeWidth={1.5} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -284,7 +284,7 @@ export default function SignUpScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Lock size={18} strokeWidth={1.5} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
@@ -303,7 +303,7 @@ export default function SignUpScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
                   >
-                    {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
+                    {showPassword ? <EyeOff size={18} strokeWidth={1.5} color={C.TEXT3} /> : <Eye size={18} strokeWidth={1.5} color={C.TEXT3} />}
                   </Pressable>
                 </View>
 
@@ -320,7 +320,7 @@ export default function SignUpScreen() {
                       return (
                         <View key={rule.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: passed ? C.JADE2 : C.SURFACE2, alignItems: 'center', justifyContent: 'center' }}>
-                            {passed && <Check size={8} color={C.BG} />}
+                            {passed && <Check size={8} strokeWidth={1.5} color={C.BG} />}
                           </View>
                           <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: passed ? C.JADE2 : C.TEXT3 }}>{rule.label}</Text>
                         </View>
@@ -353,7 +353,7 @@ export default function SignUpScreen() {
                       alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    {agreed && <Check size={12} color={C.BG} />}
+                    {agreed && <Check size={12} strokeWidth={1.5} color={C.BG} />}
                   </Pressable>
                   <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
                     {STRINGS.auth.signUp.agreeTermsPrefix}{' '}
