@@ -733,9 +733,22 @@ export const useAppStore = create<AppState>()(
         const userId = get().clerkUserId;
         if (userId) await loginPurchasesUser(userId);
 
-        // Check current entitlement status
+        // Check current entitlement status against RevenueCat, the source of
+        // truth for 'subscribed' vs 'free'. 'trial' is local-only and never
+        // touched here — RevenueCat has no concept of it.
         const status = await getEntitlementStatus();
-        if (status === 'subscribed') set({ subscriptionStatus: 'subscribed' });
+        const previousStatus = get().subscriptionStatus;
+        if (status === 'subscribed' && previousStatus !== 'subscribed') {
+          set({ subscriptionStatus: 'subscribed' });
+          get().syncToCloud();
+        } else if (status === 'free' && previousStatus === 'subscribed') {
+          // Cancelled, refunded, or charged back outside the app — without this
+          // branch a stale 'subscribed' from a previous launch was never
+          // corrected unless the CustomerInfo listener happened to fire a live
+          // change event during this session.
+          set({ subscriptionStatus: 'free' });
+          get().syncToCloud();
+        }
 
         // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
         // Deregister any previous listener to prevent accumulation across hot-reloads.

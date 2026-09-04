@@ -22,6 +22,7 @@ whole directory — starting with `001_initial_schema.sql`.
 | `007_enable_rls.sql` | Enables RLS properly (the "Option B" posture) | Yes, once its check passes |
 | `008_rollback_rls.sql` | Emergency undo for `007` | Only if `007` breaks syncing |
 | `009_onboarding_selections.sql` | Anonymous onboarding aggregate — insert-only table | Yes, for onboarding analytics |
+| `010_secure_stat_rpcs.sql` | Restricts `increment_choice_stat`/`increment_ending_stat` to `authenticated` | Yes — before `007` the RPCs are open to anon |
 
 ## Two files are numbered 006
 
@@ -30,7 +31,7 @@ independently. They do not conflict — one adds columns, the other adds a
 function — and either order works. The collision is recorded here rather than
 renumbered, because renaming a file that has already been applied to production
 makes the history harder to reconcile, not easier. **The next migration is
-`010`.**
+`011`.**
 
 ## The file headers used to be misnumbered
 
@@ -47,7 +48,8 @@ If you have an older checkout open, trust the filename over the header.
 ## First-time setup
 
 Run `001` → `002` in order, then `006_auth_check` → `007_enable_rls`
-(see "RLS posture"), then `009` if you want onboarding analytics.
+(see "RLS posture"), then `010` to lock down the community-stat RPCs, then
+`009` if you want onboarding analytics.
 
 **Do not run `003_rls.sql`.** See the warning below — it is not merely
 redundant, it is actively harmful now.
@@ -57,7 +59,8 @@ redundant, it is actively harmful now.
 Run whichever of `004_schema_v2.sql`, `005_account_deletion.sql` and
 `006_schema_v3.sql` you have not already applied — each adds columns or
 functions and takes defaults for existing rows. Then `006_auth_check.sql`,
-then `007_enable_rls.sql`, then `009_onboarding_selections.sql`.
+then `007_enable_rls.sql`, then `010_secure_stat_rpcs.sql`, then
+`009_onboarding_selections.sql`.
 
 ## RLS posture
 
