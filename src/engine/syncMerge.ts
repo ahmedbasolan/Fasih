@@ -10,7 +10,7 @@
  * a record to keep when both sides have one.
  */
 
-import type { PhraseReviewData, JournalEntry, LearningMilestone } from '../types';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress } from '../types';
 
 export interface ScenarioRun {
   endingType: string;
@@ -85,4 +85,36 @@ export function mergeMilestones(
 /** Union of a string-id list, order-stable, duplicates removed. */
 export function mergeIds(local: string[], cloud: string[]): string[] {
   return Array.from(new Set([...local, ...cloud]));
+}
+
+/**
+ * Union of Sentence Builder pattern progress. Per pattern, the higher
+ * correctBuilds wins — progress made on one device must never regress
+ * what another device already recorded.
+ */
+export function mergePatternProgress(
+  local: Record<string, PatternProgress>,
+  cloud: Record<string, PatternProgress>,
+): Record<string, PatternProgress> {
+  const merged: Record<string, PatternProgress> = { ...local };
+  for (const [id, cloudEntry] of Object.entries(cloud)) {
+    const localEntry = merged[id];
+    if (!localEntry || (cloudEntry.correctBuilds ?? 0) > (localEntry.correctBuilds ?? 0)) {
+      merged[id] = cloudEntry;
+    }
+  }
+  return merged;
+}
+
+/**
+ * Union of secret endings earned (scenarioId → ending title). A secret
+ * earned on any device is kept. On the rare conflict where both sides
+ * recorded a different title for the same scenarioId, local wins — the
+ * same tie-break the inline version this was extracted from used.
+ */
+export function mergeSecretEndings(
+  local: Record<string, string>,
+  cloud: Record<string, string>,
+): Record<string, string> {
+  return { ...cloud, ...local };
 }

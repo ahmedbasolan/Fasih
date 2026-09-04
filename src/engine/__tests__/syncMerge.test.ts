@@ -4,9 +4,11 @@ import {
   mergeJournal,
   mergeMilestones,
   mergeIds,
+  mergePatternProgress,
+  mergeSecretEndings,
   type ScenarioRun,
 } from '../syncMerge';
-import type { PhraseReviewData, JournalEntry, LearningMilestone } from '../../types';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress } from '../../types';
 
 const card = (phraseId: string, lastReviewed: string, extra: Partial<PhraseReviewData> = {}): PhraseReviewData => ({
   phraseId,
@@ -117,5 +119,49 @@ describe('mergeMilestones', () => {
 describe('mergeIds', () => {
   it('unions without duplicates and keeps local order first', () => {
     expect(mergeIds(['a', 'b'], ['b', 'c'])).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('mergePatternProgress', () => {
+  const progress = (correctBuilds: number, lastBuilt?: string): PatternProgress => ({
+    correctBuilds,
+    ...(lastBuilt ? { lastBuilt } : {}),
+  });
+
+  it('keeps patterns practised only locally', () => {
+    const merged = mergePatternProgress({ p1: progress(2) }, {});
+    expect(merged.p1).toEqual(progress(2));
+  });
+
+  it('keeps patterns practised only in the cloud — the reinstall case', () => {
+    const merged = mergePatternProgress({}, { p1: progress(3) });
+    expect(merged.p1).toEqual(progress(3));
+  });
+
+  it('keeps the higher correctBuilds when both sides have progress — never regresses', () => {
+    expect(mergePatternProgress({ p1: progress(1) }, { p1: progress(3) }).p1.correctBuilds).toBe(3);
+    expect(mergePatternProgress({ p1: progress(3) }, { p1: progress(1) }).p1.correctBuilds).toBe(3);
+  });
+
+  it('does not mutate its inputs', () => {
+    const local = { p1: progress(1) };
+    mergePatternProgress(local, { p1: progress(5) });
+    expect(local.p1.correctBuilds).toBe(1);
+  });
+});
+
+describe('mergeSecretEndings', () => {
+  it('is a union — a secret earned on either device is kept', () => {
+    const merged = mergeSecretEndings({ a: 'The Diplomat' }, { b: 'The Local' });
+    expect(merged).toEqual({ a: 'The Diplomat', b: 'The Local' });
+  });
+
+  it('a secret earned locally is never lost to an empty cloud', () => {
+    expect(mergeSecretEndings({ a: 'The Diplomat' }, {})).toEqual({ a: 'The Diplomat' });
+  });
+
+  it('local wins on a same-scenario conflict', () => {
+    const merged = mergeSecretEndings({ a: 'Local Title' }, { a: 'Cloud Title' });
+    expect(merged.a).toBe('Local Title');
   });
 });
