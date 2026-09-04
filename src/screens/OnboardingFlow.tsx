@@ -1,33 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Image, Alert } from 'react-native';
+import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView, AnimatePresence } from 'moti';
-import Svg, { Circle, Path, Rect, Defs, Stop, LinearGradient as SvgLinearGradient, G as SvgG } from 'react-native-svg';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { Briefcase, Users, Shield, TrendingUp, Globe, ChevronLeft, ArrowRight, Check, Bell, Star, Lock, Mic, BookOpen, Layers, Trophy, Sun, Moon, Zap, Flame, Sparkles } from '../components/icons';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../components/design/tokens';
-import { ANGLE_135 } from '../components/design/gradients';
-import { GeoPattern } from '../components/design/GeoPattern';
-import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../components/features/RoleGoalIcons';
+import { ChevronLeft } from '../components/icons';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
-import { useArabicTTS } from '../hooks/useArabicTTS';
-import { KafMascot } from '../components/features/KafMascot';
 import { STRINGS } from '../constants/strings';
-import { FadeIn, ShimmerButton, SwitchButton, GhostLetters } from '../components/ui';
+import { GhostLetters } from '../components/ui';
 import type { UserProfile } from '../types';
-import { useAppStore } from '../store/useAppStore';
-import { OnboardingScenarioPlayer } from '../components/onboarding/OnboardingScenarioPlayer';
-import { getOnboardingScenario, getScenarioScript } from '../constants/scenarios';
-import { IMAGES } from '../constants/images';
 import { computeOnboardingChecklist, computeDailyGoalXP } from '../engine/onboardingProgress';
 import { useUser } from '@clerk/expo';
 import { haptic } from '../lib/haptics';
 import { PaywallSteps } from './onboarding/PaywallSteps';
 import { QuickWinSteps } from './onboarding/QuickWinSteps';
 import { ProfileSteps } from './onboarding/ProfileSteps';
+import { ModeStep } from './onboarding/ModeStep';
+import { IdentityStep } from './onboarding/IdentityStep';
 import type { OnboardingStepProps } from './onboarding/types';
 
 
@@ -35,8 +25,8 @@ interface Props {
   onComplete: (profile: UserProfile) => void;
   onStartTrial: (plan: 'monthly' | 'yearly') => Promise<boolean>;
   onSkipTrial: () => void;
-
 }
+
 function ProgressBar({ step, total }: { step: number; total: number }) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
@@ -62,9 +52,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
 }
 
 export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props) {
-  const { C, G, isDark } = useTheme();
-  const { setTheme, unlockPhrase } = useAppStore();
-  const { speak } = useArabicTTS();
+  const { C } = useTheme();
   const { user: clerkUser } = useUser();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
@@ -267,144 +255,12 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
   const renderStep = () => {
     switch (step) {
-            case 0:
-        return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-            {/* Green gradient background - top half */}
-            <LinearGradient
-              colors={[...G.ONBOARDING_STOPS]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={{ flex: 1, minHeight: '55%', alignItems: 'center', justifyContent: 'center', paddingTop: insets.top + 40, paddingBottom: 56 }}
-            >
-              {/* Theme Toggle */}
-              <FadeIn delay={50} style={{ position: 'absolute', top: insets.top + 16, right: 24, zIndex: 100 }}>
-                <SwitchButton
-                  value={isDark}
-                  onToggle={() => setTheme(isDark ? 'light' : 'dark')}
-                  iconOn={<Moon size={14} color={isDark ? C.WHITE : C.PRIMARY} />}
-                  iconOff={<Sun size={14} color={isDark ? C.WHITE : C.PRIMARY} />}
-                  backgroundColor={mode === 'career' ? C.JADE_ACCENT : C.VIOLET2}
-                />
-              </FadeIn>
-
-              {/* Fox mascots on green gradient */}
-              <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row', gap: 12 }}>
-                <FadeIn delay={200}>
-                  <Image source={IMAGES.foxyMale} style={{ width: 130, height: 130 }} resizeMode="contain" />
-                </FadeIn>
-                <FadeIn delay={280}>
-                  <Image source={IMAGES.foxyFemale} style={{ width: 130, height: 130 }} resizeMode="contain" />
-                </FadeIn>
-              </View>
-            </LinearGradient>
-
-            {/* White bottom section - raised higher */}
-            <View style={{ backgroundColor: C.BG, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginTop: -80, paddingHorizontal: 24, paddingTop: 36, paddingBottom: insets.bottom + 36, minHeight: '45%' }}>
-              <FadeIn delay={300}>
-                <View style={{ alignItems: 'flex-start', marginBottom: 16 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, lineHeight: 36 }}>
-                    Let&apos;s Begin{' '}<Text style={{ color: C.PRIMARY }}>Growing</Text>
-                  </Text>
-                  <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, lineHeight: 36 }}>
-                    Our Skills.
-                  </Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginTop: 8, lineHeight: 22 }}>
-                    {STRINGS.onboarding.welcomeSubtitle}
-                  </Text>
-                </View>
-              </FadeIn>
-
-              {/* Intro text + Button */}
-              <FadeIn delay={400}>
-                <View style={{ gap: 16 }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 22 }}>
-                    Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.
-                  </Text>
-                  <Pressable onPress={next} accessibilityRole="button" accessibilityLabel="Get Started" style={{ width: '100%' }}>
-                    <LinearGradient
-                      colors={[...G.GOLD_STOPS]}
-                      start={ANGLE_135.start}
-                      end={ANGLE_135.end}
-                      style={{ borderRadius: 100, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>
-                        Get Started
-                      </Text>
-                    </LinearGradient>
-                  </Pressable>
-                </View>
-              </FadeIn>
-            </View>
-          </ScrollView>
-        );
+      case 0:
+        return <IdentityStep {...stepProps} />;
 
       case 1:
-        return (
-          <View style={{ flex: 1, paddingTop: insets.top + 80 }}>
-            <FadeIn delay={100}>
-              <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePath}</Text>
-                <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 }}>Select your primary focus</Text>
-              </View>
-            </FadeIn>
+        return <ModeStep {...stepProps} />;
 
-            <View style={{ flex: 1, paddingHorizontal: 24, gap: 16 }}>
-              {[
-                { id: 'career' as const, image: IMAGES.careerMode, Icon: Briefcase, title: STRINGS.onboarding.careerMode, sub: STRINGS.onboarding.careerSub, desc: STRINGS.onboarding.careerDesc, color: C.JADE_ACCENT },
-                { id: 'social' as const, image: IMAGES.socialMode, Icon: Users, title: STRINGS.onboarding.socialMode, sub: STRINGS.onboarding.socialSub, desc: STRINGS.onboarding.socialDesc, color: C.VIOLET2 },
-              ].map(({ id, image, Icon, title, sub, desc, color }, idx) => {
-                const selected = mode === id;
-                return (
-                  <FadeIn key={id} delay={200 + idx * 100} style={{ flex: 1 }}>
-                    <Pressable
-                    onPress={() => { haptic.selection(); setMode(id); }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={title}
-                    style={{ flex: 1, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: selected ? color : C.BORDER }}
-                  >
-                      <Image source={image} style={{ position: 'absolute', width: '100%', height: '100%', opacity: selected ? 0.95 : 0.65 }} resizeMode="cover" accessibilityElementsHidden />
-                      <LinearGradient colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.75)', 'rgba(0,0,0,0.95)', C.BG] as [string,string,string,string]} locations={[0, 0.4, 0.7, 1]} style={{ position: 'absolute', width: '100%', height: '100%' }} />
-                      
-                      <View style={{ flex: 1, padding: 24, justifyContent: 'flex-end' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', position: 'absolute', top: 20, left: 20, right: 20 }}>
-                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                            <Icon size={20} color={selected ? color : C.WHITE} />
-                          </View>
-                          <AnimatePresence>
-                            {selected && (
-                              <MotiView
-                                from={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ type: 'timing', duration: 220 }}
-                              >
-                                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-                                  <Check size={16} color={C.INVERTED} />
-                                </View>
-                              </MotiView>
-                            )}
-                          </AnimatePresence>
-                        </View>
-                        
-                        <MotiView animate={{ translateY: selected ? -4 : 0 }} transition={{ type: 'timing', duration: 220 }}>
-                          <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: selected ? color : C.WHITE, marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.95)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 }}>{title}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: 'rgba(255,255,255,0.9)', marginBottom: 8, letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>{sub}</Text>
-                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 20 }}>{desc}</Text>
-                        </MotiView>
-                      </View>
-                    </Pressable>
-                  </FadeIn>
-                );
-              })}
-            </View>
-
-            <FadeIn delay={400} style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: insets.bottom + 24 }}>
-              <ShimmerButton onPress={next}>{STRINGS.common.continue}</ShimmerButton>
-            </FadeIn>
-          </View>
-        );
       // Steps 2-5: name, role, goals, hold-to-commit. See ProfileSteps.
       case 2:
       case 3:
