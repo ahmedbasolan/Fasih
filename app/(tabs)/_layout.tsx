@@ -52,7 +52,7 @@ export default function TabsLayout() {
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
               style={{ padding: 6 }}
             >
-              <Home size={20} color={color} />
+              <Home size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -67,7 +67,7 @@ export default function TabsLayout() {
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
               style={{ padding: 6 }}
             >
-              <Layers size={20} color={color} />
+              <Layers size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -82,7 +82,7 @@ export default function TabsLayout() {
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
               style={{ padding: 6 }}
             >
-              <BookOpen size={20} color={color} />
+              <BookOpen size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -97,7 +97,7 @@ export default function TabsLayout() {
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
               style={{ padding: 6 }}
             >
-              <User size={20} color={color} />
+              <User size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}

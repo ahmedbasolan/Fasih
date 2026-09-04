@@ -635,14 +635,14 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                     </View>
                   </View>
                   <View style={{ alignItems: 'center', gap: 6 }}>
-                    <Blocks size={20} color={mastered ? C.CULTURAL_GOLD : C.PRIMARY} />
+                    <Blocks size={20} strokeWidth={1.5} color={mastered ? C.CULTURAL_GOLD : C.PRIMARY} />
                     {mastered && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Trophy size={12} color={C.CULTURAL_GOLD} />
+                        <Trophy size={12} strokeWidth={1.5} color={C.CULTURAL_GOLD} />
                         <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 9, color: C.CULTURAL_GOLD }}>{STRINGS.sentenceBuilder.mastered}</Text>
                       </View>
                     )}
-                    <ChevronRight size={16} color={C.TEXT3} />
+                    <ChevronRight size={16} strokeWidth={1.5} color={C.TEXT3} />
                   </View>
                 </Pressable>
               </MotiView>
@@ -661,7 +661,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                       {p.secretUnlock ? STRINGS.sentenceBuilder.secretPatternHint : STRINGS.sentenceBuilder.lockedPatternHint}
                     </Text>
                   </View>
-                  <Lock size={18} color={C.TEXT3} />
+                  <Lock size={18} strokeWidth={1.5} color={C.TEXT3} />
                 </View>
               ))}
             </>
@@ -689,7 +689,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
           <View style={styles.heroRow}>
             <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-              <ArrowLeft size={18} color={C.WHITE} />
+              <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
             </Pressable>
             <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
               {STRINGS.sentenceBuilder.noticeStep}
@@ -732,7 +732,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
             </View>
 
             <View style={[styles.noteCard, { backgroundColor: `${C.CULTURAL_GOLD}14`, borderColor: `${C.CULTURAL_GOLD}30` }]}>
-              <Sparkles size={16} color={C.CULTURAL_GOLD_DARK} style={{ marginTop: 2 }} />
+              <Sparkles size={16} strokeWidth={1.5} color={C.CULTURAL_GOLD_DARK} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.noteTitle, { color: C.CULTURAL_GOLD_DARK }]}>{STRINGS.sentenceBuilder.whyItMatters}</Text>
                 <Text style={[styles.noteText, { color: C.TEXT2 }]}>{pattern.goodImpressionNote}</Text>
@@ -774,7 +774,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                     <Text style={styles.exampleEnglish}>{phrase.english}</Text>
                     <View style={styles.playRow}>
                       <View style={[styles.playChip, { backgroundColor: playingId === ex.phraseId ? C.JADE_DIM : C.CARD_BG, borderColor: playingId === ex.phraseId ? C.JADE_ACCENT_BORDER : C.BORDER }]}>
-                        <Volume2 size={13} color={playingId === ex.phraseId ? C.JADE : C.PRIMARY} />
+                        <Volume2 size={13} strokeWidth={1.5} color={playingId === ex.phraseId ? C.JADE : C.PRIMARY} />
                         <Text style={[styles.playChipText, { color: playingId === ex.phraseId ? C.JADE : C.PRIMARY }]}>
                           {playingId === ex.phraseId ? STRINGS.scenarios.playing : STRINGS.sentenceBuilder.tapToHear}
                         </Text>
@@ -808,7 +808,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-            <ArrowLeft size={18} color={C.WHITE} />
+            <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
           </Pressable>
           <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
             {STRINGS.sentenceBuilder.swapStep}
@@ -923,7 +923,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                   accessibilityLabel={STRINGS.sentenceBuilder.tapToHear}
                   style={[styles.previewPlay, { backgroundColor: C.JADE_DIM }]}
                 >
-                  <Volume2 size={14} color={C.JADE} />
+                  <Volume2 size={14} strokeWidth={1.5} color={C.JADE} />
                 </Pressable>
                 <Text style={styles.previewArabic}>{assembled.arabic}</Text>
                 <Text style={styles.previewRoman}>{assembled.roman}</Text>
@@ -951,7 +951,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         <GeoPattern opacity={0.06} color="#FFFFFF" size={44} />
         <View style={styles.heroRow}>
           <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.common.back} style={styles.backBtn}>
-            <ArrowLeft size={18} color={C.WHITE} />
+            <ArrowLeft size={18} strokeWidth={1.5} color={C.WHITE} />
           </Pressable>
           <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
             {STRINGS.sentenceBuilder.buildStep}
@@ -988,7 +988,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
         {showMastery && (
           <MotiView from={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', damping: 14, stiffness: 200 }}>
             <View style={[styles.masteryBadge, { backgroundColor: `${C.CULTURAL_GOLD}16`, borderColor: `${C.CULTURAL_GOLD}38` }]}>
-              <Trophy size={14} color={C.CULTURAL_GOLD_DARK} />
+              <Trophy size={14} strokeWidth={1.5} color={C.CULTURAL_GOLD_DARK} />
               <Text style={[styles.masteryText, { color: C.CULTURAL_GOLD_DARK }]}>
                 {STRINGS.sentenceBuilder.masteryToast(3)}
               </Text>
@@ -1033,7 +1033,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           {buildStatus === 'correct' && (
             <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
               <View style={[styles.resultCard, { backgroundColor: C.JADE_SURFACE, borderColor: C.JADE_BORDER }]}>
-                <Check size={18} color={C.JADE2} />
+                <Check size={18} strokeWidth={1.5} color={C.JADE2} />
                 <Text style={[styles.resultText, { color: C.JADE2 }]}>
                   {STRINGS.sentenceBuilder.correct} — {STRINGS.sentenceBuilder.buildYourOwn}
                 </Text>
@@ -1044,7 +1044,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           {buildStatus === 'wrong' && (
             <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300 }}>
               <View style={[styles.resultCard, { backgroundColor: C.ERROR_SURFACE, borderColor: C.ERROR_BORDER }]}>
-                <X size={18} color={C.ERROR} />
+                <X size={18} strokeWidth={1.5} color={C.ERROR} />
                 <Text style={[styles.resultText, { color: C.ERROR }]}>{STRINGS.sentenceBuilder.incorrect}</Text>
               </View>
             </MotiView>
@@ -1083,7 +1083,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                 borderColor: C.BORDER,
               }}
             >
-              <RotateCcw size={14} color={C.TEXT2} />
+              <RotateCcw size={14} strokeWidth={1.5} color={C.TEXT2} />
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT2 }}>
                 {STRINGS.sentenceBuilder.buildDone}
               </Text>

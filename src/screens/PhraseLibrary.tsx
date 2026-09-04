@@ -449,7 +449,7 @@ export function PhraseLibrary() {
                 setSearch('');
                 if (cat === STRINGS.phrases.filterAll) setShowGrid(true);
               }}>
-                <X size={14} color={C.TEXT3} />
+                <X size={14} strokeWidth={1.5} color={C.TEXT3} />
               </Pressable>
             )}
           </View>
