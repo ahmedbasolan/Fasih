@@ -208,7 +208,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Play pronunciation"
+            accessibilityLabel={STRINGS.home.dailyPhrasePlayA11y}
           >
             {playingRipple && (
               <MotiView
@@ -225,7 +225,7 @@ export function DailyPhrase({
             )}
             <View style={styles.buttonContent}>
               <Volume2 size={14} color={C.PRIMARY} />
-              <Text style={styles.buttonText}>Play</Text>
+              <Text style={styles.buttonText}>{STRINGS.home.dailyPhrasePlay}</Text>
             </View>
           </Pressable>
 
@@ -238,7 +238,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Mark as used today"
+            accessibilityLabel={STRINGS.home.dailyPhraseUseTodayA11y}
           >
             <Text
               style={[
@@ -246,7 +246,7 @@ export function DailyPhrase({
                 usedToday && styles.buttonTextActive,
               ]}
             >
-              {usedToday ? '✓ Used' : 'Use today'}
+              {usedToday ? STRINGS.home.dailyPhraseUsed : STRINGS.home.dailyPhraseUseToday}
             </Text>
           </Pressable>
 
@@ -259,7 +259,7 @@ export function DailyPhrase({
               pressed && { opacity: 0.7 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Save phrase"
+            accessibilityLabel={STRINGS.home.dailyPhraseSaveA11y}
           >
             <View style={styles.buttonContent}>
               <Bookmark
@@ -273,7 +273,7 @@ export function DailyPhrase({
                   saved && styles.buttonTextActive,
                 ]}
               >
-                Save
+                {STRINGS.common.save}
               </Text>
             </View>
           </Pressable>
