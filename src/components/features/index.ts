@@ -1,4 +1,3 @@
-export { KafMascot } from './KafMascot';
 export { PhraseBuilder } from './PhraseBuilder';
 export { StatCard } from './StatCard';
 export { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from './RoleGoalIcons';
