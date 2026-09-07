@@ -22,7 +22,7 @@
 
 import { supabase } from './supabase';
 import { CURRENT_SCHEMA_VERSION, fromCloud } from '../engine/syncedProgress';
-import type { CloudUserData } from '../engine/syncedProgress';
+import type { CloudUserData, DecodedCloudRow } from '../engine/syncedProgress';
 
 /**
  * The wire shape, the schema version and the per-column decoders all live in
@@ -31,7 +31,7 @@ import type { CloudUserData } from '../engine/syncedProgress';
  * working; new code should import them from the engine directly.
  */
 export { CURRENT_SCHEMA_VERSION };
-export type { CloudUserData };
+export type { CloudUserData, DecodedCloudRow };
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
@@ -73,7 +73,7 @@ export async function pushProgress(
  */
 export async function pullProgress(
   userId: string,
-): Promise<{ data: CloudUserData | null; error: string | null }> {
+): Promise<{ data: DecodedCloudRow | null; error: string | null }> {
   const { data, error } = await supabase
     .from('user_data')
     .select('*')

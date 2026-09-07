@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,7 +15,6 @@ import {
 } from '../lib/syncService';
 import {
   CURRENT_SCHEMA_VERSION,
-  computeMastery,
   toCloud,
   mergeCloudState,
   persistedKeys,
@@ -22,6 +22,7 @@ import {
   changedSyncedKeys,
   hasUrgentChange,
   syncedFingerprint,
+  deriveStats,
 } from '../engine/syncedProgress';
 import { createSyncScheduler } from '../lib/syncScheduler';
 import {
@@ -36,8 +37,8 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, PhraseReviewData, JournalEntry, ScenarioChoice, ScenarioEnding, PatternProgress, PersistableState, EphemeralState } from '../types';
-import { DEFAULT_USER_STATS } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, ScenarioChoice, ScenarioEnding, PatternProgress, PersistableState, EphemeralState } from '../types';
+import { DEFAULT_COUNTERS } from '../types';
 import { PHRASE_BY_ID } from '../constants/phrases';
 import { freshMilestones } from '../constants/milestones';
 import {
@@ -147,7 +148,10 @@ const syncScheduler = createSyncScheduler({
 // own the sign-out reset value alongside every other field's. The predicates
 // below stay here: they read store state.
 
-type MilestoneChecker = (s: Pick<AppState, 'stats' | 'completedScenarios' | 'phraseReviews'>) => boolean;
+// Predicates take the assembled stats rather than reading them off state:
+// phrasesStudied, phrasesMastered and scenariosCompleted are no longer stored.
+type MilestoneInputs = Pick<AppState, 'completedScenarios' | 'phraseReviews'> & { stats: UserStats };
+type MilestoneChecker = (s: MilestoneInputs) => boolean;
 
 const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'first-scenario': (s) => s.stats.scenariosCompleted.length >= 1,
@@ -176,10 +180,6 @@ const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'scenarios-3': (s) => s.stats.scenariosCompleted.length >= 3,
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
-
-// computeMastery moved to src/engine/syncedProgress.ts — mergeCloudState needs
-// it for the derive pass, and the store's write paths import it back from there
-// so both compute mastery exactly one way.
 
 // ─── State shape ─────────────────────────────────────────────────────────────
 /**
@@ -329,7 +329,7 @@ export const useAppStore = create<AppState>()(
       trialPlan: null,
       simulatedEntitlement: false,
       themePreference: 'system',
-      stats: { ...DEFAULT_USER_STATS },
+      counters: { ...DEFAULT_COUNTERS },
       savedPhrases: [],
       favoriteScenarios: [],
       completedScenarios: {},
@@ -578,9 +578,9 @@ export const useAppStore = create<AppState>()(
         const s = get();
         const hour = derivePreferredHour(s.recentSessionHours);
         const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
-        await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
+        await scheduleDailyReminder(hour, s.counters.currentStreak, dueCount);
         await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
-        await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.stats.currentStreak);
+        await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.counters.currentStreak);
       },
 
       recordSessionHour: async () => {
@@ -593,7 +593,7 @@ export const useAppStore = create<AppState>()(
         if (!s.notificationsEnabled) return;
         const preferredHour = derivePreferredHour(s.recentSessionHours);
         const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
-        await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
+        await scheduleDailyReminder(preferredHour, s.counters.currentStreak, dueCount).catch(() => {});
       },
 
       // UI
@@ -706,12 +706,12 @@ export const useAppStore = create<AppState>()(
 
           const yesterday = addDays(today, -1);
           const isConsecutive = s.lastActiveDate === yesterday;
-          const newStreak = isConsecutive ? s.stats.currentStreak + 1 : 1;
+          const newStreak = isConsecutive ? s.counters.currentStreak + 1 : 1;
           const freezeBonus = shouldGrantStreakFreeze(newStreak) ? 1 : 0;
 
           return {
             lastActiveDate: today,
-            stats: { ...s.stats, currentStreak: newStreak, daysActive: s.stats.daysActive + 1 },
+            counters: { currentStreak: newStreak, daysActive: s.counters.daysActive + 1 },
             streakFreezes: s.streakFreezes + freezeBonus,
           };
         });
@@ -739,9 +739,10 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           const existing = s.phraseReviews[phraseId];
           const card = updateReviewCard(existing ?? newReviewCard(phraseId), correct);
-          const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
-          return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
+          // No stats write. phrasesStudied, phrasesMastered and categoryMastery
+          // are views over this very map, computed on read by useStats(), so
+          // there is nothing here that can fall out of step with it.
+          return { phraseReviews: { ...s.phraseReviews, [phraseId]: card } };
         });
       },
 
@@ -750,9 +751,10 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           const existing = s.phraseReviews[phraseId];
           const card = applyRatingToCard(existing ?? newReviewCard(phraseId), rating);
-          const newReviews = { ...s.phraseReviews, [phraseId]: card };
-          const { studied, mastered, categoryMastery } = computeMastery(newReviews);
-          return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
+          // No stats write. phrasesStudied, phrasesMastered and categoryMastery
+          // are views over this very map, computed on read by useStats(), so
+          // there is nothing here that can fall out of step with it.
+          return { phraseReviews: { ...s.phraseReviews, [phraseId]: card } };
         });
       },
 
@@ -775,7 +777,7 @@ export const useAppStore = create<AppState>()(
       completeScenario: (scenarioId, endingType) => {
         set((s) => {
           const completed = { ...s.completedScenarios, [scenarioId]: { endingType, date: new Date().toISOString() } };
-          return { completedScenarios: completed, stats: { ...s.stats, scenariosCompleted: Object.keys(completed) } };
+          return { completedScenarios: completed };
         });
         void rcRecordEndingStat(scenarioId, endingType);
       },
@@ -826,10 +828,12 @@ export const useAppStore = create<AppState>()(
 
       checkMilestones: () => set((s) => {
         const today = todayISO();
+        // Assembled once for the whole pass, not once per predicate.
+        const inputs: MilestoneInputs = { ...s, stats: deriveStats(s) };
         const updated = s.milestones.map(m => {
           if (m.reached) return m;
           const check = MILESTONE_CHECKS[m.id];
-          if (check && check(s)) return { ...m, reached: true, dateReached: today };
+          if (check && check(inputs)) return { ...m, reached: true, dateReached: today };
           return m;
         });
         const changed = updated.some((m, i) => m.reached !== s.milestones[i].reached);
@@ -940,7 +944,8 @@ export const useAppStore = create<AppState>()(
         set({
           completedScenarios: completed,
           secretEndingsEarned: secrets,
-          stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
+          // scenariosCompleted is Object.keys(completedScenarios); writing it
+          // here was the third place that had to remember to keep them in step.
           activeScenarioState: null,
         });
         // Fire milestone checks immediately so first-scenario and scenarios-3
@@ -955,6 +960,26 @@ export const useAppStore = create<AppState>()(
     {
       name: 'fasih-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      /**
+       * v1 replaced the stored `stats` blob with `counters`, keeping only the
+       * two fields that were never derivable. Everyone already installed has a
+       * v0 payload; lift their streak out of it rather than resetting it to
+       * zero, which is what a bare shape change would have done.
+       */
+      version: 1,
+      migrate: (persisted, from) => {
+        if (from >= 1) return persisted as AppState;
+        const old = (persisted ?? {}) as Record<string, unknown>;
+        const stats = (old.stats ?? {}) as Partial<UserStats>;
+        const { stats: _dropped, ...rest } = old;
+        return {
+          ...rest,
+          counters: {
+            daysActive: typeof stats.daysActive === 'number' ? stats.daysActive : 0,
+            currentStreak: typeof stats.currentStreak === 'number' ? stats.currentStreak : 0,
+          },
+        } as unknown as AppState;
+      },
       onRehydrateStorage: () => () => {
         useAppStore.setState({ _hydrated: true });
       },
@@ -1009,3 +1034,21 @@ export const useHasScenarioAccess = (scenarioIndex: number): boolean =>
 /** Number of scenarios completed — subscribes to the map, unlike the getter. */
 export const useScenariosCompletedCount = (): number =>
   useAppStore((s) => Object.keys(s.completedScenarios).length);
+
+/**
+ * The learner's stats. Only `daysActive` and `currentStreak` are stored; the
+ * rest is derived from `phraseReviews` and `completedScenarios` on read.
+ *
+ * Memoised on the three inputs, which matters: `categoryMastery` walks every
+ * review card, and a selector returning a fresh object each call would both
+ * recompute and re-render on every unrelated store change.
+ */
+export const useStats = (): UserStats => {
+  const counters = useAppStore((s) => s.counters);
+  const phraseReviews = useAppStore((s) => s.phraseReviews);
+  const completedScenarios = useAppStore((s) => s.completedScenarios);
+  return useMemo(
+    () => deriveStats({ counters, phraseReviews, completedScenarios }),
+    [counters, phraseReviews, completedScenarios],
+  );
+};

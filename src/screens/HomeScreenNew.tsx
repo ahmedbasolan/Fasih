@@ -19,7 +19,7 @@ import {
   DailyPhrase,
   SituationalConfidence,
 } from '../components/home';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, useStats } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
@@ -86,7 +86,7 @@ export function HomeScreenNew({
 
   // Real store data
   const user = useAppStore((s) => s.user);
-  const stats = useAppStore((s) => s.stats);
+  const stats = useStats();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
   const lastActiveDate = useAppStore((s) => s.lastActiveDate);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);

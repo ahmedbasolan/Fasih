@@ -52,6 +52,15 @@ export interface LearningMilestone {
   dateReached?: string;
 }
 
+/**
+ * The learner's headline numbers, as read by screens.
+ *
+ * Only `daysActive` and `currentStreak` are stored (as `ActivityCounters`).
+ * Everything else is derived from `phraseReviews` and `completedScenarios` by
+ * `deriveStats` — they are views over those maps, and storing them meant three
+ * separate write paths had to remember to recompute them in step. Read the
+ * whole thing through `useStats()`.
+ */
 export interface UserStats {
   daysActive: number;
   currentStreak: number;
@@ -60,6 +69,20 @@ export interface UserStats {
   scenariosCompleted: string[];
   categoryMastery: Record<string, CategoryMastery>;
 }
+
+/**
+ * The only part of UserStats that is genuinely stored.
+ *
+ * Neither counter can be reconstructed from anything else — a day the learner
+ * opened the app leaves no other trace — so these two persist and sync, taking
+ * the higher value on a merge since neither can legitimately go backwards.
+ */
+export interface ActivityCounters {
+  daysActive: number;
+  currentStreak: number;
+}
+
+export const DEFAULT_COUNTERS: ActivityCounters = { daysActive: 0, currentStreak: 0 };
 
 export const DEFAULT_USER_STATS: UserStats = {
   daysActive: 0,
@@ -443,7 +466,11 @@ export interface PersistableState {
   themePreference: 'system' | 'light' | 'dark';
 
   // Progress & learning
-  stats: UserStats;
+  /**
+   * The two counters that cannot be derived. The rest of `UserStats` is a view
+   * over `phraseReviews` and `completedScenarios` — read it with `useStats()`.
+   */
+  counters: ActivityCounters;
   savedPhrases: string[];
   unlockedPhraseIds: string[];
   favoriteScenarios: string[];

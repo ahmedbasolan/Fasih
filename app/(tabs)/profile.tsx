@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { router } from 'expo-router';
 import { useClerk, useUser } from '@clerk/expo';
-import { useAppStore } from '../../src/store/useAppStore';
+import { useAppStore, useStats } from '../../src/store/useAppStore';
 import { ProfileScreen } from '../../src/screens/ProfileScreen';
 import { SyncStatusBanner } from '../../src/components/ui/SyncStatusBanner';
 import { STRINGS } from '../../src/constants/strings';
 
 export default function ProfileTab() {
   const user = useAppStore((s) => s.user);
-  const stats = useAppStore((s) => s.stats);
+  const stats = useStats();
   const milestones = useAppStore((s) => s.milestones);
   const journal = useAppStore((s) => s.journal);
   const storeSignOut = useAppStore((s) => s.signOut);

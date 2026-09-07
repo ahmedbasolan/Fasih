@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Coffee, Building2, Briefcase, Moon, Compass, Activity, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore, useStats } from '../../store/useAppStore';
 
 type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 
@@ -124,7 +124,7 @@ export function SituationalConfidence({
 }: SituationalConfidenceProps) {
   const { C } = useTheme();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
-  const stats              = useAppStore((s) => s.stats);
+  const stats              = useStats();
   const [expanded, setExpanded] = useState(false);
 
   const situations = useMemo<SituationResult[]>(() => {

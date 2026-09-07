@@ -19,13 +19,14 @@ import {
   fromCloud,
   mergeCloudState,
   computeMastery,
+  deriveStats,
   changedSyncedKeys,
   hasUrgentChange,
   syncedFingerprint,
 } from '../syncedProgress';
 import type { CloudUserData } from '../syncedProgress';
 import type { PersistableState, PhraseReviewData } from '../../types';
-import { DEFAULT_USER_STATS } from '../../types';
+import { DEFAULT_USER_STATS, DEFAULT_COUNTERS } from '../../types';
 import { freshMilestones } from '../../constants/milestones';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ function localState(over: Partial<PersistableState> = {}): PersistableState {
     trialPlan: null,
     simulatedEntitlement: false,
     themePreference: 'system',
-    stats: { ...DEFAULT_USER_STATS },
+    counters: { ...DEFAULT_COUNTERS },
     savedPhrases: [],
     unlockedPhraseIds: [],
     favoriteScenarios: [],
@@ -148,7 +149,7 @@ describe('clearedOnSignOut', () => {
     expect(patch.isAuthenticated).toBe(false);
     expect(patch.phraseReviews).toEqual({});
     expect(patch.completedScenarios).toEqual({});
-    expect(patch.stats).toEqual(DEFAULT_USER_STATS);
+    expect(patch.counters).toEqual(DEFAULT_COUNTERS);
     expect(patch.subscriptionStatus).toBe('free');
   });
 
@@ -207,7 +208,7 @@ describe('persistedKeys', () => {
         'sceneProgress',
         'secretEndingsEarned',
         'simulatedEntitlement',
-        'stats',
+        'counters',
         'streakFreezes',
         'subscriptionStatus',
         'themePreference',
@@ -294,23 +295,27 @@ describe('toCloud', () => {
     expect(row).not.toHaveProperty('streak_freezes');
   });
 
-  it('recomputes the derived half of stats rather than trusting the store', () => {
-    // A stale stats blob must not reach the cloud.
+  it('writes a full stats blob, derived, so older clients read a whole object', () => {
+    // The column still carries every field; the derived half is recomputed at
+    // push time rather than taken from whatever the store happens to hold.
     const row = toCloud(
       localState({
+        counters: { daysActive: 4, currentStreak: 2 },
         phraseReviews: { g1: card('g1'), g2: card('g2') },
         completedScenarios: { 'first-morning': { endingType: 'success', date: '2026-01-01' } },
-        stats: { ...DEFAULT_USER_STATS, phrasesStudied: 999, scenariosCompleted: [] },
       }),
     );
     expect(row.stats.phrasesStudied).toBe(2);
     expect(row.stats.scenariosCompleted).toEqual(['first-morning']);
+    expect(row.stats.daysActive).toBe(4);
+    expect(row.stats.currentStreak).toBe(2);
   });
 });
 
 describe('fromCloud', () => {
-  it('round-trips a row produced by toCloud', () => {
+  it('round-trips every column except the derived half of stats', () => {
     const state = localState({
+      counters: { daysActive: 3, currentStreak: 1 },
       savedPhrases: ['g1', 'g2'],
       unlockedPhraseIds: ['g3'],
       phraseReviews: { g1: card('g1') },
@@ -318,14 +323,18 @@ describe('fromCloud', () => {
       subscriptionStatus: 'subscribed',
     });
     const row = toCloud(state);
-    expect(fromCloud(row as unknown as Record<string, unknown>)).toEqual(row);
+    const decoded = fromCloud(row as unknown as Record<string, unknown>);
+
+    expect({ ...decoded, stats: undefined }).toEqual({ ...row, stats: undefined });
+    // stats narrows on the way back: only the two counters are read out of it.
+    expect(decoded.stats).toEqual({ daysActive: 3, currentStreak: 1 });
   });
 
   it('survives a row of empty JSONB defaults', () => {
     // `NOT NULL DEFAULT '{}'` means {} is ordinary for any row not written by
     // toCloud. A bare read used to crash on the first screen after sign-in.
     const decoded = fromCloud({ stats: {}, phrase_reviews: {}, journal: {} });
-    expect(decoded.stats).toEqual(DEFAULT_USER_STATS);
+    expect(decoded.stats).toEqual(DEFAULT_COUNTERS);
     expect(decoded.phrase_reviews).toEqual({});
     expect(decoded.journal).toEqual([]);
   });
@@ -333,13 +342,13 @@ describe('fromCloud', () => {
   it('survives present-but-null columns', () => {
     // A null survives a spread and crashes exactly like a missing key does.
     const decoded = fromCloud({
-      stats: { scenariosCompleted: null, daysActive: null },
+      stats: { daysActive: null, currentStreak: null },
       saved_phrases: null,
       milestones: null,
       subscription_status: null,
     });
-    expect(decoded.stats.scenariosCompleted).toEqual([]);
     expect(decoded.stats.daysActive).toBe(0);
+    expect(decoded.stats.currentStreak).toBe(0);
     expect(decoded.saved_phrases).toEqual([]);
     expect(decoded.milestones).toEqual([]);
     expect(decoded.subscription_status).toBe('free');
@@ -378,32 +387,24 @@ describe('mergeCloudState', () => {
     expect(patch.savedPhrases!.sort()).toEqual(['a', 'b']);
   });
 
-  it('derives stats from the merged maps, not from either snapshot', () => {
-    // This is the pass that makes the counters incapable of disagreeing with
-    // the records they count.
+  it('leaves no stats in the patch — they are not state any more', () => {
+    // Nothing to reconcile: phrasesStudied and friends are views over the maps
+    // the merge just produced, so useStats() reads them straight off those.
     const patch = mergeCloudState(
-      localState({
-        phraseReviews: { g1: card('g1') },
-        stats: { ...DEFAULT_USER_STATS, phrasesStudied: 1 },
-      }),
-      cloudRow({
-        phrase_reviews: { g2: card('g2') },
-        completed_scenarios: { 'first-morning': { endingType: 'success', date: '2026-01-01' } },
-        stats: { ...DEFAULT_USER_STATS, phrasesStudied: 1, scenariosCompleted: [] },
-      }),
+      localState({ phraseReviews: { g1: card('g1') } }),
+      cloudRow({ phrase_reviews: { g2: card('g2') } }),
     );
-    expect(patch.stats!.phrasesStudied).toBe(2);
-    expect(patch.stats!.scenariosCompleted).toEqual(['first-morning']);
+    expect('stats' in patch).toBe(false);
   });
 
   it('takes the higher of the two independent counters', () => {
-    // Neither daysActive nor currentStreak can legitimately go backwards.
+    // Neither daysActive nor currentStreak can legitimately go backwards, and
+    // neither can be reconstructed from anything else, so they are stored.
     const patch = mergeCloudState(
-      localState({ stats: { ...DEFAULT_USER_STATS, daysActive: 9, currentStreak: 2 } }),
+      localState({ counters: { daysActive: 9, currentStreak: 2 } }),
       cloudRow({ stats: { ...DEFAULT_USER_STATS, daysActive: 4, currentStreak: 7 } }),
     );
-    expect(patch.stats!.daysActive).toBe(9);
-    expect(patch.stats!.currentStreak).toBe(7);
+    expect(patch.counters).toEqual({ daysActive: 9, currentStreak: 7 });
   });
 
   it('never moves lastActiveDate backwards', () => {
@@ -460,6 +461,41 @@ describe('mergeCloudState', () => {
 });
 
 // ─── Derived stats ───────────────────────────────────────────────────────────
+
+describe('deriveStats', () => {
+  it('carries the two stored counters through untouched', () => {
+    const s = deriveStats(localState({ counters: { daysActive: 12, currentStreak: 5 } }));
+    expect(s.daysActive).toBe(12);
+    expect(s.currentStreak).toBe(5);
+  });
+
+  it('derives scenariosCompleted from the completion map', () => {
+    const s = deriveStats(
+      localState({
+        completedScenarios: {
+          'first-morning': { endingType: 'success', date: '2026-01-01' },
+          'cafe-friends': { endingType: 'mixed', date: '2026-01-02' },
+        },
+      }),
+    );
+    expect(s.scenariosCompleted.sort()).toEqual(['cafe-friends', 'first-morning']);
+  });
+
+  it('derives phrasesStudied from the review map', () => {
+    const s = deriveStats(localState({ phraseReviews: { g1: card('g1'), g2: card('g2') } }));
+    expect(s.phrasesStudied).toBe(2);
+  });
+
+  it('cannot disagree with the maps, however stale the caller', () => {
+    // The whole point of the split. There is no stored copy to go stale: the
+    // three write paths that each recomputed their own slice are gone, and a
+    // cloud row's derived half is never read.
+    const base = localState({ phraseReviews: { g1: card('g1') } });
+    const after = { ...base, phraseReviews: { ...base.phraseReviews, g2: card('g2') } };
+    expect(deriveStats(base).phrasesStudied).toBe(1);
+    expect(deriveStats(after).phrasesStudied).toBe(2);
+  });
+});
 
 describe('computeMastery', () => {
   it('counts a card as mastered at 3+ correct and >=80% accuracy', () => {

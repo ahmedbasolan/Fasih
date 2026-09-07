@@ -115,21 +115,25 @@ Two things came up during implementation that the plan had not anticipated:
 
 ---
 
-## Phase 3 (PR3): Derive `stats`
+## Phase 3 (PR3): Derive `stats` — DONE
+
+One correction to the plan, found on contact: it called for `daysActive` and `currentStreak` to become **two top-level scalars**. They can't — the database has a single `stats` JSONB column, and two state fields cannot each own one column (the policy table's own uniqueness test catches this). Instead one field, `counters: ActivityCounters`, holds exactly the two non-derivable values and owns the `stats` column.
+
+That made the column's write shape and read shape genuinely differ, so the binding gained an `encode` (write the full blob for older clients) alongside `decode` (read back only the counters), and `fromCloud` returns a `DecodedCloudRow` where `stats` is narrowed. `toCloud`'s hard-coded `row.stats = …` special case is gone — the table drives every column now.
 
 Branch: `feat/derived-stats`. Changes **persisted shape**. Separate because it is its own refactor, not part of the sync seam.
 
 Only four files read `stats` outside the store: `SituationalConfidence.tsx`, `HomeScreenNew.tsx`, `app/(tabs)/profile.tsx`, `syncService.ts`.
 
-- [ ] `daysActive` and `currentStreak` become top-level scalars in `PersistableState` (merge rule: `Math.max`).
-- [ ] `phrasesStudied`, `phrasesMastered`, `categoryMastery`, `scenariosCompleted` become a memoised `useStats()` selector over `phraseReviews` + `completedScenarios`. `scenariosCompleted` is just `Object.keys(completedScenarios)`.
-- [ ] Memoisation is required, not optional — `categoryMastery` is O(reviews) and would otherwise recompute every render.
-- [ ] Delete all three `computeMastery` call sites.
-- [ ] `toCloud` still writes the full `stats` blob (computed at push time) so the wire and older clients are unaffected.
-- [ ] Add `version` + `migrate` to the `persist` config: read `daysActive`/`currentStreak` out of the legacy `stats` blob for existing installs.
-- [ ] Update the persisted-key-set snapshot test from PR2 — deliberately.
-- [ ] Update the four reader files.
-- [ ] `npx tsc --noEmit` clean; `npx jest` green.
+- [x] `daysActive` and `currentStreak` become top-level scalars in `PersistableState` (merge rule: `Math.max`).
+- [x] `phrasesStudied`, `phrasesMastered`, `categoryMastery`, `scenariosCompleted` become a memoised `useStats()` selector over `phraseReviews` + `completedScenarios`. `scenariosCompleted` is just `Object.keys(completedScenarios)`.
+- [x] Memoisation is required, not optional — `categoryMastery` is O(reviews) and would otherwise recompute every render.
+- [x] Delete all three `computeMastery` call sites.
+- [x] `toCloud` still writes the full `stats` blob (computed at push time) so the wire and older clients are unaffected.
+- [x] Add `version` + `migrate` to the `persist` config: read `daysActive`/`currentStreak` out of the legacy `stats` blob for existing installs.
+- [x] Update the persisted-key-set snapshot test from PR2 — deliberately.
+- [x] Update the four reader files.
+- [x] `npx tsc --noEmit` clean; `npx jest` green.
 
 ---
 

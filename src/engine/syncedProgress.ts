@@ -31,6 +31,7 @@
 import type {
   PersistableState,
   ScenarioCompletion,
+  ActivityCounters,
   UserProfile,
   UserStats,
   PhraseReviewData,
@@ -41,7 +42,7 @@ import type {
   CategoryMastery,
   PhraseCategory,
 } from '../types';
-import { DEFAULT_USER_STATS } from '../types';
+import { DEFAULT_USER_STATS, DEFAULT_COUNTERS } from '../types';
 import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import { freshMilestones } from '../constants/milestones';
 import { todayISO } from './srsEngine';
@@ -87,6 +88,17 @@ export interface CloudUserData {
   trial_started_at: string | null;
   trial_plan: 'monthly' | 'yearly' | null;
 }
+
+/**
+ * The row as *read back*.
+ *
+ * Identical to `CloudUserData` except for `stats`: the column is written as a
+ * complete `UserStats` so older app versions still find a whole object, but
+ * only `daysActive` and `currentStreak` are ever read out of it. Everything
+ * else in that blob is derived, and a derived value taken from a row is exactly
+ * the staleness this module exists to remove.
+ */
+export type DecodedCloudRow = Omit<CloudUserData, 'stats'> & { stats: ActivityCounters };
 
 /** Every column except the version marker, which no state field owns. */
 export type CloudColumn = Exclude<keyof CloudUserData, 'schema_version'>;
@@ -172,6 +184,12 @@ export function computeMastery(reviews: Record<string, PhraseReviewData>): {
 /** How one field maps to, and merges from, the cloud row. */
 export interface CloudBinding<K extends keyof PersistableState> {
   column: CloudColumn;
+  /**
+   * What to write into the column, when it is not just the field's value.
+   * Only `counters` needs this: it owns the `stats` column but writes a fatter
+   * object into it than it reads back.
+   */
+  encode?: (state: PersistableState) => unknown;
   /**
    * Push immediately instead of waiting out the debounce. Reserved for state
    * that costs money to get wrong — a subscription that fails to reach the
@@ -277,21 +295,28 @@ export const FIELD_POLICY: PolicyTable = {
 
   // ─── Progress & learning ───────────────────────────────────────────────────
   /**
-   * `merge` only reconciles the two independent counters. The mastery fields
-   * and `scenariosCompleted` are overwritten by the derive pass in
-   * `mergeCloudState`, because they are functions of the merged review and
-   * completion maps rather than of either side's stats snapshot.
+   * Shares the `stats` column with the derived fields, which is why this is the
+   * one binding whose state shape and column shape differ: `decode` narrows the
+   * blob to the two counters, and `toCloud` fattens them back out. The derived
+   * half is recomputed on both sides of the wire and never trusted from a row.
+   *
+   * Higher wins on a merge — neither counter can legitimately go backwards.
    */
-  stats: {
+  counters: {
     persist: true,
     clearOnSignOut: true,
-    reset: () => ({ ...DEFAULT_USER_STATS }),
+    reset: () => ({ ...DEFAULT_COUNTERS }),
     cloud: {
       column: 'stats',
       urgent: false,
-      decode: normalizeStats,
+      // Write the whole blob so an older app version still reads a complete
+      // UserStats; read back only the half that is not derivable.
+      encode: (state) => deriveStats(state),
+      decode: (raw) => {
+        const s = normalizeStats(raw);
+        return { daysActive: s.daysActive, currentStreak: s.currentStreak };
+      },
       merge: (local, cloud) => ({
-        ...local,
         daysActive: Math.max(local.daysActive, cloud.daysActive),
         currentStreak: Math.max(local.currentStreak, cloud.currentStreak),
       }),
@@ -515,20 +540,16 @@ export function clearedOnSignOut(): Partial<PersistableState> {
 // ─── Codecs ──────────────────────────────────────────────────────────────────
 
 /**
- * Project local state onto a cloud row.
- *
- * `stats` is the one field this does not read straight off the table: it ships
- * as a complete blob so older app versions still read a full object, which
- * means recomputing the derived half at push time rather than trusting whatever
- * the store happens to be holding.
+ * Project local state onto a cloud row, entirely table-driven: a field's own
+ * value unless its binding declares an `encode`.
  */
 export function toCloud(state: PersistableState): CloudUserData {
   const row: Record<string, unknown> = { schema_version: CURRENT_SCHEMA_VERSION };
   for (const key of ALL_KEYS) {
     const binding = FIELD_POLICY[key].cloud;
-    if (binding) row[binding.column] = state[key];
+    if (!binding) continue;
+    row[binding.column] = binding.encode ? binding.encode(state) : state[key];
   }
-  row.stats = deriveStats(state);
   return row as unknown as CloudUserData;
 }
 
@@ -540,7 +561,7 @@ export function toCloud(state: PersistableState): CloudUserData {
  * Rows written before `schema_version` existed have it null; that is treated as
  * version 1 and left for the caller to decide about.
  */
-export function fromCloud(raw: Record<string, unknown>): CloudUserData {
+export function fromCloud(raw: Record<string, unknown>): DecodedCloudRow {
   const row: Record<string, unknown> = {
     schema_version: (raw.schema_version as number | null) ?? 1,
   };
@@ -548,23 +569,30 @@ export function fromCloud(raw: Record<string, unknown>): CloudUserData {
     const binding = FIELD_POLICY[key].cloud;
     if (binding) row[binding.column] = binding.decode(raw[binding.column]);
   }
-  return row as unknown as CloudUserData;
+  return row as unknown as DecodedCloudRow;
 }
 
 // ─── Merge ───────────────────────────────────────────────────────────────────
 
 /**
- * Recompute the derived half of `stats` from the maps it is a function of.
+ * The learner's full stats, assembled from the two stored counters and the maps
+ * everything else is a view over.
  *
- * `daysActive` and `currentStreak` are the only genuinely independent counters
- * and are carried through untouched; everything else here is a view over
- * `phraseReviews` and `completedScenarios`.
+ * This is the only place `UserStats` is built. It used to be assembled in four:
+ * `recordPhraseReview`, `recordPhraseRating`, `finalizeScenario` and the cloud
+ * merge each recomputed their own slice, and nothing made them agree.
+ *
+ * Exported because the store's `useStats()` selector and `toCloud` both need it
+ * — the wire still carries a complete blob so older app versions read a whole
+ * object, but neither side ever trusts the derived half of a row.
  */
-function deriveStats(state: Pick<PersistableState, 'stats' | 'phraseReviews' | 'completedScenarios'>): UserStats {
+export function deriveStats(
+  state: Pick<PersistableState, 'counters' | 'phraseReviews' | 'completedScenarios'>,
+): UserStats {
   const { studied, mastered, categoryMastery } = computeMastery(state.phraseReviews);
   return {
-    daysActive: state.stats.daysActive,
-    currentStreak: state.stats.currentStreak,
+    daysActive: state.counters.daysActive,
+    currentStreak: state.counters.currentStreak,
     phrasesStudied: studied,
     phrasesMastered: mastered,
     categoryMastery,
@@ -575,11 +603,13 @@ function deriveStats(state: Pick<PersistableState, 'stats' | 'phraseReviews' | '
 /**
  * Reconcile a cloud row against local state and return the patch to apply.
  *
- * Two passes. First every field with a cloud binding runs its own merge rule —
- * all of them union-shaped, because **a merge must never lose a record**; the
- * only decision is which version to keep when both sides have one. Then a
- * derive pass recomputes `stats` from the merged maps, so the counters can
- * never disagree with the records they count.
+ * Every field with a cloud binding runs its own merge rule — all of them
+ * union-shaped, because **a merge must never lose a record**; the only decision
+ * is which version to keep when both sides have one.
+ *
+ * There is no derive pass here any more: the derived stats are not state, so
+ * there is nothing for a merge to reconcile. `useStats()` computes them from
+ * whatever the merged maps turn out to hold.
  *
  * Callers must pass local state read *after* the network round-trip, not a
  * snapshot taken before it: the app keeps running while the request is in
@@ -588,7 +618,7 @@ function deriveStats(state: Pick<PersistableState, 'stats' | 'phraseReviews' | '
  */
 export function mergeCloudState(
   local: PersistableState,
-  cloud: CloudUserData,
+  cloud: DecodedCloudRow,
 ): Partial<PersistableState> {
   const patch: Record<string, unknown> = {};
 
@@ -601,12 +631,6 @@ export function mergeCloudState(
     const mergeFn = binding.merge as (a: unknown, b: unknown) => unknown;
     patch[key] = mergeFn(local[key], (cloud as unknown as Record<string, unknown>)[binding.column]);
   }
-
-  patch.stats = deriveStats({
-    stats: patch.stats as UserStats,
-    phraseReviews: patch.phraseReviews as Record<string, PhraseReviewData>,
-    completedScenarios: patch.completedScenarios as Record<string, ScenarioCompletion>,
-  });
 
   return patch as Partial<PersistableState>;
 }
