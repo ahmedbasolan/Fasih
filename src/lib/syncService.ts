@@ -21,52 +21,17 @@
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
-import { DEFAULT_USER_STATS } from '../types';
+import { CURRENT_SCHEMA_VERSION, fromCloud } from '../engine/syncedProgress';
+import type { CloudUserData } from '../engine/syncedProgress';
 
 /**
- * Coerce whatever the `stats` column holds into a complete UserStats.
- *
- * The column is `JSONB NOT NULL DEFAULT '{}'`, so `{}` is a perfectly ordinary
- * value for a row that was created by anything other than pushProgress. The old
- * code returned it as-is behind a `UserStats` annotation — supabase-js hands back
- * `any`, so nothing type-checked it — and the store then wrote it straight over
- * good local state. The next call after that is checkMilestones(), which reads
- * `stats.scenariosCompleted.length` and threw on the first screen after sign-in.
- *
- * Every field is defaulted individually rather than by a single spread, because
- * a present-but-null field (e.g. `{"scenariosCompleted": null}`) survives a
- * spread and crashes exactly the same way.
+ * The wire shape, the schema version and the per-column decoders all live in
+ * `src/engine/syncedProgress.ts` — they are part of the synced-progress
+ * contract, not of this transport. Re-exported here so existing importers keep
+ * working; new code should import them from the engine directly.
  */
-function normalizeStats(raw: unknown): UserStats {
-  const s = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserStats>;
-  return {
-    daysActive: typeof s.daysActive === 'number' ? s.daysActive : DEFAULT_USER_STATS.daysActive,
-    currentStreak: typeof s.currentStreak === 'number' ? s.currentStreak : DEFAULT_USER_STATS.currentStreak,
-    phrasesMastered: typeof s.phrasesMastered === 'number' ? s.phrasesMastered : DEFAULT_USER_STATS.phrasesMastered,
-    phrasesStudied: typeof s.phrasesStudied === 'number' ? s.phrasesStudied : DEFAULT_USER_STATS.phrasesStudied,
-    scenariosCompleted: Array.isArray(s.scenariosCompleted) ? s.scenariosCompleted : [],
-    categoryMastery:
-      s.categoryMastery && typeof s.categoryMastery === 'object' ? s.categoryMastery : {},
-  };
-}
-
-/** Same reasoning as normalizeStats, for the collection-shaped columns. */
-function asRecord<T>(raw: unknown): Record<string, T> {
-  return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, T>) : {};
-}
-
-function asArray<T>(raw: unknown): T[] {
-  return Array.isArray(raw) ? (raw as T[]) : [];
-}
-
-/**
- * Increment this when CloudUserData shape changes in a breaking way.
- * pullProgress uses it to detect stale cloud rows.
- * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
- *          3 = added pattern_progress + secret_endings_earned (Sentence Builder)
- */
-export const CURRENT_SCHEMA_VERSION = 3;
+export { CURRENT_SCHEMA_VERSION };
+export type { CloudUserData };
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
@@ -77,26 +42,13 @@ export const CURRENT_SCHEMA_VERSION = 3;
 // SECURITY DEFINER, they bypass RLS entirely, so that restriction is the
 // actual gate, not the table policies.
 
-export interface CloudUserData {
-  schema_version: number;
-  user_profile: UserProfile | null;
-  stats: UserStats;
-  phrase_reviews: Record<string, PhraseReviewData>;
-  completed_scenarios: Record<string, { endingType: string; date: string }>;
-  pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
-  secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
-  saved_phrases: string[];
-  unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
-  milestones: LearningMilestone[];
-  journal: JournalEntry[];
-  last_active_date: string | null;
-  subscription_status: SubscriptionStatus;
-  trial_started_at: string | null;
-  trial_plan: 'monthly' | 'yearly' | null;
-}
-
 /**
  * Push local state to Supabase (upsert). Silent on error — local data is source of truth.
+ *
+ * `CloudUserData`'s keys are the column names, so the row spreads straight in.
+ * The hand-written column list this replaced was the fourth of six copies of
+ * the synced field set; `toCloud` in the engine is now the only place the
+ * mapping is stated.
  */
 export async function pushProgress(
   userId: string,
@@ -107,21 +59,7 @@ export async function pushProgress(
     .upsert(
       {
         user_id: userId,
-        schema_version: data.schema_version,
-        user_profile: data.user_profile,
-        stats: data.stats,
-        phrase_reviews: data.phrase_reviews,
-        completed_scenarios: data.completed_scenarios,
-        pattern_progress: data.pattern_progress,
-        secret_endings_earned: data.secret_endings_earned,
-        saved_phrases: data.saved_phrases,
-        unlocked_phrase_ids: data.unlocked_phrase_ids,
-        milestones: data.milestones,
-        journal: data.journal,
-        last_active_date: data.last_active_date,
-        subscription_status: data.subscription_status,
-        trial_started_at: data.trial_started_at,
-        trial_plan: data.trial_plan,
+        ...data,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },
@@ -148,34 +86,12 @@ export async function pullProgress(
     return { data: null, error: error.message };
   }
 
-  // Migration guard: rows written before schema_version was introduced will
-  // have schema_version = null (column DEFAULT 1 handles new inserts).
-  // We treat null as version 1 and let the caller decide what to do with it.
-  const cloudVersion: number = (data.schema_version as number | null) ?? 1;
-
-  return {
-    data: {
-      schema_version: cloudVersion,
-      user_profile: data.user_profile ?? null,
-      stats: normalizeStats(data.stats),
-      phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
-      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
-      // Grammar-engine columns get the same treatment as everything else here:
-      // `?? {}` only guards null, and these arrive from the same untyped
-      // supabase-js payload that made a bare `data.stats` crash the app.
-      pattern_progress: asRecord<PatternProgress>(data.pattern_progress),
-      secret_endings_earned: asRecord<string>(data.secret_endings_earned),
-      saved_phrases: asArray<string>(data.saved_phrases),
-      unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
-      milestones: asArray<LearningMilestone>(data.milestones),
-      journal: asArray<JournalEntry>(data.journal),
-      last_active_date: data.last_active_date ?? null,
-      subscription_status: data.subscription_status ?? 'free',
-      trial_started_at: data.trial_started_at ?? null,
-      trial_plan: data.trial_plan ?? null,
-    },
-    error: null,
-  };
+  // Every column runs through its field's decoder in the engine, including the
+  // schema_version guard for rows written before that column existed. supabase-js
+  // hands back `any`, and a present-but-null column crashes the same way a
+  // missing one does — a bare `data.stats` is what used to throw on the first
+  // screen after sign-in.
+  return { data: fromCloud(data as Record<string, unknown>), error: null };
 }
 
 // ─── Community stat helpers ───────────────────────────────────────────────────
