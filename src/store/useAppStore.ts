@@ -9,8 +9,13 @@ import {
   recordEndingStat as rcRecordEndingStat,
   getEndingStats,
   deleteAccountData,
-  CURRENT_SCHEMA_VERSION,
 } from '../lib/syncService';
+import {
+  CURRENT_SCHEMA_VERSION,
+  computeMastery,
+  toCloud,
+  mergeCloudState,
+} from '../engine/syncedProgress';
 import {
   configurePurchases,
   loginPurchasesUser,
@@ -23,9 +28,10 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress } from '../types';
+import type { UserProfile, PhraseReviewData, JournalEntry, ScenarioChoice, ScenarioEnding, PatternProgress, PersistableState, EphemeralState } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
-import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
+import { PHRASE_BY_ID } from '../constants/phrases';
+import { freshMilestones } from '../constants/milestones';
 import {
   applyChoice as applyChoiceEngine,
 } from '../engine/scenarioEngine';
@@ -44,10 +50,9 @@ import {
 import { shouldGrantStreakFreeze, applyStreakFreeze } from '../engine/streakEngine';
 import { recordOnboardingSelection } from '../lib/onboardingAnalytics';
 import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
-import {
-  mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings,
-} from '../engine/syncMerge';
+// The other six merge rules are reached through mergeCloudState now; only
+// unlockPhrases still needs a merge directly.
+import { mergeIds } from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
 // Single source of truth — used in hasFullAccess AND hasScenarioAccess.
@@ -113,16 +118,9 @@ function scheduleSync(fn: () => void, delayMs = 1500) {
 }
 
 // ─── Milestones ──────────────────────────────────────────────────────────────
-const DEFAULT_MILESTONES: LearningMilestone[] = [
-  { id: 'first-scenario', label: 'Cultural Explorer', description: 'You completed your first cultural scenario', reached: false },
-  { id: 'greetings-3', label: 'Three Ways to Say Hello', description: 'You can now greet someone in 3 different ways', reached: false },
-  { id: 'hospitality', label: 'Emirati Hospitality', description: 'You\'ve learned the art of Emirati hospitality phrases', reached: false },
-  { id: 'week-learner', label: 'One Week of Learning', description: 'You\'ve been learning for 7 days', reached: false },
-  { id: 'phrases-10', label: 'Growing Vocabulary', description: 'You\'ve studied 10 unique phrases', reached: false },
-  { id: 'all-categories', label: 'Well-Rounded Learner', description: 'You\'ve explored phrases from every category', reached: false },
-  { id: 'scenarios-3', label: 'Story Weaver', description: 'You\'ve navigated 3 different cultural conversations', reached: false },
-  { id: 'mastered-5', label: 'Building Confidence', description: '5 phrases are now part of your active vocabulary', reached: false },
-];
+// DEFAULT_MILESTONES moved to src/constants/milestones.ts so FIELD_POLICY can
+// own the sign-out reset value alongside every other field's. The predicates
+// below stay here: they read store state.
 
 type MilestoneChecker = (s: Pick<AppState, 'stats' | 'completedScenarios' | 'phraseReviews'>) => boolean;
 
@@ -154,104 +152,29 @@ const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
 
-// ─── Mastery computation (extracted to eliminate duplication + O(n²)) ─────────
-/**
- * Computes phrasesStudied, phrasesMastered, and categoryMastery from the current
- * review map in a single O(n) pass — replaces the previous O(n × categories × n)
- * nested-filter approach used in both recordPhraseReview and recordPhraseRating.
- */
-function computeMastery(reviews: Record<string, PhraseReviewData>): {
-  studied: number;
-  mastered: number;
-  categoryMastery: Record<string, CategoryMastery>;
-} {
-  const allCards = Object.values(reviews);
-  const studied = allCards.length;
-  let mastered = 0;
-
-  // Single pass: bucket cards by category and count mastered
-  const cardsByCategory: Partial<Record<PhraseCategory, PhraseReviewData[]>> = {};
-  for (const card of allCards) {
-    const phrase = PHRASE_BY_ID[card.phraseId];
-    if (!phrase) continue;
-    if (card.correct >= 3 && card.correct / (card.correct + card.incorrect) >= 0.8) mastered++;
-    if (!cardsByCategory[phrase.category]) cardsByCategory[phrase.category] = [];
-    cardsByCategory[phrase.category]!.push(card);
-  }
-
-  const categoryMastery: Record<string, CategoryMastery> = {};
-  for (const cat of PHRASE_CATEGORIES) {
-    const catCards = cardsByCategory[cat] ?? [];
-    const totalCorrect = catCards.reduce((sum, c) => sum + c.correct, 0);
-    const totalAttempts = catCards.reduce((sum, c) => sum + c.correct + c.incorrect, 0);
-    categoryMastery[cat] = {
-      category: cat,
-      phrasesStudied: catCards.length,
-      phrasesTotal: PHRASES_PER_CATEGORY[cat] ?? 0,
-      accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0,
-    };
-  }
-
-  return { studied, mastered, categoryMastery };
-}
+// computeMastery moved to src/engine/syncedProgress.ts — mergeCloudState needs
+// it for the derive pass, and the store's write paths import it back from there
+// so both compute mastery exactly one way.
 
 // ─── State shape ─────────────────────────────────────────────────────────────
-interface AppState {
-  // Auth & onboarding
-  user: UserProfile | null;
-  clerkUserId: string | null;
-  hasOnboarded: boolean;
-  isAuthenticated: boolean;
-  _hydrated: boolean;
-
-  // Subscription
-  subscriptionStatus: SubscriptionStatus;
-  trialStartedAt: string | null;
-  trialPlan: 'monthly' | 'yearly' | null;
-
-  // UI State
-  themePreference: 'system' | 'light' | 'dark';
-
-  // Progress & learning
-
-  stats: UserStats;
-  savedPhrases: string[];
-  favoriteScenarios: string[];
-  completedScenarios: Record<string, { endingType: string; date: string }>;
-  /**
-   * Pattern ids (grammar.ts) → build progress. Never unset — "masters" at 3
-   * correct builds. Persisted + synced.
-   */
-  patternProgress: Record<string, PatternProgress>;
-  /**
-   * scenarioId → ending title, set once inside finalizeScenario when the ending
-   * is secret. Never overwritten on replay — a replayed run can re-earn it but
-   * cannot lose it. Persisted + synced.
-   */
-  secretEndingsEarned: Record<string, string>;
-  sceneProgress: Record<string, number>; // scenarioId → scenes completed count
-  lastActiveDate: string | null;
-  streakFreezes: number;
-  /** XP earned toward today's goal. `date` is a local ISO date; a different
-   *  date means the counter has rolled over and `xp` should read as 0. */
-  dailyXP: { date: string; xp: number };
+/**
+ * Everything the store can *do*. The data it holds lives in `PersistableState`
+ * (durable, governed by FIELD_POLICY in src/engine/syncedProgress.ts) and
+ * `EphemeralState` (session-only), both in src/types.
+ *
+ * Keeping data and actions in separate interfaces is what lets the policy table
+ * be a mapped type over the data half — see the note on `PersistableState`.
+ */
+interface AppActions {
   /** Add XP toward today's goal, rolling the counter over at local midnight. */
   addXP: (amount: number) => void;
-  phraseReviews: Record<string, PhraseReviewData>;
-  journal: JournalEntry[];
-  milestones: LearningMilestone[];
-  unlockedPhraseIds: string[]; // phrases unlocked through scenarios
 
   // Cloud sync
-  isSyncing: boolean;
-  lastSyncedAt: string | null;
-  lastSyncError: string | null;
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
   dismissSyncError: () => void;
 
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
-  communityStatsCache: Record<string, number>;
   getCommunityChoiceStat: (key: string) => number;
   getCommunityEndingStat: (key: string) => number;
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
@@ -259,10 +182,6 @@ interface AppState {
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
   // Notifications
-  /** Rolling last-7 session hours (0–23, local time). Used for smart notification timing. */
-  recentSessionHours: number[];
-  /** Whether the user has granted push notification permission. */
-  notificationsEnabled: boolean;
   /** Record the current hour and (re)schedule notifications with updated smart timing. */
   recordSessionHour: () => Promise<void>;
   /** Request permission and schedule initial notifications. Call after sign-in. */
@@ -270,28 +189,6 @@ interface AppState {
 
   // Anonymous onboarding analytics
   // See docs/superpowers/specs/2026-09-03-onboarding-analytics-design.md
-  /**
-   * Opt-out state for the anonymous onboarding aggregate. On by default; the
-   * Profile toggle turns it off. It can only stop FUTURE writes — an anonymous
-   * row cannot be found again to delete, and the toggle copy must not imply
-   * otherwise.
-   */
-  analyticsEnabled: boolean;
-  /**
-   * Fire-once guard, so a row is written at most once per install. Rows carry
-   * no identifier, so uniqueness cannot be enforced in the database and a
-   * reinstall produces a second row. Not tamper-proof and not meant to be:
-   * these counts inform authoring decisions, not billing.
-   */
-  analyticsOnboardingSent: boolean;
-  /**
-   * Both fields deliberately survive `signOut` and `deleteAccount` — neither
-   * reset block lists them. `analyticsEnabled` is a device preference like the
-   * theme, and `analyticsOnboardingSent` guards the install, not the account.
-   * Nor is there anything for `deleteAccount` to erase: the row carries no
-   * identifier, which is the whole point and the basis for not honouring
-   * erasure against that table.
-   */
   setAnalyticsEnabled: (value: boolean) => void;
   /**
    * Write the anonymous onboarding row, at most once, if collection is on.
@@ -372,13 +269,14 @@ interface AppState {
   getDueReviews: () => PhraseReviewData[];
 
   // ─── Active scenario run (not persisted) ─────────────────────────────────────
-  activeScenarioState: ScenarioState | null;
   startScenario: (scenarioId: string, firstSceneId: string) => void;
   applyScenarioChoice: (choice: ScenarioChoice, npcId: string) => void;
   advanceScenarioScene: (nextSceneId: string) => void;
   finalizeScenario: (ending: ScenarioEnding) => void;
   abandonScenario: () => void;
 }
+
+type AppState = PersistableState & EphemeralState & AppActions;
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 export const useAppStore = create<AppState>()(
@@ -406,7 +304,7 @@ export const useAppStore = create<AppState>()(
       dailyXP: { date: todayISO(), xp: 0 },
       phraseReviews: {},
       journal: [],
-      milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
+      milestones: freshMilestones(),
       unlockedPhraseIds: [],
       activeScenarioState: null,
 
@@ -431,23 +329,7 @@ export const useAppStore = create<AppState>()(
         if (!s.clerkUserId) return;
         set({ isSyncing: true });
         try {
-          const { error } = await pushProgress(s.clerkUserId, {
-            schema_version: CURRENT_SCHEMA_VERSION,
-            user_profile: s.user,
-            stats: s.stats,
-            phrase_reviews: s.phraseReviews,
-            completed_scenarios: s.completedScenarios,
-            pattern_progress: s.patternProgress,
-            secret_endings_earned: s.secretEndingsEarned,
-            saved_phrases: s.savedPhrases,
-            unlocked_phrase_ids: s.unlockedPhraseIds,
-            milestones: s.milestones,
-            journal: s.journal,
-            last_active_date: s.lastActiveDate,
-            subscription_status: s.subscriptionStatus,
-            trial_started_at: s.trialStartedAt,
-            trial_plan: s.trialPlan,
-          });
+          const { error } = await pushProgress(s.clerkUserId, toCloud(s));
           if (error) {
             set({ isSyncing: false, lastSyncError: error });
           } else {
@@ -489,68 +371,11 @@ export const useAppStore = create<AppState>()(
         // snapshot would drop exactly the write we are here to protect.
         const local = get();
 
-        // Merge strategy: never lose a record. See src/engine/syncMerge.ts —
-        // the rules are pure and unit-tested there. The old code let the cloud
-        // win outright for phraseReviews and completedScenarios, so anything
-        // studied offline, or on a second device since its last push, was
-        // silently erased the next time this ran.
-        const mergedMilestones = mergeMilestones(local.milestones, data.milestones);
-        const mergedUnlocked = mergeIds(local.unlockedPhraseIds, data.unlocked_phrase_ids);
-        const mergedJournal = mergeJournal(local.journal, data.journal);
-        const mergedReviews = mergeReviews(local.phraseReviews, data.phrase_reviews);
-        const mergedCompleted = mergeCompletions(local.completedScenarios, data.completed_scenarios);
-
-        // stats is derived from the two maps above, so recompute it rather than
-        // trusting either side's snapshot. daysActive and currentStreak are the
-        // only genuinely independent counters — take the higher, since neither
-        // can legitimately go backwards on a merge.
-        const { studied, mastered, categoryMastery } = computeMastery(mergedReviews);
-        const mergedStats: UserStats = {
-          daysActive: Math.max(local.stats.daysActive, data.stats.daysActive),
-          currentStreak: Math.max(local.stats.currentStreak, data.stats.currentStreak),
-          phrasesStudied: studied,
-          phrasesMastered: mastered,
-          categoryMastery,
-          scenariosCompleted: Object.keys(mergedCompleted),
-        };
-
-        // lastActiveDate follows the same "cannot go backwards" rule as the two
-        // counters above. Taking the cloud's value outright would push the
-        // streak date back whenever the local device had practised more
-        // recently than its last successful push — which is precisely the
-        // offline case. ISO dates compare correctly as strings.
-        const mergedLastActive =
-          [local.lastActiveDate, data.last_active_date].filter(Boolean).sort().pop() ?? null;
-
-        // patternProgress/secretEndingsEarned merges: see src/engine/syncMerge.ts —
-        // pulled out of this file (and unit-tested there) alongside their five
-        // siblings above, rather than staying the two hand-written exceptions.
-        // Reads from `local`, not `s` — `s` is the snapshot taken before the
-        // network round-trip, so seeding from it would discard any pattern
-        // practised while the request was in flight. Same reason every other
-        // merge on this path was moved off `s`.
-        const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
-        const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
-
+        // Merge strategy: never lose a record. Every rule, and the derive pass
+        // that recomputes stats from the merged maps, lives in
+        // src/engine/syncedProgress.ts — pure and unit-tested there.
         set({
-          user: data.user_profile ?? local.user,
-          stats: mergedStats,
-          phraseReviews: mergedReviews,
-          completedScenarios: mergedCompleted,
-          patternProgress: mergedPatternProgress,
-          secretEndingsEarned: mergedSecrets,
-          // Union, consistent with the rule above: a save made on either device
-          // survives. The trade-off is that un-saving while offline can be
-          // undone by a cloud copy that predates it — recoverable with one tap,
-          // where a lost save is silent.
-          savedPhrases: mergeIds(local.savedPhrases, data.saved_phrases),
-          unlockedPhraseIds: mergedUnlocked,
-          milestones: mergedMilestones,
-          journal: mergedJournal,
-          lastActiveDate: mergedLastActive,
-          subscriptionStatus: data.subscription_status ?? local.subscriptionStatus,
-          trialStartedAt: data.trial_started_at ?? local.trialStartedAt,
-          trialPlan: data.trial_plan ?? local.trialPlan,
+          ...mergeCloudState(local, data),
           lastSyncedAt: new Date().toISOString(),
         });
       },
@@ -615,7 +440,7 @@ export const useAppStore = create<AppState>()(
           streakFreezes: 0,
           dailyXP: { date: todayISO(), xp: 0 },
           journal: [],
-          milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
+          milestones: freshMilestones(),
           activeScenarioState: null,
           communityStatsCache: {},
           lastSyncedAt: null,

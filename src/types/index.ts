@@ -386,3 +386,86 @@ export interface ScenarioState {
   scenesVisited: Set<string>;
   startedAt: string; // ISO date-time
 }
+
+// ─── Store state shape ───────────────────────────────────────────────────────
+
+/** One finished scenario run, keyed by scenarioId in `completedScenarios`. */
+export interface ScenarioCompletion {
+  endingType: string;
+  date: string;
+}
+
+/**
+ * XP earned toward today's goal. `date` is a local ISO date; a different date
+ * means the counter has rolled over and `xp` should read as 0.
+ */
+export interface DailyXP {
+  date: string;
+  xp: number;
+}
+
+/**
+ * The durable half of the app store — everything that survives a reload, and
+ * everything governed by `FIELD_POLICY` in `src/engine/syncedProgress.ts`.
+ *
+ * This exists as its own interface so the policy table can be typed as
+ * `{ [K in keyof PersistableState]: FieldPolicy<K> }`. That mapped type is what
+ * makes forgetting a field a compile error. Without the split, the table would
+ * need a hand-maintained list of which `AppState` keys are data and which are
+ * ephemeral — a second list, which is exactly the drift the table exists to
+ * stop. Add a durable field here and the compiler will tell you where to
+ * declare its persistence, sync and sign-out behaviour.
+ */
+export interface PersistableState {
+  // Auth & onboarding
+  user: UserProfile | null;
+  clerkUserId: string | null;
+  hasOnboarded: boolean;
+  isAuthenticated: boolean;
+
+  // Subscription
+  subscriptionStatus: SubscriptionStatus;
+  trialStartedAt: string | null;
+  trialPlan: 'monthly' | 'yearly' | null;
+
+  // UI preference
+  themePreference: 'system' | 'light' | 'dark';
+
+  // Progress & learning
+  stats: UserStats;
+  savedPhrases: string[];
+  unlockedPhraseIds: string[];
+  favoriteScenarios: string[];
+  completedScenarios: Record<string, ScenarioCompletion>;
+  patternProgress: Record<string, PatternProgress>;
+  secretEndingsEarned: Record<string, string>;
+  sceneProgress: Record<string, number>;
+  lastActiveDate: string | null;
+  streakFreezes: number;
+  dailyXP: DailyXP;
+  phraseReviews: Record<string, PhraseReviewData>;
+  journal: JournalEntry[];
+  milestones: LearningMilestone[];
+
+  // Notifications
+  recentSessionHours: number[];
+  notificationsEnabled: boolean;
+
+  // Anonymous onboarding analytics
+  analyticsEnabled: boolean;
+  analyticsOnboardingSent: boolean;
+}
+
+/**
+ * The other half: state that lives only for the session. Never persisted,
+ * never synced, and deliberately outside `FIELD_POLICY` — the policy table has
+ * nothing to say about it.
+ */
+export interface EphemeralState {
+  _hydrated: boolean;
+  isSyncing: boolean;
+  lastSyncedAt: string | null;
+  lastSyncError: string | null;
+  communityStatsCache: Record<string, number>;
+  activeScenarioState: ScenarioState | null;
+}
