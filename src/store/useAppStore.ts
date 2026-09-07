@@ -126,6 +126,18 @@ let _customerInfoUnsub: (() => void) | null = null;
 /** Fingerprint of the last payload that reached the cloud. */
 let _lastPushed: string | null = null;
 
+/**
+ * Push serialisation.
+ *
+ * The debounce keeps ordinary mutations to one push, but a foreground flush or
+ * an urgent change can land on top of one already awaiting the network. Two
+ * concurrent upserts race, and whichever resolves last wins — which can be the
+ * one carrying older state. `_pushAgain` means a change arrived mid-flight, so
+ * exactly one follow-up runs afterwards against fresh state.
+ */
+let _pushing = false;
+let _pushAgain = false;
+
 const syncScheduler = createSyncScheduler({
   push: () => useAppStore.getState()._pushToCloud(),
 });
@@ -360,38 +372,54 @@ export const useAppStore = create<AppState>()(
       // file is the only caller that should schedule a push. Components wanting
       // to retry a failure use retryPush().
       _pushToCloud: async () => {
-        const s = get();
-        if (!s.clerkUserId) return;
-
-        // A dev-simulated entitlement must never reach the real Supabase row —
-        // a release build would pull it back down and grant permanent free Pro.
-        // Blocking the whole push (not just the subscription columns) keeps this
-        // a one-line rule; the device is in a dev state and its progress is not
-        // worth risking that. Clears on sign-out.
-        if (s.simulatedEntitlement) return;
-
-        const row = toCloud(s);
-        const fingerprint = syncedFingerprint(row);
-        // Nothing has changed since the last successful push. This is what stops
-        // a pull from looping: a merge that unioned in nothing produces the same
-        // payload, so it does not bounce straight back up. A merge that *did*
-        // add records produces a different one and is pushed, which is how work
-        // done offline reaches the cloud.
-        if (fingerprint === _lastPushed) return;
-
-        set({ isSyncing: true });
+        // Never two upserts at once — see the note on _pushing. A push asked for
+        // mid-flight is remembered, not dropped, and runs once afterwards
+        // against whatever state has become by then.
+        if (_pushing) {
+          _pushAgain = true;
+          return;
+        }
+        _pushing = true;
         try {
-          const { error } = await pushProgress(s.clerkUserId, row);
-          if (error) {
-            // _lastPushed is deliberately left where it was, so the next change
-            // retries this payload rather than assuming it landed.
-            set({ isSyncing: false, lastSyncError: error, lastSyncFailure: 'push' });
-          } else {
-            _lastPushed = fingerprint;
-            set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null, lastSyncFailure: null });
+          const s = get();
+          if (!s.clerkUserId) return;
+
+          // A dev-simulated entitlement must never reach the real Supabase row —
+          // a release build would pull it back down and grant permanent free Pro.
+          // Blocking the whole push (not just the subscription columns) keeps
+          // this a one-line rule; the device is in a dev state and its progress
+          // is not worth risking that. Clears on sign-out.
+          if (s.simulatedEntitlement) return;
+
+          const row = toCloud(s);
+          const fingerprint = syncedFingerprint(row);
+          // Nothing has changed since the last successful push. This is what
+          // stops a pull from looping: a merge that unioned in nothing produces
+          // the same payload, so it does not bounce straight back up. A merge
+          // that *did* add records produces a different one and is pushed, which
+          // is how work done offline reaches the cloud.
+          if (fingerprint === _lastPushed) return;
+
+          set({ isSyncing: true });
+          try {
+            const { error } = await pushProgress(s.clerkUserId, row);
+            if (error) {
+              // _lastPushed is deliberately left where it was, so the next change
+              // retries this payload rather than assuming it landed.
+              set({ isSyncing: false, lastSyncError: error, lastSyncFailure: 'push' });
+            } else {
+              _lastPushed = fingerprint;
+              set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null, lastSyncFailure: null });
+            }
+          } catch (e) {
+            set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed', lastSyncFailure: 'push' });
           }
-        } catch (e) {
-          set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed', lastSyncFailure: 'push' });
+        } finally {
+          _pushing = false;
+          if (_pushAgain) {
+            _pushAgain = false;
+            void get()._pushToCloud();
+          }
         }
       },
 
@@ -490,6 +518,9 @@ export const useAppStore = create<AppState>()(
         // uploading and race to write an emptied row over the user's data.
         syncScheduler.disarm();
         _lastPushed = null;
+        // Drop any queued follow-up too, or it would fire against the cleared
+        // state the moment an in-flight push resolves.
+        _pushAgain = false;
 
         await logoutPurchasesUser();
         await cancelAllNotifications();
