@@ -264,6 +264,12 @@ export const FIELD_POLICY: PolicyTable = {
       merge: cloudWins,
     },
   },
+  /**
+   * Never leaves the device — that is the entire point. Persisted alongside the
+   * simulated `subscriptionStatus` it guards, so a relaunch cannot push what
+   * this session refused to.
+   */
+  simulatedEntitlement: { persist: true, clearOnSignOut: true, reset: () => false, cloud: null },
 
   // ─── UI preference ─────────────────────────────────────────────────────────
   /** A device preference, like the theme it is. Never cloud, never cleared. */
@@ -321,14 +327,15 @@ export const FIELD_POLICY: PolicyTable = {
     },
   },
   /**
-   * NOT cleared on sign-out, and that is a bug — signing into a second account
-   * on the same device inherits the first user's Sentence Builder progress and
-   * pushes it into their cloud row. Ported verbatim here so PR1 changes no
-   * behaviour; PR2 flips this to `true` with a `reset`.
+   * Cleared on sign-out. It was not, until the table made the omission
+   * visible: signing into a second account on the same device inherited the
+   * first user's Sentence Builder progress and then pushed it into their cloud
+   * row.
    */
   patternProgress: {
     persist: true,
-    clearOnSignOut: false,
+    clearOnSignOut: true,
+    reset: () => ({}),
     cloud: {
       column: 'pattern_progress',
       urgent: false,
@@ -336,10 +343,11 @@ export const FIELD_POLICY: PolicyTable = {
       merge: mergePatternProgress,
     },
   },
-  /** Same account-bleed bug as `patternProgress`. Fixed in PR2. */
+  /** Same account bleed as `patternProgress`, fixed the same way. */
   secretEndingsEarned: {
     persist: true,
-    clearOnSignOut: false,
+    clearOnSignOut: true,
+    reset: () => ({}),
     cloud: {
       column: 'secret_endings_earned',
       urgent: false,
@@ -425,19 +433,67 @@ export const FIELD_POLICY: PolicyTable = {
 
 const ALL_KEYS = Object.keys(FIELD_POLICY) as (keyof PersistableState)[];
 
+// Computed once. `partialize` runs on every store write and the push subscriber
+// on every mutation, so neither should be re-filtering a constant table.
+const PERSISTED = ALL_KEYS.filter((k) => FIELD_POLICY[k].persist);
+const SYNCED = ALL_KEYS.filter((k) => FIELD_POLICY[k].cloud !== null);
+const URGENT = ALL_KEYS.filter((k) => FIELD_POLICY[k].cloud?.urgent === true);
+
 /** Keys that survive an app restart. Feeds the store's `partialize`. */
-export function persistedKeys(): (keyof PersistableState)[] {
-  return ALL_KEYS.filter((k) => FIELD_POLICY[k].persist);
+export function persistedKeys(): readonly (keyof PersistableState)[] {
+  return PERSISTED;
 }
 
 /** Keys that travel to the cloud. */
-export function syncedKeys(): (keyof PersistableState)[] {
-  return ALL_KEYS.filter((k) => FIELD_POLICY[k].cloud !== null);
+export function syncedKeys(): readonly (keyof PersistableState)[] {
+  return SYNCED;
 }
 
 /** Keys whose change should skip the debounce and push straight away. */
-export function urgentKeys(): (keyof PersistableState)[] {
-  return ALL_KEYS.filter((k) => FIELD_POLICY[k].cloud?.urgent === true);
+export function urgentKeys(): readonly (keyof PersistableState)[] {
+  return URGENT;
+}
+
+// ─── Change detection ────────────────────────────────────────────────────────
+// The push subscriber's decisions, kept pure so they can be tested without a
+// store, a timer or a network. The subscriber itself is in src/lib/syncScheduler.
+
+/**
+ * Which synced fields differ between two states.
+ *
+ * Reference equality only. Every store mutation replaces the objects it
+ * touches, so an unchanged field is always the same reference — and a deep
+ * comparison here would run on every keystroke-scale mutation. The real
+ * "did this actually change?" question is answered once, at push time, by
+ * comparing fingerprints.
+ */
+export function changedSyncedKeys(
+  prev: PersistableState,
+  next: PersistableState,
+): (keyof PersistableState)[] {
+  return syncedKeys().filter((k) => prev[k] !== next[k]);
+}
+
+/** True when a change includes a field that must not wait out the debounce. */
+export function hasUrgentChange(prev: PersistableState, next: PersistableState): boolean {
+  return urgentKeys().some((k) => prev[k] !== next[k]);
+}
+
+/**
+ * A stable string identifying one cloud payload.
+ *
+ * Compared against the last successfully-pushed value to decide whether a push
+ * would be a no-op. That comparison is what stops a pull from looping — a pull
+ * whose merge changed nothing produces the same fingerprint — while still
+ * letting a pull that *did* union in new records push them back up.
+ *
+ * Computed only at push time, after the debounce. Serialising the synced slice
+ * on every mutation would stringify the whole review map each time a card is
+ * rated. Key order is stable because `toCloud` always builds the row in
+ * `ALL_KEYS` order.
+ */
+export function syncedFingerprint(row: CloudUserData): string {
+  return JSON.stringify(row);
 }
 
 /**

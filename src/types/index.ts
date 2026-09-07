@@ -427,6 +427,17 @@ export interface PersistableState {
   subscriptionStatus: SubscriptionStatus;
   trialStartedAt: string | null;
   trialPlan: 'monthly' | 'yearly' | null;
+  /**
+   * Dev-only: this device's `subscribed` status came from a simulated purchase
+   * (`__DEV__` with no store products configured), not a real transaction.
+   *
+   * Blocks every cloud push while set. Writing a simulated entitlement to the
+   * real Supabase row granted permanent free Pro once a release build pulled it
+   * back down — see the note on `PurchaseResult.simulated`. Persisted, because
+   * the simulated status itself is persisted: a flag that died with the session
+   * would let the next launch push what this one refused to.
+   */
+  simulatedEntitlement: boolean;
 
   // UI preference
   themePreference: 'system' | 'light' | 'dark';
@@ -466,6 +477,12 @@ export interface EphemeralState {
   isSyncing: boolean;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
+  /**
+   * Which direction produced `lastSyncError`. Both a push and a pull write that
+   * field, so a single "retry" button cannot know what to redo — the banner
+   * reads this to pick.
+   */
+  lastSyncFailure: 'push' | 'pull' | null;
   communityStatsCache: Record<string, number>;
   activeScenarioState: ScenarioState | null;
 }

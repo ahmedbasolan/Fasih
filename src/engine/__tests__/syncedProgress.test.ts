@@ -19,6 +19,9 @@ import {
   fromCloud,
   mergeCloudState,
   computeMastery,
+  changedSyncedKeys,
+  hasUrgentChange,
+  syncedFingerprint,
 } from '../syncedProgress';
 import type { CloudUserData } from '../syncedProgress';
 import type { PersistableState, PhraseReviewData } from '../../types';
@@ -49,6 +52,7 @@ function localState(over: Partial<PersistableState> = {}): PersistableState {
     subscriptionStatus: 'free',
     trialStartedAt: null,
     trialPlan: null,
+    simulatedEntitlement: false,
     themePreference: 'system',
     stats: { ...DEFAULT_USER_STATS },
     savedPhrases: [],
@@ -126,7 +130,7 @@ describe('FIELD_POLICY', () => {
 
   it('marks exactly the subscription fields urgent', () => {
     // Money state must not wait out the debounce.
-    expect(urgentKeys().sort()).toEqual(['subscriptionStatus', 'trialPlan', 'trialStartedAt']);
+    expect([...urgentKeys()].sort()).toEqual(['subscriptionStatus', 'trialPlan', 'trialStartedAt']);
   });
 
   it('persists every field it declares', () => {
@@ -158,14 +162,116 @@ describe('clearedOnSignOut', () => {
     expect('analyticsOnboardingSent' in patch).toBe(false);
   });
 
-  it('does NOT yet clear patternProgress or secretEndingsEarned', () => {
-    // Documents the account-bleed bug as it stands today: signing into a second
-    // account on one device inherits the first user's Sentence Builder progress
-    // and secret endings. PR1 ports behaviour verbatim; PR2 fixes it, and this
-    // expectation flips to `true` then.
+  it('clears patternProgress and secretEndingsEarned — the account bleed', () => {
+    // These two were missing from the hand-written sign-out list, so signing
+    // into a second account on one device inherited the first user's Sentence
+    // Builder progress and secret endings, then pushed them into their row.
     const patch = clearedOnSignOut();
-    expect('patternProgress' in patch).toBe(false);
-    expect('secretEndingsEarned' in patch).toBe(false);
+    expect(patch.patternProgress).toEqual({});
+    expect(patch.secretEndingsEarned).toEqual({});
+  });
+
+  it('clears the simulated-entitlement flag', () => {
+    // Otherwise a dev device would refuse to sync for whoever signs in next.
+    expect(clearedOnSignOut().simulatedEntitlement).toBe(false);
+  });
+});
+
+// ─── Persisted key set ───────────────────────────────────────────────────────
+
+describe('persistedKeys', () => {
+  it('matches the exact set that was persisted before the table owned it', () => {
+    // Guard against silent data loss. `partialize` is now derived from
+    // FIELD_POLICY, so a policy edit that drops a field would quietly stop
+    // persisting it and users would lose that data on their next launch with
+    // no error anywhere. This list is the pre-refactor `partialize` literal
+    // plus simulatedEntitlement; update it only deliberately.
+    expect([...persistedKeys()].sort()).toEqual(
+      [
+        'analyticsEnabled',
+        'analyticsOnboardingSent',
+        'clerkUserId',
+        'completedScenarios',
+        'dailyXP',
+        'favoriteScenarios',
+        'hasOnboarded',
+        'isAuthenticated',
+        'journal',
+        'lastActiveDate',
+        'milestones',
+        'notificationsEnabled',
+        'patternProgress',
+        'phraseReviews',
+        'recentSessionHours',
+        'savedPhrases',
+        'sceneProgress',
+        'secretEndingsEarned',
+        'simulatedEntitlement',
+        'stats',
+        'streakFreezes',
+        'subscriptionStatus',
+        'themePreference',
+        'trialPlan',
+        'trialStartedAt',
+        'unlockedPhraseIds',
+        'user',
+      ].sort(),
+    );
+  });
+});
+
+// ─── Change detection ────────────────────────────────────────────────────────
+
+describe('changedSyncedKeys', () => {
+  it('sees a replaced synced field', () => {
+    const a = localState();
+    const b = { ...a, phraseReviews: { g1: card('g1') } };
+    expect(changedSyncedKeys(a, b)).toEqual(['phraseReviews']);
+  });
+
+  it('ignores a changed device-local field', () => {
+    // Changing a favourite must not cost a network round-trip.
+    const a = localState();
+    const b = { ...a, favoriteScenarios: ['x'], themePreference: 'dark' as const };
+    expect(changedSyncedKeys(a, b)).toEqual([]);
+  });
+
+  it('reports nothing when nothing moved', () => {
+    const a = localState();
+    expect(changedSyncedKeys(a, { ...a })).toEqual([]);
+  });
+});
+
+describe('hasUrgentChange', () => {
+  it('is true for a subscription change', () => {
+    const a = localState();
+    expect(hasUrgentChange(a, { ...a, subscriptionStatus: 'subscribed' })).toBe(true);
+  });
+
+  it('is false for ordinary learning progress', () => {
+    // A rated card can wait out the debounce; a purchase cannot.
+    const a = localState();
+    expect(hasUrgentChange(a, { ...a, phraseReviews: { g1: card('g1') } })).toBe(false);
+  });
+});
+
+describe('syncedFingerprint', () => {
+  it('is equal for two payloads built from the same state', () => {
+    const s = localState({ savedPhrases: ['g1'], phraseReviews: { g1: card('g1') } });
+    expect(syncedFingerprint(toCloud(s))).toBe(syncedFingerprint(toCloud(s)));
+  });
+
+  it('differs once a synced field changes', () => {
+    const s = localState();
+    const before = syncedFingerprint(toCloud(s));
+    expect(syncedFingerprint(toCloud({ ...s, savedPhrases: ['g1'] }))).not.toBe(before);
+  });
+
+  it('is unchanged by a device-local field', () => {
+    // The whole point of the comparison: a favourite toggle must not cost a push.
+    const s = localState();
+    expect(syncedFingerprint(toCloud({ ...s, favoriteScenarios: ['x'] })))
+      .toBe(syncedFingerprint(toCloud(s)));
   });
 });
 

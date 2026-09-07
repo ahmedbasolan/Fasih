@@ -28,34 +28,46 @@ export default function Index() {
       setClerkUserId(userId);
       setAuthenticated(true);
 
-      if (!hasOnboarded) {
-        router.replace('/onboarding');
-      } else {
-        // Navigate immediately; cloud sync + daily tracking run in background.
-        // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves
-        // to prevent syncFromCloud from overwriting the streak/lastActiveDate they set.
-        router.replace('/(tabs)');
-        // recordDailyActivity and checkMilestones must run whether or not the
-        // network work above succeeds. Chained bare, a RevenueCat or Supabase
-        // failure (offline, simulator, expired token) rejected the promise and
-        // silently skipped them — the user opened the app, practised, and lost
-        // their streak. The catch reports the failure and still records the day.
-        void loginPurchasesUser(userId)
-          .then(() => syncFromCloud())
-          .catch((e: unknown) => {
-            captureError('Startup sync failed', {
-              reason: e instanceof Error ? e.message : String(e),
-            });
-          })
-          .finally(() => {
+      // Navigate immediately; cloud sync + daily tracking run in background.
+      router.replace(hasOnboarded ? '/(tabs)' : '/onboarding');
+
+      // The pull runs on BOTH paths, including onboarding. It is what arms the
+      // push scheduler (src/lib/syncScheduler.ts), which starts disarmed so
+      // that rehydrating from AsyncStorage cannot push a thin local row over
+      // good cloud data before the first merge. Skipping it for a
+      // not-yet-onboarded user left the scheduler disarmed for the whole
+      // session, so nothing they did during onboarding ever reached the cloud.
+      // A brand-new user has no row; syncFromCloud arms and pushes to create one.
+      //
+      // recordDailyActivity and checkMilestones run AFTER syncFromCloud resolves,
+      // so the pull cannot overwrite the streak/lastActiveDate they set — and in
+      // `finally`, so they still run when the network work fails. Chained bare, a
+      // RevenueCat or Supabase failure (offline, simulator, expired token)
+      // rejected the promise and silently skipped them: the user opened the app,
+      // practised, and lost their streak.
+      void loginPurchasesUser(userId)
+        .then(() => syncFromCloud())
+        .catch((e: unknown) => {
+          captureError('Startup sync failed', {
+            reason: e instanceof Error ? e.message : String(e),
+          });
+        })
+        .finally(() => {
+          // Onboarded users only, unchanged from before. Starting a streak for
+          // someone still picking their role would be a behaviour change this
+          // refactor has no business making. (A user finishing onboarding gets
+          // their first recordDailyActivity on the next launch — pre-existing,
+          // and not this branch's problem to fix.)
+          if (hasOnboarded) {
             recordDailyActivity();
             checkMilestones();
-          });
-        // Smart timing: record this session hour, re-schedule daily notification,
-        // and request permission if not yet granted (non-blocking)
-        void recordSessionHour();
-        void initNotifications();
-      }
+          }
+        });
+
+      // Smart timing: record this session hour, re-schedule daily notification,
+      // and request permission if not yet granted (non-blocking)
+      void recordSessionHour();
+      void initNotifications();
     } else {
       setAuthenticated(false);
       setClerkUserId(null);

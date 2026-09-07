@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// Aliased: this file's own AppState is the store's shape.
+import { AppState as RNAppState } from 'react-native';
 import {
   pushProgress,
   pullProgress,
@@ -15,7 +17,13 @@ import {
   computeMastery,
   toCloud,
   mergeCloudState,
+  persistedKeys,
+  clearedOnSignOut,
+  changedSyncedKeys,
+  hasUrgentChange,
+  syncedFingerprint,
 } from '../engine/syncedProgress';
+import { createSyncScheduler } from '../lib/syncScheduler';
 import {
   configurePurchases,
   loginPurchasesUser,
@@ -108,14 +116,19 @@ function computeHasScenarioAccess(s: AccessFields, scenarioIndex: number): boole
 let _journalIdCounter = 0;
 const nextJournalId = () => `j-${Date.now()}-${++_journalIdCounter}`;
 
-// ─── Debounced cloud sync ─────────────────────────────────────────────────────
-// Batches rapid mutations (e.g., reviewing several phrases) into a single push.
-let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+// ─── Cloud sync scheduling ────────────────────────────────────────────────────
+// Nothing in this file calls the scheduler by hand. A single subscription at
+// the bottom watches the keys FIELD_POLICY marks as synced and decides for
+// itself — which is why every `scheduleSync(...)` that used to trail a mutation
+// is gone. Adding a synced field now wires its own pushes.
 let _customerInfoUnsub: (() => void) | null = null;
-function scheduleSync(fn: () => void, delayMs = 1500) {
-  if (_syncTimer) clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(fn, delayMs);
-}
+
+/** Fingerprint of the last payload that reached the cloud. */
+let _lastPushed: string | null = null;
+
+const syncScheduler = createSyncScheduler({
+  push: () => useAppStore.getState()._pushToCloud(),
+});
 
 // ─── Milestones ──────────────────────────────────────────────────────────────
 // DEFAULT_MILESTONES moved to src/constants/milestones.ts so FIELD_POLICY can
@@ -170,9 +183,20 @@ interface AppActions {
   addXP: (amount: number) => void;
 
   // Cloud sync
-  syncToCloud: () => Promise<void>;
+  /**
+   * @internal Push the synced slice. The subscriber at the bottom of this file
+   * is the only thing that should decide when this runs — reaching for it from
+   * a component is how the old `scheduleSync` call sites accumulated. Underscored
+   * so that reaching for it is a deliberate act. Components want `retryPush`.
+   */
+  _pushToCloud: () => Promise<void>;
+  /** Pull and merge. Called once at launch by the auth gate; arms the pusher. */
   syncFromCloud: () => Promise<void>;
   dismissSyncError: () => void;
+  /** Retry a failed push, from the sync banner. */
+  retryPush: () => Promise<void>;
+  /** Retry a failed pull, from the sync banner. */
+  retryPull: () => Promise<void>;
 
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
   getCommunityChoiceStat: (key: string) => number;
@@ -291,6 +315,7 @@ export const useAppStore = create<AppState>()(
       subscriptionStatus: 'free',
       trialStartedAt: null,
       trialPlan: null,
+      simulatedEntitlement: false,
       themePreference: 'system',
       stats: { ...DEFAULT_USER_STATS },
       savedPhrases: [],
@@ -320,23 +345,53 @@ export const useAppStore = create<AppState>()(
       isSyncing: false,
       lastSyncedAt: null,
       lastSyncError: null,
+      lastSyncFailure: null,
 
-      dismissSyncError: () => set({ lastSyncError: null }),
+      dismissSyncError: () => set({ lastSyncError: null, lastSyncFailure: null }),
+
+      // lastSyncError is set by both directions, so a single "retry" cannot
+      // know what to redo. The banner picks the one that failed.
+      retryPush: () => get()._pushToCloud(),
+      retryPull: () => get().syncFromCloud(),
 
       // Cloud sync
-      syncToCloud: async () => {
+      //
+      // Not part of the public interface: the subscriber at the bottom of this
+      // file is the only caller that should schedule a push. Components wanting
+      // to retry a failure use retryPush().
+      _pushToCloud: async () => {
         const s = get();
         if (!s.clerkUserId) return;
+
+        // A dev-simulated entitlement must never reach the real Supabase row —
+        // a release build would pull it back down and grant permanent free Pro.
+        // Blocking the whole push (not just the subscription columns) keeps this
+        // a one-line rule; the device is in a dev state and its progress is not
+        // worth risking that. Clears on sign-out.
+        if (s.simulatedEntitlement) return;
+
+        const row = toCloud(s);
+        const fingerprint = syncedFingerprint(row);
+        // Nothing has changed since the last successful push. This is what stops
+        // a pull from looping: a merge that unioned in nothing produces the same
+        // payload, so it does not bounce straight back up. A merge that *did*
+        // add records produces a different one and is pushed, which is how work
+        // done offline reaches the cloud.
+        if (fingerprint === _lastPushed) return;
+
         set({ isSyncing: true });
         try {
-          const { error } = await pushProgress(s.clerkUserId, toCloud(s));
+          const { error } = await pushProgress(s.clerkUserId, row);
           if (error) {
-            set({ isSyncing: false, lastSyncError: error });
+            // _lastPushed is deliberately left where it was, so the next change
+            // retries this payload rather than assuming it landed.
+            set({ isSyncing: false, lastSyncError: error, lastSyncFailure: 'push' });
           } else {
-            set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
+            _lastPushed = fingerprint;
+            set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null, lastSyncFailure: null });
           }
         } catch (e) {
-          set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed' });
+          set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed', lastSyncFailure: 'push' });
         }
       },
 
@@ -346,11 +401,20 @@ export const useAppStore = create<AppState>()(
         set({ isSyncing: true });
         const { data, error } = await pullProgress(s.clerkUserId);
         if (error) {
-          set({ isSyncing: false, lastSyncError: error });
+          set({ isSyncing: false, lastSyncError: error, lastSyncFailure: 'pull' });
+          // Arm anyway. The pull failing is not a reason to stop syncing local
+          // work for the rest of the session — and the payload comparison in
+          // _pushToCloud means the first push after this is a full, correct row.
+          syncScheduler.arm();
           return;
         }
-        set({ isSyncing: false, lastSyncError: null });
-        if (!data) return;
+        set({ isSyncing: false, lastSyncError: null, lastSyncFailure: null });
+        if (!data) {
+          // New user, no row yet. Arm and push so one gets created.
+          syncScheduler.arm();
+          syncScheduler.flush();
+          return;
+        }
 
         // Additive-only changes (a new column defaulting via asRecord/asArray)
         // merge safely even from a stale row. A future shape-changing migration
@@ -378,6 +442,17 @@ export const useAppStore = create<AppState>()(
           ...mergeCloudState(local, data),
           lastSyncedAt: new Date().toISOString(),
         });
+
+        // Only now is it safe to react to changes. Arming any earlier lets the
+        // rehydrate `set()` — or this merge — push before the pull has been
+        // reconciled, which on a device holding less than the cloud does means
+        // overwriting good data and then merging against the row we clobbered.
+        syncScheduler.arm();
+        // The merge is a union, so local may now hold records the row does not.
+        // Push them back: that is how work done offline, or on another device
+        // since its last push, reaches the cloud. If the merge changed nothing,
+        // the fingerprint comparison makes this a no-op.
+        syncScheduler.flush();
       },
 
       // Auth
@@ -410,6 +485,12 @@ export const useAppStore = create<AppState>()(
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
+        // Stop pushing before anything is cleared. The reset below writes every
+        // synced key; an armed scheduler would read that as a change worth
+        // uploading and race to write an emptied row over the user's data.
+        syncScheduler.disarm();
+        _lastPushed = null;
+
         await logoutPurchasesUser();
         await cancelAllNotifications();
         // Drop the RevenueCat listener too. Left registered, it keeps firing
@@ -419,34 +500,21 @@ export const useAppStore = create<AppState>()(
           _customerInfoUnsub();
           _customerInfoUnsub = null;
         }
-        // Clear all user-specific data so the next sign-in starts clean.
-        // hasOnboarded is intentionally preserved — a returning user lands on
-        // sign-in, not onboarding.
+
         set({
-          isAuthenticated: false,
-          clerkUserId: null,
-          user: null,
-          subscriptionStatus: 'free',
-          trialStartedAt: null,
-          trialPlan: null,
-          stats: { ...DEFAULT_USER_STATS },
-          phraseReviews: {},
-          completedScenarios: {},
-          savedPhrases: [],
-          unlockedPhraseIds: [],
-          favoriteScenarios: [],
-          sceneProgress: {},
-          lastActiveDate: null,
-          streakFreezes: 0,
-          dailyXP: { date: todayISO(), xp: 0 },
-          journal: [],
-          milestones: freshMilestones(),
+          // Which durable fields a sign-out clears — and what to — is declared
+          // once in FIELD_POLICY. The hand-written list this replaced had
+          // drifted: patternProgress and secretEndingsEarned were missing from
+          // it, so a second account on the same device inherited the first
+          // user's Sentence Builder progress and secret endings, then pushed
+          // them into their cloud row.
+          ...clearedOnSignOut(),
+          // Ephemeral state is not in the table; it is this file's business.
           activeScenarioState: null,
           communityStatsCache: {},
           lastSyncedAt: null,
           lastSyncError: null,
-          recentSessionHours: [],
-          notificationsEnabled: false,
+          lastSyncFailure: null,
         });
       },
 
@@ -458,7 +526,9 @@ export const useAppStore = create<AppState>()(
         const { error } = await deleteAccountData();
         if (error) return { error };
 
-        // Cloud row is gone; tear down everything local.
+        // Cloud row is gone; tear down everything local. signOut disarms the
+        // scheduler first, which matters more here than anywhere: a push landing
+        // after the delete would recreate the row we just erased.
         await get().signOut();
 
         // signOut deliberately preserves hasOnboarded so a returning user lands
@@ -500,8 +570,10 @@ export const useAppStore = create<AppState>()(
 
       // Subscription
       startTrial: (plan) => {
+        // All three fields are `urgent` in FIELD_POLICY, so the subscriber
+        // pushes this without waiting out the debounce. No call needed here —
+        // and none of the seven sites below need one either.
         set({ subscriptionStatus: 'trial', trialStartedAt: new Date().toISOString(), trialPlan: plan });
-        get().syncToCloud();
       },
       skipTrial: () => set({ subscriptionStatus: 'free', trialStartedAt: null, trialPlan: null }),
 
@@ -509,11 +581,19 @@ export const useAppStore = create<AppState>()(
         const result = await purchasePlan(plan);
         const subscribed = result.status === 'subscribed';
         if (subscribed) {
-          set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
           // A dev-simulated purchase unlocks the app locally but must never
-          // reach the cloud row — otherwise a release build pulls it down and
-          // grants permanent free Pro to a real account.
-          if (!result.simulated) get().syncToCloud();
+          // reach the cloud row — a release build would pull it down and grant
+          // permanent free Pro to a real account.
+          //
+          // The old guard was `if (!result.simulated) syncToCloud()`, which only
+          // skipped the push on this tick: any later mutation pushed the
+          // simulated status anyway, and a relaunch pushed the persisted one.
+          // The flag is persisted and checked inside _pushToCloud, so it holds.
+          set({
+            subscriptionStatus: 'subscribed',
+            trialStartedAt: null,
+            simulatedEntitlement: result.simulated === true,
+          });
         }
         return { subscribed, cancelled: result.cancelled, error: result.error };
       },
@@ -522,7 +602,6 @@ export const useAppStore = create<AppState>()(
         const result = await rcRestorePurchases();
         if (result.status === 'subscribed') {
           set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
-          get().syncToCloud();
           return { restored: true, error: null };
         }
         return { restored: false, error: result.error };
@@ -532,7 +611,6 @@ export const useAppStore = create<AppState>()(
         const result = await rcPresentPaywall();
         if (result.purchased || result.restored) {
           set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
-          get().syncToCloud();
           return { purchased: true };
         }
         return { purchased: false };
@@ -542,7 +620,6 @@ export const useAppStore = create<AppState>()(
         const result = await rcPresentPaywallIfNeeded();
         if (result.purchased || result.restored) {
           set({ subscriptionStatus: 'subscribed', trialStartedAt: null });
-          get().syncToCloud();
           return { purchased: true };
         }
         return { purchased: false };
@@ -564,14 +641,12 @@ export const useAppStore = create<AppState>()(
         const previousStatus = get().subscriptionStatus;
         if (status === 'subscribed' && previousStatus !== 'subscribed') {
           set({ subscriptionStatus: 'subscribed' });
-          get().syncToCloud();
         } else if (status === 'free' && previousStatus === 'subscribed') {
           // Cancelled, refunded, or charged back outside the app — without this
           // branch a stale 'subscribed' from a previous launch was never
           // corrected unless the CustomerInfo listener happened to fire a live
           // change event during this session.
           set({ subscriptionStatus: 'free' });
-          get().syncToCloud();
         }
 
         // Set up real-time listener for subscription changes (e.g., renewal, cancellation).
@@ -580,8 +655,10 @@ export const useAppStore = create<AppState>()(
         _customerInfoUnsub = addCustomerInfoListener((newStatus) => {
           const current = get().subscriptionStatus;
           if (newStatus !== current) {
-            set({ subscriptionStatus: newStatus });
-            get().syncToCloud();
+            // A real entitlement change from RevenueCat supersedes any dev
+            // simulation on this device — otherwise the flag would keep
+            // blocking pushes for a genuinely subscribed user.
+            set({ subscriptionStatus: newStatus, simulatedEntitlement: false });
           }
         });
       },
@@ -607,7 +684,6 @@ export const useAppStore = create<AppState>()(
             streakFreezes: s.streakFreezes + freezeBonus,
           };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       grantStreakFreeze: (count) => set((s) => ({ streakFreezes: s.streakFreezes + count })),
@@ -624,7 +700,6 @@ export const useAppStore = create<AppState>()(
         const result = applyStreakFreeze({ streakFreezes: s.streakFreezes, lastActiveDate: s.lastActiveDate }, todayISO());
         if (result.applied) {
           set({ streakFreezes: result.streakFreezes, lastActiveDate: result.lastActiveDate });
-          scheduleSync(() => get().syncToCloud());
         }
         return result.applied;
       },
@@ -637,7 +712,6 @@ export const useAppStore = create<AppState>()(
           const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       recordPhraseRating: (phraseId, rating) => {
@@ -649,7 +723,6 @@ export const useAppStore = create<AppState>()(
           const { studied, mastered, categoryMastery } = computeMastery(newReviews);
           return { phraseReviews: newReviews, stats: { ...s.stats, phrasesStudied: studied, phrasesMastered: mastered, categoryMastery } };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       recordPatternBuild: (patternId, correct) => {
@@ -661,7 +734,6 @@ export const useAppStore = create<AppState>()(
           };
           return { patternProgress: { ...s.patternProgress, [patternId]: next } };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       /**
@@ -674,7 +746,6 @@ export const useAppStore = create<AppState>()(
           const completed = { ...s.completedScenarios, [scenarioId]: { endingType, date: new Date().toISOString() } };
           return { completedScenarios: completed, stats: { ...s.stats, scenariosCompleted: Object.keys(completed) } };
         });
-        scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, endingType);
       },
 
@@ -740,7 +811,6 @@ export const useAppStore = create<AppState>()(
           const exists = s.savedPhrases.includes(phraseId);
           return { savedPhrases: exists ? s.savedPhrases.filter((id) => id !== phraseId) : [...s.savedPhrases, phraseId] };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       isPhraseSaved: (phraseId) => get().savedPhrases.includes(phraseId),
@@ -750,7 +820,6 @@ export const useAppStore = create<AppState>()(
           const exists = s.unlockedPhraseIds.includes(phraseId);
           return { unlockedPhraseIds: exists ? s.unlockedPhraseIds : [...s.unlockedPhraseIds, phraseId] };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       unlockPhrases: (phraseIds) => {
@@ -760,7 +829,6 @@ export const useAppStore = create<AppState>()(
           // completed scenario doesn't churn state or queue a pointless push.
           return merged.length === s.unlockedPhraseIds.length ? {} : { unlockedPhraseIds: merged };
         });
-        scheduleSync(() => get().syncToCloud());
       },
 
       isPhraseUnlocked: (phraseId) => get().unlockedPhraseIds.includes(phraseId),
@@ -848,7 +916,6 @@ export const useAppStore = create<AppState>()(
         // milestones appear in the same session they are earned (not next app open).
         get().checkMilestones();
         get().addXP(XP_PER_SCENARIO);
-        scheduleSync(() => get().syncToCloud());
         void rcRecordEndingStat(scenarioId, ending.type);
       },
 
@@ -860,37 +927,37 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: () => () => {
         useAppStore.setState({ _hydrated: true });
       },
-      partialize: (state) => ({
-        user: state.user,
-        clerkUserId: state.clerkUserId,
-        hasOnboarded: state.hasOnboarded,
-        isAuthenticated: state.isAuthenticated,
-        subscriptionStatus: state.subscriptionStatus,
-        trialStartedAt: state.trialStartedAt,
-        trialPlan: state.trialPlan,
-        themePreference: state.themePreference,
-        stats: state.stats,
-        savedPhrases: state.savedPhrases,
-        unlockedPhraseIds: state.unlockedPhraseIds,
-        favoriteScenarios: state.favoriteScenarios,
-        completedScenarios: state.completedScenarios,
-        patternProgress: state.patternProgress,
-        secretEndingsEarned: state.secretEndingsEarned,
-        sceneProgress: state.sceneProgress,
-        lastActiveDate: state.lastActiveDate,
-        streakFreezes: state.streakFreezes,
-        dailyXP: state.dailyXP,
-        phraseReviews: state.phraseReviews,
-        journal: state.journal,
-        milestones: state.milestones,
-        recentSessionHours: state.recentSessionHours,
-        notificationsEnabled: state.notificationsEnabled,
-        analyticsEnabled: state.analyticsEnabled,
-        analyticsOnboardingSent: state.analyticsOnboardingSent,
-      }),
+      // Which fields survive a restart is declared once, in FIELD_POLICY. The
+      // hand-written literal this replaced was one of six copies of the same
+      // list. syncedProgress.test.ts pins the resulting key set against an
+      // explicit expectation, so a policy edit that would silently drop
+      // persisted data fails the suite instead of shipping.
+      partialize: (state) =>
+        Object.fromEntries(
+          persistedKeys().map((k) => [k, state[k]]),
+        ) as unknown as AppState,
     }
   )
 );
+
+// ─── Push subscription ────────────────────────────────────────────────────────
+// The one place that decides a mutation is worth uploading. Previously this was
+// `scheduleSync(() => syncToCloud())` pasted after 19 mutations, where the
+// twentieth was a silent bug.
+//
+// Reference-equality diff only: every store mutation replaces the objects it
+// touches, so this is cheap on the hot path. Whether the payload *really*
+// differs is settled once, at push time, by the fingerprint comparison.
+useAppStore.subscribe((state, prev) => {
+  if (changedSyncedKeys(prev, state).length === 0) return;
+  syncScheduler.note(hasUrgentChange(prev, state));
+});
+
+// Foreground flush: pick up anything the debounce still owed when the app was
+// backgrounded, and retry a push that failed while the user was away.
+RNAppState.addEventListener('change', (status) => {
+  if (status === 'active') syncScheduler.flush();
+});
 
 // ─── Access hooks ─────────────────────────────────────────────────────────────
 // Use these in components instead of calling the store getters. Selecting a

@@ -67,46 +67,51 @@ The original sketch had a `syncedSet(patch)` store helper. The subscriber makes 
 
 ---
 
-## Phase 1 (PR1): The pure module
+## Phase 1 (PR1): The pure module — DONE (PR #50)
 
 Branch: `feat/synced-progress-module`. **No runtime behaviour change.** Nothing is wired; the store still works exactly as it does today.
 
-- [ ] Split `AppState` into `PersistableState` (data) + action interfaces. `activeScenarioState` and `communityStatsCache` stay in the ephemeral half.
+- [x] Split `AppState` into `PersistableState` (data) + action interfaces. `activeScenarioState` and `communityStatsCache` stay in the ephemeral half.
       *This is load-bearing: without the split, `DataKey` needs a hand-maintained `Omit` of ephemeral keys — a second list, reintroducing the exact drift this plan removes.*
-- [ ] Create `src/engine/syncedProgress.ts`.
-- [ ] Define `FieldPolicy`: `{ persist, sync, clearOnSignOut, urgent?, column?, decode?, merge? }`.
-- [ ] Define `FIELD_POLICY: { [K in keyof PersistableState]: FieldPolicy }` — the mapped type makes a missing key a compile error.
-- [ ] Port every field's current behaviour into the table verbatim, **including today's bugs** (the sign-out gaps stay wrong until PR2). Reference: the six lists in `useAppStore.ts` and `syncService.ts`.
-- [ ] `toCloud(state) → CloudUserData` — table-driven. Runs `derive()` first so `stats` still ships as a full blob.
-- [ ] `fromCloud(row) → Partial<PersistableState>` — table-driven, per-field `decode`. Absorbs `asRecord`, `asArray`, `normalizeStats`.
-- [ ] `mergeCloudState(local, row) → Partial<PersistableState>` — per-field merges, then a derive pass. This is the composition that has never been tested.
-- [ ] `persistedKeys()` and `clearedOnSignOut()` helpers.
-- [ ] Keep `syncMerge.ts` where it is. The table references its seven atoms. Nothing outside `src/engine/` imports it after PR2.
-- [ ] Tests: `mergeCloudState` composition; policy coverage (`sync: true` ⇒ has `merge` and `column`); `toCloud → fromCloud` round-trip.
-- [ ] `syncMerge.test.ts` unchanged — verify it still passes untouched.
-- [ ] `npx tsc --noEmit` clean; `npx jest` green.
+- [x] Create `src/engine/syncedProgress.ts`.
+- [x] Define `FieldPolicy`: `{ persist, sync, clearOnSignOut, urgent?, column?, decode?, merge? }`.
+- [x] Define `FIELD_POLICY: { [K in keyof PersistableState]: FieldPolicy }` — the mapped type makes a missing key a compile error.
+- [x] Port every field's current behaviour into the table verbatim, **including today's bugs** (the sign-out gaps stay wrong until PR2). Reference: the six lists in `useAppStore.ts` and `syncService.ts`.
+- [x] `toCloud(state) → CloudUserData` — table-driven. Runs `derive()` first so `stats` still ships as a full blob.
+- [x] `fromCloud(row) → Partial<PersistableState>` — table-driven, per-field `decode`. Absorbs `asRecord`, `asArray`, `normalizeStats`.
+- [x] `mergeCloudState(local, row) → Partial<PersistableState>` — per-field merges, then a derive pass. This is the composition that has never been tested.
+- [x] `persistedKeys()` and `clearedOnSignOut()` helpers.
+- [x] Keep `syncMerge.ts` where it is. The table references its seven atoms. Nothing outside `src/engine/` imports it after PR2.
+- [x] Tests: `mergeCloudState` composition; policy coverage (`sync: true` ⇒ has `merge` and `column`); `toCloud → fromCloud` round-trip.
+- [x] `syncMerge.test.ts` unchanged — verify it still passes untouched.
+- [x] `npx tsc --noEmit` clean; `npx jest` green.
 
 ---
 
-## Phase 2 (PR2): Wire it
+## Phase 2 (PR2): Wire it — DONE
 
 Branch: `feat/synced-progress-wiring`. Changes **when pushes fire** and **what the interface is**.
 
-- [ ] `partialize` derives from `persistedKeys()`.
-- [ ] Add a Jest test asserting the persisted key set equals a hard-coded list — the permanent guard against silent data loss on upgrade. Updated only deliberately.
-- [ ] `signOut()` resets from `clearedOnSignOut()`. **Mark `patternProgress` and `secretEndingsEarned` `clearOnSignOut: true` — this is the account-bleed fix.**
-- [ ] `deleteAccount()` keeps its explicit `hasOnboarded: false` line.
-- [ ] Add the push subscriber: diff synced keys → 1500ms debounce; `urgent` fields flush immediately.
-- [ ] **Arm the subscriber only after `_hydrated === true` AND the first `syncFromCloud` settles.**
+Two things came up during implementation that the plan had not anticipated:
+
+1. **The arming gate stranded onboarding.** `app/index.tsx` only called `syncFromCloud` on the `hasOnboarded` path, so a user still in onboarding never armed the scheduler and *nothing they did during onboarding reached the cloud*. Before this branch, `scheduleSync` fired regardless of arming, so it worked by accident. Fixed by running the pull on both paths — a brand-new user's pull returns no row, which arms and flushes to create one. `recordDailyActivity`/`checkMilestones` stay onboarded-only, unchanged.
+2. **The simulated-purchase guard was already leaky.** `if (!result.simulated) syncToCloud()` only skipped the push on that tick; any later mutation, and every relaunch, pushed the persisted simulated `subscribed` anyway. A subscriber makes that worse, not better. Replaced with a persisted `simulatedEntitlement` field that `_pushToCloud` checks — a genuine RevenueCat entitlement change clears it, and so does sign-out.
+
+- [x] `partialize` derives from `persistedKeys()`.
+- [x] Add a Jest test asserting the persisted key set equals a hard-coded list — the permanent guard against silent data loss on upgrade. Updated only deliberately.
+- [x] `signOut()` resets from `clearedOnSignOut()`. **Mark `patternProgress` and `secretEndingsEarned` `clearOnSignOut: true` — this is the account-bleed fix.**
+- [x] `deleteAccount()` keeps its explicit `hasOnboarded: false` line.
+- [x] Add the push subscriber: diff synced keys → 1500ms debounce; `urgent` fields flush immediately.
+- [x] **Arm the subscriber only after `_hydrated === true` AND the first `syncFromCloud` settles.**
       *Blocker if missed: `persist` rehydrates async and calls `set()`, which mutates synced keys and fires the subscriber. On a second device with less local data that pushes a thin row over good cloud data, and the subsequent pull then merges against the row it just clobbered. The payload guard below is empty on cold start, so it does not catch this.*
-- [ ] **Preserve the simulated-purchase guard.** Today `purchaseSubscription` does `if (!result.simulated) get().syncToCloud()` ([useAppStore.ts:691](../../../src/store/useAppStore.ts)). A policy-driven subscriber pushes on any `subscriptionStatus` change, which would send dev purchases to the cloud and grant permanent free Pro on a real account. Either add a suppress-next-push hatch, or keep simulated purchases out of `subscriptionStatus` entirely. The existing comment at that line is the spec.
-- [ ] Idempotence: skip the push when the serialised synced slice equals the last successfully-pushed payload. **Compare at push time only, post-debounce** — a per-mutation comparison would serialise all of `phraseReviews` on every card rated.
-- [ ] Retry falls out of the above for free (a failed push leaves the payload un-advanced, so the next mutation retries). Add a flush on app foreground.
-- [ ] Delete `scheduleSync` and all 19 call sites.
-- [ ] Remove `syncToCloud` from the public interface. Add `retryPush()` and `retryPull()` — `lastSyncError` is set by both paths, so a single `retrySync` cannot know what to redo.
-- [ ] Update `SyncStatusBanner.tsx` to call the right retry.
-- [ ] Reduce `syncService.ts` to an adapter: `pullProgress` generic over the table, coercion gone.
-- [ ] `npx tsc --noEmit` clean; `npx jest` green.
+- [x] **Preserve the simulated-purchase guard.** Today `purchaseSubscription` does `if (!result.simulated) get().syncToCloud()` ([useAppStore.ts:691](../../../src/store/useAppStore.ts)). A policy-driven subscriber pushes on any `subscriptionStatus` change, which would send dev purchases to the cloud and grant permanent free Pro on a real account. Either add a suppress-next-push hatch, or keep simulated purchases out of `subscriptionStatus` entirely. The existing comment at that line is the spec.
+- [x] Idempotence: skip the push when the serialised synced slice equals the last successfully-pushed payload. **Compare at push time only, post-debounce** — a per-mutation comparison would serialise all of `phraseReviews` on every card rated.
+- [x] Retry falls out of the above for free (a failed push leaves the payload un-advanced, so the next mutation retries). Add a flush on app foreground.
+- [x] Delete `scheduleSync` and all 19 call sites.
+- [x] Remove `syncToCloud` from the public interface. Add `retryPush()` and `retryPull()` — `lastSyncError` is set by both paths, so a single `retrySync` cannot know what to redo.
+- [x] Update `SyncStatusBanner.tsx` to call the right retry.
+- [x] Reduce `syncService.ts` to an adapter: `pullProgress` generic over the table, coercion gone.
+- [x] `npx tsc --noEmit` clean; `npx jest` green.
 
 ---
 

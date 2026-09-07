@@ -23,7 +23,11 @@ export function SyncStatusBanner() {
   const isSyncing = useAppStore((s) => s.isSyncing);
   const lastSyncError = useAppStore((s) => s.lastSyncError);
   const dismissSyncError = useAppStore((s) => s.dismissSyncError);
-  const syncToCloud = useAppStore((s) => s.syncToCloud);
+  // Retry whichever direction actually failed. This used to always re-push,
+  // so a failed *pull* was "retried" by uploading — which never addressed it.
+  const lastSyncFailure = useAppStore((s) => s.lastSyncFailure);
+  const retryPush = useAppStore((s) => s.retryPush);
+  const retryPull = useAppStore((s) => s.retryPull);
 
   // Only show when there's an error to surface
   const visible = !!lastSyncError;
@@ -62,7 +66,7 @@ export function SyncStatusBanner() {
             {/* Retry */}
             <Pressable
               hitSlop={8}
-              onPress={() => void syncToCloud()}
+              onPress={() => void (lastSyncFailure === 'pull' ? retryPull() : retryPush())}
               disabled={isSyncing}
               accessibilityRole="button"
               accessibilityLabel={STRINGS.ui.syncBanner.retryA11y}
