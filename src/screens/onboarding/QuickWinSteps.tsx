@@ -27,7 +27,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
   const insets = useSafeAreaInsets();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
-  const { mode } = draft;
+  const { mode, name } = draft;
   const {
     phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
     setScenarioCompleted, toggleNotifs, setToggleNotifs,
@@ -131,7 +131,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
             <View style={{ marginBottom: 24 }}>
-              <Companion size={80} />
+              <Companion size={80} name={name} />
             </View>
 
             <Text style={{

@@ -81,6 +81,15 @@ const BOUNDARY_PAIRS: Pair[] = [
   // green test run.
   { fg: 'BG', bg: 'PRIMARY', min: AA_LARGE, note: 'switch knob on the on-track' },
   { fg: 'BG', bg: 'TEXT3', over: 'BG', min: AA_LARGE, note: 'switch knob on the off-track' },
+
+  // PrimaryButton's disabled label. The mode step's Continue starts disabled by
+  // design, so this is a resting state a learner reads, not a transient one.
+  //
+  // It shipped as C.BG on the pale disabled wash under a blanket opacity of
+  // 0.5 — 1.10:1 dark, 1.04:1 light, no readable label. Asserted as TEXT so the
+  // 4.5 threshold applies: a disabled control is technically exempt from
+  // 1.4.3, but a button whose label cannot be read at all is not a design.
+  { fg: 'TEXT3', bg: 'JADE_ACCENT_DIM', over: 'BG', min: AA_TEXT, note: 'disabled primary-button label' },
 ];
 
 describe.each([
