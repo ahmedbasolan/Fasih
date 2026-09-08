@@ -74,9 +74,41 @@ Builder forgot the top inset entirely and put its back button under the notch,
 three screens each applied the inset at a different level, and every onboarding
 step invented its own `paddingTop: insets.top + <a number>`.
 
+### The tab bar owns the bottom inset
+
+The bottom tab bar is a normal-flow sibling of the screen container, not an
+overlay: `BottomTabView` renders `[screens (flex: 1), tabBar]` in a column, and
+`BottomTabBar` only sets `position: 'absolute'` while it is hidden for the
+keyboard. Confirmed in
+`expo-router/build/react-navigation/bottom-tabs/views/`, and it is the same
+code on both platforms.
+
+So a tab screen already ends above the bar, and the bar already carries
+`insets.bottom`. A tab screen that clears it again is padding against nothing.
+All four did, by three different amounts — measured as 80–114px of dead space
+at the end of every tab scroll. `tabBarHandlesBottomInset` is how a screen says
+so; the lint pins the four as not touching `insets.bottom` at all.
+
+### One way to write an offset
+
+`insets.top + <bare number>` fails the lint anywhere in `src/` or `app/`. Not
+because any particular number was wrong, but because eight of them coexisted
+and nothing said whether two screens meant the same offset or had each guessed.
+A token is the same offset, named.
+
+Two screens are not on `Screen` and say why in a comment: `ScenariosScreen` and
+`PhraseLibrary` are FlashLists, and a virtualised list inside `Screen`'s
+ScrollView is a worse bug than the one being avoided. They call `screenPadding`
+directly so they cannot drift from it.
+
 ## Primitives
 
-- **`Screen`** — safe areas, margins, content/action split.
+- **`Screen`** — safe areas, margins, content/action split. `background` takes
+  the watermark: it has to sit under the scroll, ignore `SCREEN_MARGIN` and
+  bleed off all four edges, which no child in the content flow can do. The top
+  inset lives on an inner zone rather than the root for the same reason — an
+  absolutely positioned child is laid out against its parent's *padding* box,
+  so a root `paddingTop` would push the watermark out of the status bar.
 - **`Stack`** / **`Row`** — spacing between children. `gap` is typed as a key of
   `SPACE`, so `<Stack gap={13}>` does not compile.
 
@@ -112,6 +144,10 @@ string can resolve differently on the two platforms, and the one being validated
 is not the one being shipped. Keeping Arabic and Latin in separate `Text` runs —
 which `splitBilingualTitle` does — is belt-and-braces on iOS and load-bearing on
 Android.
+
+Two screens have never been opened even in the web preview: `PracticeScreen`
+and `PhraseLibrary` are both gated behind three completed scenarios, so their
+layouts are covered by the lint and by nothing else.
 
 **The fix for all of this is a build on a real iPhone.** Nothing in this
 directory substitutes for it.
