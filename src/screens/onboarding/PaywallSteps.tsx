@@ -30,7 +30,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.paywallSub}</Text>
               </View>
             </FadeIn>
@@ -57,8 +57,8 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       </LinearGradient>
                       <View style={{ flex: 1, paddingTop: 4 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: labelColor, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{day}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
                       </View>
                     </View>
                   </FadeIn>
@@ -73,7 +73,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                 </ShimmerButton>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>{STRINGS.onboarding.cancelAnytime}</Text>
                 <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
                 </Pressable>
               </View>
             </FadeIn>
@@ -86,7 +86,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.oneSubscription}</Text>
               </View>
             </FadeIn>
@@ -113,7 +113,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                         <featureData.Icon size={20} color={C.WHITE} />
                       </LinearGradient>
                       <View>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{label}</Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>{sub}</Text>
                       </View>
                     </View>
@@ -126,7 +126,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               <View style={{ borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 16 }}>
                 <Shield size={17} color={C.JADE2} />
                 <View>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.JADE2 }}>{STRINGS.onboarding.satisfactionGuarantee}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.JADE2 }}>{STRINGS.onboarding.satisfactionGuarantee}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>{STRINGS.onboarding.refundPolicy}</Text>
                 </View>
               </View>
@@ -142,7 +142,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
 
             <FadeIn delay={1000}>
               <Pressable onPress={skip} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
               </Pressable>
             </FadeIn>
           </ScrollView>
@@ -154,7 +154,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.trialCancel}</Text>
               </View>
             </FadeIn>
@@ -171,7 +171,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                 >
                   <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
                     <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
                     </LinearGradient>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 80 }}>
@@ -193,7 +193,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.yearlyBest}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.JADE_ACCENT }}>AED 16.6</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{STRINGS.onboarding.billingYearly('AED 199', 'AED 269')}</Text>
                     </View>
@@ -223,7 +223,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.monthlyFlex}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT }}>AED 39</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
                       </View>
                     </View>
                   </View>
@@ -236,7 +236,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                   <FadeIn key={f.label} delay={400 + i * 60}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                       <Check size={13} color={C.JADE2} />
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{f.label}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{f.label}</Text>
                     </View>
                   </FadeIn>
                 ))}
@@ -255,7 +255,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                   {STRINGS.onboarding.refundGuarantee}
                 </Text>
                 <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipUnlock}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipUnlock}</Text>
                 </Pressable>
               </View>
             </FadeIn>

@@ -103,6 +103,30 @@ export const TYPE_SIZES: readonly number[] = Object.values(TYPE).map(t => t.font
 export const TOUCH_MIN = 44;
 
 /**
+ * iPhone safe-area reference figures.
+ *
+ * The app LAUNCHES on iOS and is VERIFIED on Android, so iOS geometry is
+ * structurally unobserved — the web preview has no safe areas at all, and
+ * nobody is going to eyeball an iPhone before submission. These exist so
+ * inset-dependent layout can be reasoned about and asserted rather than
+ * checked by looking.
+ *
+ * Do not read insets from these at runtime. `useSafeAreaInsets()` is the
+ * source of truth on device; these are the numbers to design against and to
+ * write tests with.
+ */
+export const IOS_INSETS = {
+  /** Dynamic Island (14 Pro and later). The largest top inset shipping. */
+  topDynamicIsland: 59,
+  /** Notch (X through 14). */
+  topNotch: 47,
+  /** Home indicator. Present on every notch/Island device. */
+  bottomHomeIndicator: 34,
+  /** Touch ID era — no top or bottom inset at all. The layout must survive 0. */
+  legacyNone: 0,
+} as const;
+
+/**
  * The three vertical zones of a screen.
  *
  * Placement rules, so a screen cannot invent its own arrangement:

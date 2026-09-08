@@ -6,7 +6,7 @@
  * gets ignored, so the current violations are recorded and the test asserts the
  * count does not GROW.
  */
-import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE } from '../../components/design/layout';
+import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE, IOS_INSETS } from '../../components/design/layout';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
 
 declare const __dirname: string;
@@ -66,6 +66,42 @@ describe('the system is internally consistent', () => {
   it('radius budget is unchanged by the grid work', () => {
     expect(RADIUS.flat).toBe(0);
     expect(RADIUS.sheet).toBe(24);
+  });
+});
+
+/**
+ * iPhone is the launch platform and Android is the only one anyone looks at, so
+ * these assert the geometry nobody will see before submission.
+ */
+describe('iPhone safe areas', () => {
+  it('the action zone clears the home indicator on every iPhone', () => {
+    // Screen pads the action zone by insets.bottom + SPACE.lg. On a device with
+    // a home indicator that has to leave a real gap above it, not sit on it.
+    const padded = IOS_INSETS.bottomHomeIndicator + SPACE.lg;
+    expect(padded - IOS_INSETS.bottomHomeIndicator).toBeGreaterThanOrEqual(SPACE.md);
+    expect(padded).toBeGreaterThanOrEqual(ZONE.actionMinHeight - SPACE.lg);
+  });
+
+  it('a header clears the Dynamic Island, the tallest inset shipping', () => {
+    // ScreenHeader adds SPACE.lg on top of insets.top; the back row is TOUCH_MIN
+    // tall. Its top edge must start below the Island, not under it.
+    const backRowTop = IOS_INSETS.topDynamicIsland + SPACE.lg;
+    expect(backRowTop).toBeGreaterThan(IOS_INSETS.topDynamicIsland);
+    expect(backRowTop + TOUCH_MIN).toBeGreaterThan(IOS_INSETS.topDynamicIsland + TOUCH_MIN);
+  });
+
+  it('the layout survives a zero inset', () => {
+    // Pre-notch iPhones and most Android devices report 0. A layout that only
+    // looks right because an inset pushed it down is broken on those.
+    const top = IOS_INSETS.legacyNone + SPACE.lg;
+    expect(top).toBeGreaterThanOrEqual(SPACE.lg);
+  });
+
+  it('the two top insets differ, so nothing may hardcode one', () => {
+    // 47 vs 59 is 12pt — three baseline units. Any layout tuned to one is
+    // wrong on the other, which is why Screen reads them at runtime.
+    expect(IOS_INSETS.topDynamicIsland).not.toBe(IOS_INSETS.topNotch);
+    expect(IOS_INSETS.topDynamicIsland - IOS_INSETS.topNotch).toBe(12);
   });
 });
 
@@ -140,8 +176,8 @@ describe('type scale adoption', () => {
     return count;
   })();
 
-  /** Recorded 2026-09-04, the day the scale was introduced. Must only fall. */
-  const MAX_OFF_SCALE = 235;
+  /** 235 the day the scale landed; 186 after the onboarding pass. Must only fall. */
+  const MAX_OFF_SCALE = 186;
 
   it('does not add new off-scale font sizes', () => {
     expect(offScale).toBeLessThanOrEqual(MAX_OFF_SCALE);

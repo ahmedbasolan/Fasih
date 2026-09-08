@@ -109,18 +109,18 @@ export function OnboardingScenarioPlayer({
         },
         charInitial: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 15,
+          fontSize: 16,
           color: C.JADE2,
         },
         charName: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 13,
+          fontSize: 14,
           color: C.TEXT2,
           fontWeight: '600',
         },
         npcArabic: {
           fontFamily: FONT_ARABIC_EXTRA,
-          fontSize: 26,
+          fontSize: 28,
           color: C.TEXT,
           textAlign: 'right',
           writingDirection: 'rtl',
@@ -129,14 +129,14 @@ export function OnboardingScenarioPlayer({
         },
         npcRoman: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 13,
+          fontSize: 14,
           color: C.JADE2,
           fontWeight: '600',
           marginBottom: 4,
         },
         npcEnglish: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           color: C.TEXT2,
           lineHeight: 18,
         },
@@ -176,7 +176,7 @@ export function OnboardingScenarioPlayer({
         },
         choiceArabic: {
           fontFamily: FONT_ARABIC,
-          fontSize: 17,
+          fontSize: 18,
           lineHeight: 26,
           color: C.JADE,
           textAlign: 'right',
@@ -185,14 +185,14 @@ export function OnboardingScenarioPlayer({
         },
         choiceRoman: {
           fontFamily: FONT_LATIN,
-          fontSize: 10,
+          fontSize: 11,
           fontStyle: 'italic',
           color: `${C.JADE}70`,
           marginBottom: 5,
         },
         choiceText: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           lineHeight: 20,
           color: C.TEXT2,
         },
@@ -216,7 +216,7 @@ export function OnboardingScenarioPlayer({
         },
         youSaidArabic: {
           fontFamily: FONT_ARABIC_EXTRA,
-          fontSize: 20,
+          fontSize: 22,
           color: C.TEXT,
           textAlign: 'right',
           writingDirection: 'rtl',
@@ -225,7 +225,7 @@ export function OnboardingScenarioPlayer({
         },
         youSaidRoman: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 13,
+          fontSize: 14,
           color: C.PRIMARY,
           fontWeight: '600',
         },
@@ -258,7 +258,7 @@ export function OnboardingScenarioPlayer({
         },
         unlockSubtitle: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           color: C.TEXT2,
           textAlign: 'center',
         },
@@ -288,7 +288,7 @@ export function OnboardingScenarioPlayer({
         },
         phraseEnglish: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           color: C.TEXT2,
         },
         phraseUnlockedTag: {
@@ -304,7 +304,7 @@ export function OnboardingScenarioPlayer({
         },
         phraseUnlockedTagText: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 10,
+          fontSize: 11,
           color: C.TEXT2,
           fontWeight: '700',
           letterSpacing: 0.3,
@@ -319,7 +319,7 @@ export function OnboardingScenarioPlayer({
         },
         culturalNoteLabel: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 10,
+          fontSize: 11,
           color: C.TEXT3,
           textTransform: 'uppercase',
           letterSpacing: 0.6,
@@ -348,7 +348,7 @@ export function OnboardingScenarioPlayer({
         },
         nextButtonText: {
           fontFamily: FONT_LATIN_SEMI,
-          fontSize: 15,
+          fontSize: 16,
           color: C.BG,
           fontWeight: '700',
         },
@@ -494,7 +494,7 @@ export function OnboardingScenarioPlayer({
         transition={{ type: 'timing', duration: 350 }}
       >
         <View style={styles.unlockHeader}>
-          <Text style={{ fontSize: 36 }}>✨</Text>
+          <Text style={{ fontSize: 34 }}>✨</Text>
           <Text style={styles.unlockTitle}>Phrase Unlocked!</Text>
           <Text style={styles.unlockSubtitle}>You learned this in your first Gulf Arabic exchange</Text>
         </View>
@@ -519,7 +519,7 @@ export function OnboardingScenarioPlayer({
                   <Text style={styles.phraseRoman}>{phrase.roman}</Text>
                   <Text style={styles.phraseEnglish}>{phrase.english}</Text>
                   <View style={styles.phraseUnlockedTag}>
-                    <Text style={{ fontSize: 10 }}>✨</Text>
+                    <Text style={{ fontSize: 11 }}>✨</Text>
                     <Text style={styles.phraseUnlockedTagText}>Unlocked</Text>
                   </View>
                 </LinearGradient>

@@ -47,7 +47,7 @@ the same optical size; `ARABIC_LINE_HEIGHT_MULTIPLIER` and `ARABIC_SCALE` in
 
 ### The ratchet
 
-235 off-scale sizes were recorded the day the scale landed. The lint asserts the
+235 off-scale sizes were recorded the day the scale landed, 186 after onboarding was migrated. The lint asserts the
 count does not grow, and a second assertion stops the ceiling drifting far above
 reality.
 

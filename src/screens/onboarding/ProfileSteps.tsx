@@ -139,7 +139,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               
               <FadeIn delay={200}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourName}</Text>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourName}</Text>
                   <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.kafGreetingSub}</Text>
                 </View>
               </FadeIn>
@@ -171,7 +171,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
               <FadeIn delay={380} style={{ width: '100%' }}>
                 <View style={{ alignItems: 'center', gap: 10 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
                     {STRINGS.onboarding.genderQuestion}
                   </Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center', lineHeight: 18 }}>
@@ -262,7 +262,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <FadeIn delay={100}>
               <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
                 <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.roleTailored}</Text>
               </View>
             </FadeIn>
@@ -353,7 +353,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                         >
                           <Text style={{
                             fontFamily: chipSelected ? FONT_LATIN_SEMI : FONT_LATIN,
-                            fontSize: 13,
+                            fontSize: 14,
                             color: chipSelected ? C.PRIMARY : C.TEXT2,
                           }}>
                             {p}
@@ -378,7 +378,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24, gap: 16 }}>
             <FadeIn delay={100}>
               <View>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
                 <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.selectEverything}</Text>
               </View>
             </FadeIn>
@@ -405,8 +405,8 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                     >
                       <Icon size={20} color={selected ? C.PRIMARY : C.TEXT3} />
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 15, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
+                        <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 16, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
                       </View>
                       <View style={{
                         width: 24, height: 24, borderRadius: RADIUS.pill, borderWidth: 1,
@@ -538,7 +538,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               <AnimatePresence>
                 {!holdComplete && (
                   <FadeIn delay={400} style={{ zIndex: 2 }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
                       {STRINGS.onboarding.dailyHabit}
                     </Text>
                   </FadeIn>
