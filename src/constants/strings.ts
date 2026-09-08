@@ -167,6 +167,8 @@ export const STRINGS = {
     monthlyFlex: 'Maximum flexibility',
     billingYearly: (yearPrice: string, savings: string) => `Billed ${yearPrice}/year • Saves ${savings}`,
     perMonth: '/month',
+    // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
+    thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
     skipUnlock: 'Skip — unlock by completing 3 scenarios',
     skipWarningTitle: 'Are you sure you want to leave?',
     skipWarningMessage: "You've already set up your custom learning path and unlocked Gulf Arabic phrases. Skipping now means you won't save this progress.",
