@@ -93,7 +93,7 @@ function GhostBtn({ children, onPress }: { children: string; onPress?: () => voi
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+      style={{ borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', borderWidth: 1, borderColor: C.BORDER }}
     >
       <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{children}</Text>
     </Pressable>
@@ -153,15 +153,17 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                   accessibilityLabel="Your name"
                   autoCapitalize="words"
                   returnKeyType="done"
+                  // A ruled line, not a filled box. Sadaf separates by hairline
+                  // and space; a rounded fill here is the card language steps
+                  // 0-1 no longer use.
                   style={{
-                    fontFamily: FONT_LATIN_SEMI,
-                    fontSize: 18,
+                    fontFamily: FONT_HEADING_SEMI,
+                    fontSize: 22,
                     color: C.TEXT,
-                    padding: 16,
-                    borderRadius: 12,
-                    backgroundColor: C.SURFACE,
-                    borderWidth: 1,
-                    borderColor: C.BORDER,
+                    paddingVertical: SPACE.md,
+                    borderRadius: RADIUS.flat,
+                    borderBottomWidth: 1,
+                    borderBottomColor: name.trim() ? C.PRIMARY : C.BORDER2,
                     textAlign: 'center',
                   }}
                 />
@@ -193,19 +195,20 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                             minHeight: 72,
                             paddingVertical: 12,
                             paddingHorizontal: 10,
-                            borderRadius: 14,
+                            borderRadius: RADIUS.flat,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: 4,
-                            backgroundColor: selected ? C.JADE_ACCENT_DIM : C.SURFACE,
-                            borderWidth: selected ? 1.5 : 1,
-                            borderColor: selected ? C.JADE_ACCENT_BORDER : C.BORDER,
+                            gap: SPACE.xs,
+                            // Flat. Selection is a border and a weight change,
+                            // matching the mode plates on step 1 — no fill.
+                            borderWidth: 1,
+                            borderColor: selected ? C.PRIMARY : C.BORDER,
                           }}
                         >
-                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.JADE_ACCENT : C.TEXT }}>
+                          <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.PRIMARY : C.TEXT }}>
                             {opt.label}
                           </Text>
-                          <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(13 * ARABIC_SCALE), color: selected ? C.JADE_ACCENT : C.TEXT3 }}>
+                          <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(13 * ARABIC_SCALE), color: selected ? C.PRIMARY : C.TEXT3 }}>
                             {opt.example}
                           </Text>
                         </Pressable>
@@ -289,37 +292,21 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           justifyContent: 'center',
                           paddingHorizontal: 12,
                           paddingVertical: 10,
-                          gap: 8,
-                          backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
-                          borderRadius: 20,
-                          borderWidth: selected ? 2 : 1,
-                          borderColor: selected ? C.JADE : C.BORDER,
+                          gap: SPACE.sm,
+                          // Flat, bordered, no fill and no gradient wash — the
+                          // same selection language as the mode plates.
+                          borderRadius: RADIUS.flat,
+                          borderWidth: 1,
+                          borderColor: selected ? C.PRIMARY : C.BORDER,
                           overflow: 'hidden'
                         }}
                       >
-                        {selected && (
-                          <LinearGradient
-                            colors={[C.JADE_SURFACE, 'transparent']}
-                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                          />
-                        )}
-
-                        <View style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 12,
-                          backgroundColor: selected ? C.JADE : C.BORDER,
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Icon size={16} color={selected ? C.BG : C.TEXT2} />
-                        </View>
+                        <Icon size={20} color={selected ? C.PRIMARY : C.TEXT3} />
 
                         <Text style={{
-                          fontFamily: FONT_LATIN_SEMI,
+                          fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI,
                           fontSize: 12,
-                          color: selected ? C.JADE2 : C.TEXT,
+                          color: selected ? C.PRIMARY : C.TEXT,
                           textAlign: 'center',
                         }} numberOfLines={1}>
                           {label}
@@ -354,18 +341,20 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           accessibilityRole="radio"
                           accessibilityState={{ selected: chipSelected }}
                           style={{
-                            paddingHorizontal: 14,
-                            paddingVertical: 8,
-                            borderRadius: 20,
-                            borderWidth: 1.5,
-                            borderColor: chipSelected ? C.JADE_ACCENT : C.BORDER,
-                            backgroundColor: chipSelected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
+                            paddingHorizontal: SPACE.lg,
+                            paddingVertical: SPACE.sm,
+                            // Chips stay pill-shaped — RADIUS.pill is in the
+                            // budget precisely for interactive pills. The fill
+                            // is what goes.
+                            borderRadius: RADIUS.pill,
+                            borderWidth: 1,
+                            borderColor: chipSelected ? C.PRIMARY : C.BORDER,
                           }}
                         >
                           <Text style={{
-                            fontFamily: FONT_LATIN,
+                            fontFamily: chipSelected ? FONT_LATIN_SEMI : FONT_LATIN,
                             fontSize: 13,
-                            color: chipSelected ? C.JADE_ACCENT : C.TEXT2,
+                            color: chipSelected ? C.PRIMARY : C.TEXT2,
                           }}>
                             {p}
                           </Text>
@@ -394,7 +383,8 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               </View>
             </FadeIn>
 
-            <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
+            {/* Ruled rows, not stacked cards: a list of goals IS a list. */}
+            <ScrollView contentContainerStyle={{ paddingBottom: SPACE.lg }}>
               {goals.map(({ id, label, sub, Icon }, idx) => {
                 const selected = selectedGoals.includes(id);
                 return (
@@ -403,26 +393,25 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                       onPress={() => toggleGoal(id)}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: selected }}
-                      accessibilityLabel={label}
+                      accessibilityLabel={`${label}. ${sub}`}
                       style={{
-                        flexDirection: 'row', alignItems: 'center', gap: 12,
-                        borderRadius: 16, padding: 14,
-                        backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
-                        borderWidth: selected ? 2 : 1,
-                        borderColor: selected ? C.JADE : C.BORDER,
+                        flexDirection: 'row', alignItems: 'center', gap: SPACE.md,
+                        borderRadius: RADIUS.flat, paddingVertical: SPACE.lg,
+                        borderTopWidth: idx === 0 ? StyleSheet.hairlineWidth : 0,
+                        borderTopColor: C.BORDER,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: C.BORDER,
                       }}
                     >
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: selected ? C.JADE_DIM : C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={18} color={selected ? C.JADE2 : C.TEXT2} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: selected ? C.TEXT2 : C.TEXT3 }}>{sub}</Text>
+                      <Icon size={20} color={selected ? C.PRIMARY : C.TEXT3} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 15, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
                       </View>
                       <View style={{
-                        width: 26, height: 26, borderRadius: 13, borderWidth: 2,
-                        borderColor: selected ? C.JADE2 : C.BORDER2,
-                        backgroundColor: selected ? C.JADE2 : 'transparent',
+                        width: 24, height: 24, borderRadius: RADIUS.pill, borderWidth: 1,
+                        borderColor: selected ? C.PRIMARY : C.BORDER2,
+                        backgroundColor: selected ? C.PRIMARY : 'transparent',
                         alignItems: 'center', justifyContent: 'center'
                       }}>
                         <AnimatePresence>
