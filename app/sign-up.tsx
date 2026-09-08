@@ -190,7 +190,7 @@ export default function SignUpScreen() {
 
               {error ? (
                 <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                 </View>
               ) : null}
 
@@ -217,7 +217,7 @@ export default function SignUpScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={STRINGS.auth.signUp.backToSignUp}
               >
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
               </Pressable>
             </MotiView>
           ) : (
@@ -250,7 +250,7 @@ export default function SignUpScreen() {
                     autoComplete="name"
                     onFocus={() => setFocused('name')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                 </View>
 
@@ -273,7 +273,7 @@ export default function SignUpScreen() {
                     autoComplete="email"
                     onFocus={() => setFocused('email')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                 </View>
 
@@ -295,7 +295,7 @@ export default function SignUpScreen() {
                     autoCapitalize="none"
                     onFocus={() => setFocused('password')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
@@ -355,7 +355,7 @@ export default function SignUpScreen() {
                   >
                     {agreed && <Check size={12} strokeWidth={1.5} color={C.BG} />}
                   </Pressable>
-                  <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
+                  <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>
                     {STRINGS.auth.signUp.agreeTermsPrefix}{' '}
                     <LegalLink doc="terms" label={STRINGS.legal.termsOfService} />
                     {' '}{STRINGS.auth.signUp.agreeTermsConjunction}{' '}
@@ -372,7 +372,7 @@ export default function SignUpScreen() {
                   style={{ marginBottom: 16 }}
                 >
                   <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                   </View>
                 </MotiView>
               ) : null}

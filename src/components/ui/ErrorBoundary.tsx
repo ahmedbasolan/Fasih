@@ -99,9 +99,9 @@ const getStyles = (C: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 32,
     gap: 12,
   },
-  arabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 48, color: C.ERROR, opacity: 0.7 },
+  arabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 34, color: C.ERROR, opacity: 0.7 },
   title: { fontFamily: FONT_LATIN_BOLD, fontSize: 18, textAlign: 'center' },
-  subtitle: { fontFamily: FONT_LATIN, fontSize: 13, textAlign: 'center', maxWidth: 280, lineHeight: 20 },
+  subtitle: { fontFamily: FONT_LATIN, fontSize: 14, textAlign: 'center', maxWidth: 280, lineHeight: 20 },
   button: {
     marginTop: 16,
     borderRadius: 16,

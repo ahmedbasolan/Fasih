@@ -92,7 +92,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               With the hero gone it sits here, beside the scene count, where it
               is on the paper rather than floating over an image. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 24, color: C.TEXT }}>
+            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT }}>
               {script.scenes.length} Scenes
             </Text>
             <Pressable

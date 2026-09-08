@@ -45,18 +45,17 @@ Arabic is deliberately **not** in the scale. It needs more leading than Latin at
 the same optical size; `ARABIC_LINE_HEIGHT_MULTIPLIER` and `ARABIC_SCALE` in
 `tokens.ts` apply on top of a chosen size.
 
-### The ratchet
+### The floor
 
-235 off-scale sizes were recorded the day the scale landed, 186 after onboarding was migrated. The lint asserts the
-count does not grow, and a second assertion stops the ceiling drifting far above
-reality.
+235 off-scale sizes the day the scale landed, 186 after onboarding, **0** after
+the full sweep. It is a hard floor now rather than a ratchet: there is nothing
+left to migrate, so a new off-scale size is a new decision and should be argued
+for rather than absorbed.
 
-**Raising `MAX_OFF_SCALE` to make a build pass defeats the mechanism.** Fix the
-call site, or make the case that the size belongs on the scale.
-
-This is the same ratchet `languageContent.test.ts` uses, for the same reason: a
-permanently-red suite gets ignored within a week, and a lint nobody reads
-enforces nothing.
+The only exemption is the watermark glyphs (140–260px in `GhostLetters` and the
+mode plates). They are a graphic device, not type — nobody reads them, and no
+text scale sensibly extends to 260. The exemption is scoped to named files AND
+to sizes above 100, so an ordinary heading cannot hide behind it.
 
 ## Zones
 

@@ -152,14 +152,14 @@ export default function ForgotPasswordScreen() {
                     autoComplete="email"
                     onFocus={() => setFocused('email')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                 </View>
 
                 {error ? (
                   <MotiView from={{ opacity: 0, translateY: -10 }} animate={{ opacity: 1, translateY: 0 }} style={{ marginTop: 12 }}>
                     <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                     </View>
                   </MotiView>
                 ) : null}
@@ -216,7 +216,7 @@ export default function ForgotPasswordScreen() {
                     maxLength={6}
                     onFocus={() => setFocused('code')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12, letterSpacing: 4 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12, letterSpacing: 4 }}
                   />
                 </View>
 
@@ -237,7 +237,7 @@ export default function ForgotPasswordScreen() {
                     autoCapitalize="none"
                     onFocus={() => setFocused('password')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
@@ -252,7 +252,7 @@ export default function ForgotPasswordScreen() {
 
               {error ? (
                 <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                 </View>
               ) : null}
 
@@ -278,7 +278,7 @@ export default function ForgotPasswordScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={STRINGS.auth.forgotPassword.back}
               >
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.back}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.forgotPassword.back}</Text>
               </Pressable>
             </MotiView>
           )}

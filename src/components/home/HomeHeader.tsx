@@ -34,7 +34,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
     },
     arabicGreeting: {
       fontFamily: FONT_ARABIC_EXTRA,
-      fontSize: 32,
+      fontSize: 34,
       color: C.CULTURAL_GOLD,
       marginBottom: 4,
       textAlign: 'right',

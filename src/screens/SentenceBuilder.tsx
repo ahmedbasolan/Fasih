@@ -284,7 +284,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     heroArabic: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 30,
+      fontSize: 28,
       color: C.WHITE,
       textAlign: 'right' as const,
       writingDirection: 'rtl' as const,
@@ -311,12 +311,12 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     stepPillArabic: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 15,
+      fontSize: 16,
       marginBottom: 1,
     },
     stepPillLatin: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 9,
+      fontSize: 11,
       letterSpacing: 0.5,
       textTransform: 'uppercase' as const,
     },
@@ -329,7 +329,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderWidth: 1,
       marginBottom: 14,
     },
-    patternCardArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 26, marginBottom: 6, textAlign: 'center' as const, writingDirection: 'rtl' as const },
+    patternCardArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 28, marginBottom: 6, textAlign: 'center' as const, writingDirection: 'rtl' as const },
     patternCardSub: {
       fontFamily: FONT_LATIN,
       fontSize: 12,
@@ -345,7 +345,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderWidth: 1,
     },
     noteTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 11, marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.6 },
-    noteText: { fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20 },
+    noteText: { fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20 },
     sectionLabel: {
       fontFamily: FONT_HEADING_SEMI,
       fontSize: 12,
@@ -368,12 +368,12 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     exampleToken: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 20,
+      fontSize: 22,
       color: C.TEXT,
     },
     exampleTokenShared: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 20,
+      fontSize: 22,
       color: C.CULTURAL_GOLD_DARK,
     },
     exampleRoman: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, fontStyle: 'italic' as const, textAlign: 'right' as const, marginBottom: 2 },
@@ -414,7 +414,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderRadius: 14,
       borderWidth: 1.5,
     },
-    frameTokenText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 20 },
+    frameTokenText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 22 },
     frameSlot: {
       paddingHorizontal: 14,
       paddingVertical: 10,
@@ -422,7 +422,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderWidth: 1.5,
       borderStyle: 'dashed' as const,
     },
-    frameSlotText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 20 },
+    frameSlotText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 22 },
     optionsLabel: { fontFamily: FONT_HEADING_SEMI, fontSize: 12, marginBottom: 10 },
     optionsRow: {
       flexDirection: 'row' as const,
@@ -446,7 +446,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     previewArabic: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 24,
+      fontSize: 22,
       textAlign: 'center' as const,
       marginBottom: 4,
     },
@@ -460,7 +460,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     previewEnglish: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       textAlign: 'center' as const,
     },
@@ -484,7 +484,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     goalArabic: {
       fontFamily: FONT_ARABIC_BLACK,
-      fontSize: 24,
+      fontSize: 22,
       color: C.TEXT,
       marginBottom: 4,
       opacity: 0.55,
@@ -519,7 +519,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderRadius: 16,
       borderWidth: 1.5,
     },
-    tileText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 21 },
+    tileText: { fontFamily: FONT_ARABIC_BLACK, fontSize: 22 },
     resultCard: {
       borderRadius: 16,
       padding: 16,
@@ -529,7 +529,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       gap: 10,
       borderWidth: 1,
     },
-    resultText: { fontFamily: FONT_HEADING_SEMI, fontSize: 15 },
+    resultText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16 },
     masteryBadge: {
       flexDirection: 'row' as const,
       alignItems: 'center' as const,
@@ -555,7 +555,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     patternRowLocked: { opacity: 0.55 },
     patternRowText: { flex: 1 },
-    patternRowArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 19, marginBottom: 3, color: C.TEXT, writingDirection: 'rtl' as const },
+    patternRowArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 18, marginBottom: 3, color: C.TEXT, writingDirection: 'rtl' as const },
     // The gloss declares its own direction so it cannot inherit RTL from the
     // Arabic half above it — the two runs are what the bidi fix is.
     patternRowEnglish: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, writingDirection: 'ltr' as const },
@@ -569,7 +569,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       borderRadius: 10,
       marginTop: 8,
     },
-    skillChipText: { fontFamily: FONT_HEADING_SEMI, fontSize: 10, textTransform: 'capitalize' as const },
+    skillChipText: { fontFamily: FONT_HEADING_SEMI, fontSize: 11, textTransform: 'capitalize' as const },
   }), [C, insets]);
 
   // ─── LIST STEP ──────────────────────────────────────────────────────────────
@@ -629,7 +629,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                           }]}
                         />
                       ))}
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginLeft: 6 }}>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginLeft: 6 }}>
                         {STRINGS.sentenceBuilder.progress(patternProgress[p.id]?.correctBuilds ?? 0)}
                       </Text>
                     </View>
@@ -639,7 +639,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                     {mastered && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Trophy size={12} strokeWidth={1.5} color={C.CULTURAL_GOLD} />
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 9, color: C.CULTURAL_GOLD }}>{STRINGS.sentenceBuilder.mastered}</Text>
+                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 11, color: C.CULTURAL_GOLD }}>{STRINGS.sentenceBuilder.mastered}</Text>
                       </View>
                     )}
                     <ChevronRight size={16} strokeWidth={1.5} color={C.TEXT3} />
