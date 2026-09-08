@@ -138,6 +138,37 @@ describe('screenPadding', () => {
     expect(pad.scrollBottom).toBeLessThan(INSET_FIXTURES.bottomBar);
   });
 
+  it('does not re-apply the bottom inset the tab bar already owns', () => {
+    // The tab bar is a flow sibling of the screen container, not an overlay:
+    // BottomTabView renders [screens (flex: 1), tabBar] in a column, and the
+    // bar itself only goes absolute while hidden for the keyboard. So a tab
+    // screen sits entirely above it and the bar carries the inset.
+    //
+    // Before this flag, all four tab screens added `insets.bottom + 80..100`
+    // on top of that — measured as 80-114px of dead space at the end of every
+    // tab scroll, in three different amounts.
+    const inTabs = { hasAction: false, headerHandlesTopInset: false, tabBarHandlesBottomInset: true };
+    const pad = screenPadding({ top: 0, bottom: INSET_FIXTURES.bottomBar }, inTabs);
+    expect(pad.scrollBottom).toBe(SPACE.xl);
+  });
+
+  it('leaves the top inset alone when the tab bar owns the bottom one', () => {
+    // The two flags are independent: a tab screen still owns its own top inset.
+    const pad = screenPadding(
+      { top: INSET_FIXTURES.topLarge, bottom: INSET_FIXTURES.bottomBar },
+      { hasAction: false, headerHandlesTopInset: false, tabBarHandlesBottomInset: true },
+    );
+    expect(pad.top).toBe(INSET_FIXTURES.topLarge);
+  });
+
+  it('a pinned action inside the tabs clears the bar without the inset', () => {
+    const pad = screenPadding(
+      { top: 0, bottom: INSET_FIXTURES.bottomBar },
+      { hasAction: true, headerHandlesTopInset: false, tabBarHandlesBottomInset: true },
+    );
+    expect(pad.actionBottom).toBe(SPACE.lg);
+  });
+
   it('its local spacing copies match the real spacing scale', () => {
     // layout.ts keeps local SPACE_LG / SPACE_XL to avoid importing the
     // lower-level spacing module. If those drift, padding silently changes.

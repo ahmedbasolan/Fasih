@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking, Alert, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, Pressable, Linking, Alert, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
 import { Calendar, BookOpen, Circle, ChevronRight, MessageCircle, Check, Feather, LogOut, Sun, Moon, Monitor, Star, RotateCcw, CreditCard, Briefcase as CareerIcon, Users as SocialIcon } from '../components/icons';
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC, FONT_ARABIC_BLACK, FONT_HEADING, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
-import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
-import { GhostLetters, Companion, Rule } from '../components/ui';
+import { SPACE, RADIUS } from '../components/design/spacing';
+import { GhostLetters, Companion, Rule, Screen } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { useCountUp } from '../components/design/hooks';
 import { StatCard } from '../components/features/StatCard';
@@ -47,7 +46,6 @@ const APP_VERSION = Application.nativeApplicationVersion ?? '—';
 
 export function ProfileScreen({ user, stats, milestones, journal, subscriptionStatus = 'free', onSignOut, onManageSubscription, onUpgrade, onRestorePurchases, onDeleteAccount, isDeletingAccount = false }: Props) {
   const { C, themePreference, setTheme } = useTheme();
-  const insets = useSafeAreaInsets();
   const streakCount = useCountUp(stats.currentStreak, 900, 100);
   const phrasesMastered = useCountUp(stats.phrasesMastered, 900, 200);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -147,9 +145,11 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
   ], [notificationsEnabled]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
-    <GhostLetters glyphs={['أ', 'ن', 'ا']} />
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + SPACE.lg, paddingBottom: insets.bottom + 80, paddingHorizontal: SCREEN_MARGIN }} showsVerticalScrollIndicator={false}>
+    <Screen
+      tabBarHandlesBottomInset
+      background={<GhostLetters glyphs={['أ', 'ن', 'ا']} />}
+      contentStyle={{ paddingTop: SPACE.lg }}
+    >
 
       {/* Header */}
       <View style={{ marginBottom: SPACE.xl }}>
@@ -626,7 +626,6 @@ export function ProfileScreen({ user, stats, milestones, journal, subscriptionSt
           </Pressable>
         </MotiView>
       )}
-    </ScrollView>
-    </View>
+    </Screen>
   );
 }
