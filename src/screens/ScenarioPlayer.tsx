@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
-import { ZONE } from '../components/design/layout';
 import { MotiView } from 'moti';
 import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
@@ -563,13 +562,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     return (
       <Screen
         scroll={false}
-        contentStyle={{ paddingTop: ZONE.headerGap, justifyContent: 'center' }}
+        // EmptyState brings its own SCREEN_MARGIN — see ScenarioDetailScreen.
+        contentStyle={{ paddingHorizontal: 0 }}
         action={
           <Pressable
             onPress={onExit}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
-            style={{ borderRadius: RADIUS.sheet, paddingVertical: SPACE.md + 2, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+            style={{ borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
           >
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.goBack}</Text>
           </Pressable>
