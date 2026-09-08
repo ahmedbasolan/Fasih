@@ -1,12 +1,18 @@
 /**
  * The layout lint.
  *
- * Two jobs: prove the system is internally consistent, and ratchet the codebase
- * onto it. Same pattern as languageContent.test.ts — a permanently-red suite
- * gets ignored, so the current violations are recorded and the test asserts the
- * count does not GROW.
+ * Proves the system is internally consistent and that the codebase stays on it.
+ *
+ * WHAT THIS CANNOT DO: none of it runs on a device. There is no render-testing
+ * library in this repo, so nothing here mounts a component, measures a layout,
+ * or observes a safe area. It checks pure functions and scans source text.
+ *
+ * That boundary is worth stating because an earlier version of this file
+ * crossed it — four tests named "iPhone safe areas" that were arithmetic on
+ * constants declared in the same commit, proving nothing while reporting green.
+ * Assertions about real geometry need a real device.
  */
-import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE, IOS_INSETS } from '../../components/design/layout';
+import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE, INSET_FIXTURES, screenPadding } from '../../components/design/layout';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
 
 declare const __dirname: string;
@@ -70,38 +76,85 @@ describe('the system is internally consistent', () => {
 });
 
 /**
- * iPhone is the launch platform and Android is the only one anyone looks at, so
- * these assert the geometry nobody will see before submission.
+ * `screenPadding` — the real computation `Screen` uses.
+ *
+ * These replace four tests that were arithmetic on constants declared in the
+ * same commit (`59 + 16 > 59` and similar). Those asserted nothing about the
+ * app or about iOS, while reading in a test report as "iPhone safe areas ✓".
+ *
+ * What follows tests the actual function against a spread of inset values. That
+ * is a genuine check of the arithmetic. It is STILL NOT evidence about a real
+ * device — no iPhone has run this app — and the fixtures it uses are unverified
+ * approximations, which INSET_FIXTURES says plainly.
  */
-describe('iPhone safe areas', () => {
-  it('the action zone clears the home indicator on every iPhone', () => {
-    // Screen pads the action zone by insets.bottom + SPACE.lg. On a device with
-    // a home indicator that has to leave a real gap above it, not sit on it.
-    const padded = IOS_INSETS.bottomHomeIndicator + SPACE.lg;
-    expect(padded - IOS_INSETS.bottomHomeIndicator).toBeGreaterThanOrEqual(SPACE.md);
-    expect(padded).toBeGreaterThanOrEqual(ZONE.actionMinHeight - SPACE.lg);
+describe('screenPadding', () => {
+  const withAction = { hasAction: true, headerHandlesTopInset: false };
+  const noAction = { hasAction: false, headerHandlesTopInset: false };
+
+  it('passes the top inset through when no header owns it', () => {
+    expect(screenPadding({ top: INSET_FIXTURES.topLarge, bottom: 0 }, noAction).top)
+      .toBe(INSET_FIXTURES.topLarge);
   });
 
-  it('a header clears the Dynamic Island, the tallest inset shipping', () => {
-    // ScreenHeader adds SPACE.lg on top of insets.top; the back row is TOUCH_MIN
-    // tall. Its top edge must start below the Island, not under it.
-    const backRowTop = IOS_INSETS.topDynamicIsland + SPACE.lg;
-    expect(backRowTop).toBeGreaterThan(IOS_INSETS.topDynamicIsland);
-    expect(backRowTop + TOUCH_MIN).toBeGreaterThan(IOS_INSETS.topDynamicIsland + TOUCH_MIN);
+  it('drops the top inset when the header applies it, so it is never doubled', () => {
+    const pad = screenPadding(
+      { top: INSET_FIXTURES.topLarge, bottom: 0 },
+      { hasAction: false, headerHandlesTopInset: true },
+    );
+    expect(pad.top).toBe(0);
   });
 
-  it('the layout survives a zero inset', () => {
-    // Pre-notch iPhones and most Android devices report 0. A layout that only
-    // looks right because an inset pushed it down is broken on those.
-    const top = IOS_INSETS.legacyNone + SPACE.lg;
-    expect(top).toBeGreaterThanOrEqual(SPACE.lg);
+  it('clears the bottom bar by a real gap, not by sitting on it', () => {
+    const pad = screenPadding({ top: 0, bottom: INSET_FIXTURES.bottomBar }, withAction);
+    expect(pad.actionBottom - INSET_FIXTURES.bottomBar).toBeGreaterThanOrEqual(SPACE.md);
   });
 
-  it('the two top insets differ, so nothing may hardcode one', () => {
-    // 47 vs 59 is 12pt — three baseline units. Any layout tuned to one is
-    // wrong on the other, which is why Screen reads them at runtime.
-    expect(IOS_INSETS.topDynamicIsland).not.toBe(IOS_INSETS.topNotch);
-    expect(IOS_INSETS.topDynamicIsland - IOS_INSETS.topNotch).toBe(12);
+  it('scales with the inset rather than assuming one device', () => {
+    // The property that matters: a bigger inset produces more padding. A layout
+    // tuned to a single device would return the same number for both.
+    const small = screenPadding({ top: 0, bottom: INSET_FIXTURES.none }, withAction);
+    const large = screenPadding({ top: 0, bottom: INSET_FIXTURES.bottomBar }, withAction);
+    expect(large.actionBottom).toBeGreaterThan(small.actionBottom);
+    expect(large.actionBottom - small.actionBottom).toBe(INSET_FIXTURES.bottomBar);
+  });
+
+  it('still leaves bottom padding when there is no inset at all', () => {
+    // Pre-notch iPhones and most Android devices report 0. Content that only
+    // clears the edge because an inset pushed it is flush against it here.
+    const pad = screenPadding({ top: 0, bottom: INSET_FIXTURES.none }, withAction);
+    expect(pad.actionBottom).toBeGreaterThanOrEqual(SPACE.lg);
+  });
+
+  it('the scroll area clears the bottom itself when nothing is pinned', () => {
+    // With no action zone below it, the scroll content is the last thing on
+    // screen and has to clear the inset on its own.
+    const pad = screenPadding({ top: 0, bottom: INSET_FIXTURES.bottomBar }, noAction);
+    expect(pad.scrollBottom).toBeGreaterThan(INSET_FIXTURES.bottomBar);
+  });
+
+  it('the scroll area stops short of a pinned action instead of clearing the inset twice', () => {
+    const pad = screenPadding({ top: 0, bottom: INSET_FIXTURES.bottomBar }, withAction);
+    expect(pad.scrollBottom).toBe(ZONE.actionGap);
+    expect(pad.scrollBottom).toBeLessThan(INSET_FIXTURES.bottomBar);
+  });
+
+  it('its local spacing copies match the real spacing scale', () => {
+    // layout.ts keeps local SPACE_LG / SPACE_XL to avoid importing the
+    // lower-level spacing module. If those drift, padding silently changes.
+    expect(screenPadding({ top: 0, bottom: 0 }, withAction).actionBottom).toBe(SPACE.lg);
+    expect(screenPadding({ top: 0, bottom: 0 }, noAction).scrollBottom).toBe(SPACE.xl);
+  });
+});
+
+describe('Android font padding', () => {
+  it('every type step disables it', () => {
+    // includeFontPadding is Android-only and defaults to true, so without this
+    // the same style renders taller on Android than iOS and the baseline grid
+    // is real on only one platform.
+    const missing = Object.entries(TYPE)
+      .filter(([, t]) => (t as { includeFontPadding?: boolean }).includeFontPadding !== false)
+      .map(([k]) => k);
+    expect(missing).toEqual([]);
   });
 });
 

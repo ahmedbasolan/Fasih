@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SPACE, SCREEN_MARGIN } from '../design/spacing';
-import { ZONE } from '../design/layout';
+import { SCREEN_MARGIN } from '../design/spacing';
+import { screenPadding, ZONE } from '../design/layout';
 import { useTheme } from '../../hooks/useTheme';
 
 interface ScreenProps {
@@ -55,36 +55,48 @@ export function Screen({
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
 
+  const pad = screenPadding(insets, {
+    hasAction: !!action,
+    headerHandlesTopInset: !!headerHandlesTopInset,
+  });
+
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        root: {
-          flex: 1,
-          backgroundColor: C.BG,
-          paddingTop: headerHandlesTopInset ? 0 : insets.top,
-        },
-        content: {
-          paddingHorizontal: SCREEN_MARGIN,
-        },
+        root: { flex: 1, backgroundColor: C.BG, paddingTop: pad.top },
+        content: { paddingHorizontal: SCREEN_MARGIN },
         // Only applied when scrolling: a non-scrolling screen must not have its
         // children pushed down by contentContainer padding it cannot see.
         scrollContent: {
           flexGrow: 1,
           paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: action ? ZONE.actionGap : insets.bottom + SPACE.xl,
+          paddingBottom: pad.scrollBottom,
         },
         action: {
           paddingHorizontal: SCREEN_MARGIN,
           paddingTop: ZONE.actionGap,
-          paddingBottom: insets.bottom + SPACE.lg,
+          paddingBottom: pad.actionBottom,
           minHeight: ZONE.actionMinHeight,
         },
       }),
-    [C, insets.top, insets.bottom, headerHandlesTopInset, action],
+    [C, pad.top, pad.scrollBottom, pad.actionBottom],
   );
 
   return (
-    <View style={styles.root}>
+    // The pinned action has to move with the keyboard or it is covered by it,
+    // and the two platforms disagree about what happens by default: iOS
+    // overlays the keyboard so a bottom-pinned view stays underneath, Android
+    // usually resizes the window instead. `behavior` differs accordingly —
+    // this is the same Platform.OS split the auth screens already carry, which
+    // is the evidence that this app has hit the divergence before.
+    //
+    // Applied unconditionally rather than only for screens with inputs: a
+    // screen gains a text field long after its layout is written, and nothing
+    // would prompt anyone to come back and wrap it.
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {scroll ? (
         <ScrollView
           style={{ flex: 1 }}
@@ -99,6 +111,6 @@ export function Screen({
       )}
 
       {action ? <View style={styles.action}>{action}</View> : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

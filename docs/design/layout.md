@@ -84,6 +84,38 @@ Prefer `Stack` over `marginBottom` on children. A margin belongs to the
 *relationship* between two elements, not to one of them — which is why moving a
 component between screens so often drags the wrong spacing with it.
 
+## What has not been verified
+
+Fasih launches on iOS and is only ever looked at on Android. The web preview has
+no safe areas at all. So the platform being shipped is the one nobody observes,
+and this section exists so that is never implied away.
+
+**Nothing in the lint runs on a device.** There is no render-testing library
+here, so it checks pure functions and scans source text. `screenPadding` is
+extracted from `Screen` precisely so the arithmetic *can* be tested — but
+correct arithmetic is not a correct layout.
+
+`INSET_FIXTURES` are approximate figures typed from memory, not measured and not
+cited. They exist to exercise `screenPadding` across small, large and zero
+insets. **Do not quote them as fact.**
+
+Two platform divergences are handled, both confirmed against
+`react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts` rather than assumed:
+
+| Property | Platform | Handling |
+|---|---|---|
+| `includeFontPadding` | Android only, defaults **true** | disabled in every `TYPE` step, so line boxes match iOS |
+| `writingDirection` | **iOS only** | Android ignores it; Arabic direction there comes from the Unicode bidi algorithm alone |
+
+The second is unresolved and matters for an Arabic app: a mixed Arabic/Latin
+string can resolve differently on the two platforms, and the one being validated
+is not the one being shipped. Keeping Arabic and Latin in separate `Text` runs —
+which `splitBilingualTitle` does — is belt-and-braces on iOS and load-bearing on
+Android.
+
+**The fix for all of this is a build on a real iPhone.** Nothing in this
+directory substitutes for it.
+
 ## Breaking the rules
 
 A screen that must break these should not reach around the primitives. It should

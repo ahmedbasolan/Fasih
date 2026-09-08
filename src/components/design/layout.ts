@@ -69,23 +69,41 @@ export function span(contentWidth: number, n: number): number {
  * optical size — see ARABIC_LINE_HEIGHT_MULTIPLIER and ARABIC_SCALE in
  * tokens.ts, which are applied on top of a chosen size.
  */
+/**
+ * `includeFontPadding: false` is on every step, and it is not cosmetic.
+ *
+ * The property is ANDROID-ONLY (React Native declares it in `TextStyleAndroid`)
+ * and defaults to TRUE, so Android adds ascender/descender padding above and
+ * below every line box that iOS does not. Identical style objects therefore
+ * render at different heights on the two platforms.
+ *
+ * That silently broke the central claim of this file. A baseline grid whose
+ * line heights are multiples of 4 lands on the grid on iOS and lands near it on
+ * Android — and Android is the only platform anyone here looks at, while iOS is
+ * the one being shipped. Turning the padding off makes the two agree.
+ *
+ * It lives inside each step rather than in a global Text default so it travels
+ * with every `...TYPE.body` spread and cannot be forgotten at a call site.
+ */
+const NO_ANDROID_FONT_PADDING = { includeFontPadding: false } as const;
+
 export const TYPE = {
   /** Eyebrows, badge text, tabular labels. */
-  micro: { fontSize: 11, lineHeight: 16 },
+  micro: { fontSize: 11, lineHeight: 16, ...NO_ANDROID_FONT_PADDING },
   /** Captions, secondary metadata. */
-  caption: { fontSize: 12, lineHeight: 16 },
+  caption: { fontSize: 12, lineHeight: 16, ...NO_ANDROID_FONT_PADDING },
   /** Default body. */
-  body: { fontSize: 14, lineHeight: 20 },
+  body: { fontSize: 14, lineHeight: 20, ...NO_ANDROID_FONT_PADDING },
   /** Body that needs to carry a paragraph. */
-  bodyLarge: { fontSize: 16, lineHeight: 24 },
+  bodyLarge: { fontSize: 16, lineHeight: 24, ...NO_ANDROID_FONT_PADDING },
   /** Row titles, card headings. */
-  subhead: { fontSize: 18, lineHeight: 24 },
+  subhead: { fontSize: 18, lineHeight: 24, ...NO_ANDROID_FONT_PADDING },
   /** Section titles. */
-  title: { fontSize: 22, lineHeight: 28 },
+  title: { fontSize: 22, lineHeight: 28, ...NO_ANDROID_FONT_PADDING },
   /** Screen titles. */
-  headline: { fontSize: 28, lineHeight: 36 },
+  headline: { fontSize: 28, lineHeight: 36, ...NO_ANDROID_FONT_PADDING },
   /** The one big statement per screen. */
-  display: { fontSize: 34, lineHeight: 40 },
+  display: { fontSize: 34, lineHeight: 40, ...NO_ANDROID_FONT_PADDING },
 } as const;
 
 export type TypeStep = keyof typeof TYPE;
@@ -103,28 +121,63 @@ export const TYPE_SIZES: readonly number[] = Object.values(TYPE).map(t => t.font
 export const TOUCH_MIN = 44;
 
 /**
- * iPhone safe-area reference figures.
+ * Inset fixtures for tests. NOT verified against hardware.
  *
- * The app LAUNCHES on iOS and is VERIFIED on Android, so iOS geometry is
- * structurally unobserved — the web preview has no safe areas at all, and
- * nobody is going to eyeball an iPhone before submission. These exist so
- * inset-dependent layout can be reasoned about and asserted rather than
- * checked by looking.
+ * ⚠ These are approximate figures typed from memory, not measured on a device
+ * and not cited from Apple's HIG. Nobody in this project has run the app on an
+ * iPhone, and the web preview reports no insets at all, so nothing here has
+ * been confirmed. The notch value in particular varies across the X-14 range
+ * rather than being one number.
  *
- * Do not read insets from these at runtime. `useSafeAreaInsets()` is the
- * source of truth on device; these are the numbers to design against and to
- * write tests with.
+ * They exist ONLY so `screenPadding` can be exercised across a realistic
+ * spread of inset values — small, large, and zero. Do not read them at
+ * runtime, do not quote them as fact, and do not treat a test that uses them
+ * as evidence about iOS.
+ *
+ * An earlier version of this block presented them as authoritative and had
+ * four tests built on top of them that were pure arithmetic on these very
+ * constants. That is the failure mode this comment exists to prevent.
  */
-export const IOS_INSETS = {
-  /** Dynamic Island (14 Pro and later). The largest top inset shipping. */
-  topDynamicIsland: 59,
-  /** Notch (X through 14). */
-  topNotch: 47,
-  /** Home indicator. Present on every notch/Island device. */
-  bottomHomeIndicator: 34,
-  /** Touch ID era — no top or bottom inset at all. The layout must survive 0. */
-  legacyNone: 0,
+export const INSET_FIXTURES = {
+  /** Roughly a Dynamic Island device. */
+  topLarge: 59,
+  /** Roughly a notch device. */
+  topSmall: 47,
+  /** Roughly a home indicator. */
+  bottomBar: 34,
+  /** No inset. Pre-notch iPhones and most Android devices. Layout must survive it. */
+  none: 0,
 } as const;
+
+/**
+ * The padding `Screen` applies, as a pure function.
+ *
+ * Extracted from the component so it can actually be tested. The values used
+ * to live inline in a `StyleSheet.create` call, which meant the only way to
+ * check them was to render — and with no render-testing library in this repo,
+ * "check them" degenerated into asserting arithmetic on constants.
+ *
+ * This is still not evidence about a real device. It is evidence that the
+ * arithmetic is right for a given inset, which is the part that can be checked
+ * without one.
+ */
+export function screenPadding(
+  insets: { top: number; bottom: number },
+  opts: { hasAction: boolean; headerHandlesTopInset: boolean },
+): { top: number; scrollBottom: number; actionBottom: number } {
+  return {
+    top: opts.headerHandlesTopInset ? 0 : insets.top,
+    // With an action pinned below, the scroll area stops short of it. Without
+    // one, the scroll area itself has to clear the bottom inset.
+    scrollBottom: opts.hasAction ? ZONE.actionGap : insets.bottom + SPACE_XL,
+    actionBottom: insets.bottom + SPACE_LG,
+  };
+}
+
+// Local copies so layout.ts does not import spacing.ts and create a cycle —
+// spacing.ts is the lower-level module. Asserted equal in the lint.
+const SPACE_LG = 16;
+const SPACE_XL = 24;
 
 /**
  * The three vertical zones of a screen.
