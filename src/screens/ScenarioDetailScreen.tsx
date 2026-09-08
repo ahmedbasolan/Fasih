@@ -3,7 +3,6 @@ import { View, Text, Pressable } from 'react-native';
 import { Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
-import { ZONE } from '../components/design/layout';
 import { useTheme } from '../hooks/useTheme';
 import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader, Screen } from '../components/ui';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
@@ -42,14 +41,16 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     return (
       <Screen
         scroll={false}
-        contentStyle={{ paddingTop: ZONE.headerGap, justifyContent: 'center' }}
+        // EmptyState is flex: 1, centres itself, and applies SCREEN_MARGIN of
+        // its own. Screen's margin on top of that indents it to 40.
+        contentStyle={{ paddingHorizontal: 0 }}
         action={
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
             style={{
-              borderRadius: RADIUS.sheet, paddingVertical: SPACE.md + 2, alignItems: 'center',
+              borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
               backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
             }}
           >
