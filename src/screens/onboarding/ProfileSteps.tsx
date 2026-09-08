@@ -131,7 +131,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
       // Step 2: Name Input — consistent upward entrance
       case 2:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', marginTop: 40, gap: 24 }}>
               <FadeIn delay={100}>
                 <Companion size={72} name={name} />
@@ -476,7 +476,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
       // Step 5: Commitment — consistent upward entrance
       case 5:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}>
             {/* Arabic geometric background pattern */}
             <GeoPattern opacity={0.035} color={C.JADE_ACCENT} size={48} />
 

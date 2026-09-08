@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -261,9 +262,9 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
   const styles = useMemo(() => ({
     screen: { flex: 1, backgroundColor: C.BG },
     hero: {
-      paddingTop: insets.top + 16,
+      paddingTop: insets.top + SPACE.lg,
       paddingBottom: 20,
-      paddingHorizontal: 20,
+      paddingHorizontal: SCREEN_MARGIN,
       overflow: 'hidden' as const,
     },
     heroRow: {
@@ -321,7 +322,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       textTransform: 'uppercase' as const,
     },
     content: { flex: 1 },
-    scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
+    scroll: { paddingHorizontal: SCREEN_MARGIN, paddingTop: 20, paddingBottom: 32 },
     // Notice
     patternCard: {
       borderRadius: 20,
@@ -542,7 +543,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       marginBottom: 14,
     },
     masteryText: { fontFamily: FONT_HEADING_SEMI, fontSize: 12 },
-    footer: { paddingHorizontal: 20, paddingBottom: insets.bottom + 12 },
+    footer: { paddingHorizontal: SCREEN_MARGIN, paddingBottom: insets.bottom + SPACE.lg },
     // List
     patternRow: {
       borderRadius: 18,

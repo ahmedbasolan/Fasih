@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView, AnimatePresence } from 'moti';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
@@ -34,7 +35,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <View
       onLayout={(e) => setSegmentWidth((e.nativeEvent.layout.width - 4 * (total - 1)) / total)}
-      style={{ position: 'absolute', top: insets.top + 12, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
+      style={{ position: 'absolute', top: insets.top + SPACE.md, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
       accessibilityLabel={`Step ${step + 1} of ${total}`}
       accessibilityRole="progressbar"
     >
@@ -337,7 +338,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               animate={{ opacity: 1, translateX: 0 }}
               exit={{ opacity: 0, translateX: -10 }}
               transition={{ type: 'timing', duration: 250 }}
-              style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
+              style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
             >
               <Pressable
                 onPress={back}

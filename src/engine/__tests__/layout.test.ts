@@ -305,3 +305,77 @@ describe('type scale adoption', () => {
     expect(isWatermark('src/screens/PracticeScreen.tsx')).toBe(false);
   });
 });
+
+/**
+ * Safe-area adoption.
+ *
+ * Screens used to apply the insets by hand, and disagreed about how. Seven
+ * different top formulas were in the tree at once — `insets.top`,
+ * `+ 12`, `+ 14`, `+ 16`, `+ 40`, `+ SPACE.lg`, `+ SPACE.huge` — and four tab
+ * screens each cleared the tab bar by a different amount (80, 90, 100) on top
+ * of a bar that already carries the bottom inset.
+ *
+ * The value is not the point; the disagreement is. `Screen` and `ScreenHeader`
+ * are where the arithmetic belongs, and everything else should either use them
+ * or be spelled in tokens so a reader can tell what it is asking for.
+ *
+ * This scans source text. It cannot tell whether the result LOOKS right on a
+ * device — nothing in this file can.
+ */
+describe('safe-area adoption', () => {
+  const SRC = join(__dirname, '../..');
+  const APP = join(__dirname, '../../../app');
+
+  function walkTsx(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...walkTsx(full));
+      else if (/\.tsx$/.test(entry.name)) out.push(full);
+    }
+    return out;
+  }
+
+  const files = [...walkTsx(SRC), ...walkTsx(APP)];
+
+  it('no screen adds a bare number to a safe-area inset', () => {
+    // `insets.top + 14` is a number nobody can justify six months later.
+    // `insets.top + SPACE.lg` is the same offset, named. The tokens are what
+    // let the next reader see that two screens agree.
+    const offenders: string[] = [];
+    for (const file of files) {
+      const src = readFileSync(file, 'utf8');
+      for (const m of src.matchAll(/insets\.(top|bottom)\s*\+\s*(\d+)/g)) {
+        offenders.push(`${file.replace(/\\/g, '/').split('/src/').pop()}: insets.${m[1]} + ${m[2]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('the scan reaches files that actually use insets', () => {
+    // A walker that finds nothing would pass the assertion above.
+    const usingInsets = files.filter(f => /useSafeAreaInsets/.test(readFileSync(f, 'utf8')));
+    expect(usingInsets.length).toBeGreaterThan(5);
+  });
+
+  it('no tab screen clears the tab bar on its own', () => {
+    // The bar is a flow sibling that already owns the bottom inset — see
+    // `screenPadding`. A tab screen that pads for it again is padding against
+    // nothing, which is what produced 80-114px of dead scroll on all four.
+    const TAB_SCREENS = [
+      'screens/HomeScreenNew.tsx',
+      'screens/ScenariosScreen.tsx',
+      'screens/PhraseLibrary.tsx',
+      'screens/ProfileScreen.tsx',
+    ];
+    const offenders: string[] = [];
+    for (const file of files) {
+      const rel = file.replace(/\\/g, '/');
+      if (!TAB_SCREENS.some(t => rel.endsWith(t))) continue;
+      const src = readFileSync(file, 'utf8');
+      if (/insets\.bottom/.test(src)) offenders.push(rel.split('/src/').pop() ?? rel);
+    }
+    expect(offenders).toEqual([]);
+  });
+});

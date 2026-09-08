@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, Pressable } from 'react-native';
 import { Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
 import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
-import { RADIUS } from '../components/design/spacing';
+import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
+import { ZONE } from '../components/design/layout';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader } from '../components/ui';
+import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader, Screen } from '../components/ui';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -19,7 +19,6 @@ interface Props {
 
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
-  const insets = useSafeAreaInsets();
   
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
   // the whole scenario corpus on every call, and calling them in the render
@@ -41,19 +40,16 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   // already handles the identical case with an empty state and a way out.
   if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
-        <EmptyState
-          arabic="؟"
-          title={STRINGS.scenarios.notFound}
-          subtitle={STRINGS.scenarios.noScript(scenarioId)}
-        />
-        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
+      <Screen
+        scroll={false}
+        contentStyle={{ paddingTop: ZONE.headerGap, justifyContent: 'center' }}
+        action={
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
             style={{
-              borderRadius: 16, paddingVertical: 14, alignItems: 'center',
+              borderRadius: RADIUS.sheet, paddingVertical: SPACE.md + 2, alignItems: 'center',
               backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
             }}
           >
@@ -61,18 +57,25 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               {STRINGS.scenarios.goBack}
             </Text>
           </Pressable>
-        </View>
-      </View>
+        }
+      >
+        <EmptyState
+          arabic="؟"
+          title={STRINGS.scenarios.notFound}
+          subtitle={STRINGS.scenarios.noScript(scenarioId)}
+        />
+      </Screen>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
-      <GhostLetters glyphs={['ح', 'و', 'ا']} />
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
-        showsVerticalScrollIndicator={false}
-      >
+    <Screen
+      background={<GhostLetters glyphs={['ح', 'و', 'ا']} />}
+      // ScreenHeader applies the top inset itself, and both it and the sheet
+      // below run edge to edge and set their own horizontal padding.
+      headerHandlesTopInset
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
         {/* ── Header ──
             Was a 450pt illustrated hero with white text over a black scrim.
             Sadaf has no photographic ground to write on, and the illustration
@@ -86,7 +89,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         />
 
         {/* ── Content Section ── */}
-        <SheetPanel radius={RADIUS.sheet} overlap={0} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
+        <SheetPanel radius={RADIUS.sheet} overlap={0} style={{ backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl }}>
           {/* Metadata Row.
               The save toggle used to live as a translucent circle on the hero.
               With the hero gone it sits here, beside the scene count, where it
@@ -200,7 +203,6 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             )}
           </View>
         </SheetPanel>
-      </ScrollView>
-    </View>
+    </Screen>
   );
 }

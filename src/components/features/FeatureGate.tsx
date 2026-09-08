@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE } from '../design/spacing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Lock, Layers, ChevronRight } from '../icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI } from '../design/tokens';
@@ -30,7 +31,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingBottom: insets.bottom + 40 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingBottom: insets.bottom + SPACE.xl }}>
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Companion size={80} />
         </View>
