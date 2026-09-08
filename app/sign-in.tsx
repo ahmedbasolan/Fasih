@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
 import { Mail, Lock, Eye, EyeOff, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
@@ -64,7 +65,7 @@ export default function SignInScreen() {
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 60, paddingBottom: insets.bottom + 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}

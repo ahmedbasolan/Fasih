@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
 import { Mail, Lock, Eye, EyeOff, Shield, ChevronLeft } from '../src/components/icons';
 import { router } from 'expo-router';
@@ -82,7 +83,7 @@ export default function ForgotPasswordScreen() {
 
       <Pressable
         onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
+        style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityRole="button"
         accessibilityLabel="Go back"
@@ -92,7 +93,7 @@ export default function ForgotPasswordScreen() {
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import { X, Check, ArrowRight, RotateCcw, Trophy, BookOpen, Volume2, ArrowLeftRight, Layers } from '../components/icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -493,8 +494,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
       {/* Header */}
       <View
         style={{
-          paddingHorizontal: 20,
-          paddingTop: insets.top + 12,
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingTop: insets.top + SPACE.lg,
           paddingBottom: 12,
         }}
       >
@@ -559,8 +560,8 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
 
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: insets.bottom + 24,
+          paddingHorizontal: SCREEN_MARGIN,
+          paddingBottom: insets.bottom + SPACE.xl,
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}
@@ -890,7 +891,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
         {/* ─── PHRASE BUILDER ─── */}
         {mode === 'phrase-builder' && deck[current] && (
           <View style={{ flex: 1, backgroundColor: C.BG }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.lg, paddingBottom: 16 }}>
               <Pressable onPress={() => setMode('menu')} accessibilityRole="button" accessibilityLabel="Back to menu" hitSlop={8} style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
                 <X size={15} strokeWidth={1.5} color={C.TEXT2} />
               </Pressable>

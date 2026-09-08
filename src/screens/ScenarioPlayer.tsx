@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { ZONE } from '../components/design/layout';
 import { MotiView } from 'moti';
 import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
@@ -13,7 +15,7 @@ import { ThresholdSeam } from '../components/design/ThresholdSeam';
 import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, Screen } from '../components/ui';
 import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
 import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
@@ -559,14 +561,22 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // actually know the scenario is restricted and know the learner doesn't match.
   if (!scriptData || !isScenarioAvailableFor(scenario ?? {}, user?.gender)) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
-        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
-        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
-          <Pressable onPress={onExit} style={{ borderRadius: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+      <Screen
+        scroll={false}
+        contentStyle={{ paddingTop: ZONE.headerGap, justifyContent: 'center' }}
+        action={
+          <Pressable
+            onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.scenarios.goBack}
+            style={{ borderRadius: RADIUS.sheet, paddingVertical: SPACE.md + 2, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+          >
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.goBack}</Text>
           </Pressable>
-        </View>
-      </View>
+        }
+      >
+        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
+      </Screen>
     );
   }
 
@@ -610,7 +620,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ك', 'ل', 'م']} />
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 14, paddingBottom: 10, zIndex: 10 }}>
+      <View style={{ paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.lg, paddingBottom: 10, zIndex: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <View>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
@@ -651,7 +661,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: insets.bottom + SPACE.xl }}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
       >
