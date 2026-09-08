@@ -47,7 +47,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, letterSpacing: -0.5, color: C.TEXT, marginBottom: SPACE.sm }}>
                 {STRINGS.onboarding.notifTitle}
               </Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, color: C.TEXT2, marginBottom: SPACE.xl }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, lineHeight: 24, color: C.TEXT2, marginBottom: SPACE.xl }}>
                 {STRINGS.onboarding.notifSub}
               </Text>
             </FadeIn>
@@ -84,8 +84,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                       color={toggleNotifs[i] ? C.PRIMARY : C.TEXT3}
                     />
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: toggleNotifs[i] ? C.TEXT : C.TEXT3 }}>{text}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: toggleNotifs[i] ? C.TEXT : C.TEXT3 }}>{text}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
                     </View>
                     {/* The track is the only rounded thing on the screen, and it
                         earns it: a pill is what a switch looks like.
@@ -136,7 +136,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
 
             <Text style={{
               fontFamily: FONT_LATIN_SEMI,
-              fontSize: 13,
+              fontSize: 14,
               color: C.TEXT2,
               textAlign: 'center',
               marginBottom: 8,
@@ -190,7 +190,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                   backgroundColor: C.PRIMARY,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
                   {STRINGS.onboarding.firstPhraseHear}
                 </Text>
               </Pressable>
@@ -204,10 +204,10 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 {/* The payoff is the contrast, not the translation. Saying it
                     is the win; knowing it is not what the textbook taught is
                     the reason to keep going. */}
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: SPACE.md }}>
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.TEXT, textAlign: 'center', marginBottom: SPACE.md }}>
                   {STRINGS.onboarding.firstPhraseDone}
                 </Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT2, textAlign: 'center', marginBottom: SPACE.xl }}>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT2, textAlign: 'center', marginBottom: SPACE.xl }}>
                   {STRINGS.onboarding.firstPhraseWhy}
                 </Text>
                 <Pressable
@@ -221,7 +221,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                     backgroundColor: C.PRIMARY,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
                     Continue →
                   </Text>
                 </Pressable>
