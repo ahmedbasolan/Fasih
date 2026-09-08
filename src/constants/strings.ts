@@ -110,6 +110,32 @@ export const STRINGS = {
     makeCommitment: 'Make a commitment',
     committed: 'Committed!',
     commitmentSub: 'Hold to commit to your daily habit',
+    // Replaced a live "42%" readout. Rendering the percentage meant reading hold
+    // progress on the JS thread, which is what made the ring stutter — and a
+    // number racing 0 to 100 in 2.2 seconds was never readable. The ring shows
+    // the progress; this says what to do.
+    holdKeepHolding: 'HOLD',
+    /**
+     * Step 7, the first-phrase moment.
+     *
+     * Was مرحبا / mar-haba / "Your first Gulf Arabic phrase". مرحبا is pan-Arab
+     * textbook Arabic — you hear it from Casablanca to Baghdad — so it taught
+     * nothing Gulf and nothing the learner could not have guessed. A first
+     * phrase should prove the premise: this app teaches what people actually
+     * say, not what a textbook says they say.
+     *
+     * شلونك is that proof, and the contrast IS the lesson. Phrase, romanisation
+     * and both notes are taken from `g3` in constants/phrases.ts rather than
+     * written here — it is `UNSOURCED` like the rest of the corpus, and no new
+     * linguistic claim is being made on top of it.
+     */
+    firstPhraseEyebrow: 'Not the Arabic in the textbook',
+    firstPhraseArabic: 'شلونك؟',
+    firstPhraseRoman: 'shloo-nak',
+    firstPhraseEnglish: 'How are you?',
+    firstPhraseHear: 'Tap to hear it',
+    firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
+    firstPhraseDone: 'You just said it the way Dubai says it.',
     dailyHabit: 'Commit to learning for 5 minutes a day',
     skipForNow: 'Skip for now',
     freeTrialBadge: '4-day free trial',

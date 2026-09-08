@@ -3,7 +3,7 @@ import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView, AnimatePresence } from 'moti';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import { runOnJS, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { ChevronLeft } from '../components/icons';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
@@ -80,17 +80,17 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [profession, setProfession] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
-  const [holdProgress, setHoldProgress] = useState(0);
+  const holdProgress = useSharedValue(0);
   const [holdComplete, setHoldComplete] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
   const [phraseRevealed, setPhraseRevealed] = useState(false);
   const [phraseEverRevealed, setPhraseEverRevealed] = useState(false);
   const [scenarioCompleted, setScenarioCompleted] = useState(false);
   // Notification toggles for Step 6 — default all on to feel welcoming
   const [toggleNotifs, setToggleNotifs] = useState([true, true, true]);
-  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const holdStart = useRef(0);
-  // Tracks which haptic milestones (33, 66, 100%) have already fired this hold
-  const hapticMilestones = useRef<Set<number>>(new Set());
+  // Haptic pulses and completion, scheduled once per hold rather than checked
+  // every frame. Cleared on release and on unmount.
+  const holdTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   
   const TOTAL = 12; // 0-6 setup, 7 quick win, 8 scenario, 9 paywall (timeline), 10 features, 11 paywall (plans)
   const HOLD_DURATION = 2200;
@@ -153,39 +153,57 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
+  /**
+   * Start the hold.
+   *
+   * The ring is driven by a shared value on the UI thread; the state machine is
+   * driven by four timers. Nothing re-renders between press-in and press-out.
+   *
+   * This replaced a 16ms `setInterval` that called `setHoldProgress` — roughly
+   * 137 re-renders of this whole tree per hold, each one rebuilding `stepProps`
+   * and re-running every case in ProfileSteps. That was the stutter.
+   *
+   * Completion stays on a JS timer rather than an animation callback, so if the
+   * animation driver is unavailable the ring simply does not fill — the hold
+   * still completes and the flow still advances.
+   */
   const startHold = useCallback(() => {
     if (holdComplete) return;
-    holdStart.current = Date.now();
-    hapticMilestones.current = new Set();
-    holdTimer.current = setInterval(() => {
-      const elapsed = Date.now() - holdStart.current;
-      const p = Math.min(elapsed / HOLD_DURATION, 1);
-      setHoldProgress(p);
-      // Fire haptic pulses at 33%, 66%, and 100%
-      const pct = Math.round(p * 100);
-      [33, 66, 100].forEach((milestone) => {
-        if (pct >= milestone && !hapticMilestones.current.has(milestone)) {
-          hapticMilestones.current.add(milestone);
-          haptic.medium();
-        }
-      });
-      if (p >= 1) {
-        if (holdTimer.current) clearInterval(holdTimer.current);
+    setIsHolding(true);
+    holdProgress.value = withTiming(1, {
+      duration: HOLD_DURATION,
+      easing: Easing.linear,
+    });
+
+    // Haptics as scheduled pulses instead of a per-frame percentage check.
+    holdTimers.current = [33, 66].map((pct) =>
+      setTimeout(() => haptic.medium(), HOLD_DURATION * (pct / 100)),
+    );
+    holdTimers.current.push(
+      setTimeout(() => {
+        haptic.medium();
         setHoldComplete(true);
+        setIsHolding(false);
         setTimeout(() => nextRef.current(), 700);
-      }
-    }, 16);
-  }, [holdComplete]);
+      }, HOLD_DURATION),
+    );
+  }, [holdComplete, holdProgress]);
+
+  const clearHoldTimers = useCallback(() => {
+    holdTimers.current.forEach(clearTimeout);
+    holdTimers.current = [];
+  }, []);
 
   const endHold = useCallback(() => {
     if (holdComplete) return;
-    if (holdTimer.current) clearInterval(holdTimer.current);
-    setHoldProgress(0);
-  }, [holdComplete]);
+    clearHoldTimers();
+    setIsHolding(false);
+    // Springs back rather than snapping, so an accidental lift reads as
+    // "released" instead of as a glitch.
+    holdProgress.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) });
+  }, [holdComplete, clearHoldTimers, holdProgress]);
 
-  useEffect(() => {
-    return () => { if (holdTimer.current) clearInterval(holdTimer.current); };
-  }, []);
+  useEffect(() => clearHoldTimers, [clearHoldTimers]);
 
   const circum = 2 * Math.PI * 52;
   
@@ -263,7 +281,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       profession, setProfession, selectedGoals, toggleGoal, plan, setPlan,
       typedGreeting,
     },
-    hold: { holdProgress, holdComplete, startHold, endHold, circum },
+    hold: { holdProgress, holdComplete, isHolding, startHold, endHold, circum },
     quickWin: {
       phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
       setScenarioCompleted, toggleNotifs, setToggleNotifs,

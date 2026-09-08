@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView, AnimatePresence } from 'moti';
 import Svg, { Circle } from 'react-native-svg';
+import Animated, { useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated';
 import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
@@ -68,6 +69,15 @@ const PROFESSION_CATEGORIES = [
   },
 ];
 
+/**
+ * The progress ring, animated on the UI thread.
+ *
+ * react-native-svg's Circle does not accept animated props directly; this is
+ * the standard wrapper that lets Reanimated drive strokeDashoffset without a
+ * React render per frame.
+ */
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 const goals = [
   { id: 'professional', label: STRINGS.onboarding.goals.professional.label, sub: STRINGS.onboarding.goals.professional.sub, Icon: ProfessionalIcon },
   { id: 'friends', label: STRINGS.onboarding.goals.friends.label, sub: STRINGS.onboarding.goals.friends.sub, Icon: FriendsIcon },
@@ -103,7 +113,18 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
     name, setName, gender, setGender, role, setRole,
     profession, setProfession, selectedGoals, toggleGoal, typedGreeting,
   } = draft;
-  const { holdProgress, holdComplete, startHold, endHold, circum } = hold;
+  const { holdProgress, holdComplete, isHolding, startHold, endHold, circum } = hold;
+
+  // Both derive from the shared value, so they update on the UI thread without
+  // re-rendering this component. Declared unconditionally — hooks cannot live
+  // inside the switch below.
+  const ringProps = useAnimatedProps(() => ({
+    strokeDashoffset: circum * (1 - holdProgress.value),
+  }));
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: holdProgress.value * 0.18,
+    transform: [{ scale: 1 + holdProgress.value * 0.35 }],
+  }));
 
   switch (step) {
 
@@ -469,11 +490,15 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
               <FadeIn delay={300} style={{ zIndex: 2 }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  {/* Outer ambient glow that grows with hold progress */}
-                  <MotiView
-                    animate={{ scale: 1 + holdProgress * 0.35, opacity: holdProgress * 0.18 }}
-                    transition={{ type: 'timing', duration: 80 }}
-                    style={{ position: 'absolute', width: 136, height: 136, borderRadius: 68, backgroundColor: C.JADE_ACCENT }}
+                  {/* Glow and ring both read the shared value directly, so the
+                      whole hold runs on the UI thread. The MotiView that used
+                      to sit here had its `animate` prop rewritten every frame,
+                      which restarted a 80ms animation 60 times a second. */}
+                  <Animated.View
+                    style={[
+                      { position: 'absolute', width: 136, height: 136, borderRadius: 68, backgroundColor: C.JADE_ACCENT },
+                      glowStyle,
+                    ]}
                   />
                   <Svg width={136} height={136} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
                     {/* Outer glow ring */}
@@ -481,10 +506,10 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                     {/* Track ring */}
                     <Circle cx={68} cy={68} r={52} fill="none" stroke={C.SURFACE} strokeWidth={8} />
                     {/* Progress ring */}
-                    <Circle cx={68} cy={68} r={52} fill="none"
+                    <AnimatedCircle cx={68} cy={68} r={52} fill="none"
                       stroke={holdComplete ? C.JADE2 : C.JADE_ACCENT} strokeWidth={8} strokeLinecap="round"
                       strokeDasharray={`${circum}`}
-                      strokeDashoffset={`${circum * (1 - holdProgress)}`} />
+                      animatedProps={ringProps} />
                   </Svg>
 
                   <Pressable
@@ -493,7 +518,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                     accessibilityRole="button"
                     accessibilityLabel={holdComplete ? 'Commitment made' : 'Hold to commit'}
                     accessibilityHint={holdComplete ? undefined : 'Press and hold for 2 seconds to make your commitment'}
-                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : holdProgress > 0 ? C.JADE_ACCENT : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
+                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : isHolding ? C.JADE_ACCENT : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
                   >
                     {holdComplete ? (
                       <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
@@ -501,9 +526,14 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           <Check size={34} color={C.BG} />
                         </LinearGradient>
                       </MotiView>
-                    ) : holdProgress > 0 ? (
+                    ) : isHolding ? (
+                      /* The live percentage is gone. It could only be rendered by
+                         reading progress on the JS thread, which is the thing
+                         that made this stutter — and a number racing 0 to 100 in
+                         2.2 seconds is not readable anyway. The ring is the
+                         progress display; this is the instruction. */
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{Math.round(holdProgress * 100)}%</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdKeepHolding}</Text>
                       </LinearGradient>
                     ) : (
                       <View
