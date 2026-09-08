@@ -19,6 +19,22 @@ export interface OnboardingDraft {
   mode: 'career' | 'social';
   setMode: Dispatch<SetStateAction<'career' | 'social'>>;
   /**
+   * Whether the learner has actually picked a mode, as opposed to inheriting
+   * the default.
+   *
+   * `mode` has to stay non-optional — it lands in `UserProfile.mode` and in the
+   * analytics row's CHECK constraint, so `undefined` must not be able to reach
+   * either. But "Choose your path" was not a choice: Career was pre-selected
+   * and Continue worked without a decision, which biased every downstream
+   * scenario recommendation AND the anonymous mode distribution toward career
+   * for anyone who did not think about it.
+   *
+   * This flag lets the screen show nothing selected and gate Continue, while
+   * `mode` keeps a valid value throughout.
+   */
+  modeChosen: boolean;
+  chooseMode: (mode: 'career' | 'social') => void;
+  /**
    * Arabic marks the speaker's own gender, so this is not cosmetic: it selects
    * which verb forms are taught AND gates scenarios via `requiresGender`.
    */

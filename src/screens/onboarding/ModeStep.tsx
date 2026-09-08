@@ -45,7 +45,7 @@ const MODE_ROOTS: Record<'career' | 'social', string> = {
 export function ModeStep({ next, draft }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const { mode, setMode } = draft;
+  const { mode, modeChosen, chooseMode } = draft;
 
   const styles = useMemo(
     () =>
@@ -126,12 +126,15 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
 
       <View style={styles.plates}>
         {plates.map(({ id, Icon, title, sub, desc }, i) => {
-          const selected = mode === id;
+          // Nothing is selected until the learner picks. `mode` still holds a
+          // valid default underneath, so the profile is never malformed — but
+          // the screen must not show a decision nobody made.
+          const selected = modeChosen && mode === id;
           return (
             <React.Fragment key={id}>
               {i > 0 && <View style={styles.divider} />}
               <Pressable
-                onPress={() => { haptic.selection(); setMode(id); }}
+                onPress={() => { haptic.selection(); chooseMode(id); }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`${title}. ${sub}. ${desc}`}
@@ -175,7 +178,11 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
 
       <View style={styles.footer}>
         <FadeIn delay={400}>
-          <PrimaryButton onPress={next} accessibilityLabel={STRINGS.common.continue}>
+          <PrimaryButton
+            onPress={next}
+            disabled={!modeChosen}
+            accessibilityLabel={STRINGS.common.continue}
+          >
             {STRINGS.common.continue}
           </PrimaryButton>
         </FadeIn>

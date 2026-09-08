@@ -54,8 +54,19 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
   const disabledColors: readonly [string, string] = [C.JADE_ACCENT_DIM, C.JADE_ACCENT_DIM];
 
   return (
+    // No blanket `opacity: 0.5` when disabled.
+    //
+    // It dimmed the LABEL as well as the fill, and the label was C.BG — meant
+    // for the gold gradient, not for the pale disabled wash. Measured on the
+    // disabled state: 1.10:1 dark and 1.04:1 light, i.e. no readable label at
+    // all. Halving everything then capped even C.TEXT2 at 2.94/2.25, so the
+    // opacity was the mechanism at fault, not just the colour.
+    //
+    // Disabled is now carried by the muted fill plus a C.TEXT3 label, which
+    // measures 4.71 dark / 4.94 light. This matters more since the mode step's
+    // Continue starts disabled by design.
     <Animated.View
-      style={[{ borderRadius: 100, overflow: 'hidden', opacity: isDisabled ? 0.5 : 1, minHeight: 52 }, animatedStyle, style]}
+      style={[{ borderRadius: 100, overflow: 'hidden', minHeight: 52 }, animatedStyle, style]}
     >
       <Pressable
         onPress={onPress}
@@ -75,7 +86,7 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
           {loading ? (
             <ActivityIndicator size="small" color={C.BG} />
           ) : typeof children === 'string' ? (
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>{children}</Text>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: isDisabled ? C.TEXT3 : C.BG }}>{children}</Text>
           ) : children}
         </LinearGradient>
       </Pressable>

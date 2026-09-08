@@ -65,6 +65,14 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     }
   }, [clerkUser, name]);
   const [mode, setMode] = useState<'career' | 'social'>('career');
+  // See OnboardingDraft.modeChosen: `mode` keeps a valid default so the profile
+  // and the analytics row are always well-formed, but the mode screen must not
+  // present a pre-made choice as if the learner made it.
+  const [modeChosen, setModeChosen] = useState(false);
+  const chooseMode = useCallback((m: 'career' | 'social') => {
+    setMode(m);
+    setModeChosen(true);
+  }, []);
   // Arabic marks the speaker's own gender, so we need this to teach the right
   // forms — it also gates scenarios that only work for one gender.
   const [gender, setGender] = useState<'male' | 'female' | undefined>(undefined);
@@ -88,7 +96,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
-  const arabicGreeting = name.length === 0 ? '' : name.length < 3 ? 'أهـ' : name.length < 5 ? 'أهلاً' : `أهلاً وسهلاً ${name}`;
+  const arabicGreeting =
+    name.length === 0 ? ''
+    : name.length < 3 ? STRINGS.onboarding.greetingStub
+    : name.length < 5 ? STRINGS.onboarding.greetingShort
+    : STRINGS.onboarding.greetingFull(name);
   
   // Character-by-character typewriter effect for Arabic
   const { displayed: typedGreeting } = useTypewriter(arabicGreeting, 80, 0);
@@ -181,6 +193,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const stepRef = useRef(step);
   const nameRef = useRef(name);
   const genderRef = useRef(gender);
+  const modeChosenRef = useRef(modeChosen);
   const holdCompleteRef = useRef(holdComplete);
   const nextRef = useRef(next);
   const backRef = useRef(back);
@@ -189,10 +202,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     stepRef.current = step;
     nameRef.current = name;
     genderRef.current = gender;
+    modeChosenRef.current = modeChosen;
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
     backRef.current = back;
-  }, [step, name, gender, holdComplete, next, back]);
+  }, [step, name, gender, modeChosen, holdComplete, next, back]);
 
   useEffect(() => {
     setPhraseRevealed(false);
@@ -201,7 +215,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // -- Swipe Gesture Logic (Memoized) --
   const composedGesture = useMemo(() => {
     const swipeNext = () => {
-      // Block swiping next on steps that require explicit interaction
+      // Block swiping next on steps that require explicit interaction.
+      // Step 1 is here for the same reason its Continue button is disabled:
+      // a swipe past an unmade mode choice would bank the default silently.
+      if (stepRef.current === 1 && !modeChosenRef.current) return;
       if (stepRef.current === 2 && (!nameRef.current.trim() || !genderRef.current)) return;
       if (stepRef.current === 5 && !holdCompleteRef.current) return;
       nextRef.current();
@@ -242,7 +259,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     skip,
     finishWithTrial,
     draft: {
-      name, setName, mode, setMode, gender, setGender, role, setRole,
+      name, setName, mode, setMode, modeChosen, chooseMode, gender, setGender, role, setRole,
       profession, setProfession, selectedGoals, toggleGoal, plan, setPlan,
       typedGreeting,
     },

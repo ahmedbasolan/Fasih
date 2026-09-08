@@ -113,7 +113,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', marginTop: 40, gap: 24 }}>
               <FadeIn delay={100}>
-                <Companion size={72} />
+                <Companion size={72} name={name} />
               </FadeIn>
               
               <FadeIn delay={200}>
@@ -455,7 +455,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
               <FadeIn delay={100} style={{ zIndex: 2 }}>
-                <Companion size={72} />
+                <Companion size={72} name={name} />
               </FadeIn>
 
               <FadeIn delay={200} style={{ zIndex: 2 }}>

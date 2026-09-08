@@ -26,7 +26,7 @@ export function IdentityStep({ next, draft }: OnboardingStepProps) {
   const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const setTheme = useAppStore((s) => s.setTheme);
-  const { name, mode } = draft;
+  const { name } = draft;
 
   const styles = useMemo(
     () =>
@@ -80,16 +80,19 @@ export function IdentityStep({ next, draft }: OnboardingStepProps) {
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.toggleRow}>
         <FadeIn delay={50}>
-          {/* The icons sit on the knob's C.SURFACE fill, not on the coloured
-              track, so one colour serves both themes: PRIMARY on SURFACE is
-              10.2:1 dark and 5.8:1 light. The old theme-conditional pair also
-              passed; this is one fewer branch, not a fix. */}
+          {/* The icons sit on the knob's C.BG fill, so C.TEXT serves both
+              themes — that is the core ink-on-page pairing the token guard
+              already asserts. */}
           <SwitchButton
             value={isDark}
             onToggle={() => setTheme(isDark ? 'light' : 'dark')}
-            iconOn={<Moon size={14} strokeWidth={1.5} color={C.PRIMARY} />}
-            iconOff={<Sun size={14} strokeWidth={1.5} color={C.PRIMARY} />}
-            backgroundColor={mode === 'career' ? C.JADE_ACCENT : C.VIOLET2}
+            iconOn={<Moon size={14} strokeWidth={1.5} color={C.TEXT} />}
+            iconOff={<Sun size={14} strokeWidth={1.5} color={C.TEXT} />}
+            // Was C.JADE_ACCENT / C.VIOLET2 — the same gold as the primary
+            // button, which made a theme switch the loudest thing on the
+            // welcome screen and put it in direct competition with Get Started.
+            // A utility control should read as one.
+            backgroundColor={C.TEXT3}
             accessibilityLabel={STRINGS.onboarding.themeToggle}
           />
         </FadeIn>

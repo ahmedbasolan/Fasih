@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { LucideIcon } from '../icons';
 import { LinearGradient as ExpoGradient } from 'expo-linear-gradient';
 import { ANGLE_135 } from '../design/gradients';
@@ -15,15 +16,25 @@ import { useTheme } from '../../hooks/useTheme';
 interface Props {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: any;
+  style?: ViewStyle;
   disabled?: boolean;
   /** Optional Lucide icon rendered to the right of the label */
   Icon?: LucideIcon;
+  /**
+   * Required when `children` is not a plain string, because then there is no
+   * text for the accessible name to fall back to.
+   *
+   * This component shipped with NO accessibilityRole, label or state at all,
+   * while being the primary action on onboarding steps 2-4 and on all three
+   * paywall screens — including "Start Free Trial". A screen reader announced
+   * the purchase button as an unlabelled, non-interactive element.
+   */
+  accessibilityLabel?: string;
 }
 
 /**
  * ShimmerButton
- * 
+ *
  * Adapts to the app's primary theme gradient.
  */
 export function ShimmerButton({
@@ -32,6 +43,7 @@ export function ShimmerButton({
   style,
   disabled = false,
   Icon,
+  accessibilityLabel,
 }: Props) {
   const { C, G } = useTheme();
 
@@ -42,6 +54,9 @@ export function ShimmerButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label ?? undefined}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         {
           width: '100%',

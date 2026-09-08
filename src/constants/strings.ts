@@ -38,7 +38,10 @@ export const STRINGS = {
     welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
     getStarted: 'Get Started',
     themeToggle: 'Switch between light and dark',
-    helloKaf: 'Salam! I am Kaf.',
+    // The Kaf character was retired with the Sadaf art direction. These three
+    // strings named it out loud, so the app still introduced and quoted a
+    // mascot the learner never sees. Renamed to describe the thing itself.
+    helloKaf: 'Salam! Welcome to Fasih.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
     liveScenarios: (count: number) => `${count} Live Scenarios`,
@@ -67,7 +70,7 @@ export const STRINGS = {
     socialSub: 'Friends & Family',
     socialDesc: 'Master casual conversation, dining etiquette, and everyday interactions.',
     whatsYourName: 'What\'s your name?',
-    kafGreetingSub: 'Kaf will greet you every morning',
+    kafGreetingSub: 'We\'ll greet you in Arabic every morning',
     placeholderName: 'Enter your name',
     genderQuestion: 'How should Arabic address you?',
     genderWhy: 'Arabic changes ending depending on who is speaking — we\'ll teach you the forms you\'ll actually use',
@@ -77,6 +80,20 @@ export const STRINGS = {
     genderFemaleExample: 'أنا يديدة · مشغولة',
     welcomeName: (name: string) => `"Welcome, ${name}"`,
     keepTyping: 'Keep typing...',
+    /**
+     * The Arabic greeting that types itself out as the learner enters a name.
+     *
+     * These three were inline literals in OnboardingFlow.tsx — the only Arabic
+     * in the app that lived in a component rather than here, which put it
+     * outside both the strings rule and docs/language/pipeline.md.
+     *
+     * Bare script apart from conventional tanwīn (`أهلاً`), which the language
+     * authority permits. Unchanged in content: this is a relocation, not an
+     * edit, and any change to the Arabic itself goes through the pipeline.
+     */
+    greetingStub: 'أهـ',
+    greetingShort: 'أهلاً',
+    greetingFull: (name: string) => `أهلاً وسهلاً ${name}`,
     mascotTitle: 'Meet your companion',
     mascotSubtitle: 'They\'ll guide you through every Arabic lesson',
     mascotMayaTagline: 'Your warm & friendly guide',
@@ -384,7 +401,7 @@ export const STRINGS = {
     trust: 'Trust',
     respect: 'Respect',
     culture: 'Culture',
-    kafSays: 'Kaf says',
+    kafSays: 'Cultural note',
     introDesc: 'Ahmed, your Emirati colleague, invites you for coffee. Every choice shapes your relationship.',
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
     outcomesSummary: 'Family Partnership · Job Referral · Transactional · Missed',
