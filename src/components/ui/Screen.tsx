@@ -26,6 +26,21 @@ interface ScreenProps {
    * the top inset. Without this the inset would be applied twice.
    */
   headerHandlesTopInset?: boolean;
+  /**
+   * Set on the four screens inside the bottom tab navigator. The tab bar is a
+   * flow sibling that already owns the bottom inset, so applying it here too
+   * pads against a bar that is not there — see `screenPadding`.
+   */
+  tabBarHandlesBottomInset?: boolean;
+  /**
+   * Rendered behind the content, edge to edge and outside the margins —
+   * `GhostLetters` and nothing else so far.
+   *
+   * It goes through this prop rather than as the first child because the
+   * watermark is the page's ground, not an item in the content flow: it has to
+   * sit under the scroll, ignore SCREEN_MARGIN, and bleed off all four edges.
+   */
+  background?: React.ReactNode;
 }
 
 /**
@@ -51,6 +66,8 @@ export function Screen({
   scroll = true,
   contentStyle,
   headerHandlesTopInset,
+  tabBarHandlesBottomInset,
+  background,
 }: ScreenProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
@@ -58,12 +75,18 @@ export function Screen({
   const pad = screenPadding(insets, {
     hasAction: !!action,
     headerHandlesTopInset: !!headerHandlesTopInset,
+    tabBarHandlesBottomInset: !!tabBarHandlesBottomInset,
   });
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        root: { flex: 1, backgroundColor: C.BG, paddingTop: pad.top },
+        // The top inset lives on the zone below, not here: an absolutely
+        // positioned `background` is laid out against the root's PADDING box,
+        // so a paddingTop on the root would push the watermark down out of the
+        // status bar it is meant to bleed under.
+        root: { flex: 1, backgroundColor: C.BG },
+        topZone: { flex: 1, paddingTop: pad.top },
         content: { paddingHorizontal: SCREEN_MARGIN },
         // Only applied when scrolling: a non-scrolling screen must not have its
         // children pushed down by contentContainer padding it cannot see.
@@ -97,18 +120,24 @@ export function Screen({
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {scroll ? (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[styles.scrollContent, contentStyle]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[{ flex: 1 }, styles.content, contentStyle]}>{children}</View>
-      )}
+      {/* Outside topZone, so the watermark bleeds under the status bar rather
+          than starting below it. */}
+      {background}
+
+      <View style={styles.topZone}>
+        {scroll ? (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={[styles.scrollContent, contentStyle]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[{ flex: 1 }, styles.content, contentStyle]}>{children}</View>
+        )}
+      </View>
 
       {action ? <View style={styles.action}>{action}</View> : null}
     </KeyboardAvoidingView>

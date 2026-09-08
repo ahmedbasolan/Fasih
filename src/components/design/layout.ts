@@ -163,14 +163,35 @@ export const INSET_FIXTURES = {
  */
 export function screenPadding(
   insets: { top: number; bottom: number },
-  opts: { hasAction: boolean; headerHandlesTopInset: boolean },
+  opts: {
+    hasAction: boolean;
+    headerHandlesTopInset: boolean;
+    /**
+     * Set on a screen inside the bottom tab navigator.
+     *
+     * The tab bar is a normal-flow sibling of the screen container, not an
+     * overlay — `BottomTabView` renders `[screens (flex: 1), tabBar]` in a
+     * column, and `BottomTabBar` only sets `position: 'absolute'` while it is
+     * hidden for the keyboard. Confirmed in
+     * `expo-router/build/react-navigation/bottom-tabs/views/`, on both
+     * platforms, rather than assumed.
+     *
+     * So the screen already ends above the bar, and the bar already carries
+     * the bottom inset. A tab screen that adds `insets.bottom` again is
+     * padding against a bar that is not there. All four tab screens did, with
+     * three different numbers (80, 90, 100) — measured as 80–114px of dead
+     * space at the end of every tab scroll.
+     */
+    tabBarHandlesBottomInset?: boolean;
+  },
 ): { top: number; scrollBottom: number; actionBottom: number } {
+  const bottomInset = opts.tabBarHandlesBottomInset ? 0 : insets.bottom;
   return {
     top: opts.headerHandlesTopInset ? 0 : insets.top,
     // With an action pinned below, the scroll area stops short of it. Without
     // one, the scroll area itself has to clear the bottom inset.
-    scrollBottom: opts.hasAction ? ZONE.actionGap : insets.bottom + SPACE_XL,
-    actionBottom: insets.bottom + SPACE_LG,
+    scrollBottom: opts.hasAction ? ZONE.actionGap : bottomInset + SPACE_XL,
+    actionBottom: bottomInset + SPACE_LG,
   };
 }
 
