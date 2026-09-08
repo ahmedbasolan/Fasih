@@ -127,7 +127,7 @@ export default function SignInScreen() {
                 autoComplete="email"
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
               />
             </View>
 
@@ -148,7 +148,7 @@ export default function SignInScreen() {
                 autoCapitalize="none"
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
-                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
               />
               <Pressable
                 onPress={() => setShowPassword(!showPassword)}
@@ -172,7 +172,7 @@ export default function SignInScreen() {
               onPress={() => router.push('/forgot-password')}
               accessibilityRole="link"
             >
-              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2, textDecorationLine: 'underline' }}>
                 {STRINGS.auth.signIn.forgotPassword}
               </Text>
             </Pressable>
@@ -186,7 +186,7 @@ export default function SignInScreen() {
               style={{ marginBottom: 16 }}
             >
               <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
               </View>
             </MotiView>
           ) : null}

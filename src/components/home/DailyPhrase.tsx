@@ -73,7 +73,7 @@ export function DailyPhrase({
     },
     topLabel: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT3,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
@@ -87,13 +87,13 @@ export function DailyPhrase({
     },
     newBadge: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       color: C.PRIMARY,
       fontWeight: '600',
     },
     arabicPhrase: {
       fontFamily: FONT_ARABIC_EXTRA,
-      fontSize: 32,
+      fontSize: 34,
       color: C.PRIMARY,
       textAlign: 'right',
       writingDirection: 'rtl',
@@ -105,13 +105,13 @@ export function DailyPhrase({
     },
     phonetic: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       marginBottom: 8,
     },
     english: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 15,
+      fontSize: 16,
       color: C.TEXT,
       marginBottom: 16,
     },
@@ -146,7 +146,7 @@ export function DailyPhrase({
     },
     buttonText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.PRIMARY,
       fontWeight: '700',
     },

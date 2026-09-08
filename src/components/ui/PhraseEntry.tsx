@@ -80,7 +80,7 @@ export function PhraseEntry({
         },
         label: {
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           color: C.TEXT3,
@@ -103,7 +103,7 @@ export function PhraseEntry({
         },
         detailText: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           marginTop: SPACE.xs,
           lineHeight: 19,
           color: C.TEXT2,

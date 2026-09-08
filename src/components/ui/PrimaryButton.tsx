@@ -86,7 +86,7 @@ export function PrimaryButton({ children, onPress, disabled, loading, variant = 
           {loading ? (
             <ActivityIndicator size="small" color={C.BG} />
           ) : typeof children === 'string' ? (
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: isDisabled ? C.TEXT3 : C.BG }}>{children}</Text>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: isDisabled ? C.TEXT3 : C.BG }}>{children}</Text>
           ) : children}
         </LinearGradient>
       </Pressable>

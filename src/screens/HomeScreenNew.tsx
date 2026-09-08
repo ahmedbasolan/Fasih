@@ -146,7 +146,7 @@ export function HomeScreenNew({
     },
     sectionLabel: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT2,
       textTransform: 'uppercase',
       letterSpacing: 1.8,
@@ -176,7 +176,7 @@ export function HomeScreenNew({
     },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
-      fontSize: 15,
+      fontSize: 16,
       color: C.TEXT,
       textAlign: 'center',
     },

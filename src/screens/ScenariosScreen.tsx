@@ -293,7 +293,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                       <Text
                         style={{
                           fontFamily: FONT_LATIN_MEDIUM,
-                          fontSize: 10,
+                          fontSize: 11,
                           letterSpacing: 1.6,
                           textTransform: 'uppercase',
                           color: C.PRIMARY,

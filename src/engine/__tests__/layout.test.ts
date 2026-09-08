@@ -164,33 +164,60 @@ describe('type scale adoption', () => {
     return out;
   }
 
-  const offScale = (() => {
+  /**
+   * Watermark glyphs are a graphic device, not type.
+   *
+   * `GhostLetters` and the mode plates render single Arabic letters at 140-260px
+   * as a background texture. Forcing them onto an eight-step text scale would be
+   * cargo-culting the rule past the thing it is for — nobody reads them, and no
+   * scale sensibly extends to 260.
+   *
+   * Named files, not a size threshold, so a genuinely oversized heading cannot
+   * hide behind the exemption.
+   */
+  const WATERMARK_FILES = ['components/ui/GhostLetters.tsx', 'screens/onboarding/ModeStep.tsx'];
+  const isWatermark = (file: string) =>
+    WATERMARK_FILES.some(w => file.replace(/\\/g, '/').endsWith(w));
+
+  const scan = (() => {
     const allowed = new Set(TYPE_SIZES);
-    let count = 0;
+    const offenders: string[] = [];
+    let scanned = 0;
     for (const file of [...walk(SRC), ...walk(APP)]) {
       const src = readFileSync(file, 'utf8');
       for (const m of src.matchAll(/fontSize:\s*(\d+)/g)) {
-        if (!allowed.has(Number(m[1]))) count++;
+        scanned++;
+        const size = Number(m[1]);
+        if (allowed.has(size)) continue;
+        // Watermarks are exempt only for sizes no text step could reach.
+        if (isWatermark(file) && size > 100) continue;
+        offenders.push(`${file.replace(/\\/g, '/').split('/src/').pop()}: ${size}`);
       }
     }
-    return count;
+    return { offenders, scanned };
   })();
 
-  /** 235 the day the scale landed; 186 after the onboarding pass. Must only fall. */
-  const MAX_OFF_SCALE = 186;
-
-  it('does not add new off-scale font sizes', () => {
-    expect(offScale).toBeLessThanOrEqual(MAX_OFF_SCALE);
-  });
-
-  it('MAX_OFF_SCALE is not stale by more than a migration step', () => {
-    // Stops the ceiling drifting far above reality, which would let a big
-    // regression slip in unnoticed. Tighten it as screens are migrated.
-    expect(offScale).toBeGreaterThan(MAX_OFF_SCALE - 50);
+  /**
+   * Zero.
+   *
+   * 235 the day the scale landed, 186 after onboarding, 0 after the full sweep.
+   * It is a hard floor now rather than a ratchet — there is nothing left to
+   * migrate, so any new off-scale size is a new decision and should be argued
+   * for rather than absorbed.
+   */
+  it('no off-scale font sizes remain', () => {
+    expect(scan.offenders).toEqual([]);
   });
 
   it('the scan actually finds font sizes', () => {
-    // A walker that returns nothing would pass both assertions above.
-    expect(offScale).toBeGreaterThan(0);
+    // A walker that returns nothing would pass the assertion above.
+    expect(scan.scanned).toBeGreaterThan(200);
+  });
+
+  it('the watermark exemption cannot cover ordinary text', () => {
+    // The exemption is scoped to sizes above 100. A 28px heading in one of
+    // those files is still checked.
+    expect(isWatermark('src/components/ui/GhostLetters.tsx')).toBe(true);
+    expect(isWatermark('src/screens/PracticeScreen.tsx')).toBe(false);
   });
 });

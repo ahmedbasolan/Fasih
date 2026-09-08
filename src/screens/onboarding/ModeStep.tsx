@@ -75,7 +75,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           color: C.TEXT,
           marginBottom: SPACE.xs,
         },
-        headerSub: { fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 },
+        headerSub: { fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT2 },
         plates: { flex: 1 },
         plate: {
           flex: 1,
@@ -96,7 +96,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           color: C.TEXT,
           includeFontPadding: false,
         },
-        plateTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 30, letterSpacing: -0.4 },
+        plateTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 28, letterSpacing: -0.4 },
         plateSub: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 12,
@@ -104,7 +104,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           textTransform: 'uppercase',
           marginBottom: SPACE.sm,
         },
-        plateDesc: { fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, maxWidth: 420 },
+        plateDesc: { fontFamily: FONT_LATIN, fontSize: 16, lineHeight: 24, maxWidth: 420 },
         footer: {
           paddingHorizontal: SCREEN_MARGIN,
           paddingTop: SPACE.lg,

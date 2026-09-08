@@ -147,7 +147,7 @@ export function PhraseLibrary() {
               style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, minHeight: 44 }}
             >
               <Snail size={16} strokeWidth={1.5} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 13, color: C.PRIMARY }}>
+              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.PRIMARY }}>
                 {STRINGS.phrases.playSlowly}
               </Text>
             </Pressable>
@@ -164,10 +164,10 @@ export function PhraseLibrary() {
             {/* CEFR and type. Labels, not coloured chips — category and level
                 are information, and Sadaf spends no fills on them. */}
             <View style={{ flexDirection: 'row', gap: SPACE.md, flexWrap: 'wrap' }}>
-              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
+              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
                 {CEFR_LABELS[p.cefr]}
               </Text>
-              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
+              <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: C.TEXT3 }}>
                 {TYPE_LABELS[p.type]}
               </Text>
             </View>
@@ -193,7 +193,7 @@ export function PhraseLibrary() {
         <Text
           style={{
             fontFamily: FONT_LATIN_MEDIUM,
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: 1.6,
             textTransform: 'uppercase',
             color: C.TEXT3,
@@ -265,7 +265,7 @@ export function PhraseLibrary() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
                 {/* The icon, not a tinted tile holding the icon. */}
                 <Blocks size={15} strokeWidth={1.5} color={C.PRIMARY} />
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
                   {STRINGS.sentenceBuilder.patternsTitle}
                 </Text>
               </View>
@@ -296,7 +296,7 @@ export function PhraseLibrary() {
                       borderColor: C.BORDER,
                     }}
                   >
-                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, marginBottom: SPACE.sm, textAlign: 'right', writingDirection: 'rtl' }}>
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 18, color: C.TEXT, marginBottom: SPACE.sm, textAlign: 'right', writingDirection: 'rtl' }}>
                       {splitBilingualTitle(p.title).arabic}
                     </Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2, lineHeight: 15, writingDirection: 'ltr' }}>
@@ -400,7 +400,7 @@ export function PhraseLibrary() {
           transition={{ type: 'timing', duration: 360, delay: 50 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: SPACE.xs }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 26, color: C.TEXT }}>
+            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, color: C.TEXT }}>
               {STRINGS.phrases.title}
             </Text>
             {/* A count, not a badge. The tinted pill around it was a fill
@@ -410,7 +410,7 @@ export function PhraseLibrary() {
               <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.TEXT3, fontVariant: ['tabular-nums'] }}>{PHRASES.length}</Text>
             </View>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, marginBottom: SPACE.lg }}>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, marginBottom: SPACE.lg }}>
             {STRINGS.phrases.subtitle(PHRASES.length)}
           </Text>
         </MotiView>
@@ -462,7 +462,7 @@ export function PhraseLibrary() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 280 }}
           >
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
               {STRINGS.phrases.categoryFilterLabel}
             </Text>
             <ScrollView ref={categoryScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 8 }}>
@@ -492,7 +492,7 @@ export function PhraseLibrary() {
             </ScrollView>
 
             {/* Difficulty filter */}
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6 }}>
               {STRINGS.phrases.levelFilterLabel}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>

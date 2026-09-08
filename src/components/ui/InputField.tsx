@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: FONT_LATIN_MEDIUM,
-    fontSize: 15,
+    fontSize: 16,
     paddingVertical: 14,
   },
 });
