@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC_EXTRA } from '../../theme';
+import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_EXTRA } from '../../theme';
+import { initialFor } from '../../engine/text';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
@@ -15,11 +16,14 @@ interface OnboardingScenarioPlayerProps {
 
 type Phase = 'scene' | 'outcome' | 'unlock';
 
-const OUTCOME_EMOJI: Record<string, string> = {
-  excellent: '🌟',
-  good: '✅',
-  neutral: '💬',
-  bad: '⚠️',
+// Outcome is carried by colour and by the note's own words, as it is in the
+// real player. The emoji set that used to live here (🌟 ✅ 💬 ⚠️) appears
+// nowhere else in the app.
+const OUTCOME_TOKEN: Record<string, 'PRIMARY' | 'JADE2' | 'TEXT3' | 'ERROR'> = {
+  excellent: 'PRIMARY',
+  good: 'JADE2',
+  neutral: 'TEXT3',
+  bad: 'ERROR',
 };
 
 export function OnboardingScenarioPlayer({
@@ -103,6 +107,11 @@ export function OnboardingScenarioPlayer({
           alignItems: 'center',
           justifyContent: 'center',
         },
+        charInitial: {
+          fontFamily: FONT_LATIN_SEMI,
+          fontSize: 15,
+          color: C.JADE2,
+        },
         charName: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 13,
@@ -153,27 +162,39 @@ export function OnboardingScenarioPlayer({
           textTransform: 'uppercase',
           marginBottom: 10,
         },
+        // Matches the real player's choice card: same fill, border and radius,
+        // and the same Arabic -> romanisation -> English order. This screen had
+        // English first, Arabic second and NO romanisation at all, so a learner
+        // was asked to pick an Arabic line they had no way to pronounce.
         choiceButton: {
-          borderRadius: 14,
+          borderRadius: 16,
           padding: 14,
-          marginBottom: 10,
-          backgroundColor: C.SURFACE,
+          marginBottom: 8,
+          backgroundColor: C.JADE_ACCENT_SURFACE,
           borderWidth: 1,
           borderColor: C.BORDER,
         },
-        choiceText: {
-          fontFamily: FONT_LATIN_SEMI,
-          fontSize: 14,
-          color: C.TEXT,
-          fontWeight: '600',
-          marginBottom: 4,
-        },
         choiceArabic: {
-          fontFamily: FONT_ARABIC_EXTRA,
-          fontSize: 16,
-          color: C.TEXT2,
+          fontFamily: FONT_ARABIC,
+          fontSize: 17,
+          lineHeight: 26,
+          color: C.JADE,
           textAlign: 'right',
           writingDirection: 'rtl',
+          marginBottom: 3,
+        },
+        choiceRoman: {
+          fontFamily: FONT_LATIN,
+          fontSize: 10,
+          fontStyle: 'italic',
+          color: `${C.JADE}70`,
+          marginBottom: 5,
+        },
+        choiceText: {
+          fontFamily: FONT_LATIN,
+          fontSize: 13,
+          lineHeight: 20,
+          color: C.TEXT2,
         },
 
         youSaidLabel: {
@@ -339,26 +360,34 @@ export function OnboardingScenarioPlayer({
   if (phase === 'scene' && scene) {
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* No opacity in the `from` of any entrance on this screen. A stalled
+            animation driver would leave them at 0 and the scene would render
+            blank — the same failure FadeIn had, reproduced here because these
+            are raw MotiViews rather than FadeIn. Movement carries it instead. */}
         <MotiView
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          from={{ translateY: 6 }}
+          animate={{ translateY: 0 }}
           transition={{ type: 'timing', duration: 300 }}
         >
+          {/* A jade dot, matching the real player's setting badge. The emoji
+              that was here is not in the app's visual language anywhere else. */}
           <View style={styles.settingBadge}>
-            <Text style={{ fontSize: 11 }}>☕</Text>
+            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE }} />
             <Text style={styles.settingText}>{scene.setting}</Text>
           </View>
         </MotiView>
 
         <MotiView
-          from={{ opacity: 0, translateY: 8 }}
-          animate={{ opacity: 1, translateY: 0 }}
+          from={{ translateY: 8 }}
+          animate={{ translateY: 0 }}
           transition={{ type: 'timing', duration: 350, delay: 80 }}
         >
           <View style={styles.npcCard}>
             <View style={styles.charRow}>
+              {/* Character art is retired app-wide; the real player shows the
+                  NPC's initial. An emoji face was the last one left. */}
               <View style={styles.charAvatar}>
-                <Text style={{ fontSize: 16 }}>{scene.charGender === 'female' ? '👩' : '👨'}</Text>
+                <Text style={styles.charInitial}>{initialFor(scene.charName)}</Text>
               </View>
               <Text style={styles.charName}>{scene.charName}</Text>
             </View>
@@ -367,23 +396,23 @@ export function OnboardingScenarioPlayer({
             <Text style={styles.npcEnglish}>{scene.english}</Text>
             {scene.teachingNote ? (
               <View style={styles.teachingNote}>
-                <Text style={styles.teachingNoteText}>📌 {scene.teachingNote}</Text>
+                <Text style={styles.teachingNoteText}>{scene.teachingNote}</Text>
               </View>
             ) : null}
           </View>
         </MotiView>
 
         <MotiView
-          from={{ opacity: 0, translateY: 8 }}
-          animate={{ opacity: 1, translateY: 0 }}
+          from={{ translateY: 8 }}
+          animate={{ translateY: 0 }}
           transition={{ type: 'timing', duration: 350, delay: 200 }}
         >
           <Text style={styles.choicesLabel}>Your response</Text>
           {scene.choices.map((choice, idx) => (
             <MotiView
               key={choice.id}
-              from={{ opacity: 0, translateX: -6 }}
-              animate={{ opacity: 1, translateX: 0 }}
+              from={{ translateX: -6 }}
+              animate={{ translateX: 0 }}
               transition={{ type: 'timing', duration: 280, delay: 240 + idx * 60 }}
             >
               <Pressable
@@ -393,11 +422,15 @@ export function OnboardingScenarioPlayer({
                 ]}
                 onPress={() => handleChoice(choice)}
                 accessibilityRole="button"
+                accessibilityLabel={`${choice.text} — ${choice.roman}`}
               >
-                <Text style={styles.choiceText}>{choice.text}</Text>
                 {choice.arabic !== '—' ? (
                   <Text style={styles.choiceArabic}>{choice.arabic}</Text>
                 ) : null}
+                {choice.roman ? (
+                  <Text style={styles.choiceRoman}>{choice.roman}</Text>
+                ) : null}
+                <Text style={styles.choiceText}>{choice.text}</Text>
               </Pressable>
             </MotiView>
           ))}
@@ -408,7 +441,7 @@ export function OnboardingScenarioPlayer({
 
   // ── Outcome phase ────────────────────────────────────────────────────────────
   if (phase === 'outcome' && chosenChoice) {
-    const emoji = OUTCOME_EMOJI[chosenChoice.outcome] ?? '💬';
+    const outcomeColor = C[OUTCOME_TOKEN[chosenChoice.outcome] ?? 'TEXT3'];
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View>
@@ -421,10 +454,8 @@ export function OnboardingScenarioPlayer({
           </View>
 
           {chosenChoice.note ? (
-            <View style={styles.outcomeCard}>
-              <Text style={styles.outcomeText}>
-                {emoji} {chosenChoice.note}
-              </Text>
+            <View style={[styles.outcomeCard, { borderLeftWidth: 3, borderLeftColor: outcomeColor }]}>
+              <Text style={styles.outcomeText}>{chosenChoice.note}</Text>
             </View>
           ) : null}
 
@@ -458,8 +489,8 @@ export function OnboardingScenarioPlayer({
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <MotiView
-        from={{ opacity: 0, translateY: 10 }}
-        animate={{ opacity: 1, translateY: 0 }}
+        from={{ translateY: 10 }}
+        animate={{ translateY: 0 }}
         transition={{ type: 'timing', duration: 350 }}
       >
         <View style={styles.unlockHeader}>
@@ -505,8 +536,8 @@ export function OnboardingScenarioPlayer({
         )}
 
         <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
+          from={{ translateY: 10 }}
+          animate={{ translateY: 0 }}
           transition={{ type: 'timing', duration: 350, delay: 400 }}
         >
           <View style={styles.nextButton}>
