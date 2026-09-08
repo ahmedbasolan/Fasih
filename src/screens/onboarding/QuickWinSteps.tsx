@@ -175,6 +175,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
 
             {!phraseRevealed ? (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.onboarding.firstPhraseHear}
                 onPress={() => {
                   setPhraseRevealed(true);
                   setPhraseEverRevealed(true);
@@ -210,6 +212,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 </Text>
                 <Pressable
                   onPress={next}
+                  accessibilityRole="button"
+                  accessibilityLabel={STRINGS.common.continue}
                   style={{
                     paddingHorizontal: 28,
                     paddingVertical: 14,
