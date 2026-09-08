@@ -136,6 +136,15 @@ export const STRINGS = {
     firstPhraseHear: 'Tap to hear it',
     firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
     firstPhraseDone: 'You just said it the way Dubai says it.',
+    /**
+     * Watermark roots behind the two mode plates on step 1. Decorative, hidden
+     * from screen readers, rendered at 3-8% opacity.
+     *
+     * Here rather than in the component so the language lint sees them —
+     * everything in STRINGS is now walked by languageContent.test.ts.
+     */
+    modeRootCareer: 'ع م ل',
+    modeRootSocial: 'ص ح ب',
     dailyHabit: 'Commit to learning for 5 minutes a day',
     skipForNow: 'Skip for now',
     freeTrialBadge: '4-day free trial',

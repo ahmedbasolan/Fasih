@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Sun, Moon } from '../../components/icons';
+import { Sun, Moon, ArrowRight } from '../../components/icons';
 import { FONT_LATIN, FONT_HEADING_EXTRA } from '../../components/design/tokens';
 import { SPACE, SCREEN_MARGIN } from '../../components/design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, SwitchButton, PrimaryButton, Monogram } from '../../components/ui';
+import { FadeIn, SwitchButton, ShimmerButton, Monogram } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import type { OnboardingStepProps } from './types';
 
@@ -121,9 +121,9 @@ export function IdentityStep({ next, draft }: OnboardingStepProps) {
       <View style={styles.spacer} />
 
       <FadeIn delay={400}>
-        <PrimaryButton onPress={next} accessibilityLabel={STRINGS.onboarding.getStarted}>
+        <ShimmerButton onPress={next} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.getStarted}>
           {STRINGS.onboarding.getStarted}
-        </PrimaryButton>
+        </ShimmerButton>
       </FadeIn>
     </ScrollView>
   );

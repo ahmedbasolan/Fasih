@@ -9,7 +9,7 @@ import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, PrimaryButton } from '../../components/ui';
+import { FadeIn, ShimmerButton } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
@@ -113,9 +113,9 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
 
             <View style={{ gap: SPACE.md, marginTop: 'auto' }}>
               <FadeIn delay={550}>
-                <PrimaryButton onPress={next} accessibilityLabel={STRINGS.onboarding.notifAllow}>
+                <ShimmerButton onPress={next} Icon={Bell} accessibilityLabel={STRINGS.onboarding.notifAllow}>
                   {STRINGS.onboarding.notifAllow}
-                </PrimaryButton>
+                </ShimmerButton>
               </FadeIn>
               <FadeIn delay={620}>
                 <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
