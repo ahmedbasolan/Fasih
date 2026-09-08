@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
 
 /**
  * The contract between `OnboardingFlow` and its step components.
@@ -54,8 +55,22 @@ export interface OnboardingDraft {
 
 /** The hold-to-commit ring on step 5. Owned by the parent because it runs a timer. */
 export interface OnboardingHold {
-  holdProgress: number;
+  /**
+   * Progress 0-1 as a Reanimated shared value, NOT React state.
+   *
+   * It was state written by a 16ms interval: ~137 re-renders of the whole
+   * OnboardingFlow tree per 2.2s hold, each rebuilding `stepProps` and re-running
+   * all of ProfileSteps — including a MotiView whose `animate` prop changed
+   * every frame, so Moti restarted an animation 60 times a second. That is what
+   * made the ring stutter on device.
+   *
+   * As a shared value the ring animates on the UI thread and nothing re-renders
+   * while the finger is down.
+   */
+  holdProgress: SharedValue<number>;
   holdComplete: boolean;
+  /** True between press-in and press-out. Two re-renders per hold, not 137. */
+  isHolding: boolean;
   startHold: () => void;
   endHold: () => void;
   /** Circumference of the progress ring, for the stroke-dash maths. */

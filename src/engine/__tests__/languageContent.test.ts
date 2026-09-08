@@ -18,6 +18,7 @@
  */
 import { getScenarioScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
+import { STRINGS } from '../../constants/strings';
 import { darkTheme } from '../../components/design/tokens';
 import {
   LEVEL_SPECS,
@@ -82,6 +83,30 @@ function learnerFacingLines(): Line[] {
     }
     for (const e of script.endings) add(`${id}/ending:${e.type}`, e.arabic);
   }
+
+  // UI Arabic from STRINGS.
+  //
+  // This was a hole. The collector covered phrases.ts and scenarios.ts, so
+  // Arabic written into strings.ts — the onboarding greeting, the gender
+  // examples, the first-phrase screen — was subject to no MSA check and no
+  // tashkeel check at all. Moving Arabic out of a component and into STRINGS
+  // satisfied the strings rule while quietly leaving the language rules behind.
+  //
+  // Walked generically rather than by naming keys, so a new Arabic string
+  // cannot be added anywhere in STRINGS without being checked. Functions are
+  // called with a placeholder to reach the Arabic in template literals.
+  const walkStrings = (node: unknown, path: string) => {
+    if (typeof node === 'string') { add(`strings:${path}`, node); return; }
+    if (typeof node === 'function') {
+      try { walkStrings((node as (...a: unknown[]) => unknown)('X'), path); } catch { /* not a 1-arg formatter */ }
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach((v, i) => walkStrings(v, `${path}[${i}]`)); return; }
+    if (node && typeof node === 'object') {
+      for (const [k, v] of Object.entries(node)) walkStrings(v, `${path}.${k}`);
+    }
+  };
+  walkStrings(STRINGS, '');
 
   return out;
 }
@@ -260,6 +285,23 @@ describe('curriculum spec is internally consistent', () => {
     const blocked = new Set(MSA_BLOCKLIST.map(f => f.msa));
     const overlap = PREFERRED_FORMS.filter(f => blocked.has(f.msa)).map(f => f.msa);
     expect(overlap).toEqual([]);
+  });
+});
+
+describe('the collector reaches every Arabic source', () => {
+  // A collector that silently returns nothing passes every check below it. This
+  // is the same guard the blocklist has, applied to coverage instead of regex.
+  it('collects Arabic from phrases, scenarios AND strings', () => {
+    const where = LINES.map(l => l.where);
+    expect(where.some(w => w.startsWith('phrase:'))).toBe(true);
+    expect(where.some(w => w.includes('/ending:'))).toBe(true);
+    expect(where.some(w => w.startsWith('strings:'))).toBe(true);
+  });
+
+  it('reaches Arabic returned by a STRINGS formatter, not just literals', () => {
+    // `greetingFull` builds its Arabic in a template literal, so it is only
+    // visible if the walker calls the function.
+    expect(LINES.some(l => l.where === 'strings:.onboarding.greetingFull')).toBe(true);
   });
 });
 

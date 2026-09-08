@@ -141,7 +141,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               textAlign: 'center',
               marginBottom: 8,
             }}>
-              Your first Gulf Arabic phrase:
+              {STRINGS.onboarding.firstPhraseEyebrow}
             </Text>
 
             <Text style={{
@@ -152,7 +152,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               writingDirection: 'rtl',
               marginBottom: 6,
             }}>
-              مرحبا
+              {STRINGS.onboarding.firstPhraseArabic}
             </Text>
 
             <Text style={{
@@ -161,7 +161,16 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               color: C.TEXT2,
               marginBottom: 4,
             }}>
-              mar-haba
+              {STRINGS.onboarding.firstPhraseRoman}
+            </Text>
+
+            <Text style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 14,
+              color: C.TEXT3,
+              marginBottom: 4,
+            }}>
+              {STRINGS.onboarding.firstPhraseEnglish}
             </Text>
 
             {!phraseRevealed ? (
@@ -169,7 +178,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 onPress={() => {
                   setPhraseRevealed(true);
                   setPhraseEverRevealed(true);
-                  speak('مرحبا');
+                  speak(STRINGS.onboarding.firstPhraseArabic);
                 }}
                 style={{
                   marginTop: 20,
@@ -180,7 +189,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
-                  Tap to hear it 🔊
+                  {STRINGS.onboarding.firstPhraseHear}
                 </Text>
               </Pressable>
             ) : (
@@ -190,8 +199,14 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 transition={{ type: 'timing', duration: 300 }}
                 style={{ alignItems: 'center', marginTop: 16 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: 24 }}>
-                  Welcome – you just said it. ✨
+                {/* The payoff is the contrast, not the translation. Saying it
+                    is the win; knowing it is not what the textbook taught is
+                    the reason to keep going. */}
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: SPACE.md }}>
+                  {STRINGS.onboarding.firstPhraseDone}
+                </Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT2, textAlign: 'center', marginBottom: SPACE.xl }}>
+                  {STRINGS.onboarding.firstPhraseWhy}
                 </Text>
                 <Pressable
                   onPress={next}
