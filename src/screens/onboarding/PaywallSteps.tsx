@@ -1,15 +1,16 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import Svg, { Path } from 'react-native-svg';
 import { Shield, TrendingUp, Globe, ArrowRight, Check, Star, Lock, Mic, BookOpen, Layers, Trophy, Zap, Flame, Sparkles } from '../../components/icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
+import { SPACE } from '../../components/design/spacing';
+import { TYPE } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import type { OnboardingStepProps } from './types';
 
 /**
@@ -21,13 +22,40 @@ import type { OnboardingStepProps } from './types';
  */
 export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: OnboardingStepProps) {
   const { C, G } = useTheme();
-  const insets = useSafeAreaInsets();
   const { plan, setPlan } = draft;
+
+  // The three action zones repeat the same fine print and skip link, so they
+  // are defined once rather than inline three times with drifting values.
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        fineprint: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.TEXT3, textAlign: 'center' },
+        fineprintAccent: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.JADE2, textAlign: 'center' },
+        skipRow: { paddingVertical: SPACE.md, alignItems: 'center' },
+        skipText: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2, textDecorationLine: 'underline' },
+        skipTextQuiet: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT3, textDecorationLine: 'underline' },
+      }),
+    [C],
+  );
 
   switch (step) {
       case 9:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <FadeIn delay={800}>
+                <Stack gap="sm">
+                  <ShimmerButton onPress={next} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.startFreeTrial}>
+                    {STRINGS.onboarding.startFreeTrial}
+                  </ShimmerButton>
+                  <Text style={styles.fineprint}>{STRINGS.onboarding.cancelAnytime}</Text>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipText}>{STRINGS.onboarding.skipForNow}</Text>
+                  </Pressable>
+                </Stack>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
@@ -66,24 +94,28 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               })}
             </View>
 
-            <FadeIn delay={800}>
-              <View style={{ gap: 8, width: '100%' }}>
-                <ShimmerButton onPress={next} Icon={ArrowRight}>
-                  {STRINGS.onboarding.startFreeTrial}
-                </ShimmerButton>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>{STRINGS.onboarding.cancelAnytime}</Text>
-                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
-                </Pressable>
-              </View>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       // Step 10: Everything included — features
       case 10:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <Stack gap="xs">
+                <FadeIn delay={900}>
+                  <ShimmerButton onPress={next} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.seePlans}>
+                    {STRINGS.onboarding.seePlans}
+                  </ShimmerButton>
+                </FadeIn>
+                <FadeIn delay={1000}>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipTextQuiet}>{STRINGS.onboarding.skipForNow}</Text>
+                  </Pressable>
+                </FadeIn>
+              </Stack>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
@@ -132,26 +164,30 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               </View>
             </FadeIn>
 
-            <FadeIn delay={900}>
-              <View style={{ width: '100%' }}>
-                <ShimmerButton onPress={next} Icon={ArrowRight}>
-                  {STRINGS.onboarding.seePlans}
-                </ShimmerButton>
-              </View>
-            </FadeIn>
-
-            <FadeIn delay={1000}>
-              <Pressable onPress={skip} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
-              </Pressable>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       // Step 11: Paywall — plans
       case 11:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <FadeIn delay={650}>
+                <Stack gap="sm">
+                  <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.startFreeTrial}>
+                    {STRINGS.onboarding.startFreeTrial}
+                  </ShimmerButton>
+                  <Text style={styles.fineprint}>
+                    {STRINGS.onboarding.thenPrice(plan === 'yearly' ? 'AED 199/year' : 'AED 39/month')}
+                  </Text>
+                  <Text style={styles.fineprintAccent}>{STRINGS.onboarding.refundGuarantee}</Text>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipText}>{STRINGS.onboarding.skipUnlock}</Text>
+                  </Pressable>
+                </Stack>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 20 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
@@ -243,23 +279,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               </View>
             </View>
 
-            <FadeIn delay={650}>
-              <View style={{ gap: 8, marginTop: 16, width: '100%' }}>
-                <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight}>
-                  {STRINGS.onboarding.startFreeTrial}
-                </ShimmerButton>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>
-                  Then {plan === 'yearly' ? 'AED 199/year' : 'AED 39/month'} · {STRINGS.onboarding.cancelAnytime}
-                </Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.JADE2, textAlign: 'center' }}>
-                  {STRINGS.onboarding.refundGuarantee}
-                </Text>
-                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipUnlock}</Text>
-                </Pressable>
-              </View>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       default:
