@@ -1,15 +1,14 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { Bell, Star, TrendingUp } from '../../components/icons';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
-import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
+import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
+import { SPACE, RADIUS } from '../../components/design/spacing';
+import { TYPE } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
@@ -23,8 +22,7 @@ import type { OnboardingStepProps } from './types';
  * This is the quick win -- the learner speaks Arabic before being asked to pay.
  */
 export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepProps) {
-  const { C, G } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { C } = useTheme();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const { mode, name } = draft;
@@ -41,7 +39,22 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
          learner anything. It is now three ruled rows. */
       case 6:
         return (
-          <View style={{ flex: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.xxxl, paddingBottom: insets.bottom + SPACE.xl }}>
+          <Screen
+            action={
+              <Stack gap="md">
+                <FadeIn delay={550}>
+                  <ShimmerButton onPress={next} Icon={Bell} accessibilityLabel={STRINGS.onboarding.notifAllow}>
+                    {STRINGS.onboarding.notifAllow}
+                  </ShimmerButton>
+                </FadeIn>
+                <FadeIn delay={620}>
+                  <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
+                    <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2 }}>{STRINGS.onboarding.notifLater}</Text>
+                  </Pressable>
+                </FadeIn>
+              </Stack>
+            }
+          >
             <FadeIn delay={100}>
               <Bell size={24} strokeWidth={1.5} color={C.PRIMARY} style={{ marginBottom: SPACE.lg }} />
               <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, letterSpacing: -0.5, color: C.TEXT, marginBottom: SPACE.sm }}>
@@ -111,19 +124,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               ))}
             </View>
 
-            <View style={{ gap: SPACE.md, marginTop: 'auto' }}>
-              <FadeIn delay={550}>
-                <ShimmerButton onPress={next} Icon={Bell} accessibilityLabel={STRINGS.onboarding.notifAllow}>
-                  {STRINGS.onboarding.notifAllow}
-                </ShimmerButton>
-              </FadeIn>
-              <FadeIn delay={620}>
-                <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.notifLater}</Text>
-                </Pressable>
-              </FadeIn>
-            </View>
-          </View>
+          </Screen>
         );
 
       case 7:

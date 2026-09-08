@@ -14,7 +14,7 @@ import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, Driv
 import { Companion } from '../../components/ui/Companion';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen } from '../../components/ui';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
 
@@ -259,7 +259,19 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
       // Step 3: Role Selection — clean 2-column grid layout
       case 3:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            // The role grid scrolls, the heading and the profession tray do not.
+            // Screen must therefore NOT scroll: two same-axis ScrollViews nested
+            // is a native gesture conflict, and only one of them would ever win.
+            scroll={false}
+            action={
+              <FadeIn delay={600}>
+                <ShimmerButton onPress={next} disabled={!role || !profession} accessibilityLabel={STRINGS.common.continue}>
+                  {STRINGS.common.continue}
+                </ShimmerButton>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
@@ -267,7 +279,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               </View>
             </FadeIn>
 
-            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingBottom: 16 }}>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingBottom: 16 }}>
               {PROFESSION_CATEGORIES.map(({ id, label, Icon }, idx) => {
                 const selected = role === id;
                 const hasSelection = !!role;
@@ -366,16 +378,24 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               )}
             </AnimatePresence>
 
-            <FadeIn delay={600}>
-              <ShimmerButton onPress={next} disabled={!role || !profession}>{STRINGS.common.continue}</ShimmerButton>
-            </FadeIn>
-          </View>
+          </Screen>
         );
 
       // Step 4: Goals Selection — consistent upward entrance
       case 4:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24, gap: 16 }}>
+          <Screen
+            // Same as step 3: the goal list owns the scrolling, so Screen must not.
+            scroll={false}
+            contentStyle={{ gap: SPACE.lg }}
+            action={
+              <FadeIn delay={600}>
+                <ShimmerButton onPress={next} disabled={selectedGoals.length === 0} accessibilityLabel={STRINGS.common.continue}>
+                  {STRINGS.common.continue}
+                </ShimmerButton>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View>
                 <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
@@ -384,7 +404,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
             </FadeIn>
 
             {/* Ruled rows, not stacked cards: a list of goals IS a list. */}
-            <ScrollView contentContainerStyle={{ paddingBottom: SPACE.lg }}>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACE.lg }}>
               {goals.map(({ id, label, sub, Icon }, idx) => {
                 const selected = selectedGoals.includes(id);
                 return (
@@ -449,11 +469,8 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                   </MotiView>
                 )}
               </AnimatePresence>
-              <FadeIn delay={600}>
-                <ShimmerButton onPress={next} disabled={selectedGoals.length === 0}>{STRINGS.common.continue}</ShimmerButton>
-              </FadeIn>
             </View>
-          </View>
+          </Screen>
         );
 
       // Step 5: Commitment — consistent upward entrance
