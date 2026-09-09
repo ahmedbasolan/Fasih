@@ -7,9 +7,10 @@ import {
 } from '../onboardingSteps';
 
 describe('onboarding step order', () => {
-  it('has exactly twelve screens', () => {
-    // TOTAL in OnboardingFlow is 12 and this array is now the source of it.
-    expect(ONBOARDING_SCREENS).toHaveLength(12);
+  it('has exactly thirteen screens', () => {
+    // TOTAL in OnboardingFlow derives from this array rather than the reverse.
+    // Was twelve; `progress` is the thirteenth and is a give, not an ask.
+    expect(ONBOARDING_SCREENS).toHaveLength(13);
   });
 
   it('names every screen uniquely', () => {
@@ -90,5 +91,35 @@ describe('ask/give rhythm', () => {
 
   it('pays the role question off on the same screen, so goals may follow it', () => {
     expect(indexOfScreen('goals')).toBeGreaterThan(indexOfScreen('role'));
+  });
+
+  it('never runs more than three asks back to back', () => {
+    // Moving the first give forward fixed the opening and left the ending: the
+    // flow closed on five consecutive asks — commitment, notifications and the
+    // three paywall screens. Three of those five are the paywall and are not
+    // being touched, so the fix is a give before it rather than fewer asks.
+    //
+    // `welcome` asks nothing, and `role` pays itself off inline, so both break
+    // a run.
+    const BREAKS_A_RUN: readonly string[] = ['welcome', 'phrase', 'scenario', 'role', 'progress'];
+
+    let run = 0;
+    let worst = 0;
+    for (const screen of ONBOARDING_SCREENS) {
+      run = BREAKS_A_RUN.includes(screen) ? 0 : run + 1;
+      worst = Math.max(worst, run);
+    }
+    expect(worst).toBeLessThanOrEqual(3);
+  });
+
+  it('shows progress before the paywall asks the learner not to lose it', () => {
+    // The paywall's title, subtitle and CTA all say "don't lose your progress".
+    // Nothing had ever shown the learner any. This screen is what makes those
+    // three strings true rather than a bluff.
+    expect(indexOfScreen('progress')).toBeLessThan(indexOfScreen('paywall-timeline'));
+  });
+
+  it('shows progress only after there is progress to show', () => {
+    expect(indexOfScreen('progress')).toBeGreaterThan(indexOfScreen('scenario'));
   });
 });

@@ -22,6 +22,7 @@ export type OnboardingScreen =
   | 'notifications'
   | 'phrase'
   | 'scenario'
+  | 'progress'
   | 'paywall-timeline'
   | 'paywall-features'
   | 'paywall-plans';
@@ -38,6 +39,13 @@ export type OnboardingScreen =
  * position, since the scenario needs `mode` and gender — and the profile
  * questions follow them. `role` pays itself off inline rather than banking
  * the answer for later.
+ *
+ * `progress` closes the same gap at the other end. Moving the first give
+ * forward fixed the opening and left the flow ending on five consecutive
+ * asks: commitment, notifications and three paywall screens. Three of those
+ * are the paywall, so the fix is a give before it rather than fewer asks —
+ * and the paywall's own title, subtitle and CTA all say "don't lose your
+ * progress" to a learner who has never been shown any.
  */
 export const ONBOARDING_SCREENS: readonly OnboardingScreen[] = [
   'welcome',
@@ -49,6 +57,7 @@ export const ONBOARDING_SCREENS: readonly OnboardingScreen[] = [
   'goals',
   'commitment',
   'notifications',
+  'progress',
   'paywall-timeline',
   'paywall-features',
   'paywall-plans',
