@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { SharedValue } from 'react-native-reanimated';
+import type { OnboardingScreen } from '../../engine/onboardingSteps';
 
 /**
  * The contract between `OnboardingFlow` and its step components.
@@ -98,6 +99,14 @@ export interface OnboardingQuickWin {
 
 export interface OnboardingStepProps {
   step: number;
+  /**
+   * Which screen this is, by name.
+   *
+   * `step` stays because the progress bar and the back button are genuinely
+   * positional. Everything that cares about WHICH screen it is switches on
+   * this instead, so reordering the flow does not touch any component.
+   */
+  screen: OnboardingScreen;
   next: () => void;
   /** Steps 9-11: leave without subscribing. Confirmed by an Alert in the parent. */
   skip: () => void;
