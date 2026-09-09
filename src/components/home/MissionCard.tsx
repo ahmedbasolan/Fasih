@@ -61,7 +61,7 @@ export function MissionCard({
       position: 'absolute',
       top: 12,
       right: 16,
-      fontSize: 24,
+      fontSize: 22,
     },
     mosqueSilhouette: {
       position: 'absolute',
@@ -92,7 +92,7 @@ export function MissionCard({
     },
     sceneTagText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 9,
+      fontSize: 11,
       color: C.PRIMARY,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
@@ -112,7 +112,7 @@ export function MissionCard({
     },
     subtitle: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       marginBottom: 14,
     },
@@ -147,7 +147,7 @@ export function MissionCard({
     },
     continueButtonText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.BG,
       fontWeight: '700',
     },
@@ -195,7 +195,7 @@ export function MissionCard({
 
           {/* Mosque Silhouette SVG */}
           <View style={styles.mosqueSilhouette}>
-            <Text style={{ fontSize: 32, opacity: 0.4 }}>🕌</Text>
+            <Text style={{ fontSize: 34, opacity: 0.4 }}>🕌</Text>
           </View>
         </View>
 

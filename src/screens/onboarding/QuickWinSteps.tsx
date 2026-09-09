@@ -1,15 +1,14 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { Bell, Star, TrendingUp } from '../../components/icons';
-import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
-import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
+import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
+import { SPACE, RADIUS } from '../../components/design/spacing';
+import { TYPE } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, PrimaryButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
 import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
@@ -23,11 +22,10 @@ import type { OnboardingStepProps } from './types';
  * This is the quick win -- the learner speaks Arabic before being asked to pay.
  */
 export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepProps) {
-  const { C, G } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { C } = useTheme();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
-  const { mode } = draft;
+  const { mode, name } = draft;
   const {
     phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
     setScenarioCompleted, toggleNotifs, setToggleNotifs,
@@ -41,13 +39,28 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
          learner anything. It is now three ruled rows. */
       case 6:
         return (
-          <View style={{ flex: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.xxxl, paddingBottom: insets.bottom + SPACE.xl }}>
+          <Screen
+            action={
+              <Stack gap="md">
+                <FadeIn delay={550}>
+                  <ShimmerButton onPress={next} Icon={Bell} accessibilityLabel={STRINGS.onboarding.notifAllow}>
+                    {STRINGS.onboarding.notifAllow}
+                  </ShimmerButton>
+                </FadeIn>
+                <FadeIn delay={620}>
+                  <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
+                    <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2 }}>{STRINGS.onboarding.notifLater}</Text>
+                  </Pressable>
+                </FadeIn>
+              </Stack>
+            }
+          >
             <FadeIn delay={100}>
               <Bell size={24} strokeWidth={1.5} color={C.PRIMARY} style={{ marginBottom: SPACE.lg }} />
               <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, letterSpacing: -0.5, color: C.TEXT, marginBottom: SPACE.sm }}>
                 {STRINGS.onboarding.notifTitle}
               </Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, color: C.TEXT2, marginBottom: SPACE.xl }}>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, lineHeight: 24, color: C.TEXT2, marginBottom: SPACE.xl }}>
                 {STRINGS.onboarding.notifSub}
               </Text>
             </FadeIn>
@@ -84,8 +97,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                       color={toggleNotifs[i] ? C.PRIMARY : C.TEXT3}
                     />
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: toggleNotifs[i] ? C.TEXT : C.TEXT3 }}>{text}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: toggleNotifs[i] ? C.TEXT : C.TEXT3 }}>{text}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
                     </View>
                     {/* The track is the only rounded thing on the screen, and it
                         earns it: a pill is what a switch looks like.
@@ -111,19 +124,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               ))}
             </View>
 
-            <View style={{ gap: SPACE.md, marginTop: 'auto' }}>
-              <FadeIn delay={550}>
-                <PrimaryButton onPress={next} accessibilityLabel={STRINGS.onboarding.notifAllow}>
-                  {STRINGS.onboarding.notifAllow}
-                </PrimaryButton>
-              </FadeIn>
-              <FadeIn delay={620}>
-                <Pressable onPress={next} accessibilityRole="button" style={{ paddingVertical: SPACE.md, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.notifLater}</Text>
-                </Pressable>
-              </FadeIn>
-            </View>
-          </View>
+          </Screen>
         );
 
       case 7:
@@ -131,17 +132,17 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
             {/* Mascot at top */}
             <View style={{ marginBottom: 24 }}>
-              <Companion size={80} />
+              <Companion size={80} name={name} />
             </View>
 
             <Text style={{
               fontFamily: FONT_LATIN_SEMI,
-              fontSize: 13,
+              fontSize: 14,
               color: C.TEXT2,
               textAlign: 'center',
               marginBottom: 8,
             }}>
-              Your first Gulf Arabic phrase:
+              {STRINGS.onboarding.firstPhraseEyebrow}
             </Text>
 
             <Text style={{
@@ -152,7 +153,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               writingDirection: 'rtl',
               marginBottom: 6,
             }}>
-              مرحبا
+              {STRINGS.onboarding.firstPhraseArabic}
             </Text>
 
             <Text style={{
@@ -161,15 +162,26 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
               color: C.TEXT2,
               marginBottom: 4,
             }}>
-              mar-haba
+              {STRINGS.onboarding.firstPhraseRoman}
+            </Text>
+
+            <Text style={{
+              fontFamily: FONT_LATIN,
+              fontSize: 14,
+              color: C.TEXT3,
+              marginBottom: 4,
+            }}>
+              {STRINGS.onboarding.firstPhraseEnglish}
             </Text>
 
             {!phraseRevealed ? (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.onboarding.firstPhraseHear}
                 onPress={() => {
                   setPhraseRevealed(true);
                   setPhraseEverRevealed(true);
-                  speak('مرحبا');
+                  speak(STRINGS.onboarding.firstPhraseArabic);
                 }}
                 style={{
                   marginTop: 20,
@@ -179,8 +191,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                   backgroundColor: C.PRIMARY,
                 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
-                  Tap to hear it 🔊
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
+                  {STRINGS.onboarding.firstPhraseHear}
                 </Text>
               </Pressable>
             ) : (
@@ -190,11 +202,19 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                 transition={{ type: 'timing', duration: 300 }}
                 style={{ alignItems: 'center', marginTop: 16 }}
               >
-                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, textAlign: 'center', marginBottom: 24 }}>
-                  Welcome – you just said it. ✨
+                {/* The payoff is the contrast, not the translation. Saying it
+                    is the win; knowing it is not what the textbook taught is
+                    the reason to keep going. */}
+                <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.TEXT, textAlign: 'center', marginBottom: SPACE.md }}>
+                  {STRINGS.onboarding.firstPhraseDone}
+                </Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT2, textAlign: 'center', marginBottom: SPACE.xl }}>
+                  {STRINGS.onboarding.firstPhraseWhy}
                 </Text>
                 <Pressable
                   onPress={next}
+                  accessibilityRole="button"
+                  accessibilityLabel={STRINGS.common.continue}
                   style={{
                     paddingHorizontal: 28,
                     paddingVertical: 14,
@@ -202,7 +222,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                     backgroundColor: C.PRIMARY,
                   }}
                 >
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.BG, fontWeight: '700' }}>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
                     Continue →
                   </Text>
                 </Pressable>

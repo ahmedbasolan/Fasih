@@ -111,7 +111,7 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
         },
         label: {
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           color: C.TEXT3,
@@ -123,7 +123,7 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
         },
         lockedLabel: {
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           // Accent, not TEXT3: this row is actionable, and the accent is what

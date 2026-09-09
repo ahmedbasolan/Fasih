@@ -30,7 +30,7 @@ function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
   return (
     <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.JADE_SURFACE, borderWidth: 1, borderColor: C.JADE_BORDER, gap: 4 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: C.JADE, textAlign: 'right', flex: 1, lineHeight: 30 }}>{arabic}</Text>
+        <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: C.JADE, textAlign: 'right', flex: 1, lineHeight: 30 }}>{arabic}</Text>
         <Pressable
           hitSlop={8}
           onPress={onSpeak}
@@ -41,8 +41,8 @@ function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
           <Volume2 size={13} color={isPlaying ? C.JADE : C.TEXT3} />
         </Pressable>
       </View>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${C.JADE}80`, fontStyle: 'italic' }}>{roman}</Text>
-      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT2, marginTop: 2 }}>{english}</Text>
+      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}80`, fontStyle: 'italic' }}>{roman}</Text>
+      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.TEXT2, marginTop: 2 }}>{english}</Text>
     </View>
   );
 }
@@ -101,14 +101,14 @@ export function ScenarioResultPhase({
         {/* Ending card */}
         <View style={{ borderRadius: 24, padding: 22, backgroundColor: `${ending.color}18`, borderWidth: 1.5, borderColor: `${ending.color}40` }}>
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: ending.color, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>
+            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: ending.color, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>
               {ending.type.charAt(0).toUpperCase() + ending.type.slice(1)} Outcome
             </Text>
-            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 26, color: C.TEXT, marginBottom: 8, textAlign: 'center' }}>{ending.title}</Text>
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20, textAlign: 'center', marginBottom: 16 }}>{ending.desc}</Text>
+            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT, marginBottom: 8, textAlign: 'center' }}>{ending.title}</Text>
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20, textAlign: 'center', marginBottom: 16 }}>{ending.desc}</Text>
             <View style={{ width: '100%', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 14, backgroundColor: `${ending.color}10` }}>
               <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: ending.color, textAlign: 'center', marginBottom: 4 }}>{`"${ending.arabic}"`}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${ending.color}85`, textAlign: 'center', fontStyle: 'italic', marginBottom: 4 }}>{ending.roman}</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${ending.color}85`, textAlign: 'center', fontStyle: 'italic', marginBottom: 4 }}>{ending.roman}</Text>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center' }}>{ending.en}</Text>
             </View>
           </View>
@@ -118,7 +118,7 @@ export function ScenarioResultPhase({
         <View style={{ borderRadius: 14, paddingVertical: 11, paddingHorizontal: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Compass size={15} color={C.VIOLET2} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.TEXT }}>
+            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.TEXT }}>
               {STRINGS.scenarios.endingDiscovery(endings.length)}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 1 }}>
@@ -143,7 +143,7 @@ export function ScenarioResultPhase({
         {toneHistory.length > 0 && (
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 140 }}>
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 16 }}>
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 16 }}>
                 How the relationship evolved
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -158,7 +158,7 @@ export function ScenarioResultPhase({
                         >
                           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }} />
                         </View>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: dotColor }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: dotColor }}>{label}</Text>
                       </View>
                       {i < toneHistory.length - 1 && (
                         <View style={{ flex: 1, height: 1.5, backgroundColor: C.BORDER, marginHorizontal: 6, marginBottom: 16 }} />
@@ -190,7 +190,7 @@ export function ScenarioResultPhase({
         <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
           <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT, flex: 1, lineHeight: 20 }}>
+            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, flex: 1, lineHeight: 20 }}>
               {ending.secret
                 ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))
                 : STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
@@ -213,7 +213,7 @@ export function ScenarioResultPhase({
               )}
               style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
             >
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 }}>
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 }}>
                 {STRINGS.scenarios.railTitle}
               </Text>
               <MarginRail marks={railMarks} orientation="horizontal" />
@@ -229,8 +229,8 @@ export function ScenarioResultPhase({
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
             {impactValues.map(({ label, value, color }) => (
               <View key={label} style={{ alignItems: 'center' }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</Text>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 24, color: value !== 0 ? color : C.TEXT3, marginTop: 4 }}>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</Text>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: value !== 0 ? color : C.TEXT3, marginTop: 4 }}>
                   {value > 0 ? `+${value}` : value}
                 </Text>
               </View>
@@ -249,8 +249,8 @@ export function ScenarioResultPhase({
 
         {/* Final score */}
         <View style={{ borderRadius: 16, padding: 20, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', gap: 4 }} accessible accessibilityRole="text" accessibilityLabel={`Final score ${total}`}>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>Final Score</Text>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 52, color: ending.color }}>{total}</Text>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1 }}>Final Score</Text>
+          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 34, color: ending.color }}>{total}</Text>
         </View>
 
         {/* Cultural journey */}
@@ -259,7 +259,7 @@ export function ScenarioResultPhase({
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <Companion size={32} />
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: violetColor }}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: violetColor }}>
                   {STRINGS.scenarios.culturalJourneyTitle}
                 </Text>
               </View>
@@ -281,7 +281,7 @@ export function ScenarioResultPhase({
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.JADE_SURFACE, borderWidth: 1, borderColor: C.JADE_BORDER }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <BookOpen size={14} color={C.JADE2} />
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE }}>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE }}>
                   {STRINGS.scenarios.phrasesUnlocked(unlockedPhrases.length)}
                 </Text>
               </View>
@@ -315,7 +315,7 @@ export function ScenarioResultPhase({
               <View style={{ borderRadius: 16, padding: 16, backgroundColor: `${C.CULTURAL_GOLD}12`, borderWidth: 1, borderColor: `${C.CULTURAL_GOLD}30` }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <Sparkles size={14} color={C.CULTURAL_GOLD_DARK} />
-                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.CULTURAL_GOLD_DARK }}>
+                  <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.CULTURAL_GOLD_DARK }}>
                     {STRINGS.scenarios.patternUnlockedTitle}
                   </Text>
                 </View>
@@ -345,7 +345,7 @@ export function ScenarioResultPhase({
                       <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${C.CULTURAL_GOLD}22`, alignItems: 'center', justifyContent: 'center' }}>
                         <Blocks size={15} color={C.CULTURAL_GOLD_DARK} />
                       </View>
-                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 15, color: C.TEXT }}>{p.title}</Text>
+                      <Text style={{ fontFamily: FONT_ARABIC, fontSize: 16, color: C.TEXT }}>{p.title}</Text>
                     </View>
                     <ArrowRight size={14} color={C.CULTURAL_GOLD_DARK} style={{ transform: [{ rotate: '-45deg' }] }} />
                   </Pressable>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
@@ -13,7 +14,7 @@ import { ThresholdSeam } from '../components/design/ThresholdSeam';
 import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, Screen } from '../components/ui';
 import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
 import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
@@ -63,14 +64,14 @@ function ImpactCol({ label, value, color, maxVal }: { label: string; value: numb
   const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
+      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
       <MotiView
         key={`stat-${label}-${value}`}
         from={{ scale: 1.35, translateY: -4 }}
         animate={{ scale: 1, translateY: 0 }}
         transition={{ type: 'spring', damping: 15, stiffness: 200 }}
       >
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
+        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
       </MotiView>
       <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
         <MotiView
@@ -136,7 +137,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
         alignSelf: 'flex-start', marginBottom: hasToneShift ? 8 : 14,
       }}>
         <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE }} />
-        <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{scene.setting}</Text>
+        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2 }}>{scene.setting}</Text>
       </View>
 
       {/* Butterfly effect badge — only appears when past choices changed this NPC response */}
@@ -151,7 +152,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           }}
         >
           <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: toneColor, letterSpacing: 0.5 }}>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: toneColor, letterSpacing: 0.5 }}>
             {tone === 'warm' ? 'Your choices shaped this response' : 'Your choices echo here'}
           </Text>
         </View>
@@ -165,11 +166,11 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
           borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
           alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>{initial}</Text>
+          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{initial}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginBottom: 6 }}>{scene.charName}</Text>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 6 }}>{scene.charName}</Text>
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
             <View style={{
               borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
@@ -190,8 +191,8 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
                   <ThresholdSeam height={7} style={{ marginBottom: translationRevealed ? 8 : 0 }} />
                   {translationRevealed && (
                     <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{`"${displayed}"`}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>{`"${displayed}"`}</Text>
                     </MotiView>
                   )}
                 </MotiView>
@@ -204,7 +205,7 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
             style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}
           >
             <WaveBars isPlaying={playingAudio} size="sm" color={playingAudio ? C.JADE2 : C.TEXT3} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: playingAudio ? C.JADE2 : C.TEXT3 }}>
+            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: playingAudio ? C.JADE2 : C.TEXT3 }}>
               {playingAudio ? STRINGS.scenarios.playing : STRINGS.scenarios.listenVoice(scene.charGender)}
             </Text>
           </Pressable>
@@ -559,14 +560,23 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // actually know the scenario is restricted and know the learner doesn't match.
   if (!scriptData || !isScenarioAvailableFor(scenario ?? {}, user?.gender)) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
-        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
-        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
-          <Pressable onPress={onExit} style={{ borderRadius: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
+      <Screen
+        scroll={false}
+        // EmptyState brings its own SCREEN_MARGIN — see ScenarioDetailScreen.
+        contentStyle={{ paddingHorizontal: 0 }}
+        action={
+          <Pressable
+            onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.scenarios.goBack}
+            style={{ borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+          >
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.goBack}</Text>
           </Pressable>
-        </View>
-      </View>
+        }
+      >
+        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
+      </Screen>
     );
   }
 
@@ -610,7 +620,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     <View style={{ flex: 1, backgroundColor: C.BG }}>
       <GhostLetters glyphs={['ك', 'ل', 'م']} />
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 14, paddingBottom: 10, zIndex: 10 }}>
+      <View style={{ paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.lg, paddingBottom: 10, zIndex: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <View>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
@@ -651,7 +661,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: insets.bottom + SPACE.xl }}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
       >
@@ -691,7 +701,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
                 {!selectedChoiceId && (
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
                     {STRINGS.scenarios.chooseResponse}
                   </Text>
                 )}
@@ -739,13 +749,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                             accessibilityState={{ selected: isSelected }}
                           >
                             <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14, paddingBottom: selectedChoiceId ? 14 : 6 }}>
-                              <Text style={{ fontFamily: FONT_ARABIC, fontSize: 17, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
+                              <Text style={{ fontFamily: FONT_ARABIC, fontSize: 18, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
                                 {replaceName(choiceArabic)}
                               </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentColor}70`, fontStyle: 'italic', marginBottom: 5 }}>
+                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${accentColor}70`, fontStyle: 'italic', marginBottom: 5 }}>
                                 {replaceName(choice.roman)}
                               </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: isSelected ? C.TEXT1_5 : C.TEXT2, lineHeight: 20 }}>
+                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: isSelected ? C.TEXT1_5 : C.TEXT2, lineHeight: 20 }}>
                                 {replaceName(choice.text)}
                               </Text>
                             </View>
@@ -765,7 +775,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER }}
                             >
                               <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
+                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
                                 {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
                               </Text>
                             </Pressable>

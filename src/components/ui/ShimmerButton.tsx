@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import type { LucideIcon } from '../icons';
 import { LinearGradient as ExpoGradient } from 'expo-linear-gradient';
 import { ANGLE_135 } from '../design/gradients';
@@ -15,15 +16,25 @@ import { useTheme } from '../../hooks/useTheme';
 interface Props {
   children: React.ReactNode;
   onPress?: () => void;
-  style?: any;
+  style?: ViewStyle;
   disabled?: boolean;
   /** Optional Lucide icon rendered to the right of the label */
   Icon?: LucideIcon;
+  /**
+   * Required when `children` is not a plain string, because then there is no
+   * text for the accessible name to fall back to.
+   *
+   * This component shipped with NO accessibilityRole, label or state at all,
+   * while being the primary action on onboarding steps 2-4 and on all three
+   * paywall screens — including "Start Free Trial". A screen reader announced
+   * the purchase button as an unlabelled, non-interactive element.
+   */
+  accessibilityLabel?: string;
 }
 
 /**
  * ShimmerButton
- * 
+ *
  * Adapts to the app's primary theme gradient.
  */
 export function ShimmerButton({
@@ -32,21 +43,34 @@ export function ShimmerButton({
   style,
   disabled = false,
   Icon,
+  accessibilityLabel,
 }: Props) {
   const { C, G } = useTheme();
 
   const label = typeof children === 'string' ? children : null;
   const isStringChild = label !== null;
 
+  const disabledColors: readonly [string, string] = [C.JADE_ACCENT_DIM, C.JADE_ACCENT_DIM];
+  // C.TEXT3 on the disabled wash measures 4.71 dark / 4.94 light. C.BG on it
+  // measured 1.10 / 1.04 — no readable label at all.
+  const labelColor = disabled ? C.TEXT3 : C.BG;
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label ?? undefined}
+      accessibilityState={{ disabled }}
+      // No blanket `opacity: 0.5` when disabled — same fix as PrimaryButton.
+      // It dimmed the label along with the fill, and the label is C.BG, which is
+      // meant for the gold gradient and not for a half-faded one. Disabled is a
+      // flat muted fill plus a C.TEXT3 label, so the two button components look
+      // and measure the same in that state.
       style={({ pressed }) => [
         {
           width: '100%',
-          opacity: disabled ? 0.5 : 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
+          transform: [{ scale: pressed && !disabled ? 0.97 : 1 }],
         },
         style,
       ]}
@@ -54,19 +78,18 @@ export function ShimmerButton({
       <View style={styles.container}>
         {/* ── Layer 1: App Theme Background Gradient ── */}
         <ExpoGradient
-          colors={G.GOLD_STOPS as any}
+          colors={disabled ? disabledColors : (G.GOLD_STOPS as unknown as readonly [string, string])}
           start={ANGLE_135.start}
           end={ANGLE_135.end}
           style={StyleSheet.absoluteFill}
-
         />
 
         {/* ── Layer 2: Button content ── */}
         <View style={styles.content} pointerEvents="none">
           {isStringChild ? (
             <>
-              <Text style={[styles.text, { color: C.BG }]}>{label}</Text>
-              {Icon && <Icon size={18} strokeWidth={1.5} color={C.BG} style={{ marginLeft: 6 }} />}
+              <Text style={[styles.text, { color: labelColor }]}>{label}</Text>
+              {Icon && <Icon size={18} strokeWidth={1.5} color={labelColor} style={{ marginLeft: 6 }} />}
             </>
           ) : (
             <View style={styles.childWrapper}>{children}</View>

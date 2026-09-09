@@ -44,7 +44,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
     },
     title: {
       fontFamily: FONT_HEADING_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT,
     },
     sub: {
