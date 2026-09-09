@@ -45,3 +45,50 @@ describe('onboarding step order', () => {
     expect(requiresInteraction(indexOfScreen('goals'))).toBe(false);
   });
 });
+
+/**
+ * The reason this change exists.
+ *
+ * Screens either ASK the learner for something or GIVE them something. The
+ * flow shipped with seven consecutive asks before the first give, which is
+ * what "boring to go through" described.
+ */
+describe('ask/give rhythm', () => {
+  const GIVES: readonly string[] = ['phrase', 'scenario'];
+
+  const firstGiveIndex = () =>
+    ONBOARDING_SCREENS.findIndex(s => GIVES.includes(s));
+
+  it('reaches the first give within three screens', () => {
+    // Was 7. The scenario depends on mode and gender, so 4 is the earliest
+    // legal position for it and the phrase sits immediately before it.
+    expect(firstGiveIndex()).toBeLessThanOrEqual(3);
+  });
+
+  it('opens with at most two asks', () => {
+    // Screen 0 is the welcome splash and asks nothing.
+    expect(firstGiveIndex() - 1).toBeLessThanOrEqual(2);
+  });
+
+  it('plays the phrase immediately before the scenario', () => {
+    // The phrase is the primer — hear now, earn later. It is only priming if
+    // it lands first.
+    expect(indexOfScreen('scenario') - indexOfScreen('phrase')).toBe(1);
+  });
+
+  it('asks for a commitment only after something has been given', () => {
+    // A 2.2-second hold placed before any payoff is the flow's most demanding
+    // interaction asked at its least earned moment.
+    expect(indexOfScreen('commitment')).toBeGreaterThan(firstGiveIndex());
+  });
+
+  it('keeps the scenario after the two things it depends on', () => {
+    // getScenarioScript takes mode; gender gates scenarios via requiresGender.
+    expect(indexOfScreen('scenario')).toBeGreaterThan(indexOfScreen('mode'));
+    expect(indexOfScreen('scenario')).toBeGreaterThan(indexOfScreen('name'));
+  });
+
+  it('pays the role question off on the same screen, so goals may follow it', () => {
+    expect(indexOfScreen('goals')).toBeGreaterThan(indexOfScreen('role'));
+  });
+});

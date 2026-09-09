@@ -29,19 +29,26 @@ export type OnboardingScreen =
 /**
  * The order the learner sees.
  *
- * This is the CURRENT order, recorded as-is. A later task changes it; nothing
- * else in the app should need editing when it does.
+ * Ordered by ask/give rhythm, not by what is convenient to collect. The flow
+ * previously ran seven consecutive asks before the first give: mode, name,
+ * gender, role, profession, goals, a 2.2-second hold, and a notifications
+ * prompt, all before the learner was handed a single Arabic phrase.
+ *
+ * The phrase and the scenario now sit at 3 and 4 — the earliest legal
+ * position, since the scenario needs `mode` and gender — and the profile
+ * questions follow them. `role` pays itself off inline rather than banking
+ * the answer for later.
  */
 export const ONBOARDING_SCREENS: readonly OnboardingScreen[] = [
   'welcome',
   'mode',
   'name',
+  'phrase',
+  'scenario',
   'role',
   'goals',
   'commitment',
   'notifications',
-  'phrase',
-  'scenario',
   'paywall-timeline',
   'paywall-features',
   'paywall-plans',
