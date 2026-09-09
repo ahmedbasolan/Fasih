@@ -1,4 +1,5 @@
 import { parseColor, composite, relativeLuminance, contrastRatio } from '../contrast';
+import { darkTheme, lightTheme } from '../../components/design/tokens';
 
 describe('parseColor', () => {
   it('parses 6-digit hex', () => {
@@ -84,4 +85,48 @@ describe('contrastRatio', () => {
   it('rejects a translucent background, which cannot be measured against', () => {
     expect(() => contrastRatio('#1C150D', 'rgba(0,0,0,0.5)')).toThrow(/opaque/);
   });
+});
+
+/**
+ * Text sitting on a fill made of the accent, rather than on the page ground.
+ *
+ * This is the app's most-repeated contrast mistake and it has now shipped three
+ * times: ShimmerButton and PhraseBuilder both used hardcoded white, and the
+ * onboarding unlocked-phrase card used TEXT/TEXT2. All three are cream tokens
+ * built for a dark ground, and all three were placed on gold.
+ *
+ * The card measured 1.25:1 in dark and 2.11:1 in light — on the one screen the
+ * whole taster scenario builds towards. C.BG measures 8.24 and 5.37.
+ *
+ * The tests above check the contrast MATHS. These check the app's actual
+ * pairings, which is the part that kept regressing.
+ */
+describe('text on a gold fill', () => {
+  const themes = [
+    { name: 'dark', C: darkTheme },
+    { name: 'light', C: lightTheme },
+  ];
+
+  for (const { name, C } of themes) {
+    // The unlocked-phrase card is a [PRIMARY -> JADE] gradient, so a label has
+    // to clear BOTH stops — passing against one end is not passing.
+    const stops = [
+      { at: 'PRIMARY stop', fill: C.PRIMARY },
+      { at: 'JADE stop', fill: C.JADE },
+    ];
+
+    for (const { at, fill } of stops) {
+      it(`${name}: C.BG label clears AA on the ${at}`, () => {
+        expect(contrastRatio(C.BG, fill)).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it(`${name}: the cream text tokens do NOT clear it, on the ${at}`, () => {
+        // Pins the reason C.BG is the convention. If a future palette makes
+        // these pass, the rule can be revisited deliberately rather than by
+        // someone assuming a text token is safe anywhere text goes.
+        expect(contrastRatio(C.TEXT, fill)).toBeLessThan(4.5);
+        expect(contrastRatio(C.TEXT2, fill)).toBeLessThan(4.5);
+      });
+    }
+  }
 });
