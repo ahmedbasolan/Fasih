@@ -9,7 +9,8 @@ import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
 import { SPACE, RADIUS } from '../../components/design/spacing';
-import { ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
+import { ONBOARDING_CHROME_HEIGHT, TYPE } from '../../components/design/layout';
+import { categoriesForRole, phraseCountForRole } from '../../engine/roleCategories';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
 import { Companion } from '../../components/ui/Companion';
@@ -388,6 +389,53 @@ export function ProfileSteps({ screen, next, draft, hold }: OnboardingStepProps)
                 </MotiView>
               )}
             </AnimatePresence>
+
+            {/* The payoff. The flow collected a role and a profession and then
+                never mentioned them again until the paywall; this reflects the
+                answer back on the screen that asked for it, which is a shorter
+                causal link than asking here and paying off a screen later.
+
+                Categories lead, count supports. Greetings and Everyday apply to
+                every job, so every role resolves to a similar total and the
+                number differentiates far less than the category list does. */}
+            {profession ? (
+              <FadeIn delay={80}>
+                <View
+                  style={{
+                    marginTop: SPACE.lg,
+                    paddingTop: SPACE.lg,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: C.BORDER,
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...TYPE.micro,
+                      fontFamily: FONT_LATIN_MEDIUM,
+                      letterSpacing: 1.6,
+                      textTransform: 'uppercase',
+                      color: C.TEXT3,
+                      marginBottom: SPACE.sm,
+                    }}
+                  >
+                    {STRINGS.onboarding.shiftHeading}
+                  </Text>
+                  <Text
+                    style={{
+                      ...TYPE.bodyLarge,
+                      fontFamily: FONT_LATIN_SEMI,
+                      color: C.TEXT,
+                      marginBottom: SPACE.xs,
+                    }}
+                  >
+                    {categoriesForRole(role).join(STRINGS.onboarding.shiftCategorySeparator)}
+                  </Text>
+                  <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2 }}>
+                    {STRINGS.onboarding.shiftCount(phraseCountForRole(role))}
+                  </Text>
+                </View>
+              </FadeIn>
+            ) : null}
 
           </Screen>
         );
