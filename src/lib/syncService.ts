@@ -23,6 +23,7 @@
 import { supabase } from './supabase';
 import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
+import { reportServiceError } from './analytics';
 
 /**
  * Coerce whatever the `stats` column holds into a complete UserStats.
@@ -218,8 +219,14 @@ const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
 export async function deleteAccountData(): Promise<{ error: string | null }> {
   try {
     const { error } = await supabase.rpc('delete_my_account');
+    // A Postgres-level refusal is not an exception, so it never reaches the
+    // catch below. Reported here because a deletion that fails for everyone —
+    // a dropped RPC, a permissions change — is a compliance problem that
+    // otherwise surfaces only as one confused support email at a time.
+    if (error) reportServiceError(error, 'syncService.deleteAccount');
     return { error: error?.message ?? null };
   } catch (e) {
+    reportServiceError(e, 'syncService.deleteAccount');
     return { error: e instanceof Error ? e.message : 'Could not reach the server' };
   }
 }
@@ -273,7 +280,12 @@ export async function recordChoiceStat(
       p_scene_id: sceneId,
       p_choice_id: choiceId,
     });
-  } catch { /* non-fatal */ }
+  } catch {
+    // Deliberately silent, and deliberately NOT reported to Sentry. Community
+    // stats are a nice-to-have aggregate; a dropped write costs one row out of
+    // many and the learner is unaffected. Wiring reportServiceError in here
+    // would report once per choice made, offline or not.
+  }
 }
 
 /**
@@ -313,7 +325,12 @@ export async function recordEndingStat(
       p_scenario_id: scenarioId,
       p_ending_type: endingType,
     });
-  } catch { /* non-fatal */ }
+  } catch {
+    // Deliberately silent, and deliberately NOT reported to Sentry. Community
+    // stats are a nice-to-have aggregate; a dropped write costs one row out of
+    // many and the learner is unaffected. Wiring reportServiceError in here
+    // would report once per choice made, offline or not.
+  }
 }
 
 /**
