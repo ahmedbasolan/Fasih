@@ -22,6 +22,7 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { Platform } from 'react-native';
 import type { PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+import { reportServiceError } from './analytics';
 import type { SubscriptionStatus } from '../types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -83,7 +84,12 @@ export async function loginPurchasesUser(userId: string): Promise<void> {
   try {
     await Purchases.logIn(userId);
   } catch {
-    // non-fatal — anonymous customer info still works
+    // non-fatal — anonymous customer info still works.
+    //
+    // Deliberately NOT reported. This and the other "not configured" catches in
+    // this file fire on every boot whenever configurePurchases() skipped
+    // configure() for a missing key — routinely in dev and on any platform
+    // without a key set. Reporting them would mean an error per app start.
   }
 }
 
@@ -199,6 +205,12 @@ export async function purchasePlan(plan: Plan): Promise<PurchaseResult> {
     return { status: toStatus(customerInfo), cancelled: false, error: null };
   } catch (err: any) {
     if (err?.userCancelled) return { status: 'free', cancelled: true, error: null };
+    // Everything past the cancel check is a purchase that failed for a reason
+    // the learner did not choose — a declined card, a misconfigured product, a
+    // StoreKit fault. Revenue-critical and, until now, invisible: the message
+    // went to the UI and nowhere else, so a purchase flow broken for everyone
+    // would look exactly like nobody wanting to buy.
+    reportServiceError(err, 'purchases.purchasePlan', { plan });
     return { status: 'free', cancelled: false, error: err?.message ?? 'Purchase failed' };
   }
 }
@@ -212,6 +224,10 @@ export async function restorePurchases(): Promise<PurchaseResult> {
     const info = await Purchases.restorePurchases();
     return { status: toStatus(info), cancelled: false, error: null };
   } catch (err: any) {
+    // Restore is required by App Store Review, so a broken one is both a
+    // support burden and a review risk. Same reasoning as purchaseSubscription:
+    // there is no user-cancelled path here, so anything caught is a fault.
+    reportServiceError(err, 'purchases.restorePurchases');
     return { status: 'free', cancelled: false, error: err?.message ?? 'Restore failed' };
   }
 }
