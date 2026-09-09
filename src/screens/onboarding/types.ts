@@ -93,6 +93,15 @@ export interface OnboardingQuickWin {
    */
   setPhraseEverRevealed: Dispatch<SetStateAction<boolean>>;
   setScenarioCompleted: Dispatch<SetStateAction<boolean>>;
+  /**
+   * The latched values, readable.
+   *
+   * The progress screen reports what the learner actually did, so it needs to
+   * READ these rather than only set them — a summary that assumed the steps
+   * happened would claim credit for a scenario the learner swiped past.
+   */
+  phraseEverRevealed: boolean;
+  scenarioCompleted: boolean;
   toggleNotifs: boolean[];
   setToggleNotifs: Dispatch<SetStateAction<boolean[]>>;
 }
