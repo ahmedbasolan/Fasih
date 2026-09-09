@@ -27,6 +27,12 @@ interface ScreenProps {
    */
   headerHandlesTopInset?: boolean;
   /**
+   * Set on a step rendered inside `OnboardingFlow`, which absolutely positions
+   * a progress bar and a back button over every step. Reserves their height so
+   * the step's first line of content clears them instead of running underneath.
+   */
+  onboardingChrome?: boolean;
+  /**
    * Set on the four screens inside the bottom tab navigator. The tab bar is a
    * flow sibling that already owns the bottom inset, so applying it here too
    * pads against a bar that is not there — see `screenPadding`.
@@ -69,6 +75,7 @@ export function Screen({
   scroll = true,
   contentStyle,
   headerHandlesTopInset,
+  onboardingChrome,
   tabBarHandlesBottomInset,
   background,
 }: ScreenProps) {
@@ -78,6 +85,7 @@ export function Screen({
   const pad = screenPadding(insets, {
     hasAction: !!action,
     headerHandlesTopInset: !!headerHandlesTopInset,
+    onboardingChrome: !!onboardingChrome,
     tabBarHandlesBottomInset: !!tabBarHandlesBottomInset,
   });
 
