@@ -107,7 +107,7 @@ function GhostBtn({ children, onPress }: { children: string; onPress?: () => voi
  * The profile the learner is actually building. `PROFESSION_CATEGORIES` and
  * `goals` moved here with the cases -- nothing else reads them.
  */
-export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
+export function ProfileSteps({ screen, next, draft, hold }: OnboardingStepProps) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const {
@@ -127,10 +127,10 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
     transform: [{ scale: 1 + holdProgress.value * 0.35 }],
   }));
 
-  switch (step) {
+  switch (screen) {
 
-      // Step 2: Name Input — consistent upward entrance
-      case 2:
+      // Name input — consistent upward entrance
+      case 'name':
         return (
           // Lays itself out rather than using `Screen`: both steps are centred,
           // non-scrolling compositions with their own horizontal margin. The top
@@ -267,7 +267,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
         );
 
       // Step 3: Role Selection — clean 2-column grid layout
-      case 3:
+      case 'role':
         return (
           <Screen
             // The role grid scrolls, the heading and the profession tray do not.
@@ -393,10 +393,10 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
         );
 
       // Step 4: Goals Selection — consistent upward entrance
-      case 4:
+      case 'goals':
         return (
           <Screen
-            // Same as step 3: the goal list owns the scrolling, so Screen must not.
+            // Same as the role screen: the goal list owns the scrolling, so Screen must not.
             scroll={false}
             onboardingChrome
             contentStyle={{ gap: SPACE.lg }}
@@ -485,8 +485,8 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           </Screen>
         );
 
-      // Step 5: Commitment — consistent upward entrance
-      case 5:
+      // Commitment — consistent upward entrance
+      case 'commitment':
         return (
           // Lays itself out rather than using `Screen`: both steps are centred,
           // non-scrolling compositions with their own horizontal margin. The top
