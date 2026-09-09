@@ -343,11 +343,33 @@ describe('safe-area adoption', () => {
     // `insets.top + 14` is a number nobody can justify six months later.
     // `insets.top + SPACE.lg` is the same offset, named. The tokens are what
     // let the next reader see that two screens agree.
+    //
+    // Both operand orders, because `16 + insets.top` is the same drift written
+    // backwards and a lint that only reads one way invites the other.
     const offenders: string[] = [];
     for (const file of files) {
       const src = readFileSync(file, 'utf8');
+      const rel = file.replace(/\\/g, '/').split('/src/').pop();
       for (const m of src.matchAll(/insets\.(top|bottom)\s*\+\s*(\d+)/g)) {
-        offenders.push(`${file.replace(/\\/g, '/').split('/src/').pop()}: insets.${m[1]} + ${m[2]}`);
+        offenders.push(`${rel}: insets.${m[1]} + ${m[2]}`);
+      }
+      for (const m of src.matchAll(/(\d+)\s*\+\s*insets\.(top|bottom)/g)) {
+        offenders.push(`${rel}: ${m[1]} + insets.${m[2]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('nothing destructures the insets, which would read past both scans', () => {
+    // `const { bottom } = useSafeAreaInsets()` then `bottom + 80` expresses
+    // exactly what the scans above forbid, in a spelling neither can see.
+    // Requiring the object form is what keeps them honest — it is also how
+    // every file in the tree already writes it.
+    const offenders: string[] = [];
+    for (const file of files) {
+      const src = readFileSync(file, 'utf8');
+      if (/(?:const|let)\s*\{[^}]*\}\s*=\s*useSafeAreaInsets\(\)/.test(src)) {
+        offenders.push(file.replace(/\\/g, '/').split('/src/').pop() ?? file);
       }
     }
     expect(offenders).toEqual([]);

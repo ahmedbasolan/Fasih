@@ -39,6 +39,9 @@ interface ScreenProps {
    * It goes through this prop rather than as the first child because the
    * watermark is the page's ground, not an item in the content flow: it has to
    * sit under the scroll, ignore SCREEN_MARGIN, and bleed off all four edges.
+   *
+   * Screen positions it, so whatever is passed cannot take layout space or
+   * swallow a touch even if it forgets to say so itself.
    */
   background?: React.ReactNode;
 }
@@ -121,11 +124,30 @@ export function Screen({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Outside topZone, so the watermark bleeds under the status bar rather
-          than starting below it. */}
-      {background}
+          than starting below it.
+
+          Positioned here rather than trusted to position itself: as a bare
+          flow child, a background that forgot `absoluteFill` would consume
+          layout height and push the whole screen down — silently, and only on
+          the screen that passed it. The wrapper makes that unrepresentable,
+          and `pointerEvents="none"` means a decorative layer can never take a
+          tap meant for the content under it. */}
+      {background ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {background}
+        </View>
+      ) : null}
 
       <View style={styles.topZone}>
         {scroll ? (
+          // No `removeClippedSubviews`, deliberately. HomeScreenNew carried it
+          // before moving here, but it arrived in an unrelated cleanup commit
+          // rather than as a measured decision, and Home is under two screens
+          // of content — the prop is for long virtualised lists. ScenariosScreen
+          // sets it FALSE on purpose to stop a black-square flash on Android,
+          // which is the platform this app is actually looked at on. Adding it
+          // to every Screen would spread a known Android artefact for no
+          // measured gain.
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={[styles.scrollContent, contentStyle]}
