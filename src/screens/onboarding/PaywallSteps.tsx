@@ -20,7 +20,7 @@ import type { OnboardingStepProps } from './types';
  * starts the subscription, and `skip` leaves without one -- all three are the
  * parent's, and all three must keep firing.
  */
-export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: OnboardingStepProps) {
+export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: OnboardingStepProps) {
   const { C, G } = useTheme();
   const { plan, setPlan } = draft;
 
@@ -38,8 +38,8 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
     [C],
   );
 
-  switch (step) {
-      case 9:
+  switch (screen) {
+      case 'paywall-timeline':
         return (
           <Screen
             onboardingChrome
@@ -99,7 +99,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
         );
 
       // Step 10: Everything included — features
-      case 10:
+      case 'paywall-features':
         return (
           <Screen
             onboardingChrome
@@ -170,7 +170,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
         );
 
       // Step 11: Paywall — plans
-      case 11:
+      case 'paywall-plans':
         return (
           <Screen
             onboardingChrome
