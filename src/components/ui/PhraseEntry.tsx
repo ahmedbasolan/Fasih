@@ -9,6 +9,7 @@ import {
   ARABIC_LINE_HEIGHT_MULTIPLIER,
 } from '../design/tokens';
 import { SPACE, RADIUS } from '../design/spacing';
+import { ltrParagraph } from '../../engine/text';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 import { Rule } from './Rule';
@@ -181,13 +182,13 @@ export function PhraseEntry({
           {phrase.pronTip ? (
             <View>
               <Text style={styles.label}>{STRINGS.phrases.pronunciation}</Text>
-              <Text style={styles.detailText}>{phrase.pronTip}</Text>
+              <Text style={styles.detailText}>{ltrParagraph(phrase.pronTip)}</Text>
             </View>
           ) : null}
           {phrase.culturalNote ? (
             <View>
               <Text style={styles.label}>{STRINGS.phrases.culturalContext}</Text>
-              <Text style={styles.detailText}>{phrase.culturalNote}</Text>
+              <Text style={styles.detailText}>{ltrParagraph(phrase.culturalNote)}</Text>
             </View>
           ) : null}
           {expandedExtra}

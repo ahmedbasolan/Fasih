@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_EXTRA } from '../../theme';
 import { ONBOARDING_CHROME_HEIGHT } from '../design/layout';
-import { initialFor } from '../../engine/text';
+import { initialFor, ltrParagraph } from '../../engine/text';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
@@ -407,7 +407,7 @@ export function OnboardingScenarioPlayer({
             <Text style={styles.npcEnglish}>{scene.english}</Text>
             {scene.teachingNote ? (
               <View style={styles.teachingNote}>
-                <Text style={styles.teachingNoteText}>{scene.teachingNote}</Text>
+                <Text style={styles.teachingNoteText}>{ltrParagraph(scene.teachingNote)}</Text>
               </View>
             ) : null}
           </View>
@@ -466,7 +466,7 @@ export function OnboardingScenarioPlayer({
 
           {chosenChoice.note ? (
             <View style={[styles.outcomeCard, { borderLeftWidth: 3, borderLeftColor: outcomeColor }]}>
-              <Text style={styles.outcomeText}>{chosenChoice.note}</Text>
+              <Text style={styles.outcomeText}>{ltrParagraph(chosenChoice.note)}</Text>
             </View>
           ) : null}
 
@@ -539,7 +539,7 @@ export function OnboardingScenarioPlayer({
               {phrase.culturalNote ? (
                 <View style={styles.culturalNoteCard}>
                   <Text style={styles.culturalNoteLabel}>Cultural Note</Text>
-                  <Text style={styles.culturalNoteText}>{phrase.culturalNote}</Text>
+                  <Text style={styles.culturalNoteText}>{ltrParagraph(phrase.culturalNote)}</Text>
                 </View>
               ) : null}
             </View>
