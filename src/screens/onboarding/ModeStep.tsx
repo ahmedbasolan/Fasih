@@ -8,6 +8,7 @@ import {
   FONT_HEADING_SEMI, FONT_HEADING_EXTRA, FONT_ARABIC_BLACK,
 } from '../../components/design/tokens';
 import { SPACE, SCREEN_MARGIN } from '../../components/design/spacing';
+import { ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 import { FadeIn, ShimmerButton } from '../../components/ui';
@@ -66,7 +67,10 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        root: { flex: 1, backgroundColor: C.BG, paddingTop: insets.top + SPACE.huge },
+        // Deliberate full-bleed, so it lays itself out rather than using
+        // `Screen` — but the top padding still comes from the chrome constant,
+        // so it tracks the progress bar and back button it has to clear.
+        root: { flex: 1, backgroundColor: C.BG, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT },
         header: { paddingHorizontal: SCREEN_MARGIN, marginBottom: SPACE.xl },
         title: {
           fontFamily: FONT_HEADING_EXTRA,

@@ -13,6 +13,7 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
+import { ltrParagraph } from '../engine/text';
 import { PhraseBuilder } from '../components/features/PhraseBuilder';
 import { GhostLetters } from '../components/ui';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -194,7 +195,7 @@ function FlashCard({
                       textAlign: 'center',
                     }}
                   >
-                    {phrase.culturalNote}
+                    {ltrParagraph(phrase.culturalNote)}
                   </Text>
                 </View>
               )}
@@ -777,7 +778,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                   <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
                     {STRINGS.phrases.culturalContext}
                   </Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 }}>{phrase.culturalNote}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 }}>{ltrParagraph(phrase.culturalNote)}</Text>
                 </View>
               </MotiView>
             )}
@@ -822,7 +823,7 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                 </Text>
                 {phrase.culturalNote && (
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center', lineHeight: 18, fontStyle: 'italic' }}>
-                    {phrase.culturalNote}
+                    {ltrParagraph(phrase.culturalNote)}
                   </Text>
                 )}
               </View>

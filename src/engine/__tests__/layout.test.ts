@@ -12,7 +12,7 @@
  * constants declared in the same commit, proving nothing while reporting green.
  * Assertions about real geometry need a real device.
  */
-import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE, INSET_FIXTURES, screenPadding } from '../../components/design/layout';
+import { BASELINE, toBaseline, GRID, span, TYPE, TYPE_SIZES, TOUCH_MIN, ZONE, INSET_FIXTURES, screenPadding, ONBOARDING_CHROME, ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../../components/design/spacing';
 
 declare const __dirname: string;
@@ -167,6 +167,44 @@ describe('screenPadding', () => {
       { hasAction: true, headerHandlesTopInset: false, tabBarHandlesBottomInset: true },
     );
     expect(pad.actionBottom).toBe(SPACE.lg);
+  });
+
+  it('reserves the onboarding chrome on top of the inset, not instead of it', () => {
+    // The chrome is drawn by OnboardingFlow as an absolute overlay, so the step
+    // underneath still owns its safe-area inset — the two stack.
+    const pad = screenPadding(
+      { top: INSET_FIXTURES.topLarge, bottom: 0 },
+      { hasAction: false, headerHandlesTopInset: false, onboardingChrome: true },
+    );
+    expect(pad.top).toBe(INSET_FIXTURES.topLarge + ONBOARDING_CHROME_HEIGHT);
+  });
+
+  it('clears the lowest piece of chrome, which is the back button', () => {
+    // The progress bar sits higher than the back button, so the button is what
+    // content has to clear. Asserting the relationship rather than the number
+    // means moving either piece cannot silently leave content underneath it.
+    const lowestChromeEdge = ONBOARDING_CHROME.backTop + ONBOARDING_CHROME.backSize;
+    const progressEdge = ONBOARDING_CHROME.progressTop + ONBOARDING_CHROME.progressHeight;
+
+    expect(lowestChromeEdge).toBeGreaterThan(progressEdge);
+    expect(ONBOARDING_CHROME_HEIGHT).toBeGreaterThan(lowestChromeEdge);
+  });
+
+  it('reserves nothing for chrome on a screen outside the onboarding flow', () => {
+    const pad = screenPadding({ top: INSET_FIXTURES.topSmall, bottom: 0 }, noAction);
+    expect(pad.top).toBe(INSET_FIXTURES.topSmall);
+  });
+
+  it('stacks chrome onto a zero inset, so Android still clears it', () => {
+    // Most Android devices report top: 0. Content that only clears the chrome
+    // because an inset happened to push it down would collide here — which is
+    // the platform this app is actually looked at on.
+    const pad = screenPadding(
+      { top: INSET_FIXTURES.none, bottom: 0 },
+      { hasAction: false, headerHandlesTopInset: false, onboardingChrome: true },
+    );
+    expect(pad.top).toBe(ONBOARDING_CHROME_HEIGHT);
+    expect(pad.top).toBeGreaterThan(ONBOARDING_CHROME.backTop + ONBOARDING_CHROME.backSize);
   });
 
   it('its local spacing copies match the real spacing scale', () => {
