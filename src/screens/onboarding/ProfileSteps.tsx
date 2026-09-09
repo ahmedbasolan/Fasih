@@ -9,7 +9,8 @@ import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
 import { SPACE, RADIUS } from '../../components/design/spacing';
-import { ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
+import { ONBOARDING_CHROME_HEIGHT, TYPE } from '../../components/design/layout';
+import { categoriesForRole, phraseCountForRole } from '../../engine/roleCategories';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
 import { Companion } from '../../components/ui/Companion';
@@ -107,7 +108,7 @@ function GhostBtn({ children, onPress }: { children: string; onPress?: () => voi
  * The profile the learner is actually building. `PROFESSION_CATEGORIES` and
  * `goals` moved here with the cases -- nothing else reads them.
  */
-export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
+export function ProfileSteps({ screen, next, draft, hold }: OnboardingStepProps) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const {
@@ -127,10 +128,10 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
     transform: [{ scale: 1 + holdProgress.value * 0.35 }],
   }));
 
-  switch (step) {
+  switch (screen) {
 
-      // Step 2: Name Input — consistent upward entrance
-      case 2:
+      // Name input — consistent upward entrance
+      case 'name':
         return (
           // Lays itself out rather than using `Screen`: both steps are centred,
           // non-scrolling compositions with their own horizontal margin. The top
@@ -267,7 +268,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
         );
 
       // Step 3: Role Selection — clean 2-column grid layout
-      case 3:
+      case 'role':
         return (
           <Screen
             // The role grid scrolls, the heading and the profession tray do not.
@@ -389,14 +390,61 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               )}
             </AnimatePresence>
 
+            {/* The payoff. The flow collected a role and a profession and then
+                never mentioned them again until the paywall; this reflects the
+                answer back on the screen that asked for it, which is a shorter
+                causal link than asking here and paying off a screen later.
+
+                Categories lead, count supports. Greetings and Everyday apply to
+                every job, so every role resolves to a similar total and the
+                number differentiates far less than the category list does. */}
+            {profession ? (
+              <FadeIn delay={80}>
+                <View
+                  style={{
+                    marginTop: SPACE.lg,
+                    paddingTop: SPACE.lg,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: C.BORDER,
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...TYPE.micro,
+                      fontFamily: FONT_LATIN_MEDIUM,
+                      letterSpacing: 1.6,
+                      textTransform: 'uppercase',
+                      color: C.TEXT3,
+                      marginBottom: SPACE.sm,
+                    }}
+                  >
+                    {STRINGS.onboarding.shiftHeading}
+                  </Text>
+                  <Text
+                    style={{
+                      ...TYPE.bodyLarge,
+                      fontFamily: FONT_LATIN_SEMI,
+                      color: C.TEXT,
+                      marginBottom: SPACE.xs,
+                    }}
+                  >
+                    {categoriesForRole(role).join(STRINGS.onboarding.shiftCategorySeparator)}
+                  </Text>
+                  <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2 }}>
+                    {STRINGS.onboarding.shiftCount(phraseCountForRole(role))}
+                  </Text>
+                </View>
+              </FadeIn>
+            ) : null}
+
           </Screen>
         );
 
       // Step 4: Goals Selection — consistent upward entrance
-      case 4:
+      case 'goals':
         return (
           <Screen
-            // Same as step 3: the goal list owns the scrolling, so Screen must not.
+            // Same as the role screen: the goal list owns the scrolling, so Screen must not.
             scroll={false}
             onboardingChrome
             contentStyle={{ gap: SPACE.lg }}
@@ -485,8 +533,8 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           </Screen>
         );
 
-      // Step 5: Commitment — consistent upward entrance
-      case 5:
+      // Commitment — consistent upward entrance
+      case 'commitment':
         return (
           // Lays itself out rather than using `Screen`: both steps are centred,
           // non-scrolling compositions with their own horizontal margin. The top

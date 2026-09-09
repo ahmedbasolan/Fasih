@@ -22,7 +22,7 @@ import type { OnboardingStepProps } from './types';
  *
  * This is the quick win -- the learner speaks Arabic before being asked to pay.
  */
-export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepProps) {
+export function QuickWinSteps({ screen, next, draft, quickWin }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const { speak } = useArabicTTS();
@@ -33,13 +33,13 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
     setScenarioCompleted, toggleNotifs, setToggleNotifs,
   } = quickWin;
 
-  switch (step) {
-      /* Step 6: notification opt-ins.
+  switch (screen) {
+      /* Notification opt-ins.
          Was a skeuomorphic SVG phone -- metallic bezel, glass glare, a fake
          drop-shadowed notification -- above three floating drop-shadowed cards.
          Six hardcoded hex literals and two shadows, none of it telling the
          learner anything. It is now three ruled rows. */
-      case 6:
+      case 'notifications':
         return (
           <Screen
             onboardingChrome
@@ -130,7 +130,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
           </Screen>
         );
 
-      case 7:
+      case 'phrase':
         return (
           // Centred composition with inline buttons rather than a pinned action,
           // so it lays itself out. The chrome padding is still needed: it
@@ -239,8 +239,8 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
           </View>
         );
 
-      // Step 8: Onboarding Scenario — Café
-      case 8: {
+      // Onboarding Scenario — Café
+      case 'scenario': {
         const onboardingScenario = getOnboardingScenario(C);
         // Use the local mode state — user hasn't been saved to the store yet at this step
         const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;

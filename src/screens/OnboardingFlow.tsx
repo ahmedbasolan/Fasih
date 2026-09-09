@@ -3,6 +3,12 @@ import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SCREEN_MARGIN } from '../components/design/spacing';
 import { ONBOARDING_CHROME } from '../components/design/layout';
+import {
+  ONBOARDING_SCREENS,
+  screenAt,
+  requiresInteraction,
+  indexOfScreen,
+} from '../engine/onboardingSteps';
 import { MotiView, AnimatePresence } from 'moti';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
@@ -53,6 +59,16 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   );
 }
 
+/**
+ * How many screens the flow has.
+ *
+ * Module scope, not component scope. It was a hand-maintained `12` inside the
+ * component with a comment listing the order; deriving it from the screen list
+ * is correct, but leaving it in the body made it a value the `next` callback's
+ * dependency array had to track. It depends on nothing — it is constant data.
+ */
+const TOTAL = ONBOARDING_SCREENS.length;
+
 export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props) {
   const { C } = useTheme();
   const { user: clerkUser } = useUser();
@@ -94,7 +110,6 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // every frame. Cleared on release and on unmount.
   const holdTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   
-  const TOTAL = 12; // 0-6 setup, 7 quick win, 8 scenario, 9 paywall (timeline), 10 features, 11 paywall (plans)
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
@@ -249,12 +264,20 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // -- Swipe Gesture Logic (Memoized) --
   const composedGesture = useMemo(() => {
     const swipeNext = () => {
-      // Block swiping next on steps that require explicit interaction.
-      // Step 1 is here for the same reason its Continue button is disabled:
-      // a swipe past an unmade mode choice would bank the default silently.
-      if (stepRef.current === 1 && !modeChosenRef.current) return;
-      if (stepRef.current === 2 && (!nameRef.current.trim() || !genderRef.current)) return;
-      if (stepRef.current === 5 && !holdCompleteRef.current) return;
+      // Block swiping next on screens that require explicit interaction.
+      // `mode` is here for the same reason its Continue button is disabled: a
+      // swipe past an unmade mode choice would bank the default silently.
+      //
+      // Which screens are gated lives in engine/onboardingSteps.ts and is keyed
+      // by NAME, so reordering the flow cannot leave a guard pointing at the
+      // wrong screen — which is the failure this indirection exists to prevent.
+      const current = stepRef.current;
+      if (requiresInteraction(current)) {
+        const s = screenAt(current);
+        if (s === 'mode' && !modeChosenRef.current) return;
+        if (s === 'name' && (!nameRef.current.trim() || !genderRef.current)) return;
+        if (s === 'commitment' && !holdCompleteRef.current) return;
+      }
       nextRef.current();
     };
 
@@ -287,8 +310,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
 
   // The contract every step component receives. Assembled once here so the
   // switch below reads as routing rather than as twelve different call shapes.
+  const screen = screenAt(step) ?? 'welcome';
+
   const stepProps: OnboardingStepProps = {
     step,
+    screen,
     next,
     skip,
     finishWithTrial,
@@ -304,38 +330,37 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     },
   };
 
+  // Routed by screen NAME, not by index. The switch is exhaustive over the
+  // OnboardingScreen union, so adding or renaming a screen is a type error
+  // here rather than a blank render at runtime.
   const renderStep = () => {
-    switch (step) {
-      case 0:
+    switch (screen) {
+      case 'welcome':
         return <IdentityStep {...stepProps} />;
 
-      case 1:
+      case 'mode':
         return <ModeStep {...stepProps} />;
 
-      // Steps 2-5: name, role, goals, hold-to-commit. See ProfileSteps.
-      case 2:
-      case 3:
-      case 4:
-      case 5:
+      // Name, role, goals, hold-to-commit. See ProfileSteps.
+      case 'name':
+      case 'role':
+      case 'goals':
+      case 'commitment':
         return <ProfileSteps {...stepProps} />;
 
-
-      // Steps 6-8: the quick win -- notifications, the first phrase, and the
-      // taster scenario. See QuickWinSteps.
-      case 6:
-      case 7:
-      case 8:
+      // The quick win -- notifications, the first phrase, and the taster
+      // scenario. See QuickWinSteps.
+      case 'notifications':
+      case 'phrase':
+      case 'scenario':
         return <QuickWinSteps {...stepProps} />;
 
-      // Steps 9-11: the paywall. See PaywallSteps -- next advances the three
-      // screens, finishWithTrial subscribes, skip leaves without subscribing.
-      case 9:
-      case 10:
-      case 11:
+      // The paywall. See PaywallSteps -- next advances the three screens,
+      // finishWithTrial subscribes, skip leaves without subscribing.
+      case 'paywall-timeline':
+      case 'paywall-features':
+      case 'paywall-plans':
         return <PaywallSteps {...stepProps} />;
-
-      default:
-        return null;
     }
   };
 
@@ -343,7 +368,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     <GestureDetector gesture={composedGesture}>
       <View style={{ flex: 1, backgroundColor: C.BG }}>
         <GhostLetters glyphs={['ب', 'د', 'أ']} />
-        {step > 0 && step < 11 && <ProgressBar step={step} total={11} />}
+        {/* Hidden on the welcome screen and on the final paywall screen. Named
+            rather than indexed so the reorder cannot move the bar's last step
+            without moving this with it. */}
+        {step > 0 && step < indexOfScreen('paywall-plans') && <ProgressBar step={step} total={11} />}
         
         <AnimatePresence>
           {step > 0 && (
