@@ -283,10 +283,22 @@ export function OnboardingScenarioPlayer({
         phraseCardInner: {
           padding: 20,
         },
+        // The four styles below sit on the unlocked-phrase card, which is a GOLD
+        // gradient fill — so they take C.BG, the dark ink, not the light-on-dark
+        // text tokens the rest of the screen uses.
+        //
+        // They were TEXT and TEXT2, which are cream: 1.25:1 in dark and 2.11:1
+        // in light against the gold, on the one card the whole taster scenario
+        // builds towards. C.BG measures 8.24 and 5.37.
+        //
+        // Third time this exact mistake has shipped — ShimmerButton and
+        // PhraseBuilder both did it with hardcoded white. A colour that is safe
+        // AS TEXT on a dark ground is not safe on a fill made of the accent.
+        // `textOnGoldFill` in contrast.test.ts now guards it.
         phraseArabic: {
           fontFamily: FONT_ARABIC_EXTRA,
           fontSize: 28,
-          color: C.TEXT,
+          color: C.BG,
           textAlign: 'right',
           writingDirection: 'rtl',
           marginBottom: 6,
@@ -295,14 +307,16 @@ export function OnboardingScenarioPlayer({
         phraseRoman: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 14,
-          color: C.TEXT2,
+          color: C.BG,
           fontWeight: '600',
           marginBottom: 2,
         },
+        // Also rendered on C.SURFACE in the empty state, which overrides this
+        // colour explicitly at that call site.
         phraseEnglish: {
           fontFamily: FONT_LATIN,
           fontSize: 14,
-          color: C.TEXT2,
+          color: C.BG,
         },
         phraseUnlockedTag: {
           flexDirection: 'row',
@@ -313,12 +327,15 @@ export function OnboardingScenarioPlayer({
           paddingHorizontal: 8,
           paddingVertical: 4,
           borderRadius: 8,
+          // A light wash over the gold fill, so it lightens the chip slightly
+          // and the C.BG label above it measures higher than on bare gold, not
+          // lower. Kept as-is; only the label colour was wrong here.
           backgroundColor: C.BORDER,
         },
         phraseUnlockedTagText: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 11,
-          color: C.TEXT2,
+          color: C.BG,
           fontWeight: '700',
           letterSpacing: 0.3,
         },
