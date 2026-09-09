@@ -114,7 +114,21 @@ export const STRINGS = {
     // progress on the JS thread, which is what made the ring stutter — and a
     // number racing 0 to 100 in 2.2 seconds was never readable. The ring shows
     // the progress; this says what to do.
-    holdKeepHolding: 'HOLD',
+    // Kept short on purpose. The label sits inside a 96pt circle with no
+    // padding, and the Text scales with the system font setting: measured at
+    // 11pt, "KEEP GOING" is 80pt wide and wraps above 1.2x, which is an
+    // ordinary accessibility setting. "HOLDING" is 60 and survives to 1.6x.
+    // Both labels also carry numberOfLines={1}, so neither can wrap regardless.
+    holdKeepHolding: 'HOLDING',
+    /**
+     * The untouched ring.
+     *
+     * It read `common.done` — "Done" — on a control nobody had touched yet,
+     * under copy saying "Hold to commit to your daily habit". A button that
+     * claims the outcome before the action is the one thing this screen must
+     * not say, since the whole point is that the commitment is made by holding.
+     */
+    holdToCommit: 'HOLD',
     /**
      * Step 7, the first-phrase moment.
      *

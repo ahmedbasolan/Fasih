@@ -218,10 +218,15 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                 </View>
               </FadeIn>
 
+              {/* No FadeIn here. AnimatePresence can only drive an exit on its
+                  DIRECT child, and FadeIn's root is a plain View since the
+                  blank-screen fix — so wrapping this hid the MotiView's own
+                  `exit` and the greeting vanished instead of fading. The
+                  MotiView already carries the entrance, so FadeIn was doubling
+                  a translateY as well. */}
               <AnimatePresence>
                 {typedGreeting && (
-                  <FadeIn delay={0}>
-                    <MotiView
+                  <MotiView
                       key="greeting"
                       from={{ opacity: 0, translateY: 10 }}
                       animate={{ opacity: 1, translateY: 0 }}
@@ -244,8 +249,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
                       </View>
-                    </MotiView>
-                  </FadeIn>
+                  </MotiView>
                 )}
               </AnimatePresence>
             </View>
@@ -539,28 +543,29 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                          2.2 seconds is not readable anyway. The ring is the
                          progress display; this is the instruction. */
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdKeepHolding}</Text>
+                        <Text numberOfLines={1} style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdKeepHolding}</Text>
                       </LinearGradient>
                     ) : (
                       <View
                         style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 12, color: C.TEXT2, letterSpacing: 1.2 }}>{STRINGS.common.done}</Text>
+                        <Text numberOfLines={1} style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 12, color: C.TEXT2, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdToCommit}</Text>
                       </View>
                     )}
                   </Pressable>
                 </View>
               </FadeIn>
 
-              <AnimatePresence>
-                {!holdComplete && (
-                  <FadeIn delay={400} style={{ zIndex: 2 }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
-                      {STRINGS.onboarding.dailyHabit}
-                    </Text>
-                  </FadeIn>
-                )}
-              </AnimatePresence>
+              {/* No AnimatePresence: nothing here declares an `exit`, and
+                  FadeIn's plain-View root means it could not drive one anyway.
+                  The line just unmounts, which is what it already did. */}
+              {!holdComplete && (
+                <FadeIn delay={400} style={{ zIndex: 2 }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
+                    {STRINGS.onboarding.dailyHabit}
+                  </Text>
+                </FadeIn>
+              )}
             </View>
 
             <AnimatePresence>
