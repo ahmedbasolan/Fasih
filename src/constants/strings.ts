@@ -100,6 +100,16 @@ export const STRINGS = {
     mascotMaxTagline: 'Your sharp & clever companion',
     whatsYourRole: 'What\'s your role?',
     roleTailored: 'We\'ll tailor your experience',
+    /**
+     * The payoff under the profession chips.
+     *
+     * `shiftCount` deliberately says "in your shift" rather than "for your
+     * job" — the phrases are grouped by category, not authored per
+     * profession, and the copy must not imply otherwise.
+     */
+    shiftHeading: 'What you\'ll practise',
+    shiftCount: (n: number) => `${n} phrases in your shift`,
+    shiftCategorySeparator: ' · ',
     whatsDrivesYou: 'What drives you?',
     selectEverything: 'Select everything that applies',
     goalCount: (count: number) => `${count} goals selected`,
