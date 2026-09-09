@@ -223,3 +223,24 @@ export const ZONE = {
   /** Minimum height of the action zone, so it never collapses onto content. */
   actionMinHeight: 52,
 } as const;
+
+/**
+ * Bottom padding for a scrolling list that IS the screen, inside the tabs.
+ *
+ * `ScenariosScreen` and `PhraseLibrary` are FlashLists. Putting a virtualised
+ * list inside `Screen`'s ScrollView is a worse bug than any it would fix, so
+ * those two keep their own frame — but they must not therefore pick their own
+ * number, which is how the tab screens ended up disagreeing by 80/90/100 in the
+ * first place.
+ *
+ * Derived from `screenPadding` rather than written out, so the formula stays in
+ * one place. It is a constant because for a tab screen with its own header
+ * neither inset can reach the result: the header owns the top and the tab bar
+ * owns the bottom. Passing live insets in only to have both zeroed made the two
+ * screens hold a `useSafeAreaInsets()` subscription to a value they could not
+ * use, and told the reader insets mattered here when they do not.
+ */
+export const TAB_LIST_SCROLL_BOTTOM = screenPadding(
+  { top: 0, bottom: 0 },
+  { hasAction: false, headerHandlesTopInset: true, tabBarHandlesBottomInset: true },
+).scrollBottom;

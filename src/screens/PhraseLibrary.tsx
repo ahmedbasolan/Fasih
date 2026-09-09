@@ -8,7 +8,7 @@ import { Search, X, Snail, ChevronRight, BookOpen, Sparkles, Grid2x2, Blocks, Tr
 import { FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_ARABIC_BLACK, FONT_HEADING_SEMI, FONT_HEADING_EXTRA } from '../components/design/tokens';
 import { GhostLetters, PhraseEntry, Rule } from '../components/ui';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
-import { screenPadding } from '../components/design/layout';
+import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
 import type { CEFRBand } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -27,17 +27,11 @@ type Phrase = typeof PHRASES[0];
 
 export function PhraseLibrary() {
   const { C } = useTheme();
+  // Kept for the header below, which applies the top inset itself. The bottom
+  // is TAB_LIST_SCROLL_BOTTOM — same reason as ScenariosScreen: the list is a
+  // FlashList, so this screen keeps its own frame rather than nesting a
+  // virtualised list inside Screen's ScrollView.
   const insets = useSafeAreaInsets();
-
-  // Same reason as ScenariosScreen: the list view is a FlashList, so this
-  // screen keeps its own frame rather than nesting inside Screen's ScrollView.
-  // The padding still comes from Screen's function so the two cannot drift.
-  // The header below applies the top inset itself; the tab bar owns the bottom.
-  const pad = screenPadding(insets, {
-    hasAction: false,
-    headerHandlesTopInset: true,
-    tabBarHandlesBottomInset: true,
-  });
 
   const savedPhrases = useAppStore((s) => s.savedPhrases);
   const toggleSavedPhrase = useAppStore((s) => s.toggleSavedPhrase);
@@ -534,7 +528,7 @@ export function PhraseLibrary() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: SCREEN_MARGIN,
-            paddingBottom: pad.scrollBottom,
+            paddingBottom: TAB_LIST_SCROLL_BOTTOM,
           }}
         >
           {CategoryGridHeader}
@@ -589,7 +583,7 @@ export function PhraseLibrary() {
           ListEmptyComponent={() => (
             <EmptyState title={STRINGS.phrases.noPhrasesFound} subtitle={STRINGS.phrases.noPhrasesSub} />
           )}
-          contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: pad.scrollBottom }}
+          contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: TAB_LIST_SCROLL_BOTTOM }}
           showsVerticalScrollIndicator={false}
         />
       )}

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
   Heart, Search, CheckCircle2, Lock, Sparkles, Zap, Target, Rocket,
@@ -17,7 +16,7 @@ import {
   SMOOTH,
 } from '../components/design/tokens';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
-import { screenPadding } from '../components/design/layout';
+import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
 import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
@@ -91,18 +90,7 @@ function useRandomHeading() {
 
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const { C, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const { heading, funFact } = useRandomHeading();
-
-  // This screen is a FlashList, so it cannot sit inside Screen's ScrollView —
-  // that would nest a virtualised list in a scroll view. It takes its padding
-  // from the same function Screen does instead, so the two cannot drift.
-  // ScreenHeader owns the top inset; the tab bar owns the bottom one.
-  const pad = screenPadding(insets, {
-    hasAction: false,
-    headerHandlesTopInset: true,
-    tabBarHandlesBottomInset: true,
-  });
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
@@ -234,7 +222,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
         {...({ estimatedItemSize: 120 } as any)}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: pad.scrollBottom,
+          paddingBottom: TAB_LIST_SCROLL_BOTTOM,
         }}
         showsVerticalScrollIndicator={false}
         // Fix black square flash on Android
