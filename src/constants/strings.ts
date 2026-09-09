@@ -150,6 +150,18 @@ export const STRINGS = {
     firstPhraseHear: 'Tap to hear it',
     firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
     firstPhraseDone: 'You just said it the way Dubai says it.',
+
+    // The taster scenario's own controls. `common.continue` covers the mid-
+    // scenario step; these two are the beats that need their own words.
+    scenarioSeeUnlocked: 'See what you unlocked',
+    scenarioContinueToApp: 'Continue to App',
+    scenarioCulturalNote: 'Cultural Note',
+    scenarioYouSaid: 'You said',
+    scenarioYourResponse: 'Your response',
+    scenarioUnlockTitle: 'Phrase Unlocked!',
+    scenarioUnlockSubtitle: 'You learned this in your first Gulf Arabic exchange',
+    scenarioComplete: 'Scenario complete',
+    scenarioUnlockedTag: 'Unlocked',
     /**
      * Watermark roots behind the two mode plates on step 1. Decorative, hidden
      * from screen readers, rendered at 3-8% opacity.

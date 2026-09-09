@@ -231,7 +231,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
                   }}
                 >
                   <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
-                    Continue →
+                    {STRINGS.common.continue}
                   </Text>
                 </Pressable>
               </MotiView>
@@ -246,7 +246,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
         const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
 
         if (!script) {
-          return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>;
+          return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: C.TEXT2 }}>{STRINGS.common.loading}</Text></View>;
         }
 
         return (

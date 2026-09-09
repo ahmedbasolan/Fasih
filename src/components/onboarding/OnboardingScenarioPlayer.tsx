@@ -7,6 +7,8 @@ import { initialFor, ltrParagraph } from '../../engine/text';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
+import { ShimmerButton } from '../ui';
+import { STRINGS } from '../../constants/strings';
 import { FONT_HEADING_SEMI } from '../design/tokens';
 import type { ScenarioScript, ScenarioChoice, Phrase } from '../../types';
 import { PHRASES } from '../../constants/phrases';
@@ -344,24 +346,12 @@ export function OnboardingScenarioPlayer({
           lineHeight: 18,
         },
 
+        // Spacing only. The pill, the gradient and the label all belong to
+        // ShimmerButton now — this used to be a hand-rolled copy of it that put
+        // its row layout on the Pressable's own style callback, where it did not
+        // apply, so the label and chevron stacked instead of sitting inline.
         nextButton: {
-          borderRadius: 14,
-          overflow: 'hidden',
           marginTop: 8,
-        },
-        nextButtonContent: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          paddingVertical: 15,
-          paddingHorizontal: 20,
-        },
-        nextButtonText: {
-          fontFamily: FONT_LATIN_SEMI,
-          fontSize: 16,
-          color: C.BG,
-          fontWeight: '700',
         },
       }),
     [C, insets.top]
@@ -418,7 +408,7 @@ export function OnboardingScenarioPlayer({
           animate={{ translateY: 0 }}
           transition={{ type: 'timing', duration: 350, delay: 200 }}
         >
-          <Text style={styles.choicesLabel}>Your response</Text>
+          <Text style={styles.choicesLabel}>{STRINGS.onboarding.scenarioYourResponse}</Text>
           {scene.choices.map((choice, idx) => (
             <MotiView
               key={choice.id}
@@ -453,10 +443,13 @@ export function OnboardingScenarioPlayer({
   // ── Outcome phase ────────────────────────────────────────────────────────────
   if (phase === 'outcome' && chosenChoice) {
     const outcomeColor = C[OUTCOME_TOKEN[chosenChoice.outcome] ?? 'TEXT3'];
+    const nextLabel = isLastScene
+      ? STRINGS.onboarding.scenarioSeeUnlocked
+      : STRINGS.common.continue;
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View>
-          <Text style={styles.youSaidLabel}>You said</Text>
+          <Text style={styles.youSaidLabel}>{STRINGS.onboarding.scenarioYouSaid}</Text>
           <View style={styles.youSaidCard}>
             {chosenChoice.arabic !== '—' ? (
               <Text style={styles.youSaidArabic}>{chosenChoice.arabic}</Text>
@@ -471,25 +464,13 @@ export function OnboardingScenarioPlayer({
           ) : null}
 
           <View style={styles.nextButton}>
-            <LinearGradient
-              colors={[C.PRIMARY, C.JADE]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <ShimmerButton
+              onPress={handleNext}
+              Icon={ChevronRight}
+              accessibilityLabel={nextLabel}
             >
-              <Pressable
-                style={({ pressed }) => [
-                  styles.nextButtonContent,
-                  pressed && { opacity: 0.85 },
-                ]}
-                onPress={handleNext}
-                accessibilityRole="button"
-              >
-                <Text style={styles.nextButtonText}>
-                  {isLastScene ? 'See what you unlocked' : 'Continue'}
-                </Text>
-                <ChevronRight size={18} color={C.BG} strokeWidth={2.5} />
-              </Pressable>
-            </LinearGradient>
+              {nextLabel}
+            </ShimmerButton>
           </View>
         </View>
       </ScrollView>
@@ -506,14 +487,14 @@ export function OnboardingScenarioPlayer({
       >
         <View style={styles.unlockHeader}>
           <Text style={{ fontSize: 34 }}>✨</Text>
-          <Text style={styles.unlockTitle}>Phrase Unlocked!</Text>
-          <Text style={styles.unlockSubtitle}>You learned this in your first Gulf Arabic exchange</Text>
+          <Text style={styles.unlockTitle}>{STRINGS.onboarding.scenarioUnlockTitle}</Text>
+          <Text style={styles.unlockSubtitle}>{STRINGS.onboarding.scenarioUnlockSubtitle}</Text>
         </View>
 
         {unlockedPhrases.length === 0 ? (
           <View style={[styles.phraseCard, { backgroundColor: C.SURFACE }]}>
             <View style={styles.phraseCardInner}>
-              <Text style={[styles.phraseEnglish, { color: C.TEXT2 }]}>Scenario complete</Text>
+              <Text style={[styles.phraseEnglish, { color: C.TEXT2 }]}>{STRINGS.onboarding.scenarioComplete}</Text>
             </View>
           </View>
         ) : (
@@ -531,14 +512,14 @@ export function OnboardingScenarioPlayer({
                   <Text style={styles.phraseEnglish}>{phrase.english}</Text>
                   <View style={styles.phraseUnlockedTag}>
                     <Text style={{ fontSize: 11 }}>✨</Text>
-                    <Text style={styles.phraseUnlockedTagText}>Unlocked</Text>
+                    <Text style={styles.phraseUnlockedTagText}>{STRINGS.onboarding.scenarioUnlockedTag}</Text>
                   </View>
                 </LinearGradient>
               </View>
 
               {phrase.culturalNote ? (
                 <View style={styles.culturalNoteCard}>
-                  <Text style={styles.culturalNoteLabel}>Cultural Note</Text>
+                  <Text style={styles.culturalNoteLabel}>{STRINGS.onboarding.scenarioCulturalNote}</Text>
                   <Text style={styles.culturalNoteText}>{ltrParagraph(phrase.culturalNote)}</Text>
                 </View>
               ) : null}
@@ -552,23 +533,13 @@ export function OnboardingScenarioPlayer({
           transition={{ type: 'timing', duration: 350, delay: 400 }}
         >
           <View style={styles.nextButton}>
-            <LinearGradient
-              colors={[C.PRIMARY, C.JADE]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <ShimmerButton
+              onPress={() => onComplete?.(script.phrasesUnlocked ?? [])}
+              Icon={ChevronRight}
+              accessibilityLabel={STRINGS.onboarding.scenarioContinueToApp}
             >
-              <Pressable
-                style={({ pressed }) => [
-                  styles.nextButtonContent,
-                  pressed && { opacity: 0.85 },
-                ]}
-                onPress={() => onComplete?.(script.phrasesUnlocked ?? [])}
-                accessibilityRole="button"
-              >
-                <Text style={styles.nextButtonText}>Continue to App</Text>
-                <ChevronRight size={18} color={C.BG} strokeWidth={2.5} />
-              </Pressable>
-            </LinearGradient>
+              {STRINGS.onboarding.scenarioContinueToApp}
+            </ShimmerButton>
           </View>
         </MotiView>
       </MotiView>
