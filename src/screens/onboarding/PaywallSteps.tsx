@@ -42,6 +42,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
       case 9:
         return (
           <Screen
+            onboardingChrome
             action={
               <FadeIn delay={800}>
                 <Stack gap="sm">
@@ -101,6 +102,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
       case 10:
         return (
           <Screen
+            onboardingChrome
             action={
               <Stack gap="xs">
                 <FadeIn delay={900}>
@@ -171,6 +173,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
       case 11:
         return (
           <Screen
+            onboardingChrome
             action={
               <FadeIn delay={650}>
                 <Stack gap="sm">

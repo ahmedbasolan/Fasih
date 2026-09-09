@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_ARABIC, FONT_ARABIC_EXTRA } from '../../theme';
+import { ONBOARDING_CHROME_HEIGHT } from '../design/layout';
 import { initialFor } from '../../engine/text';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +33,7 @@ export function OnboardingScenarioPlayer({
   onComplete,
 }: OnboardingScenarioPlayerProps) {
   const { C } = useTheme();
+  const insets = useSafeAreaInsets();
   const [sceneIdx, setSceneIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('scene');
   const [chosenChoice, setChosenChoice] = useState<ScenarioChoice | null>(null);
@@ -63,7 +66,15 @@ export function OnboardingScenarioPlayer({
     () =>
       StyleSheet.create({
         scroll: { flex: 1 },
-        content: { padding: 24, paddingBottom: 120 },
+        // Rendered inside `OnboardingFlow`, which overlays a progress bar and a
+        // back button. This is a bare ScrollView rather than a `Screen`, so it
+        // has to clear both itself — without this the setting badge renders
+        // through the progress bar and the first card sits under the chevron.
+        content: {
+          padding: 24,
+          paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT,
+          paddingBottom: 120,
+        },
 
         settingBadge: {
           flexDirection: 'row',
@@ -353,7 +364,7 @@ export function OnboardingScenarioPlayer({
           fontWeight: '700',
         },
       }),
-    [C]
+    [C, insets.top]
   );
 
   // ── Scene phase ──────────────────────────────────────────────────────────────
