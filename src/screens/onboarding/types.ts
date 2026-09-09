@@ -18,7 +18,12 @@ export interface OnboardingDraft {
   name: string;
   setName: Dispatch<SetStateAction<string>>;
   mode: 'career' | 'social';
-  setMode: Dispatch<SetStateAction<'career' | 'social'>>;
+  /**
+   * No `setMode`. It is deliberately absent, not forgotten: setting the mode
+   * without setting `modeChosen` is exactly the state this pair exists to make
+   * unreachable, and leaving the plain setter on the interface left the door
+   * open for a step to walk back through. `chooseMode` is the only way in.
+   */
   /**
    * Whether the learner has actually picked a mode, as opposed to inheriting
    * the default.

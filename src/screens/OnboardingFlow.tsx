@@ -154,6 +154,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
+  const clearHoldTimers = useCallback(() => {
+    holdTimers.current.forEach(clearTimeout);
+    holdTimers.current = [];
+  }, []);
+
   /**
    * Start the hold.
    *
@@ -167,9 +172,18 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
    * Completion stays on a JS timer rather than an animation callback, so if the
    * animation driver is unavailable the ring simply does not fill — the hold
    * still completes and the flow still advances.
+   *
+   * Every timer it schedules goes into `holdTimers`, including the one the
+   * completion callback adds, so release and unmount can both cancel the whole
+   * hold rather than most of it.
    */
   const startHold = useCallback(() => {
     if (holdComplete) return;
+    // Clear before scheduling rather than reassigning the array. Pressable
+    // pairs onPressIn with onPressOut, so a second start without a release
+    // should not happen — but reassigning would orphan the first hold's
+    // completion timer, and an uncancellable one of those advances two steps.
+    clearHoldTimers();
     setIsHolding(true);
     holdProgress.value = withTiming(1, {
       duration: HOLD_DURATION,
@@ -177,23 +191,23 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     });
 
     // Haptics as scheduled pulses instead of a per-frame percentage check.
-    holdTimers.current = [33, 66].map((pct) =>
-      setTimeout(() => haptic.medium(), HOLD_DURATION * (pct / 100)),
-    );
+    for (const pct of [33, 66]) {
+      holdTimers.current.push(
+        setTimeout(() => haptic.medium(), HOLD_DURATION * (pct / 100)),
+      );
+    }
     holdTimers.current.push(
       setTimeout(() => {
         haptic.medium();
         setHoldComplete(true);
         setIsHolding(false);
-        setTimeout(() => nextRef.current(), 700);
+        // Tracked like the rest. It was the one timer this array existed to
+        // catch and did not: leaving step 5 inside the beat between the ring
+        // filling and the flow advancing left it running against a dead tree.
+        holdTimers.current.push(setTimeout(() => nextRef.current(), 700));
       }, HOLD_DURATION),
     );
-  }, [holdComplete, holdProgress]);
-
-  const clearHoldTimers = useCallback(() => {
-    holdTimers.current.forEach(clearTimeout);
-    holdTimers.current = [];
-  }, []);
+  }, [holdComplete, holdProgress, clearHoldTimers]);
 
   const endHold = useCallback(() => {
     if (holdComplete) return;
@@ -278,7 +292,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     skip,
     finishWithTrial,
     draft: {
-      name, setName, mode, setMode, modeChosen, chooseMode, gender, setGender, role, setRole,
+      name, setName, mode, modeChosen, chooseMode, gender, setGender, role, setRole,
       profession, setProfession, selectedGoals, toggleGoal, plan, setPlan,
       typedGreeting,
     },
