@@ -163,6 +163,24 @@ export const STRINGS = {
 
     // The taster scenario's own controls. `common.continue` covers the mid-
     // scenario step; these two are the beats that need their own words.
+    /**
+     * The progress reveal, immediately before the paywall.
+     *
+     * The paywall's title, subtitle and CTA all say "don't lose your
+     * progress" — to a learner who had never been shown any. This screen is
+     * what makes those three strings true. Every line below reports something
+     * the learner actually did; nothing here is aspirational.
+     */
+    progressTitle: 'Look what you just did',
+    progressSub: 'Twenty minutes ago you had none of this',
+    progressPhraseHeard: 'Heard your first Gulf phrase',
+    progressScenarioDone: 'Held a conversation in Arabic',
+    progressPhrasesUnlocked: (n: number) => `${n} phrase${n === 1 ? '' : 's'} unlocked`,
+    progressCommitted: 'Committed to a daily habit',
+    progressDayOne: 'Day 1',
+    progressDayOneSub: 'Your streak starts here',
+    progressContinue: 'Continue',
+
     scenarioSeeUnlocked: 'See what you unlocked',
     scenarioContinueToApp: 'Continue to App',
     scenarioCulturalNote: 'Cultural Note',

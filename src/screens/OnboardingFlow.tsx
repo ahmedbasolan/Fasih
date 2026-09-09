@@ -327,6 +327,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     quickWin: {
       phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
       setScenarioCompleted, toggleNotifs, setToggleNotifs,
+      phraseEverRevealed, scenarioCompleted,
     },
   };
 
@@ -353,6 +354,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
       case 'notifications':
       case 'phrase':
       case 'scenario':
+      case 'progress':
         return <QuickWinSteps {...stepProps} />;
 
       // The paywall. See PaywallSteps -- next advances the three screens,
@@ -370,8 +372,15 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
         <GhostLetters glyphs={['ب', 'د', 'أ']} />
         {/* Hidden on the welcome screen and on the final paywall screen. Named
             rather than indexed so the reorder cannot move the bar's last step
-            without moving this with it. */}
-        {step > 0 && step < indexOfScreen('paywall-plans') && <ProgressBar step={step} total={11} />}
+            without moving this with it.
+
+            `total` is the number of screens the bar actually covers — every
+            one between `welcome` and `paywall-plans`, both excluded — derived
+            rather than written down, so inserting a screen cannot leave the
+            bar counting the old number of segments. */}
+        {step > 0 && step < indexOfScreen('paywall-plans') && (
+          <ProgressBar step={step} total={indexOfScreen('paywall-plans') - 1} />
+        )}
         
         <AnimatePresence>
           {step > 0 && (

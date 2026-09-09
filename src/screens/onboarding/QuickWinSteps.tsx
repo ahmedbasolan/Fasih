@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Bell, Star, TrendingUp } from '../../components/icons';
+import { Bell, Star, TrendingUp, Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
 import { SPACE, RADIUS } from '../../components/design/spacing';
 import { TYPE, ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
@@ -22,15 +22,18 @@ import type { OnboardingStepProps } from './types';
  *
  * This is the quick win -- the learner speaks Arabic before being asked to pay.
  */
-export function QuickWinSteps({ screen, next, draft, quickWin }: OnboardingStepProps) {
+export function QuickWinSteps({ screen, next, draft, quickWin, hold }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
+  const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
   const { mode, name } = draft;
+  const { holdComplete } = hold;
   const {
     phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
     setScenarioCompleted, toggleNotifs, setToggleNotifs,
+    phraseEverRevealed, scenarioCompleted,
   } = quickWin;
 
   switch (screen) {
@@ -238,6 +241,87 @@ export function QuickWinSteps({ screen, next, draft, quickWin }: OnboardingStepP
             )}
           </View>
         );
+
+      /* The progress reveal, immediately before the paywall.
+         The paywall's title, subtitle and CTA all say "don't lose your
+         progress" to a learner who had never been shown any. This is what
+         makes those three strings true.
+
+         Every row is gated on the state that proves it happened. A learner who
+         swiped past the scenario does not get told they held a conversation —
+         a summary that claims credit for skipped steps is worth less than no
+         summary, because the one thing it has to be is believable. */
+      case 'progress': {
+        const done = [
+          { key: 'phrase', label: STRINGS.onboarding.progressPhraseHeard, show: phraseEverRevealed },
+          { key: 'scenario', label: STRINGS.onboarding.progressScenarioDone, show: scenarioCompleted },
+          {
+            key: 'unlocked',
+            label: STRINGS.onboarding.progressPhrasesUnlocked(unlockedPhraseIds.length),
+            show: unlockedPhraseIds.length > 0,
+          },
+          { key: 'committed', label: STRINGS.onboarding.progressCommitted, show: holdComplete },
+        ].filter(r => r.show);
+
+        return (
+          <Screen
+            onboardingChrome
+            action={
+              <FadeIn delay={400}>
+                <ShimmerButton onPress={next} accessibilityLabel={STRINGS.onboarding.progressContinue}>
+                  {STRINGS.onboarding.progressContinue}
+                </ShimmerButton>
+              </FadeIn>
+            }
+          >
+            <FadeIn delay={100}>
+              <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 28, letterSpacing: -0.5, color: C.TEXT, marginBottom: SPACE.sm }}>
+                {STRINGS.onboarding.progressTitle}
+              </Text>
+              <Text style={{ ...TYPE.bodyLarge, fontFamily: FONT_LATIN, color: C.TEXT2, marginBottom: SPACE.xl }}>
+                {STRINGS.onboarding.progressSub}
+              </Text>
+            </FadeIn>
+
+            {/* Ruled rows, no fills — the same treatment as the notification
+                opt-ins two screens earlier. */}
+            <View>
+              {done.map(({ key, label }, i) => (
+                <FadeIn key={key} delay={200 + i * 80}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: SPACE.md,
+                      paddingVertical: SPACE.lg,
+                      borderTopWidth: i === 0 ? StyleSheet.hairlineWidth : 0,
+                      borderTopColor: C.BORDER,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: C.BORDER,
+                    }}
+                  >
+                    <Check size={20} strokeWidth={1.5} color={C.PRIMARY} />
+                    <Text style={{ ...TYPE.bodyLarge, fontFamily: FONT_LATIN_SEMI, color: C.TEXT, flex: 1, minWidth: 0 }}>
+                      {label}
+                    </Text>
+                  </View>
+                </FadeIn>
+              ))}
+            </View>
+
+            <FadeIn delay={200 + done.length * 80}>
+              <View style={{ marginTop: SPACE.xl }}>
+                <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 34, letterSpacing: -0.5, color: C.PRIMARY }}>
+                  {STRINGS.onboarding.progressDayOne}
+                </Text>
+                <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2, marginTop: SPACE.xs }}>
+                  {STRINGS.onboarding.progressDayOneSub}
+                </Text>
+              </View>
+            </FadeIn>
+          </Screen>
+        );
+      }
 
       // Onboarding Scenario — Café
       case 'scenario': {
