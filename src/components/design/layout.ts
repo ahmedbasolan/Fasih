@@ -161,11 +161,59 @@ export const INSET_FIXTURES = {
  * arithmetic is right for a given inset, which is the part that can be checked
  * without one.
  */
+/**
+ * The onboarding flow's chrome: a progress bar and a back button, absolutely
+ * positioned by `OnboardingFlow` over every step it renders.
+ *
+ * They are an overlay, not flow siblings, so nothing below them reserves their
+ * height automatically — each step has to leave room itself. Every onboarding
+ * step that did not is a step whose title runs through the progress bar and
+ * whose first content sits under the back chevron.
+ *
+ * Exported so the overlay is positioned from the same numbers the padding
+ * reserves space for. Before this the two were unrelated literals in different
+ * files, which is how four steps ended up colliding while two others cleared
+ * the chrome by hand with `insets.top + SPACE.huge` — the right answer, arrived
+ * at by eye, with nothing tying it to the thing it was clearing.
+ */
+export const ONBOARDING_CHROME = {
+  /** Progress bar's top offset below the safe-area inset. */
+  progressTop: 12,
+  /** Progress bar track height. */
+  progressHeight: 4,
+  /** Back button's top offset below the safe-area inset. */
+  backTop: 24,
+  /** The back chevron's icon box. */
+  backSize: 28,
+  /** Gap between the lowest chrome edge and the first line of content. */
+  gap: 12,
+} as const;
+
+/**
+ * Height the onboarding chrome occupies below the top safe-area inset.
+ *
+ * The back button sits lower than the progress bar, so it sets the floor.
+ * Equals 64 — which is what the two hand-rolled steps already used, arrived at
+ * independently. That agreement is the reason this is a safe change to make
+ * everywhere rather than a re-tuning of screens that currently look right.
+ */
+export const ONBOARDING_CHROME_HEIGHT =
+  ONBOARDING_CHROME.backTop + ONBOARDING_CHROME.backSize + ONBOARDING_CHROME.gap;
+
 export function screenPadding(
   insets: { top: number; bottom: number },
   opts: {
     hasAction: boolean;
     headerHandlesTopInset: boolean;
+    /**
+     * Set on a step rendered inside `OnboardingFlow`, which overlays a progress
+     * bar and a back button on top of whatever the step draws.
+     *
+     * Independent of `headerHandlesTopInset`: the chrome is drawn by the flow,
+     * not by the step, so the step still owns its own safe-area inset and the
+     * chrome height stacks on top of it.
+     */
+    onboardingChrome?: boolean;
     /**
      * Set on a screen inside the bottom tab navigator.
      *
@@ -187,7 +235,9 @@ export function screenPadding(
 ): { top: number; scrollBottom: number; actionBottom: number } {
   const bottomInset = opts.tabBarHandlesBottomInset ? 0 : insets.bottom;
   return {
-    top: opts.headerHandlesTopInset ? 0 : insets.top,
+    top:
+      (opts.headerHandlesTopInset ? 0 : insets.top) +
+      (opts.onboardingChrome ? ONBOARDING_CHROME_HEIGHT : 0),
     // With an action pinned below, the scroll area stops short of it. Without
     // one, the scroll area itself has to clear the bottom inset.
     scrollBottom: opts.hasAction ? ZONE.actionGap : bottomInset + SPACE_XL,

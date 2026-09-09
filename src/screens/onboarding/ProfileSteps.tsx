@@ -9,6 +9,7 @@ import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
 import { SPACE, RADIUS } from '../../components/design/spacing';
+import { ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
 import { Companion } from '../../components/ui/Companion';
@@ -131,7 +132,12 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
       // Step 2: Name Input — consistent upward entrance
       case 2:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}>
+          // Lays itself out rather than using `Screen`: both steps are centred,
+          // non-scrolling compositions with their own horizontal margin. The top
+          // padding still comes from ONBOARDING_CHROME_HEIGHT so it tracks the
+          // chrome it is clearing — it was SPACE.huge, the same 64, but tied to
+          // nothing.
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT, paddingBottom: insets.bottom + SPACE.xl }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', marginTop: 40, gap: 24 }}>
               <FadeIn delay={100}>
                 <Companion size={72} name={name} />
@@ -268,6 +274,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
             // Screen must therefore NOT scroll: two same-axis ScrollViews nested
             // is a native gesture conflict, and only one of them would ever win.
             scroll={false}
+            onboardingChrome
             action={
               <FadeIn delay={600}>
                 <ShimmerButton onPress={next} disabled={!role || !profession} accessibilityLabel={STRINGS.common.continue}>
@@ -391,6 +398,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
           <Screen
             // Same as step 3: the goal list owns the scrolling, so Screen must not.
             scroll={false}
+            onboardingChrome
             contentStyle={{ gap: SPACE.lg }}
             action={
               <FadeIn delay={600}>
@@ -480,7 +488,12 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
       // Step 5: Commitment — consistent upward entrance
       case 5:
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}>
+          // Lays itself out rather than using `Screen`: both steps are centred,
+          // non-scrolling compositions with their own horizontal margin. The top
+          // padding still comes from ONBOARDING_CHROME_HEIGHT so it tracks the
+          // chrome it is clearing — it was SPACE.huge, the same 64, but tied to
+          // nothing.
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT, paddingBottom: insets.bottom + SPACE.xl }}>
             {/* Arabic geometric background pattern */}
             <GeoPattern opacity={0.035} color={C.JADE_ACCENT} size={48} />
 

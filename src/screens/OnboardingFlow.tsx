@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SPACE, SCREEN_MARGIN } from '../components/design/spacing';
+import { SCREEN_MARGIN } from '../components/design/spacing';
+import { ONBOARDING_CHROME } from '../components/design/layout';
 import { MotiView, AnimatePresence } from 'moti';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
@@ -35,16 +36,16 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <View
       onLayout={(e) => setSegmentWidth((e.nativeEvent.layout.width - 4 * (total - 1)) / total)}
-      style={{ position: 'absolute', top: insets.top + SPACE.md, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
+      style={{ position: 'absolute', top: insets.top + ONBOARDING_CHROME.progressTop, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
       accessibilityLabel={`Step ${step + 1} of ${total}`}
       accessibilityRole="progressbar"
     >
       {Array.from({ length: total }).map((_, i) => (
-        <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
+        <View key={i} style={{ flex: 1, height: ONBOARDING_CHROME.progressHeight, borderRadius: 2, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
           <MotiView
             animate={{ width: i <= step ? segmentWidth : 0 }}
             transition={{ type: 'timing', duration: 380, delay: i * 40 }}
-            style={{ height: 4, borderRadius: 2, backgroundColor: i <= step ? C.PRIMARY : 'transparent' }}
+            style={{ height: ONBOARDING_CHROME.progressHeight, borderRadius: 2, backgroundColor: i <= step ? C.PRIMARY : 'transparent' }}
           />
         </View>
       ))}
@@ -352,7 +353,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               animate={{ opacity: 1, translateX: 0 }}
               exit={{ opacity: 0, translateX: -10 }}
               transition={{ type: 'timing', duration: 250 }}
-              style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
+              style={{ position: 'absolute', top: insets.top + ONBOARDING_CHROME.backTop, left: SCREEN_MARGIN, zIndex: 30 }}
             >
               <Pressable
                 onPress={back}
@@ -360,7 +361,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
                 accessibilityLabel="Go back"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <ChevronLeft size={28} color={C.TEXT3} />
+                <ChevronLeft size={ONBOARDING_CHROME.backSize} color={C.TEXT3} />
               </Pressable>
             </MotiView>
           )}

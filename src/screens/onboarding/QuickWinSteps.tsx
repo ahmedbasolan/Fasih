@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Bell, Star, TrendingUp } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_EXTRA, ARABIC_SCALE } from '../../components/design/tokens';
 import { SPACE, RADIUS } from '../../components/design/spacing';
-import { TYPE } from '../../components/design/layout';
+import { TYPE, ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { STRINGS } from '../../constants/strings';
@@ -23,6 +24,7 @@ import type { OnboardingStepProps } from './types';
  */
 export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepProps) {
   const { C } = useTheme();
+  const insets = useSafeAreaInsets();
   const { speak } = useArabicTTS();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const { mode, name } = draft;
@@ -40,6 +42,7 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
       case 6:
         return (
           <Screen
+            onboardingChrome
             action={
               <Stack gap="md">
                 <FadeIn delay={550}>
@@ -129,7 +132,12 @@ export function QuickWinSteps({ step, next, draft, quickWin }: OnboardingStepPro
 
       case 7:
         return (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: C.BG }}>
+          // Centred composition with inline buttons rather than a pinned action,
+          // so it lays itself out. The chrome padding is still needed: it
+          // centres the content in the space BELOW the progress bar and back
+          // button, not in the whole screen — without it the mascot drifts up
+          // under the chrome as soon as the revealed state adds two more rows.
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT, backgroundColor: C.BG }}>
             {/* Mascot at top */}
             <View style={{ marginBottom: 24 }}>
               <Companion size={80} name={name} />
