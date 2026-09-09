@@ -1,15 +1,16 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import Svg, { Path } from 'react-native-svg';
 import { Shield, TrendingUp, Globe, ArrowRight, Check, Star, Lock, Mic, BookOpen, Layers, Trophy, Zap, Flame, Sparkles } from '../../components/icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
+import { SPACE } from '../../components/design/spacing';
+import { TYPE } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import type { OnboardingStepProps } from './types';
 
 /**
@@ -21,16 +22,43 @@ import type { OnboardingStepProps } from './types';
  */
 export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: OnboardingStepProps) {
   const { C, G } = useTheme();
-  const insets = useSafeAreaInsets();
   const { plan, setPlan } = draft;
+
+  // The three action zones repeat the same fine print and skip link, so they
+  // are defined once rather than inline three times with drifting values.
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        fineprint: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.TEXT3, textAlign: 'center' },
+        fineprintAccent: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.JADE2, textAlign: 'center' },
+        skipRow: { paddingVertical: SPACE.md, alignItems: 'center' },
+        skipText: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2, textDecorationLine: 'underline' },
+        skipTextQuiet: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT3, textDecorationLine: 'underline' },
+      }),
+    [C],
+  );
 
   switch (step) {
       case 9:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <FadeIn delay={800}>
+                <Stack gap="sm">
+                  <ShimmerButton onPress={next} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.startFreeTrial}>
+                    {STRINGS.onboarding.startFreeTrial}
+                  </ShimmerButton>
+                  <Text style={styles.fineprint}>{STRINGS.onboarding.cancelAnytime}</Text>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipText}>{STRINGS.onboarding.skipForNow}</Text>
+                  </Pressable>
+                </Stack>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.paywallTitle}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.paywallSub}</Text>
               </View>
             </FadeIn>
@@ -57,8 +85,8 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       </LinearGradient>
                       <View style={{ flex: 1, paddingTop: 4 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: labelColor, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{day}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 15, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.TEXT, marginBottom: 4 }}>{title}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>{desc}</Text>
                       </View>
                     </View>
                   </FadeIn>
@@ -66,27 +94,31 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               })}
             </View>
 
-            <FadeIn delay={800}>
-              <View style={{ gap: 8, width: '100%' }}>
-                <ShimmerButton onPress={next} Icon={ArrowRight}>
-                  {STRINGS.onboarding.startFreeTrial}
-                </ShimmerButton>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>{STRINGS.onboarding.cancelAnytime}</Text>
-                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
-                </Pressable>
-              </View>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       // Step 10: Everything included — features
       case 10:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <Stack gap="xs">
+                <FadeIn delay={900}>
+                  <ShimmerButton onPress={next} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.seePlans}>
+                    {STRINGS.onboarding.seePlans}
+                  </ShimmerButton>
+                </FadeIn>
+                <FadeIn delay={1000}>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipTextQuiet}>{STRINGS.onboarding.skipForNow}</Text>
+                  </Pressable>
+                </FadeIn>
+              </Stack>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.everythingIncluded}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.oneSubscription}</Text>
               </View>
             </FadeIn>
@@ -113,7 +145,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                         <featureData.Icon size={20} color={C.WHITE} />
                       </LinearGradient>
                       <View>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.TEXT }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT }}>{label}</Text>
                         <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>{sub}</Text>
                       </View>
                     </View>
@@ -126,35 +158,39 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
               <View style={{ borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 16 }}>
                 <Shield size={17} color={C.JADE2} />
                 <View>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 13, color: C.JADE2 }}>{STRINGS.onboarding.satisfactionGuarantee}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.JADE2 }}>{STRINGS.onboarding.satisfactionGuarantee}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>{STRINGS.onboarding.refundPolicy}</Text>
                 </View>
               </View>
             </FadeIn>
 
-            <FadeIn delay={900}>
-              <View style={{ width: '100%' }}>
-                <ShimmerButton onPress={next} Icon={ArrowRight}>
-                  {STRINGS.onboarding.seePlans}
-                </ShimmerButton>
-              </View>
-            </FadeIn>
-
-            <FadeIn delay={1000}>
-              <Pressable onPress={skip} style={{ paddingVertical: 12, alignItems: 'center', marginTop: 4 }}>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipForNow}</Text>
-              </Pressable>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       // Step 11: Paywall — plans
       case 11:
         return (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            action={
+              <FadeIn delay={650}>
+                <Stack gap="sm">
+                  <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight} accessibilityLabel={STRINGS.onboarding.startFreeTrial}>
+                    {STRINGS.onboarding.startFreeTrial}
+                  </ShimmerButton>
+                  <Text style={styles.fineprint}>
+                    {STRINGS.onboarding.thenPrice(plan === 'yearly' ? 'AED 199/year' : 'AED 39/month')}
+                  </Text>
+                  <Text style={styles.fineprintAccent}>{STRINGS.onboarding.refundGuarantee}</Text>
+                  <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
+                    <Text style={styles.skipText}>{STRINGS.onboarding.skipUnlock}</Text>
+                  </Pressable>
+                </Stack>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.choosePlan}</Text>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.trialCancel}</Text>
               </View>
             </FadeIn>
@@ -171,7 +207,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                 >
                   <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
                     <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
                     </LinearGradient>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 80 }}>
@@ -193,7 +229,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.yearlyBest}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.JADE_ACCENT }}>AED 16.6</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{STRINGS.onboarding.billingYearly('AED 199', 'AED 269')}</Text>
                     </View>
@@ -223,7 +259,7 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.monthlyFlex}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT }}>AED 39</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
                       </View>
                     </View>
                   </View>
@@ -236,30 +272,14 @@ export function PaywallSteps({ step, next, skip, finishWithTrial, draft }: Onboa
                   <FadeIn key={f.label} delay={400 + i * 60}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                       <Check size={13} color={C.JADE2} />
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{f.label}</Text>
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{f.label}</Text>
                     </View>
                   </FadeIn>
                 ))}
               </View>
             </View>
 
-            <FadeIn delay={650}>
-              <View style={{ gap: 8, marginTop: 16, width: '100%' }}>
-                <ShimmerButton onPress={finishWithTrial} Icon={ArrowRight}>
-                  {STRINGS.onboarding.startFreeTrial}
-                </ShimmerButton>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center' }}>
-                  Then {plan === 'yearly' ? 'AED 199/year' : 'AED 39/month'} · {STRINGS.onboarding.cancelAnytime}
-                </Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.JADE2, textAlign: 'center' }}>
-                  {STRINGS.onboarding.refundGuarantee}
-                </Text>
-                <Pressable onPress={skip} accessibilityRole="button" style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textDecorationLine: 'underline' }}>{STRINGS.onboarding.skipUnlock}</Text>
-                </Pressable>
-              </View>
-            </FadeIn>
-          </ScrollView>
+          </Screen>
         );
 
       default:

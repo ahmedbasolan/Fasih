@@ -4,6 +4,14 @@ import { Monogram } from './Monogram';
 
 interface CompanionProps {
   size?: number;
+  /**
+   * Overrides the stored name. Onboarding needs this: the learner's name lives
+   * in local step state until `onComplete` writes the profile, so the store's
+   * user is still null while the name is being typed. Without it the avatar
+   * showed the empty-name placeholder — a dash — on the very screen asking for
+   * the name, and kept showing it for the rest of the flow.
+   */
+  name?: string;
 }
 
 /**
@@ -18,7 +26,7 @@ interface CompanionProps {
  * PNGs are all deleted and all recoverable from git history. Nine call sites
  * now route through this one function.
  */
-export function Companion({ size = 64 }: CompanionProps) {
-  const name = useAppStore((s) => s.user?.name) ?? '';
-  return <Monogram name={name} size={size} />;
+export function Companion({ size = 64, name }: CompanionProps) {
+  const storedName = useAppStore((s) => s.user?.name) ?? '';
+  return <Monogram name={name ?? storedName} size={size} />;
 }

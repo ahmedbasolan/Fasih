@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
   Heart, Search, CheckCircle2, Lock, Sparkles, Zap, Target, Rocket,
@@ -17,6 +16,7 @@ import {
   SMOOTH,
 } from '../components/design/tokens';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
 import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
@@ -90,7 +90,6 @@ function useRandomHeading() {
 
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const { C, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const { heading, funFact } = useRandomHeading();
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
@@ -223,7 +222,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
         {...({ estimatedItemSize: 120 } as any)}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: insets.bottom + 90,
+          paddingBottom: TAB_LIST_SCROLL_BOTTOM,
         }}
         showsVerticalScrollIndicator={false}
         // Fix black square flash on Android
@@ -293,7 +292,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                       <Text
                         style={{
                           fontFamily: FONT_LATIN_MEDIUM,
-                          fontSize: 10,
+                          fontSize: 11,
                           letterSpacing: 1.6,
                           textTransform: 'uppercase',
                           color: C.PRIMARY,

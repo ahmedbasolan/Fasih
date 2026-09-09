@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import {
   View,
-  ScrollView,
   Text,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Companion } from '../components/ui/Companion';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
-import { GhostLetters, PrimaryButton } from '../components/ui';
+import { GhostLetters, PrimaryButton, Screen } from '../components/ui';
+import { SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import {
   HomeHeader,
@@ -137,26 +137,19 @@ export function HomeScreenNew({
   const challengePhrase = getChallengePhrase();
 
   const styles = useMemo(() => StyleSheet.create({
-    scrollView: {
-      flex: 1,
-      backgroundColor: C.BG,
-    },
-    scrollContent: {
-      paddingBottom: insets.bottom + 100,
-    },
     sectionLabel: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT2,
       textTransform: 'uppercase',
       letterSpacing: 1.8,
       fontWeight: '600',
-      paddingHorizontal: 24,
+      paddingHorizontal: SCREEN_MARGIN,
       marginTop: 20,
       marginBottom: 10,
     },
     sectionContent: {
-      paddingHorizontal: 24,
+      paddingHorizontal: SCREEN_MARGIN,
       marginBottom: 14,
     },
     emptyCard: {
@@ -176,7 +169,7 @@ export function HomeScreenNew({
     },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
-      fontSize: 15,
+      fontSize: 16,
       color: C.TEXT,
       textAlign: 'center',
     },
@@ -187,16 +180,19 @@ export function HomeScreenNew({
       textAlign: 'center',
       lineHeight: 18,
     },
-  }), [C, insets.bottom]);
+  }), [C]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
-    <GhostLetters glyphs={['م', 'ح', 'ب']} />
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      removeClippedSubviews
+    <Screen
+      tabBarHandlesBottomInset
+      background={<GhostLetters glyphs={['م', 'ح', 'ب']} />}
+      // The header scrolls with the content and applies the top inset itself,
+      // so Screen must not apply it as well.
+      headerHandlesTopInset
+      // Every band on this screen sets its own horizontal padding, and some
+      // (the streak widget, the confidence strip) are deliberately full-bleed.
+      // Screen's margin would apply on top of both.
+      contentStyle={{ paddingHorizontal: 0 }}
     >
       {/* Header */}
       <View style={{ paddingTop: insets.top }}>
@@ -300,7 +296,6 @@ export function HomeScreenNew({
           There is no such API yet, so the card stated something false as fact.
           CommunityBar is still available and now requires real values; render
           it again once a genuine count exists. */}
-    </ScrollView>
-    </View>
+    </Screen>
   );
 }

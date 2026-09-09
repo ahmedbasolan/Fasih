@@ -38,7 +38,10 @@ export const STRINGS = {
     welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
     getStarted: 'Get Started',
     themeToggle: 'Switch between light and dark',
-    helloKaf: 'Salam! I am Kaf.',
+    // The Kaf character was retired with the Sadaf art direction. These three
+    // strings named it out loud, so the app still introduced and quoted a
+    // mascot the learner never sees. Renamed to describe the thing itself.
+    helloKaf: 'Salam! Welcome to Fasih.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
     liveScenarios: (count: number) => `${count} Live Scenarios`,
@@ -67,7 +70,7 @@ export const STRINGS = {
     socialSub: 'Friends & Family',
     socialDesc: 'Master casual conversation, dining etiquette, and everyday interactions.',
     whatsYourName: 'What\'s your name?',
-    kafGreetingSub: 'Kaf will greet you every morning',
+    kafGreetingSub: 'We\'ll greet you in Arabic every morning',
     placeholderName: 'Enter your name',
     genderQuestion: 'How should Arabic address you?',
     genderWhy: 'Arabic changes ending depending on who is speaking — we\'ll teach you the forms you\'ll actually use',
@@ -77,6 +80,20 @@ export const STRINGS = {
     genderFemaleExample: 'أنا يديدة · مشغولة',
     welcomeName: (name: string) => `"Welcome, ${name}"`,
     keepTyping: 'Keep typing...',
+    /**
+     * The Arabic greeting that types itself out as the learner enters a name.
+     *
+     * These three were inline literals in OnboardingFlow.tsx — the only Arabic
+     * in the app that lived in a component rather than here, which put it
+     * outside both the strings rule and docs/language/pipeline.md.
+     *
+     * Bare script apart from conventional tanwīn (`أهلاً`), which the language
+     * authority permits. Unchanged in content: this is a relocation, not an
+     * edit, and any change to the Arabic itself goes through the pipeline.
+     */
+    greetingStub: 'أهـ',
+    greetingShort: 'أهلاً',
+    greetingFull: (name: string) => `أهلاً وسهلاً ${name}`,
     mascotTitle: 'Meet your companion',
     mascotSubtitle: 'They\'ll guide you through every Arabic lesson',
     mascotMayaTagline: 'Your warm & friendly guide',
@@ -93,6 +110,55 @@ export const STRINGS = {
     makeCommitment: 'Make a commitment',
     committed: 'Committed!',
     commitmentSub: 'Hold to commit to your daily habit',
+    // Replaced a live "42%" readout. Rendering the percentage meant reading hold
+    // progress on the JS thread, which is what made the ring stutter — and a
+    // number racing 0 to 100 in 2.2 seconds was never readable. The ring shows
+    // the progress; this says what to do.
+    // Kept short on purpose. The label sits inside a 96pt circle with no
+    // padding, and the Text scales with the system font setting: measured at
+    // 11pt, "KEEP GOING" is 80pt wide and wraps above 1.2x, which is an
+    // ordinary accessibility setting. "HOLDING" is 60 and survives to 1.6x.
+    // Both labels also carry numberOfLines={1}, so neither can wrap regardless.
+    holdKeepHolding: 'HOLDING',
+    /**
+     * The untouched ring.
+     *
+     * It read `common.done` — "Done" — on a control nobody had touched yet,
+     * under copy saying "Hold to commit to your daily habit". A button that
+     * claims the outcome before the action is the one thing this screen must
+     * not say, since the whole point is that the commitment is made by holding.
+     */
+    holdToCommit: 'HOLD',
+    /**
+     * Step 7, the first-phrase moment.
+     *
+     * Was مرحبا / mar-haba / "Your first Gulf Arabic phrase". مرحبا is pan-Arab
+     * textbook Arabic — you hear it from Casablanca to Baghdad — so it taught
+     * nothing Gulf and nothing the learner could not have guessed. A first
+     * phrase should prove the premise: this app teaches what people actually
+     * say, not what a textbook says they say.
+     *
+     * شلونك is that proof, and the contrast IS the lesson. Phrase, romanisation
+     * and both notes are taken from `g3` in constants/phrases.ts rather than
+     * written here — it is `UNSOURCED` like the rest of the corpus, and no new
+     * linguistic claim is being made on top of it.
+     */
+    firstPhraseEyebrow: 'Not the Arabic in the textbook',
+    firstPhraseArabic: 'شلونك؟',
+    firstPhraseRoman: 'shloo-nak',
+    firstPhraseEnglish: 'How are you?',
+    firstPhraseHear: 'Tap to hear it',
+    firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
+    firstPhraseDone: 'You just said it the way Dubai says it.',
+    /**
+     * Watermark roots behind the two mode plates on step 1. Decorative, hidden
+     * from screen readers, rendered at 3-8% opacity.
+     *
+     * Here rather than in the component so the language lint sees them —
+     * everything in STRINGS is now walked by languageContent.test.ts.
+     */
+    modeRootCareer: 'ع م ل',
+    modeRootSocial: 'ص ح ب',
     dailyHabit: 'Commit to learning for 5 minutes a day',
     skipForNow: 'Skip for now',
     freeTrialBadge: '4-day free trial',
@@ -115,6 +181,8 @@ export const STRINGS = {
     monthlyFlex: 'Maximum flexibility',
     billingYearly: (yearPrice: string, savings: string) => `Billed ${yearPrice}/year • Saves ${savings}`,
     perMonth: '/month',
+    // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
+    thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
     skipUnlock: 'Skip — unlock by completing 3 scenarios',
     skipWarningTitle: 'Are you sure you want to leave?',
     skipWarningMessage: "You've already set up your custom learning path and unlocked Gulf Arabic phrases. Skipping now means you won't save this progress.",
@@ -384,7 +452,7 @@ export const STRINGS = {
     trust: 'Trust',
     respect: 'Respect',
     culture: 'Culture',
-    kafSays: 'Kaf says',
+    kafSays: 'Cultural note',
     introDesc: 'Ahmed, your Emirati colleague, invites you for coffee. Every choice shapes your relationship.',
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
     outcomesSummary: 'Family Partnership · Job Referral · Transactional · Missed',

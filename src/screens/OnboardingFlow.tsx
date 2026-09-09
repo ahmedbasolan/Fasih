@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView, AnimatePresence } from 'moti';
 import { GestureDetector, Gesture, Directions } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import { runOnJS, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { ChevronLeft } from '../components/icons';
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
@@ -34,7 +35,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <View
       onLayout={(e) => setSegmentWidth((e.nativeEvent.layout.width - 4 * (total - 1)) / total)}
-      style={{ position: 'absolute', top: insets.top + 12, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
+      style={{ position: 'absolute', top: insets.top + SPACE.md, left: 24, right: 24, zIndex: 20, flexDirection: 'row', gap: 4 }}
       accessibilityLabel={`Step ${step + 1} of ${total}`}
       accessibilityRole="progressbar"
     >
@@ -65,6 +66,14 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     }
   }, [clerkUser, name]);
   const [mode, setMode] = useState<'career' | 'social'>('career');
+  // See OnboardingDraft.modeChosen: `mode` keeps a valid default so the profile
+  // and the analytics row are always well-formed, but the mode screen must not
+  // present a pre-made choice as if the learner made it.
+  const [modeChosen, setModeChosen] = useState(false);
+  const chooseMode = useCallback((m: 'career' | 'social') => {
+    setMode(m);
+    setModeChosen(true);
+  }, []);
   // Arabic marks the speaker's own gender, so we need this to teach the right
   // forms — it also gates scenarios that only work for one gender.
   const [gender, setGender] = useState<'male' | 'female' | undefined>(undefined);
@@ -72,23 +81,27 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const [profession, setProfession] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
-  const [holdProgress, setHoldProgress] = useState(0);
+  const holdProgress = useSharedValue(0);
   const [holdComplete, setHoldComplete] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
   const [phraseRevealed, setPhraseRevealed] = useState(false);
   const [phraseEverRevealed, setPhraseEverRevealed] = useState(false);
   const [scenarioCompleted, setScenarioCompleted] = useState(false);
   // Notification toggles for Step 6 — default all on to feel welcoming
   const [toggleNotifs, setToggleNotifs] = useState([true, true, true]);
-  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const holdStart = useRef(0);
-  // Tracks which haptic milestones (33, 66, 100%) have already fired this hold
-  const hapticMilestones = useRef<Set<number>>(new Set());
+  // Haptic pulses and completion, scheduled once per hold rather than checked
+  // every frame. Cleared on release and on unmount.
+  const holdTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   
   const TOTAL = 12; // 0-6 setup, 7 quick win, 8 scenario, 9 paywall (timeline), 10 features, 11 paywall (plans)
   const HOLD_DURATION = 2200;
 
   // Compute Arabic greeting for name input
-  const arabicGreeting = name.length === 0 ? '' : name.length < 3 ? 'أهـ' : name.length < 5 ? 'أهلاً' : `أهلاً وسهلاً ${name}`;
+  const arabicGreeting =
+    name.length === 0 ? ''
+    : name.length < 3 ? STRINGS.onboarding.greetingStub
+    : name.length < 5 ? STRINGS.onboarding.greetingShort
+    : STRINGS.onboarding.greetingFull(name);
   
   // Character-by-character typewriter effect for Arabic
   const { displayed: typedGreeting } = useTypewriter(arabicGreeting, 80, 0);
@@ -141,39 +154,71 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
   };
 
+  const clearHoldTimers = useCallback(() => {
+    holdTimers.current.forEach(clearTimeout);
+    holdTimers.current = [];
+  }, []);
+
+  /**
+   * Start the hold.
+   *
+   * The ring is driven by a shared value on the UI thread; the state machine is
+   * driven by four timers. Nothing re-renders between press-in and press-out.
+   *
+   * This replaced a 16ms `setInterval` that called `setHoldProgress` — roughly
+   * 137 re-renders of this whole tree per hold, each one rebuilding `stepProps`
+   * and re-running every case in ProfileSteps. That was the stutter.
+   *
+   * Completion stays on a JS timer rather than an animation callback, so if the
+   * animation driver is unavailable the ring simply does not fill — the hold
+   * still completes and the flow still advances.
+   *
+   * Every timer it schedules goes into `holdTimers`, including the one the
+   * completion callback adds, so release and unmount can both cancel the whole
+   * hold rather than most of it.
+   */
   const startHold = useCallback(() => {
     if (holdComplete) return;
-    holdStart.current = Date.now();
-    hapticMilestones.current = new Set();
-    holdTimer.current = setInterval(() => {
-      const elapsed = Date.now() - holdStart.current;
-      const p = Math.min(elapsed / HOLD_DURATION, 1);
-      setHoldProgress(p);
-      // Fire haptic pulses at 33%, 66%, and 100%
-      const pct = Math.round(p * 100);
-      [33, 66, 100].forEach((milestone) => {
-        if (pct >= milestone && !hapticMilestones.current.has(milestone)) {
-          hapticMilestones.current.add(milestone);
-          haptic.medium();
-        }
-      });
-      if (p >= 1) {
-        if (holdTimer.current) clearInterval(holdTimer.current);
+    // Clear before scheduling rather than reassigning the array. Pressable
+    // pairs onPressIn with onPressOut, so a second start without a release
+    // should not happen — but reassigning would orphan the first hold's
+    // completion timer, and an uncancellable one of those advances two steps.
+    clearHoldTimers();
+    setIsHolding(true);
+    holdProgress.value = withTiming(1, {
+      duration: HOLD_DURATION,
+      easing: Easing.linear,
+    });
+
+    // Haptics as scheduled pulses instead of a per-frame percentage check.
+    for (const pct of [33, 66]) {
+      holdTimers.current.push(
+        setTimeout(() => haptic.medium(), HOLD_DURATION * (pct / 100)),
+      );
+    }
+    holdTimers.current.push(
+      setTimeout(() => {
+        haptic.medium();
         setHoldComplete(true);
-        setTimeout(() => nextRef.current(), 700);
-      }
-    }, 16);
-  }, [holdComplete]);
+        setIsHolding(false);
+        // Tracked like the rest. It was the one timer this array existed to
+        // catch and did not: leaving step 5 inside the beat between the ring
+        // filling and the flow advancing left it running against a dead tree.
+        holdTimers.current.push(setTimeout(() => nextRef.current(), 700));
+      }, HOLD_DURATION),
+    );
+  }, [holdComplete, holdProgress, clearHoldTimers]);
 
   const endHold = useCallback(() => {
     if (holdComplete) return;
-    if (holdTimer.current) clearInterval(holdTimer.current);
-    setHoldProgress(0);
-  }, [holdComplete]);
+    clearHoldTimers();
+    setIsHolding(false);
+    // Springs back rather than snapping, so an accidental lift reads as
+    // "released" instead of as a glitch.
+    holdProgress.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) });
+  }, [holdComplete, clearHoldTimers, holdProgress]);
 
-  useEffect(() => {
-    return () => { if (holdTimer.current) clearInterval(holdTimer.current); };
-  }, []);
+  useEffect(() => clearHoldTimers, [clearHoldTimers]);
 
   const circum = 2 * Math.PI * 52;
   
@@ -181,6 +226,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   const stepRef = useRef(step);
   const nameRef = useRef(name);
   const genderRef = useRef(gender);
+  const modeChosenRef = useRef(modeChosen);
   const holdCompleteRef = useRef(holdComplete);
   const nextRef = useRef(next);
   const backRef = useRef(back);
@@ -189,10 +235,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     stepRef.current = step;
     nameRef.current = name;
     genderRef.current = gender;
+    modeChosenRef.current = modeChosen;
     holdCompleteRef.current = holdComplete;
     nextRef.current = next;
     backRef.current = back;
-  }, [step, name, gender, holdComplete, next, back]);
+  }, [step, name, gender, modeChosen, holdComplete, next, back]);
 
   useEffect(() => {
     setPhraseRevealed(false);
@@ -201,7 +248,10 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
   // -- Swipe Gesture Logic (Memoized) --
   const composedGesture = useMemo(() => {
     const swipeNext = () => {
-      // Block swiping next on steps that require explicit interaction
+      // Block swiping next on steps that require explicit interaction.
+      // Step 1 is here for the same reason its Continue button is disabled:
+      // a swipe past an unmade mode choice would bank the default silently.
+      if (stepRef.current === 1 && !modeChosenRef.current) return;
       if (stepRef.current === 2 && (!nameRef.current.trim() || !genderRef.current)) return;
       if (stepRef.current === 5 && !holdCompleteRef.current) return;
       nextRef.current();
@@ -242,11 +292,11 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
     skip,
     finishWithTrial,
     draft: {
-      name, setName, mode, setMode, gender, setGender, role, setRole,
+      name, setName, mode, modeChosen, chooseMode, gender, setGender, role, setRole,
       profession, setProfession, selectedGoals, toggleGoal, plan, setPlan,
       typedGreeting,
     },
-    hold: { holdProgress, holdComplete, startHold, endHold, circum },
+    hold: { holdProgress, holdComplete, isHolding, startHold, endHold, circum },
     quickWin: {
       phraseRevealed, setPhraseRevealed, setPhraseEverRevealed,
       setScenarioCompleted, toggleNotifs, setToggleNotifs,
@@ -302,7 +352,7 @@ export function OnboardingFlow({ onComplete, onStartTrial, onSkipTrial }: Props)
               animate={{ opacity: 1, translateX: 0 }}
               exit={{ opacity: 0, translateX: -10 }}
               transition={{ type: 'timing', duration: 250 }}
-              style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
+              style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
             >
               <Pressable
                 onPress={back}

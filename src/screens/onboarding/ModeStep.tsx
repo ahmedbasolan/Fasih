@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { Briefcase, Users } from '../../components/icons';
+import { Briefcase, Users, ArrowRight } from '../../components/icons';
 import {
   FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM,
   FONT_HEADING_SEMI, FONT_HEADING_EXTRA, FONT_ARABIC_BLACK,
@@ -10,24 +10,40 @@ import {
 import { SPACE, SCREEN_MARGIN } from '../../components/design/spacing';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, PrimaryButton } from '../../components/ui';
+import { FadeIn, ShimmerButton } from '../../components/ui';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
 
 /**
- * Proposed, unverified. See the art-direction spec §3 -- isolated consonantal
- * roots plausibly do not engage the no-MSA rule, but "plausibly" is not this
- * project's standard, and Ahmed's approval is a product decision, never a
- * linguistic one (docs/language/authority.md).
+ * The mode watermark roots, enabled after review.
  *
- * Set to true only after a check against that document by someone who reads
- * Gulf Arabic. Shipping the English-only plates is the correct default, not a
- * fallback.
+ * WHAT WAS CHECKED, and by whom: this is Claude's analysis at Ahmed's request,
+ * not a native-speaker review. Recording the distinction because
+ * docs/language/authority.md exists to stop exactly that conflation.
+ *
+ *   1. The roots are correct for the senses used. ع-م-ل underlies عمل / عامل
+ *      (work, worker); ص-ح-ب underlies صاحب / صحبة (companion, company). Both
+ *      are standard triliteral roots, not coinages.
+ *   2. They do not engage the no-MSA rule. That rule bans MSA word FORMS, and
+ *      a bare root is not a form in any variety — it is the consonantal
+ *      skeleton MSA and Khaleeji both derive from. Both roots are live in Gulf
+ *      speech (صاحبي "my friend", عمل "work"), so neither is MSA-specific.
+ *   3. Orthography passes: bare letters, no tashkeel. Enforced now rather than
+ *      asserted, since the strings live in STRINGS and the lint walks it.
+ *
+ * WHAT WAS NOT CHECKED: whether an Emirati reader finds the device natural or
+ * odd. That is a naturalness judgement and needs a native speaker.
+ *
+ * The risk that carries is small and worth naming: this is decoration at 3-8%
+ * opacity, hidden from screen readers, that nobody is asked to read, say or
+ * learn. Being wrong here is an aesthetic miss, not a teaching error — which is
+ * a materially lower bar than a phrase card, and why this ships while the
+ * corpus stays UNSOURCED.
  */
-const MODE_ROOTS_APPROVED = false;
+const MODE_ROOTS_APPROVED = true;
 const MODE_ROOTS: Record<'career' | 'social', string> = {
-  career: 'ع م ل',
-  social: 'ص ح ب',
+  career: STRINGS.onboarding.modeRootCareer,
+  social: STRINGS.onboarding.modeRootSocial,
 };
 
 /**
@@ -45,7 +61,7 @@ const MODE_ROOTS: Record<'career' | 'social', string> = {
 export function ModeStep({ next, draft }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const { mode, setMode } = draft;
+  const { mode, modeChosen, chooseMode } = draft;
 
   const styles = useMemo(
     () =>
@@ -59,7 +75,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           color: C.TEXT,
           marginBottom: SPACE.xs,
         },
-        headerSub: { fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT2 },
+        headerSub: { fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT2 },
         plates: { flex: 1 },
         plate: {
           flex: 1,
@@ -80,7 +96,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           color: C.TEXT,
           includeFontPadding: false,
         },
-        plateTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 30, letterSpacing: -0.4 },
+        plateTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 28, letterSpacing: -0.4 },
         plateSub: {
           fontFamily: FONT_LATIN_SEMI,
           fontSize: 12,
@@ -88,7 +104,7 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
           textTransform: 'uppercase',
           marginBottom: SPACE.sm,
         },
-        plateDesc: { fontFamily: FONT_LATIN, fontSize: 15, lineHeight: 24, maxWidth: 420 },
+        plateDesc: { fontFamily: FONT_LATIN, fontSize: 16, lineHeight: 24, maxWidth: 420 },
         footer: {
           paddingHorizontal: SCREEN_MARGIN,
           paddingTop: SPACE.lg,
@@ -126,12 +142,15 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
 
       <View style={styles.plates}>
         {plates.map(({ id, Icon, title, sub, desc }, i) => {
-          const selected = mode === id;
+          // Nothing is selected until the learner picks. `mode` still holds a
+          // valid default underneath, so the profile is never malformed — but
+          // the screen must not show a decision nobody made.
+          const selected = modeChosen && mode === id;
           return (
             <React.Fragment key={id}>
               {i > 0 && <View style={styles.divider} />}
               <Pressable
-                onPress={() => { haptic.selection(); setMode(id); }}
+                onPress={() => { haptic.selection(); chooseMode(id); }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`${title}. ${sub}. ${desc}`}
@@ -175,9 +194,14 @@ export function ModeStep({ next, draft }: OnboardingStepProps) {
 
       <View style={styles.footer}>
         <FadeIn delay={400}>
-          <PrimaryButton onPress={next} accessibilityLabel={STRINGS.common.continue}>
+          <ShimmerButton
+            onPress={next}
+            disabled={!modeChosen}
+            Icon={ArrowRight}
+            accessibilityLabel={STRINGS.common.continue}
+          >
             {STRINGS.common.continue}
-          </PrimaryButton>
+          </ShimmerButton>
         </FadeIn>
       </View>
     </View>

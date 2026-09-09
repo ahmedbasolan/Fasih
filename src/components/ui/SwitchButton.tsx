@@ -54,7 +54,12 @@ export function SwitchButton({ value, onToggle, iconOn, iconOff, backgroundColor
           width: 24,
           height: 24,
           borderRadius: 14,
-          backgroundColor: C.SURFACE,
+          // C.BG, not C.SURFACE. Knob position is the state, so the knob has to
+          // read against the track; on the quiet C.TEXT3 track the old SURFACE
+          // knob measured 1.00:1 in both themes — invisible. C.BG on C.TEXT3 is
+          // 5.83 dark / 5.27 light, the same pairing the notification switches
+          // use.
+          backgroundColor: C.BG,
           alignItems: 'center',
           justifyContent: 'center',
           position: 'absolute',

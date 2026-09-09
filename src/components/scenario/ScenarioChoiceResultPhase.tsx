@@ -74,17 +74,17 @@ export function ScenarioChoiceResultPhase({
           >
             <CheckCircle size={32} color={color} />
           </View>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 24, color }}>
+          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color }}>
             {outcomeLabel[choice.outcome]}
           </Text>
         </View>
 
         {/* What you said */}
         <View style={{ borderRadius: 20, padding: 18, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 10, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
             You Said
           </Text>
-          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 20, color: accentColor, textAlign: 'right', marginBottom: 6, lineHeight: 30 }}>
+          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentColor, textAlign: 'right', marginBottom: 6, lineHeight: 30 }}>
             {replaceName(choice.arabic)}
           </Text>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 22 }}>
@@ -98,7 +98,7 @@ export function ScenarioChoiceResultPhase({
             <Companion size={32} />
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: violetColor }}>Cultural Insight</Text>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 15, color: C.TEXT2, lineHeight: 24 }}>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24 }}>
             {choice.note || 'A solid choice in this context. Keep it up!'}
           </Text>
         </View>
@@ -108,7 +108,7 @@ export function ScenarioChoiceResultPhase({
           <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: totalImpact >= 0 ? C.JADE2 : C.ERROR }}>
             {totalImpact > 0 ? `+${totalImpact}` : totalImpact}
           </Text>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.8 }}>Impact</Text>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.8 }}>Impact</Text>
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.CULTURAL_GOLD }}>T: {choice.impact?.trust ?? 0}</Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.JADE2 }}>R: {choice.impact?.respect ?? 0}</Text>
