@@ -37,10 +37,33 @@ Two aggravating factors:
 1. **Six pieces of data are collected and none is reflected back** before the paywall — mode, name, gender, role, profession, goals. The Arabic name typewriter on step 2 is the sole exception, and it is the one moment in the run that is not boring. That is evidence for the fix, not a coincidence.
 2. **Step 5 asks for a 2.2-second hold and returns nothing for it.** The most demanding interaction in the flow, placed sixth in the ask-run, paying out nothing.
 
-### Two redundancies found while mapping
+### Correction, 2026-09-09 — the "redundancy" this spec first claimed does not exist
 
-- **Step 7 duplicates a mechanism the scenario already has.** `ScenarioScript.primerPhrases` is documented as *"2-3 phrase IDs from phrasesUnlocked previewed as tap-to-hear chips in the scenario intro — listen-only priming, no quiz. Hear now → earn later."* Step 7 is a standalone tap-to-hear phrase screen sitting immediately before the scenario. It is that feature, built twice.
-- **Phrase-before-scenario is backwards.** Step 7 hands over شلونك, then step 8 runs the scenario that is supposed to earn a phrase, which then unlocks its own phrase in its unlock phase. Two reward moments, the first unearned.
+An earlier draft of this section asserted that step 7 duplicates
+`ScenarioScript.primerPhrases` and should be folded into it. **That is wrong**, and the
+plan built on it would have failed the existing suite on the first run. Checked before
+planning:
+
+| Fact | Where |
+|---|---|
+| `primerPhrases` must be a subset of `phrasesUnlocked` | `scenarioContent.test.ts:150` |
+| If present, must be 2–3 chips | `scenarioContent.test.ts:153` |
+| **Onboarding scenarios are explicitly exempted from having a primer** | `scenarioContent.test.ts:160` — `!s.id.startsWith('onboarding')` |
+| `onboarding-cafe-career` unlocks exactly one phrase, `e_new1` | `scenarios.ts:1254` |
+| Primer chips are rendered by `ScenarioIntroPhase`, which the onboarding player does not use | `ScenarioIntroPhase.tsx` |
+
+So a valid primer for the café would need 2–3 phrases drawn from a `phrasesUnlocked`
+list holding one, plus an intro phase the onboarding player does not have, plus new
+Arabic authored under the language authority. And the exemption on line 160 is a
+recorded decision, not a gap.
+
+**Step 7 is not a duplicate. It IS the primer** — hear-now-earn-later, implemented as its
+own screen precisely because the onboarding player has no intro phase. It stays, and it
+moves to where a primer belongs: immediately before the scenario.
+
+This correction improves the result. The phrase screen is a cheap, fast give, so putting
+it at step 3 lands the first give one step *earlier* than the original plan, and it
+touches no content, no scenario script and no content test.
 
 ---
 
@@ -55,21 +78,25 @@ The first give moves from step 7 to step 3. Ask-run before it: **7 → 2**.
 | 0 | Welcome | — | unchanged |
 | 1 | Mode | ask | unchanged |
 | 2 | Name + gender | ask | unchanged |
-| 3 | **Café scenario** (+ unlock phase) | **give** | **moved from 8.** شلونك becomes its `primerPhrases` |
-| 4 | Role + profession | ask | moved down from 3 |
-| 5 | Goals | ask | moved adjacent to role so §4 can reflect both |
-| 6 | **Your shift** | **give** | **NEW.** §4 |
+| 3 | **First phrase شلونك** | **give** | **moved from 7.** Content unchanged |
+| 4 | **Café scenario** (+ unlock phase) | **give** | **moved from 8.** Content unchanged |
+| 5 | Role + profession **+ inline payoff** | ask → **give** | moved down from 3. §4 renders on selection |
+| 6 | Goals | ask | unchanged |
 | 7 | Commitment | ask | moved down from 5 — now lands after value, not before |
-| 8 | Notifications | ask | unchanged in content |
+| 8 | Notifications | ask | unchanged |
 | 9–11 | Paywall ×3 | ask | **untouched.** §6 |
 
 Twelve steps before, twelve after. **The count is not the problem and this spec does not chase it.** The rhythm is:
 
 ```
 old   —  ask ask ask ask ask ask  GIVE GIVE  ask ask ask
-new   —  ask ask  GIVE  ask ask  GIVE  ask ask  ask ask ask
+new   —  ask ask  GIVE GIVE  ask→give  ask ask ask  ask ask ask
               ↑ first give at step 3
 ```
+
+Nothing is cut. The two gives that were buried at 7–8 move to 3–4, the profile questions
+move behind them, and the payoff in §4 rides on a screen that already exists rather than
+adding a thirteenth step.
 
 ### Sub-decisions taken in conversation
 
@@ -77,7 +104,7 @@ new   —  ask ask  GIVE  ask ask  GIVE  ask ask  ask ask ask
 |---|---|
 | How early the first give lands | After mode + gender. Those two are the scenario's hard dependencies — `getScenarioScript` takes `mode`, and gender gates scenarios per CLAUDE.md. Step 3 is the earliest it can legally run. |
 | The commitment screen | **Kept.** Proposed for cutting; Ahmed chose to keep it. It moves after the payoff instead. This also avoids changing `ONBOARDING_CHECKLIST_ITEMS` — see §5. |
-| The standalone phrase screen | **Folded** into `primerPhrases`. It is the same feature and the scenario already declares the field. |
+| The standalone phrase screen | **Kept and moved** to step 3, immediately before the scenario. It is the primer, not a duplicate of one — see the correction in §1. |
 | Paywall | **Untouched.** §6. |
 | Art direction | Unchanged. §7. |
 
@@ -90,9 +117,18 @@ new   —  ask ask  GIVE  ask ask  GIVE  ask ask  ask ask ask
 
 ---
 
-## 4. "Your shift" — the new screen
+## 4. "Your shift" — the payoff, inline on the role screen
 
-The one screen this spec adds. It exists because the flow already collects role and profession and never uses them.
+**Not a new step.** It renders on step 5 as soon as a profession is chosen, in the space
+below the chips.
+
+That screen already works this way: picking a role category reveals the profession chips
+inline, on the same screen, without advancing. The payoff extends that pattern by one
+beat — pick category, pick profession, see what it maps to. Ask and answer in the same
+place, which is a stronger causal link than ask-then-advance, and it keeps the flow at
+twelve steps instead of thirteen.
+
+It exists because the flow already collects role and profession and never uses them.
 
 ### What it can honestly say
 
@@ -142,7 +178,10 @@ The number is computed by counting `PHRASES` in the mapped categories, never wri
 
 ### Placement
 
-Role (4) → goals (5) → payoff (6). Ask and pay off within two screens so the causal link is felt. Goals moved up from its old position specifically so this screen can reflect **both** signals rather than one.
+Renders on step 5 the moment a profession is selected. It reflects **role and profession
+only** — not goals, which are still two screens away at that point. Reflecting one signal
+immediately beats reflecting two after a delay, and it avoids inventing a thirteenth
+screen to hold both.
 
 ---
 
@@ -154,7 +193,13 @@ Role (4) → goals (5) → payoff (6). Ask and pay off within two screens so the
 
 ### Changed
 
-**`phraseRevealed` loses its screen.** The flag is set today by step 7's tap-to-hear and feeds the `first_phrase` checklist item. With step 7 folded into the primer, it is set by the primer chip instead. The checklist item keeps its meaning — *the learner heard a phrase before being asked to pay* — and its trigger moves.
+**`phraseRevealed` keeps its screen and its trigger.** The phrase screen survives the
+correction in §1, so the flag is still set by its tap-to-hear and still feeds the
+`first_phrase` checklist item. Nothing about it changes except which step index it lives on.
+
+**No scenario content changes.** `scenarios.ts` is untouched. `primerPhrases`,
+`phrasesUnlocked` and `scenarioContent.test.ts` are all left exactly as they are — the
+correction in §1 removed the only reason to touch them.
 
 **Step routing.** `OnboardingFlow`'s `switch` maps step indices to the four step components. Every index from 3 up shifts. `TOTAL` stays 12.
 
@@ -200,16 +245,16 @@ One Sadaf decision is already reversed on `dev` and is **not** revisited here: `
 
 Each step ends compiling and usable.
 
-1. **Step-order module.** The pure index → screen mapping and the guards derived from it, with its test. Nothing moves yet; this only makes the current order explicit and testable.
-2. **Resequence.** Move the scenario to 3, role/goals to 4/5, commitment to 7. Fold step 7's phrase into `primerPhrases` and repoint `phraseRevealed`. Delete the standalone phrase case.
-3. **"Your shift."** The role → category map with its test, then the screen.
+1. **Step-order module.** The pure index → screen mapping and the swipe guards derived from it, with its test. Nothing moves yet; this only makes the current order explicit and testable, so step 2 is a data change rather than a hunt through a switch.
+2. **Resequence.** Phrase to 3, scenario to 4, role to 5, goals to 6, commitment to 7. Pure reordering — no screen's content changes.
+3. **The payoff.** The role → category map with its test, then the inline block on step 5.
 
-Steps 1–2 are shippable without step 3: the rhythm fix is the bulk of the value and does not depend on the new screen.
+Steps 1–2 are shippable without step 3: the rhythm fix is the bulk of the value and does not depend on the payoff.
 
 ---
 
 ## 10. Open risks
 
-- **The scenario now runs before the learner has told the app much.** It takes only `mode` and gender, which is why step 3 is legal — but the café scenario was authored to sit after the profile questions, and its copy may assume context the learner has not yet given. **The script needs reading against its new position** before this ships.
+- **The scenario now runs before the learner has told the app much.** It takes only `mode` and gender, which is why step 4 is legal — but the café scenario was authored to sit after the profile questions, and its copy may assume context the learner has not yet given. **The script needs reading against its new position** before this ships. `kafIntro` on both onboarding scripts is the first thing to check: *"Your first moment speaking Gulf Arabic"* still reads correctly at step 4, but it is the sentence most likely to have assumed a later position.
 - **The tail is now the boring part.** §6. Moving the first give forward does not add gives to the end, and five consecutive asks close the flow.
 - **Not verifiable without a device.** As with PR #52, nothing here can be confirmed by running the app in this session. The ask/give mapping is checkable from source; how the new order *feels* is not.
