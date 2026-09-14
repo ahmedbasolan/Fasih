@@ -20,8 +20,15 @@ export function choiceSceneCount(script: ScenarioScript): number {
   return script.scenes.filter((s) => !s.bonus && s.choices.length > 0).length;
 }
 
+/**
+ * `chosen` is a valid choice in a judgement scene: it happened, but it is not
+ * graded — those scenes have no single best answer, and a strong/weak mark on
+ * the rail would hand back the signal the scene deliberately hides.
+ */
+export type RailOutcome = ChoiceOutcome | 'chosen';
+
 export type RailMark =
-  | { state: 'filled'; outcome: ChoiceOutcome; npcId: string; sceneId: string }
+  | { state: 'filled'; outcome: RailOutcome; npcId: string; sceneId: string }
   | { state: 'empty' };
 
 /**
@@ -43,12 +50,14 @@ export function railMarks(
   script: ScenarioScript,
   slots: number,
 ): RailMark[] {
-  const outcomeOf = (sceneId: string, choiceId: string): ChoiceOutcome => {
+  const outcomeOf = (sceneId: string, choiceId: string): RailOutcome => {
     const scene = script.scenes.find((s) => s.id === sceneId);
     const choice = scene?.choices.find((c) => c.id === choiceId);
     // A run persisted against an older script can reference a choice that no
     // longer exists. It still happened, so it keeps its slot.
-    return choice?.outcome ?? 'neutral';
+    if (!choice) return 'neutral';
+    if (scene?.kind === 'judgement' && choice.outcome !== 'bad') return 'chosen';
+    return choice.outcome;
   };
 
   const filled: RailMark[] = state.choiceHistory.map((h) => ({

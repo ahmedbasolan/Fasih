@@ -23,6 +23,7 @@ whole directory — starting with `001_initial_schema.sql`.
 | `008_rollback_rls.sql` | Emergency undo for `007` | Only if `007` breaks syncing |
 | `009_onboarding_selections.sql` | Anonymous onboarding aggregate — insert-only table | Yes, for onboarding analytics |
 | `010_secure_stat_rpcs.sql` | Restricts `increment_choice_stat`/`increment_ending_stat` to `authenticated` | Yes — before `007` the RPCs are open to anon |
+| `011_schema_v4.sql` | Adds `endings_found` + `scenario_runs` columns (replay loop) | Yes — **before** shipping app code at schema v4, or every sync upsert fails |
 
 ## Two files are numbered 006
 
@@ -31,7 +32,7 @@ independently. They do not conflict — one adds columns, the other adds a
 function — and either order works. The collision is recorded here rather than
 renumbered, because renaming a file that has already been applied to production
 makes the history harder to reconcile, not easier. **The next migration is
-`011`.**
+`012`.**
 
 ## The file headers used to be misnumbered
 
@@ -60,7 +61,7 @@ Run whichever of `004_schema_v2.sql`, `005_account_deletion.sql` and
 `006_schema_v3.sql` you have not already applied — each adds columns or
 functions and takes defaults for existing rows. Then `006_auth_check.sql`,
 then `007_enable_rls.sql`, then `010_secure_stat_rpcs.sql`, then
-`009_onboarding_selections.sql`.
+`009_onboarding_selections.sql`, then `011_schema_v4.sql`.
 
 ## RLS posture
 
@@ -148,3 +149,4 @@ version listed here. This tracks the shape of the synced `user_data` row only �
 | 1 | Initial schema (all JSONB blobs, no versioning) |
 | 2 | Added `schema_version` + `unlocked_phrase_ids` columns |
 | 3 | Added `pattern_progress` + `secret_endings_earned` columns |
+| 4 | Added `endings_found` + `scenario_runs` columns (`011_schema_v4.sql`) |

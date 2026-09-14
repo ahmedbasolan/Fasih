@@ -44,9 +44,10 @@ import {
 import { shouldGrantStreakFreeze, applyStreakFreeze } from '../engine/streakEngine';
 import { recordOnboardingSelection } from '../lib/onboardingAnalytics';
 import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
+import { pickPersisted, signOutReset } from '../engine/persistedState';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings,
+  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns,
 } from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
@@ -229,6 +230,10 @@ interface AppState {
    * cannot lose it. Persisted + synced.
    */
   secretEndingsEarned: Record<string, string>;
+  /** scenarioId → ending ids ever reached. Only grows. Drives "3 of 5 found". Persisted + synced. */
+  endingsFound: Record<string, string[]>;
+  /** scenarioId → completed runs. A run with count > 1 is a replay. Persisted + synced. */
+  scenarioRuns: Record<string, number>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
@@ -255,7 +260,8 @@ interface AppState {
   getCommunityChoiceStat: (key: string) => number;
   getCommunityEndingStat: (key: string) => number;
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
-  fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
+  /** Cache reach percentages as `scenarioId:endingId`; empty below the completion floor. */
+  fetchCommunityEndingStats: (scenarioId: string, endingIds: string[]) => Promise<void>;
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
   // Notifications
@@ -285,8 +291,9 @@ interface AppState {
    */
   analyticsOnboardingSent: boolean;
   /**
-   * Both fields deliberately survive `signOut` and `deleteAccount` — neither
-   * reset block lists them. `analyticsEnabled` is a device preference like the
+   * Both fields deliberately survive `signOut` and `deleteAccount` — both are
+   * DEVICE_SCOPED_KEYS in engine/persistedState.ts, and deleteAccount resets
+   * only hasOnboarded on top. `analyticsEnabled` is a device preference like the
    * theme, and `analyticsOnboardingSent` guards the install, not the account.
    * Nor is there anything for `deleteAccount` to erase: the row carries no
    * identifier, which is the whole point and the basis for not honouring
@@ -400,6 +407,8 @@ export const useAppStore = create<AppState>()(
       completedScenarios: {},
       patternProgress: {},
       secretEndingsEarned: {},
+      endingsFound: {},
+      scenarioRuns: {},
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
@@ -439,6 +448,8 @@ export const useAppStore = create<AppState>()(
             completed_scenarios: s.completedScenarios,
             pattern_progress: s.patternProgress,
             secret_endings_earned: s.secretEndingsEarned,
+            endings_found: s.endingsFound,
+            scenario_runs: s.scenarioRuns,
             saved_phrases: s.savedPhrases,
             unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
@@ -531,6 +542,8 @@ export const useAppStore = create<AppState>()(
         // merge on this path was moved off `s`.
         const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
         const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
+        const mergedEndingsFound = mergeEndingsFound(local.endingsFound, data.endings_found ?? {});
+        const mergedRuns = mergeScenarioRuns(local.scenarioRuns, data.scenario_runs ?? {});
 
         set({
           user: data.user_profile ?? local.user,
@@ -539,6 +552,8 @@ export const useAppStore = create<AppState>()(
           completedScenarios: mergedCompleted,
           patternProgress: mergedPatternProgress,
           secretEndingsEarned: mergedSecrets,
+          endingsFound: mergedEndingsFound,
+          scenarioRuns: mergedRuns,
           // Union, consistent with the rule above: a save made on either device
           // survives. The trade-off is that un-saving while offline can be
           // undone by a cloud copy that predates it — recoverable with one tap,
@@ -595,34 +610,10 @@ export const useAppStore = create<AppState>()(
           _customerInfoUnsub = null;
         }
         // Clear all user-specific data so the next sign-in starts clean.
-        // hasOnboarded is intentionally preserved — a returning user lands on
-        // sign-in, not onboarding.
-        set({
-          isAuthenticated: false,
-          clerkUserId: null,
-          user: null,
-          subscriptionStatus: 'free',
-          trialStartedAt: null,
-          trialPlan: null,
-          stats: { ...DEFAULT_USER_STATS },
-          phraseReviews: {},
-          completedScenarios: {},
-          savedPhrases: [],
-          unlockedPhraseIds: [],
-          favoriteScenarios: [],
-          sceneProgress: {},
-          lastActiveDate: null,
-          streakFreezes: 0,
-          dailyXP: { date: todayISO(), xp: 0 },
-          journal: [],
-          milestones: DEFAULT_MILESTONES.map(m => ({ ...m })),
-          activeScenarioState: null,
-          communityStatsCache: {},
-          lastSyncedAt: null,
-          lastSyncError: null,
-          recentSessionHours: [],
-          notificationsEnabled: false,
-        });
+        // What gets wiped — and why hasOnboarded, the theme and the analytics
+        // flags survive — lives in engine/persistedState.ts, where a test fails
+        // if a persisted key is neither reset nor kept on purpose.
+        set(signOutReset(DEFAULT_MILESTONES));
       },
 
       deleteAccount: async () => {
@@ -877,11 +868,11 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
 
-      fetchCommunityEndingStats: async (scenarioId: string) => {
-        const stats = await getEndingStats(scenarioId);
+      fetchCommunityEndingStats: async (scenarioId: string, endingIds: string[]) => {
+        const stats = await getEndingStats(scenarioId, endingIds);
         const entries: Record<string, number> = {};
-        for (const [endingType, pct] of Object.entries(stats)) {
-          entries[`${scenarioId}:${endingType}`] = pct;
+        for (const [endingId, pct] of Object.entries(stats)) {
+          entries[`${scenarioId}:${endingId}`] = pct;
         }
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
@@ -1013,9 +1004,14 @@ export const useAppStore = create<AppState>()(
           ending.secret && !s.secretEndingsEarned[scenarioId]
             ? { ...s.secretEndingsEarned, [scenarioId]: ending.title }
             : s.secretEndingsEarned;
+        const found = s.endingsFound[scenarioId] ?? [];
         set({
           completedScenarios: completed,
           secretEndingsEarned: secrets,
+          endingsFound: found.includes(ending.id)
+            ? s.endingsFound
+            : { ...s.endingsFound, [scenarioId]: [...found, ending.id] },
+          scenarioRuns: { ...s.scenarioRuns, [scenarioId]: (s.scenarioRuns[scenarioId] ?? 0) + 1 },
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
@@ -1024,7 +1020,7 @@ export const useAppStore = create<AppState>()(
         get().checkMilestones();
         get().addXP(XP_PER_SCENARIO);
         scheduleSync(() => get().syncToCloud());
-        void rcRecordEndingStat(scenarioId, ending.type);
+        void rcRecordEndingStat(scenarioId, ending.id);
       },
 
       abandonScenario: () => set({ activeScenarioState: null }),
@@ -1035,34 +1031,10 @@ export const useAppStore = create<AppState>()(
       onRehydrateStorage: () => () => {
         useAppStore.setState({ _hydrated: true });
       },
-      partialize: (state) => ({
-        user: state.user,
-        clerkUserId: state.clerkUserId,
-        hasOnboarded: state.hasOnboarded,
-        isAuthenticated: state.isAuthenticated,
-        subscriptionStatus: state.subscriptionStatus,
-        trialStartedAt: state.trialStartedAt,
-        trialPlan: state.trialPlan,
-        themePreference: state.themePreference,
-        stats: state.stats,
-        savedPhrases: state.savedPhrases,
-        unlockedPhraseIds: state.unlockedPhraseIds,
-        favoriteScenarios: state.favoriteScenarios,
-        completedScenarios: state.completedScenarios,
-        patternProgress: state.patternProgress,
-        secretEndingsEarned: state.secretEndingsEarned,
-        sceneProgress: state.sceneProgress,
-        lastActiveDate: state.lastActiveDate,
-        streakFreezes: state.streakFreezes,
-        dailyXP: state.dailyXP,
-        phraseReviews: state.phraseReviews,
-        journal: state.journal,
-        milestones: state.milestones,
-        recentSessionHours: state.recentSessionHours,
-        notificationsEnabled: state.notificationsEnabled,
-        analyticsEnabled: state.analyticsEnabled,
-        analyticsOnboardingSent: state.analyticsOnboardingSent,
-      }),
+      // The key list lives in engine/persistedState.ts, next to the sign-out
+      // reset, so adding a persisted key without deciding whether signOut
+      // wipes it fails a test instead of leaking to the next account.
+      partialize: (state) => pickPersisted(state),
     }
   )
 );

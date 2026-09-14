@@ -48,20 +48,14 @@ describe('authored decision counts are within their script', () => {
    * than the script could possibly deliver.
    */
   /**
-   * One scenario is already outside its bound, and it is recorded here rather
-   * than quietly corrected.
+   * Scenarios outside their bound, recorded rather than quietly corrected.
    *
-   * `gym-consultation` advertises 7 decisions; its script offers at most 6
-   * choice-scenes, so no run can make 7. Either the metadata is a typo or a
-   * scene was never written — that is an authoring question, not something to
-   * settle by editing a number until a test passes.
-   *
-   * Same ratchet as `languageContent.test.ts`: the known violation stays
-   * visible in source, and any NEW one fails immediately. The allowlist is
-   * asserted to be exactly right, so fixing this without removing it from the
-   * list fails too — the list cannot rot into a permanent excuse.
+   * Same ratchet as `languageContent.test.ts`: a known violation stays visible
+   * in source, and any NEW one fails immediately. The allowlist is asserted to
+   * be exactly right, so fixing one without removing it from the list fails
+   * too. Emptied when gym-consultation (7 advertised, 6 possible) was cut.
    */
-  const KNOWN_OUT_OF_BOUNDS = ['gym-consultation'];
+  const KNOWN_OUT_OF_BOUNDS: string[] = [];
 
   it('every scenario with a script is between 1 and its choice-scene count', () => {
     const bad: string[] = [];
@@ -135,6 +129,28 @@ describe('railMarks', () => {
     );
     expect(marks).toHaveLength(4);
     expect(marks[3].state).toBe('filled');
+  });
+
+  it('marks a valid judgement choice as chosen, not graded — misstep marks still show', () => {
+    // A judgement scene has no single best answer; a graded mark on the rail
+    // would give back exactly the signal the scene hides.
+    const judged = {
+      id: 't', title: 't', endings: [],
+      scenes: [
+        { id: 'j', kind: 'judgement', choices: [{ id: 'a', outcome: 'excellent' }, { id: 'b', outcome: 'bad' }] },
+        { id: 'l', kind: 'language', choices: [{ id: 'c', outcome: 'good' }] },
+      ],
+    } as unknown as ScenarioScript;
+    const marks = railMarks(
+      stateOf([
+        { sceneId: 'j', choiceId: 'a', npcId: 'Ahmed' },
+        { sceneId: 'j', choiceId: 'b', npcId: 'Ahmed' },
+        { sceneId: 'l', choiceId: 'c', npcId: 'Ahmed' },
+      ]),
+      judged,
+      3,
+    );
+    expect(marks.map((m) => (m.state === 'filled' ? m.outcome : 'empty'))).toEqual(['chosen', 'bad', 'good']);
   });
 
   it('falls back to neutral when a choice id is not in the script', () => {
