@@ -9,6 +9,7 @@ import {
   ARABIC_LINE_HEIGHT_MULTIPLIER,
 } from '../design/tokens';
 import { SPACE, RADIUS } from '../design/spacing';
+import { ltrParagraph } from '../../engine/text';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 import { Rule } from './Rule';
@@ -80,7 +81,7 @@ export function PhraseEntry({
         },
         label: {
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           color: C.TEXT3,
@@ -103,7 +104,7 @@ export function PhraseEntry({
         },
         detailText: {
           fontFamily: FONT_LATIN,
-          fontSize: 13,
+          fontSize: 14,
           marginTop: SPACE.xs,
           lineHeight: 19,
           color: C.TEXT2,
@@ -181,13 +182,13 @@ export function PhraseEntry({
           {phrase.pronTip ? (
             <View>
               <Text style={styles.label}>{STRINGS.phrases.pronunciation}</Text>
-              <Text style={styles.detailText}>{phrase.pronTip}</Text>
+              <Text style={styles.detailText}>{ltrParagraph(phrase.pronTip)}</Text>
             </View>
           ) : null}
           {phrase.culturalNote ? (
             <View>
               <Text style={styles.label}>{STRINGS.phrases.culturalContext}</Text>
-              <Text style={styles.detailText}>{phrase.culturalNote}</Text>
+              <Text style={styles.detailText}>{ltrParagraph(phrase.culturalNote)}</Text>
             </View>
           ) : null}
           {expandedExtra}

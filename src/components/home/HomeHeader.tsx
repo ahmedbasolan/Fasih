@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTheme, FONT_ARABIC_EXTRA, FONT_LATIN } from '../../theme';
 import { Settings } from '../icons';
+import { SCREEN_MARGIN } from '../design/spacing';
 import { STRINGS } from '../../constants/strings';
 
 interface HomeHeaderProps {
@@ -26,7 +27,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      paddingHorizontal: 24,
+      paddingHorizontal: SCREEN_MARGIN,
       paddingVertical: 20,
     },
     leftSection: {
@@ -34,7 +35,7 @@ export function HomeHeader({ userName, onSettingsPress }: HomeHeaderProps) {
     },
     arabicGreeting: {
       fontFamily: FONT_ARABIC_EXTRA,
-      fontSize: 32,
+      fontSize: 34,
       color: C.CULTURAL_GOLD,
       marginBottom: 4,
       textAlign: 'right',

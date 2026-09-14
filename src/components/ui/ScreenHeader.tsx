@@ -68,7 +68,7 @@ export function ScreenHeader({ title, subtitle, eyebrow, onBack, insetApplied }:
         },
         eyebrow: {
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           color: C.TEXT3,

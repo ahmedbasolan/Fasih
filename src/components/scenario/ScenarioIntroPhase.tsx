@@ -62,11 +62,11 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
 
         {/* Kaf icon with Arabic watermark */}
         <View style={{ position: 'relative', width: '100%', alignItems: 'center', height: 72, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 72, color: C.JADE_ACCENT, opacity: 0.07, position: 'absolute' }}>
+          <Text style={{ fontFamily: FONT_ARABIC, fontSize: 34, color: C.JADE_ACCENT, opacity: 0.07, position: 'absolute' }}>
             {scenario?.arabicScene || ''}
           </Text>
           <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: C.JADE_ACCENT_DIM, borderWidth: 1.5, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 26, color: C.JADE_ACCENT }}>ك</Text>
+            <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 28, color: C.JADE_ACCENT }}>ك</Text>
           </View>
         </View>
 
@@ -127,14 +127,14 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
                     <Volume2 size={14} color={isPlaying ? C.JADE : C.PRIMARY} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 17, color: C.TEXT, textAlign: 'right' }}>
+                    <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 18, color: C.TEXT, textAlign: 'right' }}>
                       {p.arabic}
                     </Text>
                     <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'right', fontStyle: 'italic' }}>
                       {p.roman}
                     </Text>
                   </View>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, maxWidth: 110 }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, maxWidth: 110 }}>
                     {isPlaying ? STRINGS.scenarios.playing : p.english}
                   </Text>
                 </Pressable>
@@ -151,8 +151,8 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
             [unlockedPhrases.length > 0 ? `${unlockedPhrases.length}` : '8+', STRINGS.scenarios.phraseLabel(8)],
           ].map(([v, l]) => (
             <View key={l} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 20, color: C.TEXT }}>{v}</Text>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginTop: 2 }}>{l}</Text>
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: C.TEXT }}>{v}</Text>
+              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{l}</Text>
             </View>
           ))}
         </View>
@@ -170,7 +170,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
         {/* Begin button */}
         <Pressable onPress={onBegin} accessibilityRole="button" style={{ width: '100%', borderRadius: 16, overflow: 'hidden' }}>
           <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.BG }}>{STRINGS.scenarios.begin}</Text>
+            <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.BG }}>{STRINGS.scenarios.begin}</Text>
             <ArrowRight size={17} color={C.BG} />
           </LinearGradient>
         </Pressable>

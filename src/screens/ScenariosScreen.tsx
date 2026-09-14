@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
-  Heart, Search, CheckCircle2, Lock, Sparkles, Zap, Target, Rocket,
+  Heart, Search, CheckCircle2, Lock,
 } from '../components/icons';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import {
@@ -17,6 +16,7 @@ import {
   SMOOTH,
 } from '../components/design/tokens';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
 import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
@@ -34,63 +34,22 @@ interface Props {
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
 
-// ─── Random motivational headings ───────────────────────────────────────────
-
-const MOTIVATIONAL_HEADINGS = [
-  { text: 'Gulf Arabic', sub: 'Choose a real situation.', icon: Sparkles },
-  { text: 'Build Confidence', sub: 'One scenario at a time.', icon: Target },
-  { text: 'Your Next Situation', sub: 'Practice Gulf Arabic.', icon: Rocket },
-  { text: 'Real Conversations', sub: 'Cultural fluency awaits.', icon: Zap },
-  { text: 'Master the Dialect', sub: 'Start where you are.', icon: Sparkles },
-  { text: 'Practice Today', sub: 'A few minutes is enough.', icon: Target },
-];
-
-// Fun facts about Arabic/Gulf culture - all under 15 words
-const FUN_FACTS = [
-  'Gulf Arabic has unique words for camel types.',
-  'Marhaba means welcome in every Arab country.',
-  'Arabic is written right-to-left, unlike English.',
-  'Shukran is thank you - use it often!',
-  'Gulf Arabs love coffee with cardamom spice.',
-  'Ya Hala is the warmest greeting here.',
-  'Inshallah means God willing - very common.',
-  'Mashallah protects from envy when praising.',
-  'Gulf Arabic skips many vowel sounds.',
-  'Habibi means my dear - use freely!',
-  'Arabic has 28 letters, all consonants included.',
-  'Khallas means finished or enough in Gulf.',
-  'Yalla means lets go - very versatile!',
-  'Dates are the traditional Gulf welcome gift.',
-  'Arabic coffee is served in tiny cups.',
-  'Alif is the first letter of Arabic.',
-  'Gulf Arabic borrows words from English often.',
-  'Salam means peace - the perfect greeting.',
-  'Naam means yes, with a head nod.',
-  'La means no, with upward head flick.',
-  'Gulf men wear white thobes in summer.',
-  'Friday is the holy day of rest.',
-  'Arabic has over 12 million unique words.',
-  'One word can have 100 different forms.',
-  'Gulf people say wallahi meaning I swear.',
-];
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
 
 function useRandomHeading() {
   // Pick a random heading and fun fact once, when the component first mounts.
   // Lazy initializers keep the value stable for the component's lifetime without
   // an effect + setState (which would double-render and flash the default first).
-  const [heading] = useState(
-    () => MOTIVATIONAL_HEADINGS[Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length)],
-  );
-  const [funFact] = useState(
-    () => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)],
-  );
+  const [heading] = useState(() => pickRandom(STRINGS.scenarios.headings));
+  const [funFact] = useState(() => pickRandom(STRINGS.scenarios.funFacts));
 
   return { heading, funFact };
 }
 
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const { C, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
   const { heading, funFact } = useRandomHeading();
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
@@ -158,7 +117,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           every screen, rather than mode being a colour swap nobody reads. */}
       <ScreenHeader
         eyebrow={userMode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
-        title={heading.text}
+        title={heading}
         subtitle={funFact}
       />
 
@@ -223,7 +182,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
         {...({ estimatedItemSize: 120 } as any)}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: insets.bottom + 90,
+          paddingBottom: TAB_LIST_SCROLL_BOTTOM,
         }}
         showsVerticalScrollIndicator={false}
         // Fix black square flash on Android
@@ -293,7 +252,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                       <Text
                         style={{
                           fontFamily: FONT_LATIN_MEDIUM,
-                          fontSize: 10,
+                          fontSize: 11,
                           letterSpacing: 1.6,
                           textTransform: 'uppercase',
                           color: C.PRIMARY,

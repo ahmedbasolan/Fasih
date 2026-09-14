@@ -108,7 +108,7 @@ export function StreakWidget({
     },
     daysLabel: {
       fontFamily: FONT_LATIN,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT2,
     },
     rightBlock: {

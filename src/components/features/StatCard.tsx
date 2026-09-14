@@ -34,7 +34,7 @@ export function StatCard({ icon, value, label, onPress }: Props) {
       <Text
         style={{
           fontFamily: FONT_HEADING_EXTRA,
-          fontSize: 24,
+          fontSize: 22,
           color: C.TEXT,
           fontVariant: ['tabular-nums'],
         }}
@@ -44,7 +44,7 @@ export function StatCard({ icon, value, label, onPress }: Props) {
       <Text
         style={{
           fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: 1.6,
           textTransform: 'uppercase',
           color: C.TEXT3,

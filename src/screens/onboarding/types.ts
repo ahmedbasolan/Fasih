@@ -1,4 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
+import type { SharedValue } from 'react-native-reanimated';
+import type { OnboardingScreen } from '../../engine/onboardingSteps';
 
 /**
  * The contract between `OnboardingFlow` and its step components.
@@ -17,7 +19,28 @@ export interface OnboardingDraft {
   name: string;
   setName: Dispatch<SetStateAction<string>>;
   mode: 'career' | 'social';
-  setMode: Dispatch<SetStateAction<'career' | 'social'>>;
+  /**
+   * No `setMode`. It is deliberately absent, not forgotten: setting the mode
+   * without setting `modeChosen` is exactly the state this pair exists to make
+   * unreachable, and leaving the plain setter on the interface left the door
+   * open for a step to walk back through. `chooseMode` is the only way in.
+   */
+  /**
+   * Whether the learner has actually picked a mode, as opposed to inheriting
+   * the default.
+   *
+   * `mode` has to stay non-optional — it lands in `UserProfile.mode` and in the
+   * analytics row's CHECK constraint, so `undefined` must not be able to reach
+   * either. But "Choose your path" was not a choice: Career was pre-selected
+   * and Continue worked without a decision, which biased every downstream
+   * scenario recommendation AND the anonymous mode distribution toward career
+   * for anyone who did not think about it.
+   *
+   * This flag lets the screen show nothing selected and gate Continue, while
+   * `mode` keeps a valid value throughout.
+   */
+  modeChosen: boolean;
+  chooseMode: (mode: 'career' | 'social') => void;
   /**
    * Arabic marks the speaker's own gender, so this is not cosmetic: it selects
    * which verb forms are taught AND gates scenarios via `requiresGender`.
@@ -38,8 +61,22 @@ export interface OnboardingDraft {
 
 /** The hold-to-commit ring on step 5. Owned by the parent because it runs a timer. */
 export interface OnboardingHold {
-  holdProgress: number;
+  /**
+   * Progress 0-1 as a Reanimated shared value, NOT React state.
+   *
+   * It was state written by a 16ms interval: ~137 re-renders of the whole
+   * OnboardingFlow tree per 2.2s hold, each rebuilding `stepProps` and re-running
+   * all of ProfileSteps — including a MotiView whose `animate` prop changed
+   * every frame, so Moti restarted an animation 60 times a second. That is what
+   * made the ring stutter on device.
+   *
+   * As a shared value the ring animates on the UI thread and nothing re-renders
+   * while the finger is down.
+   */
+  holdProgress: SharedValue<number>;
   holdComplete: boolean;
+  /** True between press-in and press-out. Two re-renders per hold, not 137. */
+  isHolding: boolean;
   startHold: () => void;
   endHold: () => void;
   /** Circumference of the progress ring, for the stroke-dash maths. */
@@ -56,12 +93,29 @@ export interface OnboardingQuickWin {
    */
   setPhraseEverRevealed: Dispatch<SetStateAction<boolean>>;
   setScenarioCompleted: Dispatch<SetStateAction<boolean>>;
+  /**
+   * The latched values, readable.
+   *
+   * The progress screen reports what the learner actually did, so it needs to
+   * READ these rather than only set them — a summary that assumed the steps
+   * happened would claim credit for a scenario the learner swiped past.
+   */
+  phraseEverRevealed: boolean;
+  scenarioCompleted: boolean;
   toggleNotifs: boolean[];
   setToggleNotifs: Dispatch<SetStateAction<boolean[]>>;
 }
 
 export interface OnboardingStepProps {
   step: number;
+  /**
+   * Which screen this is, by name.
+   *
+   * `step` stays because the progress bar and the back button are genuinely
+   * positional. Everything that cares about WHICH screen it is switches on
+   * this instead, so reordering the flow does not touch any component.
+   */
+  screen: OnboardingScreen;
   next: () => void;
   /** Steps 9-11: leave without subscribing. Confirmed by an Alert in the parent. */
   skip: () => void;
