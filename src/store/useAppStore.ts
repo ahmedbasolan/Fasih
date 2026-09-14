@@ -46,7 +46,7 @@ import { recordOnboardingSelection } from '../lib/onboardingAnalytics';
 import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings,
+  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns,
 } from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
@@ -229,6 +229,10 @@ interface AppState {
    * cannot lose it. Persisted + synced.
    */
   secretEndingsEarned: Record<string, string>;
+  /** scenarioId → ending ids ever reached. Only grows. Drives "3 of 5 found". Persisted + synced. */
+  endingsFound: Record<string, string[]>;
+  /** scenarioId → completed runs. A run with count > 1 is a replay. Persisted + synced. */
+  scenarioRuns: Record<string, number>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
@@ -400,6 +404,8 @@ export const useAppStore = create<AppState>()(
       completedScenarios: {},
       patternProgress: {},
       secretEndingsEarned: {},
+      endingsFound: {},
+      scenarioRuns: {},
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
@@ -439,6 +445,8 @@ export const useAppStore = create<AppState>()(
             completed_scenarios: s.completedScenarios,
             pattern_progress: s.patternProgress,
             secret_endings_earned: s.secretEndingsEarned,
+            endings_found: s.endingsFound,
+            scenario_runs: s.scenarioRuns,
             saved_phrases: s.savedPhrases,
             unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
@@ -531,6 +539,8 @@ export const useAppStore = create<AppState>()(
         // merge on this path was moved off `s`.
         const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
         const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
+        const mergedEndingsFound = mergeEndingsFound(local.endingsFound, data.endings_found ?? {});
+        const mergedRuns = mergeScenarioRuns(local.scenarioRuns, data.scenario_runs ?? {});
 
         set({
           user: data.user_profile ?? local.user,
@@ -539,6 +549,8 @@ export const useAppStore = create<AppState>()(
           completedScenarios: mergedCompleted,
           patternProgress: mergedPatternProgress,
           secretEndingsEarned: mergedSecrets,
+          endingsFound: mergedEndingsFound,
+          scenarioRuns: mergedRuns,
           // Union, consistent with the rule above: a save made on either device
           // survives. The trade-off is that un-saving while offline can be
           // undone by a cloud copy that predates it — recoverable with one tap,
@@ -607,6 +619,8 @@ export const useAppStore = create<AppState>()(
           stats: { ...DEFAULT_USER_STATS },
           phraseReviews: {},
           completedScenarios: {},
+          endingsFound: {},
+          scenarioRuns: {},
           savedPhrases: [],
           unlockedPhraseIds: [],
           favoriteScenarios: [],
@@ -1013,9 +1027,14 @@ export const useAppStore = create<AppState>()(
           ending.secret && !s.secretEndingsEarned[scenarioId]
             ? { ...s.secretEndingsEarned, [scenarioId]: ending.title }
             : s.secretEndingsEarned;
+        const found = s.endingsFound[scenarioId] ?? [];
         set({
           completedScenarios: completed,
           secretEndingsEarned: secrets,
+          endingsFound: found.includes(ending.id)
+            ? s.endingsFound
+            : { ...s.endingsFound, [scenarioId]: [...found, ending.id] },
+          scenarioRuns: { ...s.scenarioRuns, [scenarioId]: (s.scenarioRuns[scenarioId] ?? 0) + 1 },
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
@@ -1051,6 +1070,8 @@ export const useAppStore = create<AppState>()(
         completedScenarios: state.completedScenarios,
         patternProgress: state.patternProgress,
         secretEndingsEarned: state.secretEndingsEarned,
+        endingsFound: state.endingsFound,
+        scenarioRuns: state.scenarioRuns,
         sceneProgress: state.sceneProgress,
         lastActiveDate: state.lastActiveDate,
         streakFreezes: state.streakFreezes,
