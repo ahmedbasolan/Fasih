@@ -10,6 +10,7 @@ import {
   leadingRoute,
   phrasesEarned,
   allPhraseIds,
+  sceneAfterChoice,
 } from '../scenarioEngine';
 import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioEnding } from '../../types';
 
@@ -622,5 +623,50 @@ describe('phrasesEarned / allPhraseIds', () => {
 
   it('allPhraseIds lists everything the scenario can teach, once each', () => {
     expect(allPhraseIds(script)).toEqual(['p-core', 'p-warm', 'p-hidden']);
+  });
+});
+
+// ─── sceneAfterChoice ─────────────────────────────────────────────────────────
+
+describe('sceneAfterChoice', () => {
+  // s1 → s2 → end. The bonus scene sits between them in the array (as authors
+  // place them) and plays only after the main path, on the hidden ending.
+  const script = makeScript({
+    scenes: [
+      makeScene({ id: 's1', choices: [makeChoice()] }),
+      makeScene({ id: 'bonus', bonus: true, choices: [makeChoice()] }),
+      makeScene({ id: 's2', choices: [makeChoice()] }),
+    ],
+    endings: [
+      ...makeScript().endings,
+      {
+        id: 'secret', min: 10, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+        desc: 'd', color: '#8B00FF', type: 'exceptional' as const, secret: true, requiredFlags: ['A'],
+      },
+    ],
+  });
+  const at = (sceneId: string, extra: Partial<ScenarioState> = {}) => ({ ...makeEmptyState(), currentSceneId: sceneId, ...extra });
+  const earned = { flags: new Set(['A']), impactByNpc: { Ahmed: impactOf(10, 0, 0) } };
+
+  it('goes to the resolved scene', () => {
+    expect(sceneAfterChoice(at('s1'), 's2', script)).toBe('s2');
+  });
+
+  it('never walks into a bonus scene on the main path — it skips past it', () => {
+    expect(sceneAfterChoice(at('s1'), 'bonus', script)).toBe('s2');
+    expect(sceneAfterChoice(at('s1', earned), 'bonus', script)).toBe('s2');
+  });
+
+  it('ends the run when the main path is over and the hidden ending is not earned', () => {
+    expect(sceneAfterChoice(at('s2', { flags: new Set(['A']) }), null, script)).toBeNull();
+    expect(sceneAfterChoice(at('s2', { impactByNpc: { Ahmed: impactOf(10, 0, 0) } }), null, script)).toBeNull();
+  });
+
+  it('plays the bonus scene when the main path is over and the hidden ending is earned', () => {
+    expect(sceneAfterChoice(at('s2', earned), null, script)).toBe('bonus');
+  });
+
+  it('the bonus scene is always the last thing played', () => {
+    expect(sceneAfterChoice(at('bonus', earned), 's2', script)).toBeNull();
   });
 });
