@@ -36,17 +36,10 @@ import { TIER_BANDS } from '../../constants/curriculum';
 
 /**
  * Choices whose impact sits outside its tier band, recorded rather than fixed.
- *
- * Tightening `bad` to −3 (a mistake the learner barely pays for teaches nothing)
- * surfaced three pre-existing choices at −2. Re-scoring them changes how those
- * scenarios play, which is a content decision and not this commit's business.
- * New offenders still fail; this list may only shrink.
+ * New offenders fail; this list may only shrink. Emptied when gym-consultation
+ * and the-checkup — the only offenders — were cut for the MVP.
  */
-const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [
-  'gym-consultation/scene1/d',
-  'gym-consultation/scene4/d',
-  'the-checkup/scene1/d',
-];
+const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [];
 
 const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, script: ScenarioScript, id: string) => void) => {
   for (const [id, script] of scriptEntries) {
@@ -237,19 +230,20 @@ describe('gender-restricted scenarios', () => {
   });
 
   it('filterScenariosForLearner drops exactly the restricted entries', () => {
-    const restricted = catalog.filter(s => s.requiresGender);
-    expect(restricted.length).toBeGreaterThan(0); // guards the rule from silently lapsing
-    expect(filterScenariosForLearner(catalog, undefined)).toHaveLength(catalog.length - restricted.length);
-    expect(filterScenariosForLearner(catalog, 'female').map(s => s.id)).toEqual(
-      expect.arrayContaining(restricted.filter(s => s.requiresGender === 'female').map(s => s.id)),
-    );
+    // Fixture list: no MVP scenario is gender-restricted, but the gate must keep working.
+    const list = [
+      { id: 'open' },
+      { id: 'women-only', requiresGender: 'female' as const },
+      { id: 'men-only', requiresGender: 'male' as const },
+    ];
+    expect(filterScenariosForLearner(list, undefined).map(s => s.id)).toEqual(['open']);
+    expect(filterScenariosForLearner(list, 'female').map(s => s.id)).toEqual(['open', 'women-only']);
+    expect(filterScenariosForLearner(list, 'male').map(s => s.id)).toEqual(['open', 'men-only']);
   });
 
-  // Café Connection stages a one-on-one encounter with an unrelated Emirati woman
-  // ending in a personal number exchange. It is written for a female learner and
-  // must not be served to a male one.
-  it('cafe-friends is restricted to female learners', () => {
-    expect(catalog.find(s => s.id === 'cafe-friends')?.requiresGender).toBe('female');
+  // MVP rule (spec 2026-09-14 §2.8): the same six scenarios for every learner.
+  it('no MVP scenario is gender-restricted', () => {
+    expect(catalog.filter(s => s.requiresGender).map(s => s.id)).toEqual([]);
   });
 
   it('a gender-restricted script does not also carry arabicFeminine variants', () => {

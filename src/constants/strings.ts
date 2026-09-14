@@ -433,10 +433,6 @@ export const STRINGS = {
   },
   scenarios: {
     title: 'Scenarios',
-    // Social's name for the same metric Career calls 'trust' (see below).
-    // Two strings, not one conditional: the vocabulary split is content, and
-    // it is the most visible expression of the mode differentiator.
-    vibe: 'Vibe',
     // Distinct from comingSoon() above, which is a sentence about how much
     // content is pending. This is the badge on a single entry.
     comingSoonBadge: 'Coming soon',
@@ -575,10 +571,10 @@ export const STRINGS = {
       `The path you took, decision by decision: ${words.join(', ')}.`,
     endingDiscovery: (total: number) => `1 of ${total} possible endings`,
     tryDifferentChoices: 'Play again with different choices to find another path',
-    communityEnding: (pct: number) => pct > 0 ? `${pct}% of players reach this ending` : 'One of the first players to reach this ending',
-    communityEndingSecret: (pct: number) => pct > 0 ? `Only ${pct}% of players ever find this — you just did` : 'Almost no one finds this ending. You did.',
+    communityEnding: (pct: number) => `${pct}% of players reach this ending`,
+    communityEndingSecret: (pct: number) => `${pct}% of players find this ending — you just did`,
     communityChoice: (pct: number) => `${pct}% of learners made this choice`,
-    secretEndingExists: 'This scenario has a hidden ending. Most players miss it.',
+    secretEndingExists: 'This scenario has a hidden ending.',
     secretEndingTeaser: 'There\'s an ending you haven\'t found yet. It unlocks when you make the right choices at every step — play again to find it.',
     practiceThesePhrases: 'Practice These Phrases',
     tryAgain: 'Try Again',

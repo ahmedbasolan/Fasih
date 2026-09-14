@@ -122,12 +122,12 @@ describe('grammar language hygiene', () => {
 
 describe('grammar native-review gate', () => {
   it('every needsNativeReview pattern is listed in REVIEW_QUEUE', () => {
-    const flagged = GRAMMAR_PATTERNS.filter((p) => p.needsNativeReview).map((p) => p.id);
-    // REVIEW_QUEUE holds derived strings, not ids — assert the derived pattern
-    // documents its queue membership via source and that the queue is non-empty.
-    expect(flagged.length).toBeGreaterThan(0);
-    expect(REVIEW_QUEUE.length).toBeGreaterThan(0);
-    for (const p of GRAMMAR_PATTERNS.filter((x) => x.needsNativeReview)) {
+    const flagged = GRAMMAR_PATTERNS.filter((p) => p.needsNativeReview);
+    // REVIEW_QUEUE holds derived strings, not ids — assert each derived pattern
+    // documents its queue membership via source, and that the queue is empty
+    // exactly when nothing is derived (no orphaned strings, no unqueued pattern).
+    expect(REVIEW_QUEUE.length > 0).toBe(flagged.length > 0);
+    for (const p of flagged) {
       expect(p.source?.toLowerCase()).toContain('review_queue');
     }
   });
