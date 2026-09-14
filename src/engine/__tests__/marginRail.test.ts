@@ -131,6 +131,28 @@ describe('railMarks', () => {
     expect(marks[3].state).toBe('filled');
   });
 
+  it('marks a valid judgement choice as chosen, not graded — misstep marks still show', () => {
+    // A judgement scene has no single best answer; a graded mark on the rail
+    // would give back exactly the signal the scene hides.
+    const judged = {
+      id: 't', title: 't', endings: [],
+      scenes: [
+        { id: 'j', kind: 'judgement', choices: [{ id: 'a', outcome: 'excellent' }, { id: 'b', outcome: 'bad' }] },
+        { id: 'l', kind: 'language', choices: [{ id: 'c', outcome: 'good' }] },
+      ],
+    } as unknown as ScenarioScript;
+    const marks = railMarks(
+      stateOf([
+        { sceneId: 'j', choiceId: 'a', npcId: 'Ahmed' },
+        { sceneId: 'j', choiceId: 'b', npcId: 'Ahmed' },
+        { sceneId: 'l', choiceId: 'c', npcId: 'Ahmed' },
+      ]),
+      judged,
+      3,
+    );
+    expect(marks.map((m) => (m.state === 'filled' ? m.outcome : 'empty'))).toEqual(['chosen', 'bad', 'good']);
+  });
+
   it('falls back to neutral when a choice id is not in the script', () => {
     // Defensive: a run persisted against an older script version must not crash
     // the player. An unknown choice still occupies its slot.

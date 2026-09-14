@@ -566,16 +566,37 @@ export const STRINGS = {
       good: 'warm',
       neutral: 'neutral',
       bad: 'misstep',
+      chosen: 'your call',
     } as const,
     railSummary: (words: string[]) =>
       `The path you took, decision by decision: ${words.join(', ')}.`,
-    endingDiscovery: (total: number) => `1 of ${total} possible endings`,
+    // Endings collection (spec 2026-09-14 §2.6) — card, intro and end screen.
+    /** "3 of 5 endings found · 1 hidden" — the one line card, intro and end screen share. */
+    endingsSummary: (p: { found: number; total: number; hidden: number; hiddenFound: boolean }) =>
+      p.hidden > 0
+        ? `${p.found} of ${p.total} endings found · ${p.hiddenFound ? 'hidden ending found' : `${p.hidden} hidden`}`
+        : `${p.found} of ${p.total} endings found`,
     tryDifferentChoices: 'Play again with different choices to find another path',
+    // Result screen, route scripts.
+    destinationEyebrow: (label: string, tier: 'strong' | 'weak' | undefined) =>
+      tier === 'weak' ? `${label} · halfway there` : label,
+    hiddenEndingEyebrow: 'Hidden ending',
+    failedEndingEyebrow: 'The connection didn\'t land',
+    momentsTitle: 'What sent you here',
+    momentsSub: 'The choices in this run that leaned this way.',
+    hintsTitle: 'Other endings to look for',
+    hintHidden: 'Hidden',
+    // Choice feedback by scene kind (§2.4).
+    feedbackCorrect: 'Correct',
+    feedbackNotQuite: 'Not quite',
+    feedbackMisstep: 'Cultural misstep',
+    feedbackReaction: (npc: string) => `${npc}'s reaction`,
+    feedbackRightForm: 'The form to use',
     communityEnding: (pct: number) => `${pct}% of players reach this ending`,
     communityEndingSecret: (pct: number) => `${pct}% of players find this ending — you just did`,
     communityChoice: (pct: number) => `${pct}% of learners made this choice`,
     secretEndingExists: 'This scenario has a hidden ending.',
-    secretEndingTeaser: 'There\'s an ending you haven\'t found yet. It unlocks when you make the right choices at every step — play again to find it.',
+    secretEndingTeaser: 'There\'s a hidden ending you haven\'t found yet. Play again to look for it.',
     practiceThesePhrases: 'Practice These Phrases',
     tryAgain: 'Try Again',
   },
