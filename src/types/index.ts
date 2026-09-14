@@ -84,7 +84,13 @@ export interface Scenario {
   endings: number;
   phrases: string;
   level: DifficultyLevel;
-  locked: boolean;
+  /**
+   * Behind the paywall for this learner. Computed by the screen listing it, from
+   * hasScenarioAccess — never authored in the catalog. An authored value
+   * disagreed with the paywall (eid-greeting said locked while sitting in a free
+   * slot) and Home trusted it.
+   */
+  locked?: boolean;
   comingSoon?: boolean;
   isOnboarding?: boolean;
   dialect?: string;

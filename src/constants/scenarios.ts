@@ -10,7 +10,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'first-morning', iconName: 'Sunrise',
     title: 'The First Morning', subtitle: 'Your first day. One greeting can change everything.',
-    decisions: 4, endings: 5, phrases: '8', level: 'Beginner', locked: false,
+    decisions: 4, endings: 5, phrases: '8', level: 'Beginner',
     color: C.JADE2, gradientColors: ['#0A1A0F', '#050D08'],
     arabicScene: 'أول صباح',
     kafIntro: 'Your first Arabic greeting sets the tone for every interaction that follows.',
@@ -20,7 +20,7 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'coffee-invitation', iconName: 'Coffee',
     title: 'The Coffee Invitation', subtitle: 'Build trust with your Emirati colleague',
-    decisions: 3, endings: 4, phrases: '8', level: 'Beginner', locked: false,
+    decisions: 3, endings: 4, phrases: '8', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A0F0A', '#0D0608'],
     arabicScene: 'قهوة',
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
@@ -30,7 +30,10 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'office-meeting', iconName: 'Briefcase',
     title: 'The First Introduction', subtitle: 'Make a lasting impression at a formal meeting',
-    decisions: 12, endings: 5, phrases: '25+', level: 'Intermediate', locked: true,
+    // Not written yet, so there is nothing to count: these were 12 / 5 / '25+',
+    // typed in for a script that does not exist. ScenarioEntry shows no counts
+    // for a coming-soon row.
+    decisions: 0, endings: 0, phrases: '0', level: 'Intermediate',
     color: C.VIOLET2, gradientColors: ['#110A1C', '#080510'],
     arabicScene: 'اجتماع',
     kafIntro: 'In Gulf business culture, how you introduce yourself matters far more than your resume.',
@@ -44,7 +47,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'social_taxi_ride', iconName: 'Zap',
     title: 'The Taxi Ride', subtitle: 'Airport → Hotel, a late-night conversation',
-    decisions: 5, endings: 4, phrases: '5', level: 'Beginner', locked: false,
+    decisions: 5, endings: 4, phrases: '5', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A1208', '#0D0A05'],
     arabicScene: 'تاكسي',
     kafIntro: 'You just landed in Dubai. Your driver is warm and chatty. Make conversation!',
@@ -54,7 +57,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'social_elevator', iconName: 'Users',
     title: 'The Elevator', subtitle: 'A brief encounter in your building',
-    decisions: 6, endings: 4, phrases: '5', level: 'Beginner', locked: false,
+    decisions: 6, endings: 4, phrases: '5', level: 'Beginner',
     color: C.VIOLET2, gradientColors: ['#0A0A1A', '#050510'],
     arabicScene: 'مصعد',
     kafIntro: 'You meet someone in your building elevator. Short phrases, simple choices.',
@@ -64,7 +67,7 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'eid-greeting', iconName: 'Users',
     title: 'Eid Greetings', subtitle: 'Celebrate the holy day with neighbours',
-    decisions: 3, endings: 4, phrases: '7', level: 'Beginner', locked: true,
+    decisions: 3, endings: 4, phrases: '7', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A140A', '#0D0A05'],
     arabicScene: 'عيد',
     kafIntro: 'Eid greetings carry centuries of tradition — each phrase is a gift of connection.',
@@ -77,7 +80,7 @@ export const getOnboardingScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'onboarding-cafe', iconName: 'Coffee',
     title: 'Welcome to the Café', subtitle: 'Your first interaction in Gulf Arabic',
-    decisions: 4, endings: 2, phrases: '5+', level: 'Beginner', locked: false,
+    decisions: 4, endings: 2, phrases: '5+', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A1408', '#0D0A05'],
     arabicScene: 'مقهى',
     kafIntro: 'Your first Arabic moment. Simple, welcoming, and full of cultural warmth.',
