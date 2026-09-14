@@ -45,35 +45,6 @@ const MOTIVATIONAL_HEADINGS = [
   { text: 'Practice Today', sub: 'A few minutes is enough.', icon: Target },
 ];
 
-// Fun facts about Arabic/Gulf culture - all under 15 words
-const FUN_FACTS = [
-  'Gulf Arabic has unique words for camel types.',
-  'Marhaba means welcome in every Arab country.',
-  'Arabic is written right-to-left, unlike English.',
-  'Shukran is thank you - use it often!',
-  'Gulf Arabs love coffee with cardamom spice.',
-  'Ya Hala is the warmest greeting here.',
-  'Inshallah means God willing - very common.',
-  'Mashallah protects from envy when praising.',
-  'Gulf Arabic skips many vowel sounds.',
-  'Habibi means my dear - use freely!',
-  'Arabic has 28 letters, all consonants included.',
-  'Khallas means finished or enough in Gulf.',
-  'Yalla means lets go - very versatile!',
-  'Dates are the traditional Gulf welcome gift.',
-  'Arabic coffee is served in tiny cups.',
-  'Alif is the first letter of Arabic.',
-  'Gulf Arabic borrows words from English often.',
-  'Salam means peace - the perfect greeting.',
-  'Naam means yes, with a head nod.',
-  'La means no, with upward head flick.',
-  'Gulf men wear white thobes in summer.',
-  'Friday is the holy day of rest.',
-  'Arabic has over 12 million unique words.',
-  'One word can have 100 different forms.',
-  'Gulf people say wallahi meaning I swear.',
-];
-
 function useRandomHeading() {
   // Pick a random heading and fun fact once, when the component first mounts.
   // Lazy initializers keep the value stable for the component's lifetime without
@@ -82,7 +53,7 @@ function useRandomHeading() {
     () => MOTIVATIONAL_HEADINGS[Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length)],
   );
   const [funFact] = useState(
-    () => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)],
+    () => STRINGS.scenarios.funFacts[Math.floor(Math.random() * STRINGS.scenarios.funFacts.length)],
   );
 
   return { heading, funFact };
