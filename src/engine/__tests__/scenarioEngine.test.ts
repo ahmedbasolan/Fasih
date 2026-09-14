@@ -248,6 +248,11 @@ describe('resolveNextScene', () => {
     expect(resolveNextScene(state, choice, script)).toBe('scene-3');
   });
 
+  it('returns null when the choice ends the main path with next: null', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'scene-1' };
+    expect(resolveNextScene(state, makeChoice({ next: null }), makeScript())).toBeNull();
+  });
+
   it('returns the next scene in order when choice has no next', () => {
     const state = { ...makeEmptyState(), currentSceneId: 'scene-1' };
     const choice = makeChoice({ next: undefined });
