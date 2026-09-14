@@ -450,13 +450,23 @@ export const useAppStore = create<AppState>()(
             trial_started_at: s.trialStartedAt,
             trial_plan: s.trialPlan,
           });
-          if (error) {
+          // The payload was snapshotted with its owner before the await, so it
+          // can only reach that learner's row. Only the status can leak: if
+          // signOut ran meanwhile, this result describes the previous session,
+          // and signOutReset has just cleared lastSyncedAt/lastSyncError.
+          if (get().clerkUserId !== s.clerkUserId) {
+            set({ isSyncing: false });
+          } else if (error) {
             set({ isSyncing: false, lastSyncError: error });
           } else {
             set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
           }
         } catch (e) {
-          set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed' });
+          if (get().clerkUserId !== s.clerkUserId) {
+            set({ isSyncing: false });
+          } else {
+            set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed' });
+          }
         }
       },
 
@@ -465,6 +475,14 @@ export const useAppStore = create<AppState>()(
         if (!s.clerkUserId) return;
         set({ isSyncing: true });
         const { data, error } = await pullProgress(s.clerkUserId);
+        // signOut can run while the pull is in flight. If it did, this row
+        // belongs to the previous learner and the store has already been reset
+        // for the next one — merging it in would hand them that progress, and
+        // their next syncToCloud would push it into their own row for good.
+        if (get().clerkUserId !== s.clerkUserId) {
+          set({ isSyncing: false });
+          return;
+        }
         if (error) {
           set({ isSyncing: false, lastSyncError: error });
           return;
