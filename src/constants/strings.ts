@@ -444,6 +444,37 @@ export const STRINGS = {
     // the paywall, so the row stays pressable and says so.
     lockedBadge: 'Locked',
     subtitle: 'Choose a situation to practice',
+    // One is shown at random under the Scenarios header. Keep each under 15 words.
+    //
+    // Every fact here must be checkable against a named source (docs/language/
+    // authority.md). The earlier list taught MSA as speech (na'am, shukran),
+    // overclaimed (marhaba "in every Arab country") and stated unverifiable
+    // numbers ("12 million words"). It also glossed dialect words — yalla,
+    // khalas, inshallah — that are UNSOURCED in phrases.ts, and a fun fact cannot
+    // say what it is sourced to, so those stay out until the phrases are sourced.
+    //
+    // No native speaker has reviewed these. None claims how Emiratis speak except
+    // the last, and that one generalises from a 100-student university sample.
+    funFacts: [
+      // Unicode Standard 16.0, ch. 9 (Arabic): "written from right to left".
+      'Arabic is written right to left, unlike English.',
+      // Letter count: Wikipedia, "Arabic alphabet" (tertiary; uncited there).
+      // Vowels: Unicode 16.0 ch. 9 — vowel marks "in normal writing ... are omitted".
+      'Arabic has 28 letters, and short vowels usually go unwritten.',
+      // Wikipedia, "Arabic alphabet": alif opens the hijā'ī order.
+      'Alif is the first letter of the Arabic alphabet.',
+      // Abu Dhabi Dept. of Culture & Tourism, "Gahwa-Arabic Coffee" (UNESCO ICH page):
+      // "a large pot for boiling coffee and cardamom". Heritage practice — current
+      // urban habit not checked.
+      'Emirati Arabic coffee is brewed with cardamom.',
+      // Same page: "The most important or oldest guest is served first". UNESCO,
+      // "Arabic coffee, a symbol of generosity" (UAE co-submitter): "older people
+      // and guests are served first". Heritage practice, as above.
+      'The oldest or most important guest is served coffee first.',
+      // Hopkyns, Zoghbor & Hassall (2021), World Englishes 40(2), doi:10.1111/weng.12506.
+      // 100 Emirati university students; "creative translanguaging practices".
+      'Many young Emiratis mix English into their Arabic.',
+    ],
     career: 'Career',
     social: 'Social',
     decisions: (count: number) => `${count} decisions`,
