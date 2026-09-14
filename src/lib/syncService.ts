@@ -65,9 +65,10 @@ function asArray<T>(raw: unknown): T[] {
  * Increment this when CloudUserData shape changes in a breaking way.
  * pullProgress uses it to detect stale cloud rows.
  * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
- *          3 = added pattern_progress + secret_endings_earned (Sentence Builder)
+ *          3 = added pattern_progress + secret_endings_earned (Sentence Builder);
+ *          4 = added endings_found + scenario_runs (replay loop, migration 011)
  */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
@@ -86,6 +87,8 @@ export interface CloudUserData {
   completed_scenarios: Record<string, { endingType: string; date: string }>;
   pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
   secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
+  endings_found: Record<string, string[]>;            // scenarioId → ending ids ever reached ("3 of 5 found")
+  scenario_runs: Record<string, number>;              // scenarioId → completed runs (replays = runs > 1)
   saved_phrases: string[];
   unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
@@ -115,6 +118,8 @@ export async function pushProgress(
         completed_scenarios: data.completed_scenarios,
         pattern_progress: data.pattern_progress,
         secret_endings_earned: data.secret_endings_earned,
+        endings_found: data.endings_found,
+        scenario_runs: data.scenario_runs,
         saved_phrases: data.saved_phrases,
         unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
@@ -166,6 +171,8 @@ export async function pullProgress(
       // supabase-js payload that made a bare `data.stats` crash the app.
       pattern_progress: asRecord<PatternProgress>(data.pattern_progress),
       secret_endings_earned: asRecord<string>(data.secret_endings_earned),
+      endings_found: asRecord<string[]>(data.endings_found),
+      scenario_runs: asRecord<number>(data.scenario_runs),
       saved_phrases: asArray<string>(data.saved_phrases),
       unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
       milestones: asArray<LearningMilestone>(data.milestones),

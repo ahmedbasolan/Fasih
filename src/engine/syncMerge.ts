@@ -118,3 +118,30 @@ export function mergeSecretEndings(
 ): Record<string, string> {
   return { ...cloud, ...local };
 }
+
+/**
+ * Union of endings found (scenarioId → ending ids). The endings collection
+ * ("3 of 5 found") only ever grows — a find on either device stays found.
+ */
+export function mergeEndingsFound(
+  local: Record<string, string[]>,
+  cloud: Record<string, string[]>,
+): Record<string, string[]> {
+  const merged: Record<string, string[]> = { ...cloud };
+  for (const [id, found] of Object.entries(local)) merged[id] = mergeIds(found, cloud[id] ?? []);
+  return merged;
+}
+
+/**
+ * Completed runs per scenario. Not summed: both sides can already count the
+ * same runs from before they diverged. The higher count never under-reports,
+ * which is the side that matters for "is this a replay?".
+ */
+export function mergeScenarioRuns(
+  local: Record<string, number>,
+  cloud: Record<string, number>,
+): Record<string, number> {
+  const merged: Record<string, number> = { ...cloud };
+  for (const [id, n] of Object.entries(local)) merged[id] = Math.max(n, cloud[id] ?? 0);
+  return merged;
+}

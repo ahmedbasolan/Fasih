@@ -43,7 +43,7 @@ Each scenario has **~5 endings**:
 
 **Route tags pick the destination.** Valid judgement choices carry `route: '<routeId>'`. Destination = route with most tags in the run; tie → route of the most recent tagged choice; no tags → script `defaultRoute`.
 
-**Meters pick the quality.** trust+respect+culture (unchanged `relationshipScore`) decides strong vs weak within the destination, and failure below the script's failure threshold. Meters are visible; routes are not — that is what keeps the destination non-obvious.
+**Meters pick the quality.** trust+respect+culture (unchanged `relationshipScore`) decides strong vs weak within the destination, and failure below the destination's weak `min`. Meters are visible; routes are not — that is what keeps the destination non-obvious.
 
 ### 2.2 Choice design (Q2)
 
@@ -143,7 +143,7 @@ Engine stays pure (`src/engine/scenarioEngine.ts`, no React, no store).
 
 **Types (`src/types/index.ts`)**
 
-- `ScenarioScript`: `routes: { id: string; label: string }[]`, `defaultRoute: string`, `failBelow: number`, `phrases: { core: string[]; byEnding: Record<string, string[]> }` (replaces `phrasesUnlocked`).
+- `ScenarioScript`: `routes: { id: string; label: string }[]`, `defaultRoute: string`, `phrases: { core: string[]; byEnding: Record<string, string[]> }` (replaces `phrasesUnlocked`). *Amended in branch 2:* no `failBelow` — each destination's weak ending `min` is its failure line, so `min` means "score needed" on every ending.
 - `ScenarioScene`: `kind: 'language' | 'judgement'`, `nextByRoute?: Record<string, string>` (the fork), feminine variants for learner-addressing NPC lines.
 - `ScenarioChoice`: `route?: string`.
 - `ScenarioEnding`: `id: string` (stable), `route?: string`, `tier?: 'strong' | 'weak'`, `hint: string`. `type` kept and derived: hidden → `exceptional`, strong → `success`, weak → `mixed`, failure → `failed` (keeps Situational Confidence and stats readable).
@@ -153,7 +153,7 @@ Engine stays pure (`src/engine/scenarioEngine.ts`, no React, no store).
 
 - `leadingRoute(state, script)` → route id (most tags, tie → most recent, none → `defaultRoute`).
 - `resolveNextScene`: `choice.next` → `scene.nextByRoute[leadingRoute]` → linear → null.
-- `evaluateEnding`: hidden (flags + min) → failure (`relationshipScore < failBelow`) → destination of `leadingRoute`, strong if score ≥ its strong `min`, else weak.
+- `evaluateEnding`: hidden (flags + min) → destination of `leadingRoute`: strong if score ≥ its strong `min`, weak if ≥ its weak `min`, else failure. Scripts without `routes` keep the legacy ladder until rewritten.
 
 **Store (`src/store/useAppStore.ts`)**
 
@@ -165,7 +165,7 @@ Engine stays pure (`src/engine/scenarioEngine.ts`, no React, no store).
 
 ## 4. Content rules (tests in `scenarioContent.test.ts`)
 
-New, applied to every script:
+New, applied to every **route** script (legacy scripts are exempt until their rewrite branch; rule 11 and unique ending ids apply to all). Implemented as `routeScriptProblems()` in `src/engine/scenarioRules.ts`, which simulates runs with the real engine:
 
 1. Greedy path never reaches the hidden ending.
 2. Hidden ending: ≥2 required flags set in different scenes; ≥1 on a non-max-impact choice.
