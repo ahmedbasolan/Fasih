@@ -7,7 +7,7 @@ import {
 } from '../components/icons';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import {
-  getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner,
+  getCareerScenarios, getSocialScenarios, filterScenariosForLearner,
 } from '../constants/scenarios';
 import {
   FONT_HEADING_SEMI,
@@ -108,7 +108,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const allScenarios: Scenario[] = useMemo(
     () => filterScenariosForLearner(
-      [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
+      [...getCareerScenarios(C), ...getSocialScenarios(C)]
         .filter((s) => s.mode === userMode),
       userGender,
     ),
