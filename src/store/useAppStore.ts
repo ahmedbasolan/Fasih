@@ -260,7 +260,8 @@ interface AppState {
   getCommunityChoiceStat: (key: string) => number;
   getCommunityEndingStat: (key: string) => number;
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
-  fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
+  /** Cache reach percentages as `scenarioId:endingId`; empty below the completion floor. */
+  fetchCommunityEndingStats: (scenarioId: string, endingIds: string[]) => Promise<void>;
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
   // Notifications
@@ -867,11 +868,11 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
 
-      fetchCommunityEndingStats: async (scenarioId: string) => {
-        const stats = await getEndingStats(scenarioId);
+      fetchCommunityEndingStats: async (scenarioId: string, endingIds: string[]) => {
+        const stats = await getEndingStats(scenarioId, endingIds);
         const entries: Record<string, number> = {};
-        for (const [endingType, pct] of Object.entries(stats)) {
-          entries[`${scenarioId}:${endingType}`] = pct;
+        for (const [endingId, pct] of Object.entries(stats)) {
+          entries[`${scenarioId}:${endingId}`] = pct;
         }
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
@@ -1019,7 +1020,7 @@ export const useAppStore = create<AppState>()(
         get().checkMilestones();
         get().addXP(XP_PER_SCENARIO);
         scheduleSync(() => get().syncToCloud());
-        void rcRecordEndingStat(scenarioId, ending.type);
+        void rcRecordEndingStat(scenarioId, ending.id);
       },
 
       abandonScenario: () => set({ activeScenarioState: null }),

@@ -68,6 +68,9 @@ export function MarginRail({ marks, orientation = 'vertical' }: Props) {
         excellent: { width: UNIT * 1.75, height: UNIT * 1.75, backgroundColor: C.PRIMARY },
         good: { width: UNIT * 1.25, height: UNIT * 1.25, backgroundColor: C.PRIMARY },
         neutral: { width: UNIT, height: UNIT, backgroundColor: C.TEXT3 },
+        // Judgement choice: one size for every valid answer, so the rail shows
+        // that a decision was made without grading it.
+        chosen: { width: UNIT * 1.25, height: UNIT * 1.25, backgroundColor: C.TEXT2 },
         bad: {
           width: UNIT * 1.75,
           height: UNIT * 1.75,
@@ -85,6 +88,7 @@ export function MarginRail({ marks, orientation = 'vertical' }: Props) {
       case 'excellent': return styles.excellent;
       case 'good': return styles.good;
       case 'bad': return styles.bad;
+      case 'chosen': return styles.chosen;
       default: return styles.neutral;
     }
   };
