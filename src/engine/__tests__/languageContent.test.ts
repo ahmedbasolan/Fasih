@@ -39,6 +39,8 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
+import { phrasesEarned } from '../scenarioEngine';
+import { enumerateRuns } from '../scenarioRules';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
@@ -75,6 +77,16 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/npc-warm`, scene.charDialogue.warm.arabic);
         add(`${id}/${scene.id}/npc-neutral`, scene.charDialogue.neutral.arabic);
         add(`${id}/${scene.id}/npc-cold`, scene.charDialogue.cold.arabic);
+      }
+      // What a female learner hears instead — same rules, or they are a back door.
+      if (scene.femaleLearner) {
+        add(`${id}/${scene.id}/npc-f`, scene.femaleLearner.arabic);
+        const toned = scene.femaleLearner.charDialogue;
+        if (toned) {
+          add(`${id}/${scene.id}/npc-f-warm`, toned.warm.arabic);
+          add(`${id}/${scene.id}/npc-f-neutral`, toned.neutral.arabic);
+          add(`${id}/${scene.id}/npc-f-cold`, toned.cold.arabic);
+        }
       }
       for (const c of scene.choices) {
         add(`${id}/${scene.id}/${c.id}`, c.arabic);
@@ -129,29 +141,11 @@ function choiceCards(scriptId: string): string[] {
  * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
  * any single playthrough visits five — counting scenes would have marked it two
  * turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending.
+ * only appear on a secret ending. Runs come from the real engine, so a route
+ * script's fork is followed exactly as the player follows it.
  */
 function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const script = scripts[scriptId];
-  const scenes = script.scenes;
-  const byId = new Map(scenes.map(s => [s.id, s]));
-  const lengths: number[] = [];
-
-  const walk = (sceneId: string | null, n: number, flags: Set<string>, depth: number) => {
-    const scene = sceneId ? byId.get(sceneId) : undefined;
-    if (!scene || depth > 25) { lengths.push(n); return; }
-    const visible = scene.choices.filter(c => !c.requiredFlag || flags.has(c.requiredFlag));
-    if (!visible.length) { lengths.push(n); return; }
-    const idx = scenes.findIndex(s => s.id === sceneId);
-    const counted = scene.bonus ? n : n + 1;
-    for (const c of visible) {
-      const next = new Set(flags);
-      if (c.flag) next.add(c.flag);
-      walk(c.next !== undefined ? c.next : (scenes[idx + 1]?.id ?? null), counted, next, depth + 1);
-    }
-  };
-
-  walk(scenes[0]?.id ?? null, 0, new Set(), 0);
+  const lengths = enumerateRuns(scripts[scriptId]).map(r => r.steps.length);
   return { min: Math.min(...lengths), max: Math.max(...lengths) };
 }
 
@@ -340,7 +334,8 @@ describe('level gates', () => {
       if (!cards.length) continue;
 
       const turns = turnsPerPlaythrough(scriptId);
-      const phrases = (script.phrasesUnlocked ?? []).length;
+      // What one run can grant: core plus the largest single ending's set.
+      const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));

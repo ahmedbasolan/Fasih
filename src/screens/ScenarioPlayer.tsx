@@ -20,7 +20,7 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
-import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
+import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore, phrasesEarned, allPhraseIds } from '../engine/scenarioEngine';
 import { railMarks } from '../engine/marginRail';
 import type { RailMark } from '../engine/marginRail';
 import {
@@ -33,7 +33,7 @@ import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
 import { MarginRail } from '../components/scenario/MarginRail';
-import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioScript } from '../types';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, Phrase } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -45,16 +45,9 @@ interface Props {
 
 type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 
-/**
- * Phrase ids a scenario grants on completion.
- *
- * Single source of truth for both the result screen's "phrases unlocked" list
- * and the store writes that actually unlock them — those two used to be derived
- * separately, and only the display half existed.
- */
-function resolveUnlockedPhraseIds(script: ScenarioScript, scenarioId: string): string[] {
-  if (script.phrasesUnlocked?.length) return script.phrasesUnlocked;
-  return PHRASES.filter(p => p.scenarioSource === scenarioId).slice(0, 8).map(p => p.id);
+/** Phrase ids → library entries, dropping any id the library doesn't have. */
+function toPhrases(ids: string[]): Phrase[] {
+  return ids.map(id => PHRASES.find(p => p.id === id)).filter((p): p is Phrase => p !== undefined);
 }
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
@@ -362,7 +355,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // onboarding, so every phrase earned by finishing a scenario stayed
     // un-unlocked in the library and the two screens disagreed. One bulk write
     // rather than one per phrase — this fires as the result screen animates in.
-    unlockPhrases(resolveUnlockedPhraseIds(scriptData, scenarioId));
+    // Same function as the result screen's list, so the two cannot disagree.
+    unlockPhrases(phrasesEarned(scriptData, currEnding));
     trackScenarioCompleted({
       scenarioId,
       title: scriptData.title,
@@ -612,9 +606,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
 
-  const unlockedPhrases = resolveUnlockedPhraseIds(scriptData, scenarioId)
-    .map(id => PHRASES.find(p => p.id === id))
-    .filter(Boolean) as typeof PHRASES;
+  // Intro: everything the scenario can teach. Result: what this run earned.
+  const learnablePhrases = toPhrases(allPhraseIds(scriptData));
+  const earnedPhrases = toPhrases(phrasesEarned(scriptData, ending));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -673,7 +667,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             scenario={scenario}
             scenes={scenes}
             endings={endings}
-            unlockedPhrases={unlockedPhrases}
+            unlockedPhrases={learnablePhrases}
             onBegin={() => {
               trackScenarioStarted({ scenarioId, title: scriptData.title, category: scenario?.mode });
               setPhase('scene');
@@ -818,7 +812,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             scenarioId={scenarioId}
             scriptData={scriptData}
             railMarks={finalizedRail ?? railMarksForRun}
-            unlockedPhrases={unlockedPhrases}
+            unlockedPhrases={earnedPhrases}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
             getCommunityEndingStat={getCommunityEndingStat}

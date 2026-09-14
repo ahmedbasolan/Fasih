@@ -131,7 +131,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
   'first-morning': {
     id: 'first-morning',
     title: 'The First Morning',
-    phrasesUnlocked: ['fm-s1-1', 'fm-s1-2', 'fm-s1-3', 'fm-s1-4', 'fm-s1-5', 'fm-s1-6', 'fm-s1-7', 'fm-s1-8'],
+    phrases: { core: ['fm-s1-1', 'fm-s1-2', 'fm-s1-3', 'fm-s1-4', 'fm-s1-5', 'fm-s1-6', 'fm-s1-7', 'fm-s1-8'], byEnding: {} },
     primerPhrases: ['fm-s1-1', 'fm-s1-2', 'fm-s1-5'], // صباح الخير / صباح النور / أنا يديد هني
     scenes: [
       {
@@ -210,7 +210,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       {
-        min: 30, secret: true, requiredFlags: ['GREETED_IN_DIALECT', 'BLESSED_HIS_EFFORT'],
+        id: 'one-of-the-boys', min: 30, secret: true, requiredFlags: ['GREETED_IN_DIALECT', 'BLESSED_HIS_EFFORT'],
         title: 'One of the Boys', arabic: 'صرت من الشباب', roman: 'sirt min ash-shabaab',
         en: 'Faisal: "Come sit with us at break — you\'re one of the boys now"',
         desc: 'You did the two things that matter most on a first morning: you answered his greeting the way an Emirati would, and you blessed his effort instead of just thanking him for the drink. Faisal has already told the others about you before your shift began. SECRET ENDING — most first-timers never link these two moments.',
@@ -223,7 +223,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 26,
+        id: 'the-warm-welcome', min: 26,
         title: 'The Warm Welcome', arabic: 'الترحيب الحار', roman: 'at-tarhiib al-haar',
         en: 'Faisal: "MashaAllah! I didn\'t feel like you were new — I felt like you were one of us"',
         desc: 'Your first morning couldn\'t have gone better. Faisal didn\'t just meet you — he welcomed you. By greeting correctly, accepting hospitality, and using simple blessings, you became a person, not just a new employee.',
@@ -236,7 +236,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 15,
+        id: 'the-good-start', min: 15,
         title: 'The Good Start', arabic: 'بداية زينة', roman: 'bidaaya zayna',
         en: 'Faisal: "Good luck! Come tomorrow and we\'ll have coffee again"',
         desc: 'You made a good impression. Faisal sees someone who\'s trying — maybe not fluent, but genuine. The invitation to coffee tomorrow means the door is open. Most new hires don\'t get a second coffee this fast.',
@@ -248,7 +248,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 4,
+        id: 'the-quiet-start', min: 4,
         title: 'The Quiet Start', arabic: 'بداية هادية', roman: 'bidaaya haadya',
         en: 'Faisal: "Good luck" (polite but brief)',
         desc: 'Faisal was friendly. You were polite. But the connection stayed on the surface. He\'ll say hello when he sees you, but he won\'t go out of his way to help. In a hotel where relationships determine who gets the good shifts — that matters.',
@@ -259,7 +259,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 0,
+        id: 'the-cold-start', min: 0,
         title: 'The Cold Start', arabic: 'بداية باردة', roman: 'bidaaya baarda',
         en: 'Faisal: "...Good luck" (already walking away)',
         desc: 'Faisal tried. He greeted you, offered coffee, gave you time. But the connection didn\'t land. He won\'t hold it against you — but he also won\'t be the colleague who saves you when you\'re lost on the third floor. First impressions are hard to redo.',
@@ -272,7 +272,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
   'coffee-invitation': {
     id: 'coffee-invitation',
     title: 'The Coffee Invitation',
-    phrasesUnlocked: ['w1', 'w2', 'w3', 's1', 'gr1', 'gr6', 'fm7', 's6'],
+    phrases: { core: ['w1', 'w2', 'w3', 's1', 'gr1', 'gr6', 'fm7', 's6'], byEnding: {} },
     primerPhrases: ['w1', 's1', 'gr1'], // إن شاء الله / يلا نشرب قهوة / مشكور
     scenes: [
       {
@@ -320,10 +320,10 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 22, title: 'Family Partnership', arabic: 'أنت من أهلنا', roman: 'inta min ahlna', en: "You're one of us now", desc: 'Ahmed invites you to meet his family. You\'ve crossed from colleague to friend.', color: C.JADE_ACCENT, type: 'exceptional' },
-      { min: 13, title: 'Job Referral', arabic: 'إن شاء الله خير', roman: "in shaa' allah khair", en: 'God willing, only good things', desc: 'Ahmed mentions a great opening and says he\'ll personally recommend you.', color: C.JADE2, type: 'success' },
-      { min: 3, title: 'Transactional Colleague', arabic: 'زين، شوف', roman: 'zayn, shuuf', en: "OK, we'll see", desc: 'A pleasant chat but the relationship stays professional.', color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Missed Connection', arabic: 'بكرة إن شاء الله', roman: "bukra in shaa' allah", en: "Tomorrow, God willing", desc: 'Cultural missteps created distance. Ahmed politely closes the conversation.', color: C.ERROR, type: 'failed' },
+      { id: 'family-partnership', min: 22, title: 'Family Partnership', arabic: 'أنت من أهلنا', roman: 'inta min ahlna', en: "You're one of us now", desc: 'Ahmed invites you to meet his family. You\'ve crossed from colleague to friend.', color: C.JADE_ACCENT, type: 'exceptional' },
+      { id: 'job-referral', min: 13, title: 'Job Referral', arabic: 'إن شاء الله خير', roman: "in shaa' allah khair", en: 'God willing, only good things', desc: 'Ahmed mentions a great opening and says he\'ll personally recommend you.', color: C.JADE2, type: 'success' },
+      { id: 'transactional-colleague', min: 3, title: 'Transactional Colleague', arabic: 'زين، شوف', roman: 'zayn, shuuf', en: "OK, we'll see", desc: 'A pleasant chat but the relationship stays professional.', color: C.VIOLET2, type: 'mixed' },
+      { id: 'missed-connection', min: 0, title: 'Missed Connection', arabic: 'بكرة إن شاء الله', roman: "bukra in shaa' allah", en: "Tomorrow, God willing", desc: 'Cultural missteps created distance. Ahmed politely closes the conversation.', color: C.ERROR, type: 'failed' },
     ],
   },
 
@@ -331,7 +331,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
   'eid-greeting': {
     id: 'eid-greeting',
     title: 'Eid Greetings',
-    phrasesUnlocked: ['eid-1', 'eid-2', 'eid-3', 'eid-4', 'eid-5', 'eid-6', 'core-3'],
+    phrases: { core: ['eid-1', 'eid-2', 'eid-3', 'eid-4', 'eid-5', 'eid-6', 'core-3'], byEnding: {} },
     primerPhrases: ['eid-1', 'eid-3', 'eid-6'], // عيدكم مبارك / يسلموا إيديك / بيتنا بيتك
     scenes: [
       {
@@ -385,7 +385,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       {
-        min: 22, title: 'Adopted Family', arabic: 'أنت ولدنا', roman: "inta waldna",
+        id: 'adopted-family', min: 22, title: 'Adopted Family', arabic: 'أنت ولدنا', roman: "inta waldna",
         en: 'You are our child',
         desc: 'Uncle Rashid declares you family. In Gulf culture, being called "ولدنا" (our child) by an elder is not a figure of speech — it is a formal declaration of belonging. You will never spend another Eid alone.',
         color: C.JADE_ACCENT, type: 'exceptional',
@@ -397,7 +397,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 13, title: 'Neighbourhood Welcome', arabic: 'أهلاً فيك دايماً', roman: "ahlan fiik daayiman",
+        id: 'neighbourhood-welcome', min: 13, title: 'Neighbourhood Welcome', arabic: 'أهلاً فيك دايماً', roman: "ahlan fiik daayiman",
         en: 'Always welcome',
         desc: 'Rashid tells the neighbours about you. In close-knit Emirati neighbourhoods, word travels fast — you will find doors opening before you even knock.',
         color: C.JADE2, type: 'success',
@@ -408,13 +408,13 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 3, title: 'Polite Visitor', arabic: 'تفضل وقت ما تبي', roman: "tfaddal wagt ma tabi",
+        id: 'polite-visitor', min: 3, title: 'Polite Visitor', arabic: 'تفضل وقت ما تبي', roman: "tfaddal wagt ma tabi",
         en: 'Come whenever you like',
         desc: 'A nice visit, but it felt more like a courtesy call than a connection. Rashid was generous — he always is — but the warmth did not become a bond.',
         color: C.VIOLET2, type: 'mixed',
       },
       {
-        min: 0, title: 'Missed Blessing', arabic: 'الله كريم', roman: "allah kariim",
+        id: 'missed-blessing', min: 0, title: 'Missed Blessing', arabic: 'الله كريم', roman: "allah kariim",
         en: 'God is generous',
         desc: 'Uncle Rashid smiles politely. "الله كريم" (God is generous) is what Gulf Arabs say when something disappointing happens and they choose grace over complaint. He chose grace.',
         color: C.ERROR, type: 'failed',
@@ -430,7 +430,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     kafIntro: 'You just landed in Dubai. Your driver Youssef is Egyptian — warm, chatty, and ready to talk. He speaks Egyptian; you answer in Gulf Arabic. Learning to hold that conversation is the whole point.',
     iconName: 'car',
     estimatedMinutes: 8,
-    phrasesUnlocked: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'],
+    phrases: { core: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'], byEnding: {} },
     primerPhrases: ['tx-1', 'tx-3', 'core-2'], // الله يحفظ عائلتك / شو يابك دبي؟ / شخبارك؟
     scenes: [
       {
@@ -527,10 +527,10 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
     endings: [
-      { min: 24, title: 'Best Ride Ever', arabic: 'أحسن رحلة!', roman: "ahsan rihla!", en: 'What a ride!', desc: "You didn't just take a taxi — you made a friend. Youssef gave you his number and will genuinely pick up when you call. You also did something harder than it looks: you understood Egyptian and answered in Khaleeji, all the way to the hotel.", color: C.JADE_ACCENT, type: 'exceptional' },
-      { min: 13, title: 'Good Chat', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa', en: 'Nice conversation', desc: "A genuinely pleasant ride. Youssef enjoyed talking to you and wished you well.", color: C.JADE2, type: 'success' },
-      { min: 3, title: 'Forgettable Ride', arabic: 'رحلة عادية', roman: "rihla 'aadiyya", en: 'Just a ride', desc: "Youssef drove you to the hotel. That's about it. Another passenger in a long day of passengers.", color: C.VIOLET2, type: 'mixed' },
-      { min: 0, title: 'Awkward Silence', arabic: 'سكوت محرج', roman: 'sukoot muhrij', en: 'Uncomfortable silence', desc: "Youssef gave up trying. The last 20 minutes were just Amr Diab on the radio and the sound of traffic.", color: C.ERROR, type: 'failed' },
+      { id: 'best-ride-ever', min: 24, title: 'Best Ride Ever', arabic: 'أحسن رحلة!', roman: "ahsan rihla!", en: 'What a ride!', desc: "You didn't just take a taxi — you made a friend. Youssef gave you his number and will genuinely pick up when you call. You also did something harder than it looks: you understood Egyptian and answered in Khaleeji, all the way to the hotel.", color: C.JADE_ACCENT, type: 'exceptional' },
+      { id: 'good-chat', min: 13, title: 'Good Chat', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa', en: 'Nice conversation', desc: "A genuinely pleasant ride. Youssef enjoyed talking to you and wished you well.", color: C.JADE2, type: 'success' },
+      { id: 'forgettable-ride', min: 3, title: 'Forgettable Ride', arabic: 'رحلة عادية', roman: "rihla 'aadiyya", en: 'Just a ride', desc: "Youssef drove you to the hotel. That's about it. Another passenger in a long day of passengers.", color: C.VIOLET2, type: 'mixed' },
+      { id: 'awkward-silence', min: 0, title: 'Awkward Silence', arabic: 'سكوت محرج', roman: 'sukoot muhrij', en: 'Uncomfortable silence', desc: "Youssef gave up trying. The last 20 minutes were just Amr Diab on the radio and the sound of traffic.", color: C.ERROR, type: 'failed' },
     ],
   },
 
@@ -542,7 +542,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     kafIntro: "You meet someone in your building elevator. Sami is Jordanian — reserved at first. This is Level 1: short phrases, simple choices. He speaks Levantine, you answer in Gulf Arabic. Noticing the difference is the lesson.",
     iconName: 'building',
     estimatedMinutes: 6,
-    phrasesUnlocked: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'],
+    phrases: { core: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'], byEnding: {} },
     primerPhrases: ['el-1', 'el-3', 'el-4'], // السلام عليكم / تعال على شاي / انت في أي دور؟
     scenes: [
       {
@@ -638,7 +638,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       {
-        min: 30, title: 'The Chai Invitation', arabic: 'تعال على شاي!', roman: "ta'aal 'ala shaay!",
+        id: 'the-chai-invitation', min: 30, title: 'The Chai Invitation', arabic: 'تعال على شاي!', roman: "ta'aal 'ala shaay!",
         en: 'Come for tea!',
         desc: 'In six floors and one hallway, you went from strangers to neighbours. Sami will knock on your door this weekend with Jordanian mint tea.',
         color: C.JADE_ACCENT, type: 'exceptional',
@@ -650,7 +650,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 16, title: 'Friendly Neighbour', arabic: 'جار طيب', roman: 'jaar tayyib',
+        id: 'friendly-neighbour', min: 16, title: 'Friendly Neighbour', arabic: 'جار طيب', roman: 'jaar tayyib',
         en: 'Good neighbour',
         desc: "You and Sami will say hi every time you pass each other. He'll hold the elevator for you. It's not a friendship yet — but it's the start of one.",
         color: C.JADE2, type: 'success',
@@ -661,13 +661,13 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
       {
-        min: 4, title: 'The Hallway Nod', arabic: 'هزة راس في الممر', roman: "hazzat raas fil-mamarr",
+        id: 'the-hallway-nod', min: 4, title: 'The Hallway Nod', arabic: 'هزة راس في الممر', roman: "hazzat raas fil-mamarr",
         en: 'Hallway nod',
         desc: "You and Sami will recognise each other. There'll be an awkward nod when you pass. Neither of you will remember the other's name.",
         color: C.VIOLET2, type: 'mixed',
       },
       {
-        min: 0, title: 'Invisible Neighbours', arabic: 'جيران ما يعرفون بعض', roman: "jiraan ma ya'rifun ba'ad",
+        id: 'invisible-neighbours', min: 0, title: 'Invisible Neighbours', arabic: 'جيران ما يعرفون بعض', roman: "jiraan ma ya'rifun ba'ad",
         en: 'Stranger neighbours',
         desc: "Two doors, three feet apart, and a wall between you. Sami won't try again. You'll hear his music through the wall and wonder who lives there.",
         color: C.ERROR, type: 'failed',
@@ -683,7 +683,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrasesUnlocked: ['e_new1'],
+    phrases: { core: ['e_new1'], byEnding: {} },
     scenes: [
       {
         id: 'c1', charName: 'Layla', charGender: 'female', setting: 'Small café — morning',
@@ -713,21 +713,21 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       {
-        min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
+        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
         en: 'You\'ve got a mate at the café',
         desc: 'Layla will remember you. Every time you come in, she\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
         color: C.JADE_ACCENT, type: 'exceptional',
         culturalJourney: ['You opened with a proper greeting', 'You used "law samahti" — the Gulf please, in its feminine form for a female barista', 'You used "mashkura" — the feminine form of thanks, because Layla is female'],
       },
       {
-        min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
+        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
         en: 'Nice conversation',
         desc: 'You ordered in Arabic, Layla appreciated the effort. Next time you come in, she\'ll say hello and might chat for a moment.',
         color: C.JADE2, type: 'success',
         culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
       },
       {
-        min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
+        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
         en: 'All done',
         desc: 'You got your coffee. Layla was professional. Next time you come in, it will be a similar interaction.',
         color: C.VIOLET2, type: 'mixed',
@@ -744,7 +744,7 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrasesUnlocked: ['e_new1'],
+    phrases: { core: ['e_new1'], byEnding: {} },
     scenes: [
       {
         id: 'c1', charName: 'Omar', charGender: 'male', setting: 'Small café — morning',
@@ -774,21 +774,21 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
     endings: [
       {
-        min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
+        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
         en: 'You\'ve got a mate at the café',
         desc: 'Omar will remember you. Every time you come in, he\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
         color: C.JADE_ACCENT, type: 'exceptional',
         culturalJourney: ['You opened with a proper greeting', 'You used "law samaht" — the Gulf please, not the textbook من فضلك', 'You used the masculine form of thanks because Omar is male'],
       },
       {
-        min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
+        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
         en: 'Nice conversation',
         desc: 'You ordered in Arabic, Omar appreciated the effort. Next time you come in, he\'ll say hello and might chat for a moment.',
         color: C.JADE2, type: 'success',
         culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
       },
       {
-        min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
+        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
         en: 'All done',
         desc: 'You got your coffee. Omar was professional. Next time you come in, it will be a similar interaction.',
         color: C.VIOLET2, type: 'mixed',
