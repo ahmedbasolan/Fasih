@@ -7,8 +7,9 @@ import {
 } from '../components/icons';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import {
-  getCareerScenarios, getSocialScenarios, filterScenariosForLearner,
+  getCareerScenarios, getSocialScenarios, filterScenariosForLearner, getScenarioScripts,
 } from '../constants/scenarios';
+import { endingsProgress, type EndingsProgress } from '../engine/scenarioPresentation';
 import {
   FONT_HEADING_SEMI,
   FONT_LATIN,
@@ -20,7 +21,7 @@ import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
 import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
-import type { UserProfile, Scenario } from '../types';
+import type { UserProfile, Scenario, ScenarioMode } from '../types';
 
 interface Props {
   user: UserProfile | null;
@@ -33,6 +34,11 @@ interface Props {
 // which can never be true while the first three are free. Two tabs that each
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
+
+/** The list is grouped by mode, so it mixes section headings with entries. */
+type Row =
+  | { kind: 'header'; mode: ScenarioMode }
+  | { kind: 'scenario'; scenario: Scenario; index: number; endings: EndingsProgress | undefined };
 
 // ─── Random motivational headings ───────────────────────────────────────────
 
@@ -103,46 +109,62 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
   const userGender = useAppStore((s) => s.user?.gender);
+  const endingsFound = useAppStore((s) => s.endingsFound);
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
 
+  // Both modes, always (spec 2026-09-14 Q19): with six scenarios, hiding the
+  // other mode's three made a paid app look half-empty — and a career learner
+  // still rides taxis. The learner's own mode is listed first.
   const allScenarios: Scenario[] = useMemo(
-    () => filterScenariosForLearner(
-      [...getCareerScenarios(C), ...getSocialScenarios(C)]
-        .filter((s) => s.mode === userMode),
-      userGender,
-    ),
+    () => filterScenariosForLearner([...getCareerScenarios(C), ...getSocialScenarios(C)], userGender),
     // isDark is the stable bool determining C — avoids rebuilding the scenario list
     // on every render since C is a new object reference each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isDark, userMode, userGender],
+    [isDark, userGender],
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scripts = useMemo(() => getScenarioScripts(C), [isDark]);
 
-  const displayScenarios = useMemo(() => {
-    // Determine actual locked status based on subscription. hasScenarioAccess
-    // expects the scenario's position in the full list — index must be taken
-    // from allScenarios, NOT the filtered subset, or the "first 3 free" gate
-    // rebases and lets paywalled scenarios appear unlocked on filtered tabs.
-    const withAccess = allScenarios.map((s, index) => ({
-      ...s,
-      locked: !hasScenarioAccess(index),
-    }));
-    const filtered = withAccess.filter((s) => {
-      if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
-      return true;
-    });
-    // unlocked first, locked at the bottom
-    return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+  const rows: Row[] = useMemo(() => {
+    const modes: ScenarioMode[] = userMode === 'career' ? ['career', 'social'] : ['social', 'career'];
+    const out: Row[] = [];
+    for (const mode of modes) {
+      // hasScenarioAccess takes the position WITHIN the mode — "scenario 1 of
+      // each mode is free" is a per-mode rule — and it must be taken before the
+      // saved filter, or the free slots rebase onto whatever is left.
+      const list = allScenarios
+        .filter((s) => s.mode === mode)
+        .map((s, index) => ({ ...s, locked: !hasScenarioAccess(index) }))
+        .filter((s) => filterTab !== 'saved' || favoriteScenarios.includes(s.id))
+        // unlocked first, locked at the bottom
+        .sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+      if (list.length === 0) continue;
+      out.push({ kind: 'header', mode });
+      list.forEach((scenario, index) => {
+        const script = scripts[scenario.id];
+        out.push({
+          kind: 'scenario',
+          scenario,
+          index,
+          endings: script ? endingsProgress(script, endingsFound[scenario.id] ?? []) : undefined,
+        });
+      });
+    }
+    return out;
     // subscriptionStatus and completedCount are what hasScenarioAccess reads —
     // they are the real dependencies. hasScenarioAccess itself is a stable ref.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess, subscriptionStatus, completedCount]);
+  }, [allScenarios, scripts, userMode, filterTab, favoriteScenarios, endingsFound, hasScenarioAccess, subscriptionStatus, completedCount]);
+
+  const displayScenarios = rows.flatMap((r) => (r.kind === 'scenario' ? [r.scenario] : []));
 
   // Paywalled and unwritten are different states and get different copy.
   // `locked` is assigned above from hasScenarioAccess (subscription); `comingSoon`
   // is authored content metadata.
   const paywalledCount = displayScenarios.filter((s) => s.locked && !s.comingSoon).length;
-  const comingSoonCount = displayScenarios.filter((s) => s.comingSoon).length;
+  const comingSoonScenarios = displayScenarios.filter((s) => s.comingSoon);
+  const comingSoonCount = comingSoonScenarios.length;
 
   const TABS: { id: FilterTab; label: string }[] = [
     { id: 'all', label: STRINGS.scenarios.tabAll },
@@ -207,18 +229,37 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           Single column. Entries are separated by their own hairline, so the
           list has no gap and no card fills. */}
       <FlashList
-        data={displayScenarios}
-        keyExtractor={(item: Scenario) => item.id}
-        renderItem={({ item, index }: { item: Scenario; index: number }) => (
-          <ScenarioEntry
-            scenario={item}
-            index={String(index + 1).padStart(2, '0')}
-            first={index === 0}
-            onPress={() =>
-              item.locked ? void presentPaywall() : onScenarioSelect(item.id)
-            }
-          />
-        )}
+        data={rows}
+        keyExtractor={(row: Row) => (row.kind === 'header' ? `header-${row.mode}` : row.scenario.id)}
+        getItemType={(row: Row) => row.kind}
+        renderItem={({ item: row }: { item: Row }) =>
+          row.kind === 'header' ? (
+            <Text
+              accessibilityRole="header"
+              style={{
+                fontFamily: FONT_LATIN_MEDIUM,
+                fontSize: 11,
+                letterSpacing: 1.6,
+                textTransform: 'uppercase',
+                color: C.TEXT3,
+                paddingTop: SPACE.xl,
+                paddingBottom: SPACE.sm,
+              }}
+            >
+              {row.mode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
+            </Text>
+          ) : (
+            <ScenarioEntry
+              scenario={row.scenario}
+              index={String(row.index + 1).padStart(2, '0')}
+              first={row.index === 0}
+              endings={row.endings}
+              onPress={() =>
+                row.scenario.locked ? void presentPaywall() : onScenarioSelect(row.scenario.id)
+              }
+            />
+          )
+        }
         {...({ estimatedItemSize: 120 } as any)}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_MARGIN,
@@ -280,7 +321,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                       <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
                         {paywalledCount > 0
                           ? STRINGS.scenarios.lockedCount(paywalledCount)
-                          : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
+                          : STRINGS.scenarios.comingSoon(comingSoonCount, comingSoonScenarios[0]?.mode ?? userMode)}
                       </Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs }}>
                         {paywalledCount > 0

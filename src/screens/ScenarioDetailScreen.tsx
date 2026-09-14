@@ -9,6 +9,9 @@ import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../c
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
 import { STRINGS } from '../constants/strings';
+import { DECISIONS_PER_RUN } from '../constants/curriculum';
+import { isRouteScript } from '../engine/scenarioEngine';
+import { endingsProgress } from '../engine/scenarioPresentation';
 
 interface Props {
   scenarioId: string;
@@ -28,6 +31,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
+  const foundEndingIds = useAppStore((s) => s.endingsFound[scenarioId]);
   const toggleFavoriteScenario = useAppStore((s) => s.toggleFavoriteScenario);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
   const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
@@ -69,6 +73,15 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     );
   }
 
+  // Decisions, not scenes: a route script's fork puts two variant scenes in
+  // the array for one decision. And no bonus scenes — listing one announces
+  // the hidden ending's reward before anyone has found it. A route script
+  // shows no scene list at all: its scene settings would give the branches away.
+  const routeScript = isRouteScript(script);
+  const decisions = routeScript ? DECISIONS_PER_RUN : scenario.decisions;
+  const listedScenes = routeScript ? [] : script.scenes.filter((sc) => !sc.bonus);
+  const progress = endingsProgress(script, foundEndingIds ?? []);
+
   return (
     <Screen
       background={<GhostLetters glyphs={['ح', 'و', 'ا']} />}
@@ -97,7 +110,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               is on the paper rather than floating over an image. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT }}>
-              {script.scenes.length} Scenes
+              {STRINGS.scenarios.decisions(decisions)}
             </Text>
             <Pressable
               onPress={() => toggleFavoriteScenario(scenarioId)}
@@ -110,8 +123,11 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
             </Pressable>
           </View>
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: SPACE.sm }}>
+            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, decisions * 2))}
+          </Text>
           <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
-            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, script.scenes.length * 2))}
+            {STRINGS.scenarios.endingsSummary(progress)}
           </Text>
 
           {/* Description */}
@@ -142,13 +158,13 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
 
           {/* Scenes list — progress, not navigation. */}
           <View style={{ gap: 16 }}>
-            {script.scenes.length === 0 ? (
+            {routeScript ? null : listedScenes.length === 0 ? (
               <EmptyState
                 title={STRINGS.scenarios.noScenesTitle}
                 subtitle={STRINGS.scenarios.noScenesSub}
               />
             ) : (
-              script.scenes.map((scene, index) => {
+              listedScenes.map((scene, index) => {
                 const isLocked = index > scenesUnlocked && !isCompleted;
                 const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
                 return (

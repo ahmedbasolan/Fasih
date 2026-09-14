@@ -176,6 +176,51 @@ export function resolveNextScene(
   return script.scenes[idx + 1]?.id ?? null;
 }
 
+// ─── Main path & bonus scene ─────────────────────────────────────────────────
+
+/**
+ * A resolved scene id as the main path sees it: bonus scenes are stepped over
+ * (they live in the same array as everything else), so a target that is — or
+ * is followed only by — bonus scenes means the main path is over.
+ */
+export function mainPathTarget(script: ScenarioScript, target: string | null): string | null {
+  if (target === null) return null;
+  let idx = script.scenes.findIndex(s => s.id === target);
+  if (idx < 0) return null;
+  while (idx < script.scenes.length && script.scenes[idx].bonus) idx++;
+  return script.scenes[idx]?.id ?? null;
+}
+
+/**
+ * Where the player goes after the current choice: the next main-path scene,
+ * the bonus scene if the main path just ended on the hidden ending, or null
+ * for the result screen.
+ *
+ * `state` is the state AFTER the choice was applied (flags and score count);
+ * `resolved` is what resolveNextScene returned for it. Previously the player
+ * followed `resolved` directly, so a bonus scene next in the array was played
+ * by everyone and the hidden-ending gate never decided anything.
+ */
+export function sceneAfterChoice(
+  state: ScenarioState,
+  resolved: string | null,
+  script: ScenarioScript,
+): string | null {
+  const current = script.scenes.find(s => s.id === state.currentSceneId);
+  if (current?.bonus) return null;
+
+  const next = mainPathTarget(script, resolved);
+  if (next !== null) return next;
+
+  const secret = script.endings.find(e => e.secret);
+  const bonus = script.scenes.find(s => s.bonus);
+  const earned =
+    !!secret && !!bonus &&
+    (secret.requiredFlags ?? []).every(f => state.flags.has(f)) &&
+    relationshipScore(state) >= secret.min;
+  return earned ? bonus.id : null;
+}
+
 // ─── evaluateEnding ───────────────────────────────────────────────────────────
 /**
  * Determines which ending the player earned.

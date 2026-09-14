@@ -12,7 +12,7 @@
  * Legacy scripts (no `routes`) are exempt until they are rewritten.
  */
 import type { ScenarioChoice, ScenarioEnding, ScenarioScene, ScenarioScript, ScenarioState } from '../types';
-import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, isRouteScript, resolveNextScene } from './scenarioEngine';
+import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, isRouteScript, mainPathTarget, resolveNextScene } from './scenarioEngine';
 import { DECISIONS_PER_RUN, MAX_BEST_IS_LONGEST_SHARE } from '../constants/curriculum';
 
 export interface PlayedRun {
@@ -41,19 +41,6 @@ function startState(script: ScenarioScript, firstSceneId: string): ScenarioState
   };
 }
 
-/**
- * Where the player actually goes after a choice. Mirrors ScenarioPlayer: a
- * bonus scene is never walked into — it is skipped, and reached only through
- * the hidden ending — so the main path ends at the first non-bonus scene or null.
- */
-function nextMainScene(script: ScenarioScript, target: string | null): string | null {
-  if (target === null) return null;
-  let idx = script.scenes.findIndex(s => s.id === target);
-  if (idx < 0) return null;
-  while (idx < script.scenes.length && script.scenes[idx].bonus) idx++;
-  return script.scenes[idx]?.id ?? null;
-}
-
 type Picker = (visible: ScenarioChoice[]) => ScenarioChoice[];
 
 function walk(script: ScenarioScript, pick: Picker): PlayedRun[] {
@@ -71,7 +58,8 @@ function walk(script: ScenarioScript, pick: Picker): PlayedRun[] {
       return;
     }
     for (const choice of pick(visible)) {
-      const target = nextMainScene(script, resolveNextScene(state, choice, script));
+      // Main path only — the bonus scene is not a decision the rules count.
+      const target = mainPathTarget(script, resolveNextScene(state, choice, script));
       const applied = applyChoice(state, choice, scene.charName, '');
       const nextSteps = [...steps, { sceneId: scene.id, choice }];
       if (target === null) {
