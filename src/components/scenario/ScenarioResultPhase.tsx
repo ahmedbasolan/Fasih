@@ -85,6 +85,7 @@ export function ScenarioResultPhase({
 }: Props) {
   const { C, G } = useTheme();
   const violetColor = C.VIOLET;
+  const communityPct = getCommunityEndingStat(`${scenarioId}:${ending.type}`);
 
   const impactValues = [
     { label: 'Trust',   value: impact.trust,   color: C.CULTURAL_GOLD },
@@ -186,17 +187,20 @@ export function ScenarioResultPhase({
           </MotiView>
         )}
 
-        {/* Community stat */}
-        <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
-          <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, flex: 1, lineHeight: 20 }}>
-              {ending.secret
-                ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))
-                : STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
-            </Text>
-          </View>
-        </MotiView>
+        {/* Community stat — real Supabase data only. No data, no line: the old
+            seed percentages and "almost no one finds this" fallback were invented. */}
+        {communityPct > 0 && (
+          <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
+            <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, flex: 1, lineHeight: 20 }}>
+                {ending.secret
+                  ? STRINGS.scenarios.communityEndingSecret(communityPct)
+                  : STRINGS.scenarios.communityEnding(communityPct)}
+              </Text>
+            </View>
+          </MotiView>
+        )}
 
         {/* The path you took — shape above totals. The rail says WHAT you did
             and where it turned; the three numbers below say how much it added
@@ -365,7 +369,7 @@ export function ScenarioResultPhase({
           >
             <ArrowRight size={14} color={ending.secret ? C.VIOLET2 : C.JADE2} style={{ transform: [{ rotate: '-45deg' }] }} />
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: ending.secret ? C.VIOLET2 : C.JADE2 }}>
-              {ending.secret ? 'Share this rare discovery' : 'Share your result'}
+              {ending.secret ? 'Share your hidden ending' : 'Share your result'}
             </Text>
           </Pressable>
         </MotiView>

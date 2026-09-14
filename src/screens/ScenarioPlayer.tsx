@@ -527,7 +527,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
     const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
     const message = isSecret
-      ? `I just discovered the secret ending in "${scenarioTitle}" on Fasih 🔑\n\n"${endingArabic}" — ${endingEn}\n\nVery few players ever find this.\n\nFasih — Learn Arabic by Living It`
+      ? `I just discovered the secret ending in "${scenarioTitle}" on Fasih 🔑\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It`
       : `I scored ${finalTotal} in "${scenarioTitle}" and unlocked "${endingTitle}"\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`;
     try {
       await Share.share({ message });

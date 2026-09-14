@@ -12,7 +12,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight, Coffee, Building2, Briefcase, Moon, Compass, Activity, Users } from '../icons';
+import { ChevronRight, Briefcase, Compass, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -33,55 +33,29 @@ interface SituationResult extends SituationConfig {
   scenariosCompleted: number;
 }
 
+// One situation per group of MVP scenarios. A situation with no scenario behind
+// it can only ever show "Not started", so there are none.
 const SITUATIONS: SituationConfig[] = [
-  {
-    id: 'cafe-social',
-    label: 'Café & Social',
-    icon: Coffee,
-    scenarioIds: ['coffee-invitation', 'cafe-friends'],
-    phraseCategories: ['Social', 'Food & Drink'],
-  },
-  {
-    id: 'hotel-hospitality',
-    label: 'Hotel & Hospitality',
-    icon: Building2,
-    scenarioIds: ['hotel-guest'],
-    phraseCategories: ['Hospitality'],
-  },
   {
     id: 'workplace',
     label: 'Workplace',
     icon: Briefcase,
-    scenarioIds: ['first-morning', 'office-meeting'],
-    phraseCategories: ['Workplace', 'Greetings'],
+    scenarioIds: ['first-morning', 'coffee-invitation', 'office-meeting'],
+    phraseCategories: ['Workplace', 'Greetings', 'Hospitality'],
   },
   {
-    id: 'cultural-moments',
-    label: 'Cultural Moments',
-    icon: Moon,
-    scenarioIds: ['eid-greeting', 'ramadan-shift'],
-    phraseCategories: ['Gratitude', 'Social'],
-  },
-  {
-    id: 'daily-navigation',
-    label: 'Daily Navigation',
+    id: 'getting-around',
+    label: 'Getting Around',
     icon: Compass,
-    scenarioIds: [],
-    phraseCategories: ['Everyday'],
+    scenarioIds: ['social_taxi_ride'],
+    phraseCategories: ['Everyday', 'Food & Drink'],
   },
   {
-    id: 'healthcare',
-    label: 'Healthcare',
-    icon: Activity,
-    scenarioIds: ['the-checkup'],
-    phraseCategories: [],
-  },
-  {
-    id: 'family-friends',
-    label: 'Family & Friends',
+    id: 'neighbours-celebrations',
+    label: 'Neighbours & Celebrations',
     icon: Users,
-    scenarioIds: ['weekend-invite'],
-    phraseCategories: ['Family'],
+    scenarioIds: ['social_elevator', 'eid-greeting'],
+    phraseCategories: ['Social', 'Gratitude', 'Family'],
   },
 ];
 

@@ -100,7 +100,6 @@ export interface Scenario {
   arabicScene: string;
   kafIntro: string;
   mode: ScenarioMode;
-  impactPreview?: ImpactMetrics;
   /**
    * The scenario's signature Arabic line, shown in the browse list so the
    * learner sees Arabic before opening anything. Bare script, no tashkeel —
