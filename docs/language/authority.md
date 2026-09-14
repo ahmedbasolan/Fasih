@@ -164,9 +164,10 @@ Reproduced here so it cannot quietly become an assumption that somebody checked:
 > it this way. The project owner's approval of a phrase is a product decision,
 > never a linguistic one.
 
-As of 2026-09-03, **136 of 136 phrases are `unsourced`**. That number is tracked by
-the lint and may only fall. It is the honest state of the library, not a target
-that has been met.
+**Every phrase in the library is `unsourced`.** The count is `MAX_UNSOURCED` in
+[`languageContent.test.ts`](../../src/engine/__tests__/languageContent.test.ts),
+which asserts it matches the library and may only fall — so it is not restated
+here. It is the honest state of the library, not a target that has been met.
 
 Closing this gap needs a native reviewer — Al Ramsa Institute, a UAEU linguist, or
 a vetted freelancer. Nothing in the current design substitutes for one.

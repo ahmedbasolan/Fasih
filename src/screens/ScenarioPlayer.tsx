@@ -238,7 +238,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
   const { speak, isSpeaking } = useArabicTTS();
-  const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
+  // Subscribes to the cache itself: the ending stats are fetched once the result
+  // phase starts, so the screen has to re-render when they land.
+  const communityStatsCache = useAppStore((s) => s.communityStatsCache);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
   const user = useAppStore((s) => s.user);
@@ -838,7 +840,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             arabicForUser={arabicForUser}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
-            getCommunityEndingStat={getCommunityEndingStat}
+            communityEndingPct={communityStatsCache[`${scenarioId}:${ending.id}`] ?? 0}
             isSpeaking={isSpeaking}
             playingPhraseId={playingPhraseId}
             onPlayEndPhrase={playEndPhrase}
