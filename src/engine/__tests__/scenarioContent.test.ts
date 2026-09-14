@@ -15,6 +15,8 @@ import {
 } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { darkTheme } from '../../components/design/tokens';
+import { allPhraseIds, isRouteScript, relationshipScore } from '../scenarioEngine';
+import { enumerateRuns, routeScriptProblems, type PlayedRun } from '../scenarioRules';
 import type { ScenarioScript, ScenarioScene, ScenarioChoice } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
@@ -117,30 +119,32 @@ describe('ending types', () => {
 // ─── Data integrity ──────────────────────────────────────────────────────────
 
 describe('scenario data integrity', () => {
-  it('every phrase in phrasesUnlocked exists in the phrase library', () => {
+  it('every phrase a scenario can grant exists in the phrase library', () => {
     const missing: string[] = [];
     for (const [id, script] of scriptEntries) {
-      for (const pid of script.phrasesUnlocked ?? []) {
+      for (const pid of allPhraseIds(script)) {
         if (!phraseIds.has(pid)) missing.push(`${id} → ${pid}`);
       }
     }
     expect(missing).toEqual([]);
   });
 
-  it('every scenario unlocks at least one phrase', () => {
+  it('every scenario grants at least one core phrase — failure included', () => {
     const empty = scriptEntries
-      .filter(([, s]) => (s.phrasesUnlocked ?? []).length === 0)
+      .filter(([, s]) => s.phrases.core.length === 0)
       .map(([id]) => id);
     expect(empty).toEqual([]);
   });
 
-  it('every primerPhrase resolves and is a subset of phrasesUnlocked (2-3 chips)', () => {
+  it('every primerPhrase resolves and is a core phrase (2-3 chips)', () => {
     const broken: string[] = [];
     for (const [id, script] of scriptEntries) {
-      const unlocked = script.phrasesUnlocked ?? [];
+      // Core only: a primer promises a phrase the learner will earn this run,
+      // whichever ending they reach.
+      const core = script.phrases.core;
       for (const pid of script.primerPhrases ?? []) {
         if (!phraseIds.has(pid)) broken.push(`${id} primer → ${pid} not in library`);
-        if (!unlocked.includes(pid)) broken.push(`${id} primer → ${pid} not in phrasesUnlocked`);
+        if (!core.includes(pid)) broken.push(`${id} primer → ${pid} not in phrases.core`);
       }
       const n = (script.primerPhrases ?? []).length;
       if (n > 0 && (n < 2 || n > 3)) broken.push(`${id} has ${n} primer phrases (want 2-3)`);
@@ -359,111 +363,96 @@ describe('scoring discipline', () => {
 });
 
 // ─── Score-path table (every ending must be reachable) ───────────────────────
+// Runs come from the real engine (scenarioRules.enumerateRuns), so fork routing,
+// route endings and bonus-scene skipping match the shipped player exactly.
 
-type Path = { total: number; flags: Set<string>; excellents: number; goods: number; bads: number; steps: number };
-
-/** Walk every route through a script, honouring branches and flag-gated choices. */
-function enumeratePaths(script: ScenarioScript): Path[] {
-  const byId = new Map(script.scenes.map(s => [s.id, s]));
-  const order = script.scenes.map(s => s.id);
-  const out: Path[] = [];
-
-  const walk = (sceneId: string | null, path: Path, depth: number) => {
-    if (!sceneId || depth > 24 || out.length > 60000) {
-      out.push(path);
-      return;
-    }
-    const scene = byId.get(sceneId);
-    if (!scene) {
-      out.push(path);
-      return;
-    }
-    const visible = scene.choices.filter(c => !c.requiredFlag || path.flags.has(c.requiredFlag));
-    if (visible.length === 0) {
-      out.push(path);
-      return;
-    }
-    for (const choice of visible) {
-      const flags = new Set(path.flags);
-      if (choice.flag) flags.add(choice.flag);
-      const next: Path = {
-        total: path.total + impactOf(choice),
-        flags,
-        excellents: path.excellents + (choice.outcome === 'excellent' ? 1 : 0),
-        goods: path.goods + (choice.outcome === 'good' ? 1 : 0),
-        bads: path.bads + (choice.outcome === 'bad' ? 1 : 0),
-        steps: path.steps + 1,
-      };
-      const idx = order.indexOf(sceneId);
-      const linear: string | null = order[idx + 1] ?? null;
-      let target: string | null = choice.next ?? linear;
-      // Bonus scenes are gated by the secret ending in ScenarioPlayer, not by
-      // linear progression — only continue into one when the secret is earned.
-      if (target && byId.get(target)?.bonus) {
-        const secret = script.endings.find(e => e.secret);
-        const earned =
-          !!secret &&
-          (secret.requiredFlags ?? []).every(f => next.flags.has(f)) &&
-          next.total >= secret.min;
-        if (!earned) target = null;
-      }
-      walk(target, next, depth + 1);
-    }
-  };
-
-  const first = script.scenes.find(s => !s.bonus);
-  walk(first?.id ?? null, { total: 0, flags: new Set(), excellents: 0, goods: 0, bads: 0, steps: 0 }, 0);
-  return out;
-}
-
-/** Mirrors evaluateEnding, resolving a path to the ending title it earns. */
-function endingFor(script: ScenarioScript, path: Path): string {
-  for (const e of script.endings.filter(x => x.secret)) {
-    if ((e.requiredFlags ?? []).every(f => path.flags.has(f)) && path.total >= e.min) return e.title;
-  }
-  const standard = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min);
-  return (standard.find(e => path.total >= e.min) ?? standard[standard.length - 1]).title;
-}
+const tally = (run: PlayedRun) => ({
+  steps: run.steps.length,
+  excellents: run.steps.filter(s => s.choice.outcome === 'excellent').length,
+  goods: run.steps.filter(s => s.choice.outcome === 'good').length,
+  bads: run.steps.filter(s => s.choice.outcome === 'bad').length,
+});
 
 describe('score paths', () => {
   const table = scriptEntries.map(([id, script]) => {
-    const paths = enumeratePaths(script);
-    return { id, script, paths, reached: new Set(paths.map(p => endingFor(script, p))) };
+    const runs = enumerateRuns(script);
+    return { id, script, runs, reached: new Set(runs.map(r => r.ending.id)) };
   });
+  // Legacy scripts rank endings on one ladder; route scripts get their own
+  // rules below (routeScriptProblems), which cover reachability and missteps.
+  const legacy = table.filter(t => !isRouteScript(t.script));
 
-  it.each(table)('$id — every ending is reachable by some play-through', ({ script, reached }) => {
-    const unreachable = script.endings.map(e => e.title).filter(t => !reached.has(t));
+  it.each(legacy)('$id — every ending is reachable by some play-through', ({ script, reached }) => {
+    const unreachable = script.endings.map(e => e.id).filter(id => !reached.has(id));
     expect(unreachable).toEqual([]);
   });
 
-  it.each(table)('$id — the top ending does not require a flawless run', ({ script, paths }) => {
+  it.each(legacy)('$id — the top ending does not require a flawless run', ({ script, runs }) => {
     const top = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min)[0];
-    const imperfect = paths.filter(p => p.excellents < p.steps && endingFor(script, p) === top.title);
+    const imperfect = runs.filter(r => tally(r).excellents < r.steps.length && r.ending.id === top.id);
     expect(imperfect.length).toBeGreaterThan(0);
   });
 
   // One bad moment in an otherwise strong run must not tank the learner. Runs
   // that were bad AND passive (bad + coasting on neutrals) legitimately can.
-  it.each(table)('$id — one mistake in an otherwise good run does not reach the worst ending', ({ script, paths }) => {
+  it.each(legacy)('$id — one mistake in an otherwise good run does not reach the worst ending', ({ script, runs }) => {
     const standard = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min);
     const worst = standard[standard.length - 1];
-    const oneMistakeOtherwiseStrong = paths.filter(
-      p => p.bads === 1 && p.goods + p.excellents === p.steps - 1 && endingFor(script, p) === worst.title,
-    );
+    const oneMistakeOtherwiseStrong = runs.filter(r => {
+      const t = tally(r);
+      return t.bads === 1 && t.goods + t.excellents === t.steps - 1 && r.ending.id === worst.id;
+    });
     expect(oneMistakeOtherwiseStrong).toHaveLength(0);
   });
 
   it.each(table.filter(t => t.script.endings.some(e => e.secret)))(
     '$id — the secret ending is strictly harder than the best standard ending',
-    ({ script, paths }) => {
+    ({ script, runs }) => {
       const secret = script.endings.find(e => e.secret)!;
-      const secretPaths = paths.filter(p => endingFor(script, p) === secret.title);
-      expect(secretPaths.length).toBeGreaterThan(0);
+      expect(runs.some(r => r.ending.id === secret.id)).toBe(true);
       // Holding the flags alone must not be enough.
-      const flaggedButPoor = paths.filter(
-        p => (secret.requiredFlags ?? []).every(f => p.flags.has(f)) && p.total < secret.min,
+      const flaggedButPoor = runs.filter(
+        r => (secret.requiredFlags ?? []).every(f => r.state.flags.has(f)) && relationshipScore(r.state) < secret.min,
       );
       expect(flaggedButPoor.length).toBeGreaterThan(0);
     },
   );
+});
+
+// ─── Route scripts (spec 2026-09-14 §4) ──────────────────────────────────────
+
+describe('route scripts', () => {
+  // One test over all route scripts rather than it.each: until the first
+  // rewrite lands there are none, and it.each([]) is an error, not a pass.
+  it('every route script follows every route-script rule', () => {
+    const problems = scriptEntries
+      .filter(([, s]) => isRouteScript(s))
+      .flatMap(([id, script]) => routeScriptProblems(script, phraseIds).map(p => `${id} — ${p}`));
+    expect(problems).toEqual([]);
+  });
+
+  it('every script has unique, non-empty ending ids', () => {
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      const ids = script.endings.map(e => e.id);
+      if (ids.some(x => !x.trim())) offenders.push(`${id}: empty ending id`);
+      if (new Set(ids).size !== ids.length) offenders.push(`${id}: duplicate ending ids`);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  // Rule 11. "Only 8% of users discover this" was invented. Rarity claims need
+  // real data, and real data lives in community stats, never in authored copy.
+  it('no ending text makes a percentage or rarity claim', () => {
+    const claim = /%|\brare\b|\bfew (players|people|learners)\b|\bmost (players|people|learners)\b/i;
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      for (const e of script.endings) {
+        for (const text of [e.title, e.en, e.desc, e.hint ?? '', ...(e.culturalJourney ?? [])]) {
+          if (claim.test(text)) offenders.push(`${id}/${e.id}: ${text.slice(0, 60)}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });
