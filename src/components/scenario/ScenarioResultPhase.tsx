@@ -14,7 +14,8 @@ import { MarginRail } from './MarginRail';
 import { STRINGS } from '../../constants/strings';
 import { GRAMMAR_PATTERNS } from '../../constants/grammar';
 import type { RailMark } from '../../engine/marginRail';
-import type { Phrase, ScenarioEnding, ScenarioScript } from '../../types';
+import type { EndingHint, EndingsProgress } from '../../engine/scenarioPresentation';
+import type { Phrase, ScenarioChoice, ScenarioEnding, ScenarioScript } from '../../types';
 
 // ─── PhraseCard ───────────────────────────────────────────────────────────────
 // Only used on the result screen, so it lives here alongside its only consumer.
@@ -64,6 +65,15 @@ interface Props {
    */
   railMarks: RailMark[];
   unlockedPhrases: Phrase[];
+  /** Endings found so far, this run included. */
+  progress: EndingsProgress;
+  /** Route label of the ending's destination; undefined for hidden, failure and legacy endings. */
+  destinationLabel: string | undefined;
+  /** Choices this run made toward the destination — "what sent you here". */
+  moments: ScenarioChoice[];
+  /** Hints toward endings not found yet. */
+  hints: EndingHint[];
+  arabicForUser: (choice: ScenarioChoice) => string;
   toneHistory: { sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[];
   culturalJourneyNotes: string[];
   getCommunityEndingStat: (key: string) => number;
@@ -79,13 +89,22 @@ interface Props {
 
 export function ScenarioResultPhase({
   ending, endings, impact, total, scenarioId, scriptData,
-  railMarks, unlockedPhrases, toneHistory, culturalJourneyNotes,
+  railMarks, unlockedPhrases, progress, destinationLabel, moments, hints, arabicForUser,
+  toneHistory, culturalJourneyNotes,
   getCommunityEndingStat, isSpeaking, playingPhraseId,
   onPlayEndPhrase, onRestart, onExit, onShare,
 }: Props) {
   const { C, G } = useTheme();
   const violetColor = C.VIOLET;
+  const communityPct = getCommunityEndingStat(`${scenarioId}:${ending.id}`);
 
+  // Route endings name their destination; the hidden and failure endings of a
+  // route script say what they are; legacy endings keep "<Type> Outcome".
+  const eyebrow = destinationLabel
+    ? STRINGS.scenarios.destinationEyebrow(destinationLabel, ending.tier)
+    : ending.secret ? STRINGS.scenarios.hiddenEndingEyebrow
+    : scriptData.routes?.length && ending.type === 'failed' ? STRINGS.scenarios.failedEndingEyebrow
+    : `${ending.type.charAt(0).toUpperCase() + ending.type.slice(1)} Outcome`;
   const impactValues = [
     { label: 'Trust',   value: impact.trust,   color: C.CULTURAL_GOLD },
     { label: 'Respect', value: impact.respect, color: C.JADE2 },
@@ -102,7 +121,7 @@ export function ScenarioResultPhase({
         <View style={{ borderRadius: 24, padding: 22, backgroundColor: `${ending.color}18`, borderWidth: 1.5, borderColor: `${ending.color}40` }}>
           <View style={{ alignItems: 'center' }}>
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: ending.color, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>
-              {ending.type.charAt(0).toUpperCase() + ending.type.slice(1)} Outcome
+              {eyebrow}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT, marginBottom: 8, textAlign: 'center' }}>{ending.title}</Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20, textAlign: 'center', marginBottom: 16 }}>{ending.desc}</Text>
@@ -119,7 +138,7 @@ export function ScenarioResultPhase({
           <Compass size={15} color={C.VIOLET2} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.TEXT }}>
-              {STRINGS.scenarios.endingDiscovery(endings.length)}
+              {STRINGS.scenarios.endingsSummary(progress)}
             </Text>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 1 }}>
               {STRINGS.scenarios.tryDifferentChoices}
@@ -127,8 +146,49 @@ export function ScenarioResultPhase({
           </View>
         </View>
 
-        {/* Secret ending teaser */}
-        {!ending.secret && endings.some(e => e.secret) && (
+        {/* What sent you here — route endings only */}
+        {moments.length > 0 && (
+          <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 40 }}>
+            <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 10 }}>
+              <View>
+                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 }}>
+                  {STRINGS.scenarios.momentsTitle}
+                </Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>
+                  {STRINGS.scenarios.momentsSub}
+                </Text>
+              </View>
+              {moments.map((m, i) => (
+                <View key={`${m.id}-${i}`} style={{ gap: 2 }}>
+                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 18, color: C.JADE, textAlign: 'right', lineHeight: 26 }}>{arabicForUser(m)}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 }}>{m.text}</Text>
+                </View>
+              ))}
+            </View>
+          </MotiView>
+        )}
+
+        {/* Hints toward endings not found yet */}
+        {hints.length > 0 && (
+          <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
+            <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, gap: 10 }}>
+              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 0.9 }}>
+                {STRINGS.scenarios.hintsTitle}
+              </Text>
+              {hints.map((h) => (
+                <View key={h.endingId} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2, marginTop: 6 }} />
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 }}>
+                    {h.hidden ? `${STRINGS.scenarios.hintHidden}: ` : ''}{h.hint}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </MotiView>
+        )}
+
+        {/* Secret ending teaser — legacy scripts, which have no hints */}
+        {hints.length === 0 && !scriptData.routes?.length && !ending.secret && endings.some(e => e.secret) && (
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
             <View style={{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2 }} />
@@ -186,17 +246,20 @@ export function ScenarioResultPhase({
           </MotiView>
         )}
 
-        {/* Community stat */}
-        <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
-          <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, flex: 1, lineHeight: 20 }}>
-              {ending.secret
-                ? STRINGS.scenarios.communityEndingSecret(getCommunityEndingStat(`${scenarioId}:${ending.type}`))
-                : STRINGS.scenarios.communityEnding(getCommunityEndingStat(`${scenarioId}:${ending.type}`))}
-            </Text>
-          </View>
-        </MotiView>
+        {/* Community stat — real Supabase data only. No data, no line: the old
+            seed percentages and "almost no one finds this" fallback were invented. */}
+        {communityPct > 0 && (
+          <MotiView from={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'timing', duration: 700, delay: 280 }}>
+            <View style={{ borderRadius: 14, padding: 14, backgroundColor: ending.secret ? `${C.VIOLET}12` : `${C.JADE_ACCENT}12`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}28` : `${C.JADE_ACCENT}28`, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Users size={18} color={ending.secret ? C.VIOLET2 : C.JADE_ACCENT} />
+              <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT, flex: 1, lineHeight: 20 }}>
+                {ending.secret
+                  ? STRINGS.scenarios.communityEndingSecret(communityPct)
+                  : STRINGS.scenarios.communityEnding(communityPct)}
+              </Text>
+            </View>
+          </MotiView>
+        )}
 
         {/* The path you took — shape above totals. The rail says WHAT you did
             and where it turned; the three numbers below say how much it added
@@ -365,7 +428,7 @@ export function ScenarioResultPhase({
           >
             <ArrowRight size={14} color={ending.secret ? C.VIOLET2 : C.JADE2} style={{ transform: [{ rotate: '-45deg' }] }} />
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: ending.secret ? C.VIOLET2 : C.JADE2 }}>
-              {ending.secret ? 'Share this rare discovery' : 'Share your result'}
+              {ending.secret ? 'Share your hidden ending' : 'Share your result'}
             </Text>
           </Pressable>
         </MotiView>

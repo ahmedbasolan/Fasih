@@ -129,3 +129,11 @@ feature at all. `cafe-friends` is the only scenario that passes every gate.
 second axis the single level scale cannot express, and it explains why the scenario
 reads as harder than its measurements suggest. Worth solving properly rather than by
 padding it with dialect words.
+
+### Update 2026-09-14
+
+MVP cut `the-checkup`, `gym-consultation`, `hotel-guest` and `cafe-friends`
+(spec `docs/superpowers/specs/2026-09-14-butterfly-engine-mvp-design.md`). 9 level
+violations remain, across `coffee-invitation`, `eid-greeting`, `first-morning`,
+`social_elevator` and `social_taxi_ride` — all five are being rewritten under that
+spec. The register-vs-dialect axis above still matters: The Meeting will hit it.

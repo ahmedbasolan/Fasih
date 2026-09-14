@@ -100,7 +100,6 @@ export interface Scenario {
   arabicScene: string;
   kafIntro: string;
   mode: ScenarioMode;
-  impactPreview?: ImpactMetrics;
   /**
    * The scenario's signature Arabic line, shown in the browse list so the
    * learner sees Arabic before opening anything. Bare script, no tashkeel —
@@ -134,6 +133,12 @@ export interface ScenarioChoice {
   impact?: ImpactMetrics;
   next?: string;
   teachingHighlight?: string;
+  /**
+   * Route this choice leans toward, in a route script (see ScenarioScript.routes).
+   * The route chosen most often decides the destination; it is never shown
+   * during play. Only valid judgement-scene choices carry one.
+   */
+  route?: string;
 }
 
 // Branching tone: same scene, NPC warmth adapts to accumulated score
@@ -141,6 +146,36 @@ export interface TonedDialogue {
   arabic: string;
   roman: string;
   english: string;
+}
+
+/**
+ * `language` scenes have a right form (صباح النور answers صباح الخير).
+ * `judgement` scenes are social strategy: valid choices lead different ways.
+ */
+export type SceneKind = 'language' | 'judgement';
+
+/** NPC lines as a female learner hears them, for scenes that address the learner. */
+export interface FemaleLearnerLines extends TonedDialogue {
+  charDialogue?: {
+    warm: TonedDialogue;
+    neutral: TonedDialogue;
+    cold: TonedDialogue;
+  };
+}
+
+/** A destination a route script can end at. */
+export interface ScenarioRoute {
+  id: string;
+  label: string;
+}
+
+export type EndingTier = 'strong' | 'weak';
+
+/** Phrases a scenario grants: `core` on any completion, plus the set for the ending reached. */
+export interface ScenarioPhrases {
+  core: string[];
+  /** Keyed by ScenarioEnding.id. */
+  byEnding: Record<string, string[]>;
 }
 
 export interface ScenarioScene {
@@ -166,9 +201,21 @@ export interface ScenarioScene {
   teachingNote?: string;
   choices: ScenarioChoice[];
   bonus?: boolean; // True if this is a bonus scene only shown for secret ending
+  /** Required in route scripts. */
+  kind?: SceneKind;
+  /**
+   * The fork: after this scene, go to the scene for the leading route (counting
+   * the choice just made). A choice's own `next` still wins.
+   */
+  nextByRoute?: Record<string, string>;
+  /** The NPC speaks to the learner in gendered forms here; requires `femaleLearner`. */
+  addressesLearner?: boolean;
+  femaleLearner?: FemaleLearnerLines;
 }
 
 export interface ScenarioEnding {
+  /** Stable id — what endingsFound and phrases.byEnding key on. Never reuse. */
+  id: string;
   min: number;
   title: string;
   arabic: string;
@@ -181,6 +228,12 @@ export interface ScenarioEnding {
   culturalJourney?: string[];
   secret?: boolean; // True if this is a secret ending requiring all flags + score threshold
   requiredFlags?: string[]; // Flag IDs required for secret ending (e.g., ['FLAG_1', 'FLAG_2'])
+  /** Route scripts: the destination this ending belongs to. Absent on the failure and hidden endings. */
+  route?: string;
+  /** Route scripts: strong or weak version of the destination. */
+  tier?: EndingTier;
+  /** Cultural hint pointing a replaying learner toward this ending. */
+  hint?: string;
 }
 
 export interface ScenarioScript {
@@ -192,9 +245,16 @@ export interface ScenarioScript {
   estimatedMinutes?: number;  // Estimated completion time
   scenes: ScenarioScene[];
   endings: ScenarioEnding[];
-  // IDs of phrases unlocked by completing this scenario (shown as rich cards on end screen)
-  phrasesUnlocked?: string[];
-  // 2-3 phrase IDs from phrasesUnlocked previewed as tap-to-hear chips in the
+  /**
+   * Declaring routes makes this a route script: destination by route tags,
+   * quality by meters (spec 2026-09-14 §2.1). Scripts without routes still use
+   * the legacy score ladder until they are rewritten.
+   */
+  routes?: ScenarioRoute[];
+  /** Route used when a run reaches the fork or the end without leaning anywhere. */
+  defaultRoute?: string;
+  phrases: ScenarioPhrases;
+  // 2-3 phrase IDs from phrases.core previewed as tap-to-hear chips in the
   // scenario intro — listen-only priming, no quiz. Hear now → earn later.
   primerPhrases?: string[];
 }

@@ -39,6 +39,8 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
+import { phrasesEarned } from '../scenarioEngine';
+import { enumerateRuns } from '../scenarioRules';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
@@ -75,6 +77,16 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/npc-warm`, scene.charDialogue.warm.arabic);
         add(`${id}/${scene.id}/npc-neutral`, scene.charDialogue.neutral.arabic);
         add(`${id}/${scene.id}/npc-cold`, scene.charDialogue.cold.arabic);
+      }
+      // What a female learner hears instead — same rules, or they are a back door.
+      if (scene.femaleLearner) {
+        add(`${id}/${scene.id}/npc-f`, scene.femaleLearner.arabic);
+        const toned = scene.femaleLearner.charDialogue;
+        if (toned) {
+          add(`${id}/${scene.id}/npc-f-warm`, toned.warm.arabic);
+          add(`${id}/${scene.id}/npc-f-neutral`, toned.neutral.arabic);
+          add(`${id}/${scene.id}/npc-f-cold`, toned.cold.arabic);
+        }
       }
       for (const c of scene.choices) {
         add(`${id}/${scene.id}/${c.id}`, c.arabic);
@@ -129,29 +141,11 @@ function choiceCards(scriptId: string): string[] {
  * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
  * any single playthrough visits five — counting scenes would have marked it two
  * turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending.
+ * only appear on a secret ending. Runs come from the real engine, so a route
+ * script's fork is followed exactly as the player follows it.
  */
 function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const script = scripts[scriptId];
-  const scenes = script.scenes;
-  const byId = new Map(scenes.map(s => [s.id, s]));
-  const lengths: number[] = [];
-
-  const walk = (sceneId: string | null, n: number, flags: Set<string>, depth: number) => {
-    const scene = sceneId ? byId.get(sceneId) : undefined;
-    if (!scene || depth > 25) { lengths.push(n); return; }
-    const visible = scene.choices.filter(c => !c.requiredFlag || flags.has(c.requiredFlag));
-    if (!visible.length) { lengths.push(n); return; }
-    const idx = scenes.findIndex(s => s.id === sceneId);
-    const counted = scene.bonus ? n : n + 1;
-    for (const c of visible) {
-      const next = new Set(flags);
-      if (c.flag) next.add(c.flag);
-      walk(c.next !== undefined ? c.next : (scenes[idx + 1]?.id ?? null), counted, next, depth + 1);
-    }
-  };
-
-  walk(scenes[0]?.id ?? null, 0, new Set(), 0);
+  const lengths = enumerateRuns(scripts[scriptId]).map(r => r.steps.length);
   return { min: Math.min(...lengths), max: Math.max(...lengths) };
 }
 
@@ -173,10 +167,9 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
  * Scenarios currently outside the band their declared level claims.
  *
  * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `the-checkup` and
- * `gym-consultation` are carrying content well above their labels, and
- * `coffee-invitation` / `eid-greeting` sit just over the A1 mean once clitics
- * are counted.
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `coffee-invitation` /
+ * `eid-greeting` sit just over the A1 mean once clitics are counted. (The
+ * audit's worst offenders, the-checkup and gym-consultation, were cut for the MVP.)
  *
  * Fixing one means either re-levelling the scenario or editing its content —
  * both content decisions, deliberately not made by this commit.
@@ -187,32 +180,19 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
   'first-morning:maxClauses',
-  'gym-consultation:maxClauses',
-  'gym-consultation:meanMorphemes',
-  'gym-consultation:morphemeCeiling',
-  'gym-consultation:phrasesUnlocked',
-  'hotel-guest:phrasesUnlocked',
-  'hotel-guest:turns',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
   'social_taxi_ride:phrasesUnlocked',
   'social_taxi_ride:turns',
-  'the-checkup:maxClauses',
-  'the-checkup:meanMorphemes',
-  'the-checkup:morphemeCeiling',
 ];
 
 /**
  * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
  *
- * `hotel-guest` is the one case, and it is informative rather than sloppy: its
- * difficulty is formal REGISTER (طال عمرك, honorifics, dignitary protocol), not
- * dialect grammar. That is a real second axis the single level scale cannot
- * express, and it is why the scenario reads as harder than its measurements
- * suggest. Closing this means adding Gulf grammar to its cards — a content
- * decision, deliberately not made by this commit.
+ * Empty since hotel-guest — the one case, whose difficulty was formal register
+ * rather than dialect grammar — was cut for the MVP.
  */
-const KNOWN_DIALECT_GAPS: readonly string[] = ['hotel-guest'];
+const KNOWN_DIALECT_GAPS: readonly string[] = [];
 
 describe('curriculum spec is internally consistent', () => {
   it('every difficulty level has a spec', () => {
@@ -354,7 +334,8 @@ describe('level gates', () => {
       if (!cards.length) continue;
 
       const turns = turnsPerPlaythrough(scriptId);
-      const phrases = (script.phrasesUnlocked ?? []).length;
+      // What one run can grant: core plus the largest single ending's set.
+      const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));
@@ -434,8 +415,11 @@ describe('provenance', () => {
    *
    * The assertion is one-directional on purpose: it may fall, never rise. Lower
    * it when you source a batch.
+   *
+   * 136 → 103 on 2026-09-14 by DELETION, not sourcing: the 33 phrases of the four
+   * scenarios cut for the MVP were all unsourced. Nothing got more verified.
    */
-  const MAX_UNSOURCED = 136;
+  const MAX_UNSOURCED = 103;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

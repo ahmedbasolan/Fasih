@@ -39,6 +39,8 @@ Pushed by `syncToCloud()` in `src/store/useAppStore.ts`, keyed by `clerkUserId`:
 | `stats` | Streak, days active, XP, phrases studied/mastered, per-category mastery and accuracy |
 | `phrase_reviews` | Spaced-repetition history per phrase — ratings and next-review dates |
 | `completed_scenarios` | Which scenarios were finished and which ending was reached |
+| `endings_found` | Every ending id reached per scenario, across all runs |
+| `scenario_runs` | How many times each scenario was completed |
 | `saved_phrases` | Bookmarked phrase IDs |
 | `unlocked_phrase_ids` | Phrases earned through scenarios |
 | `milestones` | Achievements reached, with dates |

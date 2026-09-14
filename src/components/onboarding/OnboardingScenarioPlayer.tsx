@@ -44,10 +44,10 @@ export function OnboardingScenarioPlayer({
   const isLastScene = sceneIdx === script.scenes.length - 1;
 
   const unlockedPhrases = useMemo<Phrase[]>(() => {
-    return (script.phrasesUnlocked ?? [])
+    return (script.phrases.core)
       .map((id) => PHRASES.find((p) => p.id === id))
       .filter((p): p is Phrase => p !== undefined);
-  }, [script.phrasesUnlocked]);
+  }, [script.phrases.core]);
 
   function handleChoice(choice: ScenarioChoice) {
     setChosenChoice(choice);
@@ -551,7 +551,7 @@ export function OnboardingScenarioPlayer({
         >
           <View style={styles.nextButton}>
             <ShimmerButton
-              onPress={() => onComplete?.(script.phrasesUnlocked ?? [])}
+              onPress={() => onComplete?.(script.phrases.core)}
               Icon={ChevronRight}
               accessibilityLabel={STRINGS.onboarding.scenarioContinueToApp}
             >

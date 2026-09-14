@@ -6,6 +6,8 @@ import {
   mergeIds,
   mergePatternProgress,
   mergeSecretEndings,
+  mergeEndingsFound,
+  mergeScenarioRuns,
   type ScenarioRun,
 } from '../syncMerge';
 import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress } from '../../types';
@@ -163,5 +165,24 @@ describe('mergeSecretEndings', () => {
   it('local wins on a same-scenario conflict', () => {
     const merged = mergeSecretEndings({ a: 'Local Title' }, { a: 'Cloud Title' });
     expect(merged.a).toBe('Local Title');
+  });
+});
+
+describe('mergeEndingsFound', () => {
+  it('unions ending ids per scenario — an ending found on either device stays found', () => {
+    const merged = mergeEndingsFound({ a: ['x', 'y'], b: ['z'] }, { a: ['y', 'w'], c: ['v'] });
+    expect(merged).toEqual({ a: ['x', 'y', 'w'], b: ['z'], c: ['v'] });
+  });
+
+  it('an empty cloud never erases local finds', () => {
+    expect(mergeEndingsFound({ a: ['x'] }, {})).toEqual({ a: ['x'] });
+  });
+});
+
+describe('mergeScenarioRuns', () => {
+  // Counts can't be summed safely — both sides may already include the same
+  // runs from before they diverged. The larger count never under-reports.
+  it('keeps the higher run count per scenario', () => {
+    expect(mergeScenarioRuns({ a: 3, b: 1 }, { a: 2, b: 4, c: 1 })).toEqual({ a: 3, b: 4, c: 1 });
   });
 });
