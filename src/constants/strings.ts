@@ -444,6 +444,15 @@ export const STRINGS = {
     // the paywall, so the row stays pressable and says so.
     lockedBadge: 'Locked',
     subtitle: 'Choose a situation to practice',
+    // The Scenarios header title — one picked at random per visit.
+    headings: [
+      'Gulf Arabic',
+      'Build Confidence',
+      'Your Next Situation',
+      'Real Conversations',
+      'Master the Dialect',
+      'Practice Today',
+    ],
     // One is shown at random under the Scenarios header. Keep each under 15 words.
     //
     // Every fact here must be checkable against a named source (docs/language/

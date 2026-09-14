@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import {
-  Heart, Search, CheckCircle2, Lock, Sparkles, Zap, Target, Rocket,
+  Heart, Search, CheckCircle2, Lock,
 } from '../components/icons';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
 import {
@@ -34,27 +34,16 @@ interface Props {
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
 
-// ─── Random motivational headings ───────────────────────────────────────────
-
-const MOTIVATIONAL_HEADINGS = [
-  { text: 'Gulf Arabic', sub: 'Choose a real situation.', icon: Sparkles },
-  { text: 'Build Confidence', sub: 'One scenario at a time.', icon: Target },
-  { text: 'Your Next Situation', sub: 'Practice Gulf Arabic.', icon: Rocket },
-  { text: 'Real Conversations', sub: 'Cultural fluency awaits.', icon: Zap },
-  { text: 'Master the Dialect', sub: 'Start where you are.', icon: Sparkles },
-  { text: 'Practice Today', sub: 'A few minutes is enough.', icon: Target },
-];
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
 
 function useRandomHeading() {
   // Pick a random heading and fun fact once, when the component first mounts.
   // Lazy initializers keep the value stable for the component's lifetime without
   // an effect + setState (which would double-render and flash the default first).
-  const [heading] = useState(
-    () => MOTIVATIONAL_HEADINGS[Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length)],
-  );
-  const [funFact] = useState(
-    () => STRINGS.scenarios.funFacts[Math.floor(Math.random() * STRINGS.scenarios.funFacts.length)],
-  );
+  const [heading] = useState(() => pickRandom(STRINGS.scenarios.headings));
+  const [funFact] = useState(() => pickRandom(STRINGS.scenarios.funFacts));
 
   return { heading, funFact };
 }
@@ -128,7 +117,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           every screen, rather than mode being a colour swap nobody reads. */}
       <ScreenHeader
         eyebrow={userMode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
-        title={heading.text}
+        title={heading}
         subtitle={funFact}
       />
 
