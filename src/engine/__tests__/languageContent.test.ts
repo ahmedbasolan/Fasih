@@ -173,10 +173,9 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
  * Scenarios currently outside the band their declared level claims.
  *
  * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `the-checkup` and
- * `gym-consultation` are carrying content well above their labels, and
- * `coffee-invitation` / `eid-greeting` sit just over the A1 mean once clitics
- * are counted.
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `coffee-invitation` /
+ * `eid-greeting` sit just over the A1 mean once clitics are counted. (The
+ * audit's worst offenders, the-checkup and gym-consultation, were cut for the MVP.)
  *
  * Fixing one means either re-levelling the scenario or editing its content —
  * both content decisions, deliberately not made by this commit.
@@ -187,32 +186,19 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
   'first-morning:maxClauses',
-  'gym-consultation:maxClauses',
-  'gym-consultation:meanMorphemes',
-  'gym-consultation:morphemeCeiling',
-  'gym-consultation:phrasesUnlocked',
-  'hotel-guest:phrasesUnlocked',
-  'hotel-guest:turns',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
   'social_taxi_ride:phrasesUnlocked',
   'social_taxi_ride:turns',
-  'the-checkup:maxClauses',
-  'the-checkup:meanMorphemes',
-  'the-checkup:morphemeCeiling',
 ];
 
 /**
  * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
  *
- * `hotel-guest` is the one case, and it is informative rather than sloppy: its
- * difficulty is formal REGISTER (طال عمرك, honorifics, dignitary protocol), not
- * dialect grammar. That is a real second axis the single level scale cannot
- * express, and it is why the scenario reads as harder than its measurements
- * suggest. Closing this means adding Gulf grammar to its cards — a content
- * decision, deliberately not made by this commit.
+ * Empty since hotel-guest — the one case, whose difficulty was formal register
+ * rather than dialect grammar — was cut for the MVP.
  */
-const KNOWN_DIALECT_GAPS: readonly string[] = ['hotel-guest'];
+const KNOWN_DIALECT_GAPS: readonly string[] = [];
 
 describe('curriculum spec is internally consistent', () => {
   it('every difficulty level has a spec', () => {
@@ -434,8 +420,11 @@ describe('provenance', () => {
    *
    * The assertion is one-directional on purpose: it may fall, never rise. Lower
    * it when you source a batch.
+   *
+   * 136 → 103 on 2026-09-14 by DELETION, not sourcing: the 33 phrases of the four
+   * scenarios cut for the MVP were all unsourced. Nothing got more verified.
    */
-  const MAX_UNSOURCED = 136;
+  const MAX_UNSOURCED = 103;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

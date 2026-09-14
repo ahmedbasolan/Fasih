@@ -27,17 +27,14 @@ const ARABIC_SIZE = 20;
 /**
  * Title-first entry for the Scenarios browse list.
  *
- * Shows ONE headline metric, not three. Three meters per card made the grid a
- * wall of instrumentation in which no title could be scanned; the full set
- * lives on the scenario detail screen where detail was asked for.
+ * No meter. The card used to show a Trust/Vibe percentage, but it was a
+ * hand-typed number per scenario, not anything the learner did — so it went.
  */
 export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntryProps) {
   const { C } = useTheme();
   const {
-    id, title, phrases, keyLine, impactPreview, locked, comingSoon, mode,
+    id, title, phrases, keyLine, locked, comingSoon,
   } = scenario;
-
-  const headline = impactPreview?.trust;
 
   // Two different things that must not be conflated:
   //
@@ -50,13 +47,6 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
   // Treating the two as one state silently killed it.
   const dimmed = locked || comingSoon;
   const inert = comingSoon === true;
-
-  // The Career/Social vocabulary split is a product differentiator, not a
-  // cosmetic label swap — see spec §5.1. The same underlying metric is called
-  // Trust in Career mode and Vibe in Social mode, and the browse list is the
-  // most-seen place it appears.
-  const headlineLabel =
-    mode === 'career' ? STRINGS.scenarios.trust : STRINGS.scenarios.vibe;
 
   const styles = useMemo(
     () =>
@@ -94,21 +84,6 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
           color: C.TEXT3,
           fontVariant: ['tabular-nums'],
         },
-        metricValue: {
-          fontFamily: FONT_LATIN_MEDIUM,
-          fontSize: 12,
-          color: C.PRIMARY,
-          fontVariant: ['tabular-nums'],
-        },
-        track: {
-          height: 2,
-          backgroundColor: C.BORDER,
-          marginTop: SPACE.md,
-        },
-        fill: {
-          height: 2,
-          backgroundColor: C.PRIMARY,
-        },
         label: {
           fontFamily: FONT_LATIN_MEDIUM,
           fontSize: 11,
@@ -134,9 +109,7 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
     [C, dimmed],
   );
 
-  const showMetric = headline !== undefined && !dimmed;
-
-  // The badges and the metric are the row's state, and they were visual only:
+  // The badges are the row's state, and they were visual only:
   // a paywalled row and a playable one announced identically as just their
   // title, so a screen-reader user tapped one expecting to play and got the
   // paywall. The comment below says these two states "were previously
@@ -145,7 +118,6 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
     title,
     comingSoon ? STRINGS.scenarios.comingSoonBadge : locked ? STRINGS.scenarios.lockedBadge : null,
     STRINGS.scenarios.phrases(phrases),
-    showMetric ? `${headlineLabel} ${headline}%` : null,
   ]
     .filter(Boolean)
     .join('. ');
@@ -183,17 +155,7 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
             <Text style={styles.lockedLabel}>{STRINGS.scenarios.lockedBadge}</Text>
           </View>
         ) : null}
-
-        {showMetric ? (
-          <Text style={styles.metricValue}>{`${headlineLabel} ${headline}%`}</Text>
-        ) : null}
       </View>
-
-      {showMetric ? (
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${headline}%` }]} />
-        </View>
-      ) : null}
     </Rule>
   );
 }

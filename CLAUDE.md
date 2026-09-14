@@ -15,7 +15,7 @@ The app teaches Khaleeji Arabic through:
 - Phrase library (categorized, filterable, with Arabic TTS playback)
 - Cultural journal (save moments, review insights)
 - Onboarding flow (role, mode, goals → quick-win scenario → paywall)
-- Situational confidence tracking across 7 real UAE situations
+- Situational confidence tracking across 3 real UAE situations (one per group of MVP scenarios)
 
 This is a production app, not a teaching project. Build for real users.
 

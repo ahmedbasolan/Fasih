@@ -4,8 +4,8 @@
  * ─── Source rule (non-negotiable) ────────────────────────────────────────────
  * Every pattern example and every slot option is a `phraseId` that resolves in
  * phrases.ts, or a `scenarioId:sceneId` reference in `source`. No invented
- * content. Derived content (pattern `b-future`) is flagged `needsNativeReview`
- * and listed in REVIEW_QUEUE — shipping it requires native-speaker sign-off.
+ * content. Derived content is flagged `needsNativeReview` and listed in
+ * REVIEW_QUEUE — shipping it requires native-speaker sign-off.
  *
  * Romanisation (from scenarios.ts header): ' = ع · kh = خ · gh = غ · g = ق ·
  * h = ح · sh = ش · aa/ii/uu = long vowels · no tashkeel.
@@ -16,13 +16,10 @@ import { PHRASE_BY_ID } from './phrases';
 // ─── REVIEW QUEUE — derived/new Arabic strings needing native-speaker sign-off ─
 // Release-blocking: nothing here ships until a native Gulf Arabic speaker has
 // confirmed it. Add to this list whenever new content is authored.
-export const REVIEW_QUEUE: string[] = [
-  // Pattern: b-future. Derived from the gym dialogue line "ونبدا خفيف"
-  // (scenarios.ts scene4 choice a): ونبدا (w-nibda, "and we start") → بنبدا
-  // (b-nibda, "we will start") — the b- prefix marks the future in Gulf Arabic.
-  'بنبدا خفيف', // assembled: ب + نبدا + خفيف
-  'بنبدا حديد', // assembled: ب + نبدا + حديد (حديد sourced from phrase gym-4)
-];
+//
+// Empty since gym-consultation was cut for the MVP: its derived b-future
+// sentences (بنبدا خفيف / بنبدا حديد) went with it. See git history.
+export const REVIEW_QUEUE: string[] = [];
 
 // ─── Profession pools ────────────────────────────────────────────────────────
 // Mechanism demonstration, MVP. Each future scenario feeds its own pool from its
@@ -35,8 +32,11 @@ export const PROFESSION_POOLS: Record<string, { label: string; wordPool: string[
 };
 
 // ─── Patterns ────────────────────────────────────────────────────────────────
-// MVP: 9 patterns + 1 deferred (continuous قاعد — ships only when a scenario's
-// dialogue naturally contains it; grep-verified absent today).
+// 7 patterns. abi-verb (أبي ___) and b-future (بـ + verb) were cut with
+// gym-consultation — every slot option they had came from its dialogue, so they
+// could not be built. They return when a rewritten MVP scenario uses the form
+// (spec 2026-09-14 §2.9). Continuous قاعد stays deferred until a scenario's
+// dialogue naturally contains it.
 //
 // `template` — assembly frame. Each entry is a fixed word or `{slotId}` in
 // Arabic-reading order (right to left in Arabic, left to right in roman/english).
@@ -63,58 +63,6 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
         label: 'word to describe yourself',
         accepts: 'adjective',
         options: ['e1', 'e15', 'f4', 'f5'], // زين، حلو، يووعان، عطشان
-      },
-    ],
-  },
-
-  {
-    id: 'abi-verb',
-    title: 'أبي ___ — I want to ___',
-    titleFeminine: 'أبي ___ — I want to ___',
-    unlockedByScenario: 'gym-consultation',
-    softSkill: 'request',
-    goodImpressionNote:
-      'أبي is the everyday Khaleeji "I want" (not أريد). A request with أبي plus لو سمحت lands as polite and direct — same words, better trust impact.',
-    examples: [{ phraseId: 'f8' }], // أبي آكل
-    source:
-      'gym-consultation:scene2 أبي أنزل عشر كيلو (line 442) / أبي أبدأ جدي (line 446); the-checkup:scene4 أبي أعرف (line 642)',
-    template: {
-      arabic: ['أبي', '{verb}'],
-      roman: ['abi', '{verb}'],
-      english: ['I want to', '{verb}'],
-    },
-    slots: [
-      {
-        id: 'verb',
-        label: 'something you want to do',
-        accepts: 'verb',
-        options: ['gym-2'], // أنحف
-      },
-    ],
-  },
-
-  {
-    id: 'b-future',
-    title: 'بـ + verb — we will ___',
-    unlockedByScenario: 'gym-consultation',
-    needsNativeReview: true,
-    softSkill: 'suggest',
-    goodImpressionNote:
-      'Gulf Arabic marks the future with بـ stuck onto the verb: ونبدا ("and we start") becomes بنبدا ("we will start"). It turns a promise into a plan.',
-    examples: [{ phraseId: 'gym-10' }], // خلنا نبدا خفيف — the ear anchor for نبدا
-    source:
-      'gym-consultation:scene4 choice a "ونبدا خفيف" (line 483) — b- prefix derived; see REVIEW_QUEUE',
-    template: {
-      arabic: ['بنبدا', '{object}'],
-      roman: ['b-nibda', '{object}'],
-      english: ["We'll start", '{object}'],
-    },
-    slots: [
-      {
-        id: 'object',
-        label: 'what we start with',
-        accepts: 'noun',
-        options: ['gym-4'], // حديد — "playing iron" = weightlifting in the Gulf
       },
     ],
   },
@@ -193,16 +141,16 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
 
   {
     id: 'question-words',
-    title: 'كم / وين / شو — how much? where? what?',
-    titleFeminine: 'كم / وين / شو — how much? where? what?',
+    title: 'شو / وين / ليش — what? where? why?',
+    titleFeminine: 'شو / وين / ليش — what? where? why?',
     unlockedByScenario: '',
     softSkill: 'question',
     goodImpressionNote:
-      'كم (how much), وين (where), شو (what) open conversations the Gulf way — asking about weight, height, or plans shows you care enough to ask.',
+      'شو (what), وين (where), ليش (why) open conversations the Gulf way — asking about someone\'s day or plans shows you care enough to ask.',
     examples: [
-      { phraseId: 'gym-9' }, // كم وزنك الحين؟
-      { phraseId: 'checkup-2' }, // كم طولك؟
       { phraseId: 'e9' }, // شو؟
+      { phraseId: 'e11' }, // وين؟
+      { phraseId: 'e10' }, // ليش؟
     ],
     template: {
       arabic: ['{question}'],
@@ -214,21 +162,22 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
         id: 'question',
         label: 'question word or full question',
         accepts: 'questionWord',
-        options: ['gym-9', 'checkup-2', 'e9', 'e10', 'e11', 'e12'],
+        options: ['e9', 'e10', 'e11', 'e12'],
       },
     ],
   },
 
   {
     id: 'imperative-polite',
-    title: 'عطني / تفضل / خلني — give me / please / let me',
-    titleFeminine: 'عطني / تفضلي / خليني — give me / please / let me',
-    unlockedByScenario: 'gym-consultation',
-    secretUnlock: true,
+    title: 'عطني / تفضل — give me / please',
+    titleFeminine: 'عطني / تفضلي — give me / please',
+    // Library basic until a rewritten MVP scenario claims it (spec §2.9: تفضل → Eid).
+    // Was a gym-consultation secret unlock; the خلني quote phrase went with that script.
+    unlockedByScenario: '',
     softSkill: 'offer',
     goodImpressionNote:
-      'خلني (let me) signals initiative — خلني أجهز لك عرض سعر is the phrase that turns a conversation into a deal. Offering to prepare something in writing proves you run a real operation.',
-    examples: [{ phraseId: 'a6' }, { phraseId: 'h1' }, { phraseId: 'gym-13-secret' }], // عطني / تفضل / خلني أجهز لك عرض سعر
+      'تفضل is how you offer — a seat, a coffee, the way through a door. Pairing an offer with تفضل instead of a bare gesture is what makes it read as hospitality.',
+    examples: [{ phraseId: 'a6' }, { phraseId: 'h1' }], // عطني / تفضل
     template: {
       arabic: ['{phrase}'],
       roman: ['{phrase}'],
@@ -239,7 +188,7 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
         id: 'phrase',
         label: 'polite request or offer',
         accepts: 'phrase',
-        options: ['a6', 'h1', 'gym-13-secret'],
+        options: ['a6', 'h1'],
       },
     ],
   },

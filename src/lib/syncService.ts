@@ -181,25 +181,6 @@ export async function pullProgress(
 
 // ─── Community stat helpers ───────────────────────────────────────────────────
 
-// Seed percentages used when Supabase has no real data yet (pre-launch / empty DB).
-// Values represent realistic completion distributions. Replaced automatically once
-// real users accumulate — Supabase data always takes precedence.
-const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
-  'first-morning':      { exceptional: 34, success: 41, mixed: 17, failed: 8 },
-  'coffee-invitation':  { exceptional: 28, success: 38, mixed: 24, failed: 10 },
-  'hotel-guest':        { exceptional: 31, success: 39, mixed: 21, failed: 9 },
-  'office-meeting':     { exceptional: 27, success: 37, mixed: 26, failed: 10 },
-  'ramadan-shift':      { exceptional: 24, success: 36, mixed: 28, failed: 12 },
-  'gym-consultation':   { exceptional: 30, success: 40, mixed: 21, failed: 9 },
-  'the-checkup':        { exceptional: 29, success: 40, mixed: 22, failed: 9 },
-  'social_taxi_ride':   { exceptional: 38, success: 35, mixed: 19, failed: 8 },
-  'social_elevator':    { exceptional: 32, success: 37, mixed: 22, failed: 9 },
-  'cafe-friends':       { exceptional: 26, success: 40, mixed: 23, failed: 11 },
-  'eid-greeting':       { exceptional: 33, success: 38, mixed: 20, failed: 9 },
-  'weekend-invite':     { exceptional: 25, success: 38, mixed: 25, failed: 12 },
-  'neighborhood':       { exceptional: 29, success: 39, mixed: 22, failed: 10 },
-};
-
 /**
  * Permanently delete the signed-in user's cloud row.
  *
@@ -357,6 +338,7 @@ export async function getEndingStats(
     }
   }
 
-  // No real data yet — return seed stats so the result screen is never empty
-  return ENDING_STAT_SEEDS[scenarioId] ?? {};
+  // No real data yet — return nothing. The result screen hides the stat rather
+  // than show a number nobody measured.
+  return {};
 }
