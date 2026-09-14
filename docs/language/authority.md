@@ -170,4 +170,6 @@ which asserts it matches the library and may only fall — so it is not restated
 here. It is the honest state of the library, not a target that has been met.
 
 Closing this gap needs a native reviewer — Al Ramsa Institute, a UAEU linguist, or
-a vetted freelancer. Nothing in the current design substitutes for one.
+a vetted freelancer. Nothing in the current design substitutes for one. What we ask
+of a reviewer, and how a review is recorded (`NativeReview`), is in
+[`reviewer-brief.md`](./reviewer-brief.md).

@@ -303,7 +303,9 @@ export function ScenarioResultPhase({
               </View>
             ))}
           </View>
-          {hasDivergence && (
+          {/* "Balance all three" is legacy advice. In a route script a lopsided
+              run is a destination, not a mistake, so the tip would contradict it. */}
+          {hasDivergence && !scriptData.routes?.length && (
             <View style={{ borderRadius: 12, padding: 12, backgroundColor: `${sortedImpact[0].color}15`, borderWidth: 1, borderColor: `${sortedImpact[0].color}30` }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, textAlign: 'center', lineHeight: 18 }}>
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sortedImpact[0].color }}>{sortedImpact[0].label}</Text> is your strongest area (+{sortedImpact[0].value}),{' '}

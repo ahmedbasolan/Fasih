@@ -39,7 +39,7 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
-import { phrasesEarned } from '../scenarioEngine';
+import { isRouteScript, phrasesEarned } from '../scenarioEngine';
 import { enumerateRuns } from '../scenarioRules';
 import type { DifficultyLevel } from '../../types';
 
@@ -179,7 +179,6 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
   'coffee-invitation:morphemeCeiling',
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
-  'first-morning:maxClauses',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
   'social_taxi_ride:phrasesUnlocked',
@@ -341,7 +340,11 @@ describe('level gates', () => {
       const maxClauses = Math.max(...cards.map(countClauses));
 
       // Both the shortest and longest playthrough must sit inside the band.
-      if (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns)) out.push(`${id}:turns`);
+      // Route scripts are exempt: their length is DECISIONS_PER_RUN for every
+      // level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
+      if (!isRouteScript(script) && (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns))) {
+        out.push(`${id}:turns`);
+      }
       if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
       if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
       if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
@@ -418,8 +421,10 @@ describe('provenance', () => {
    *
    * 136 → 103 on 2026-09-14 by DELETION, not sourcing: the 33 phrases of the four
    * scenarios cut for the MVP were all unsourced. Nothing got more verified.
+   * 103 → 102, also by deletion: fm-s1-7 duplicated core-4 (الله يعافيك) with a
+   * wrong gloss, and the First Morning rewrite no longer granted it.
    */
-  const MAX_UNSOURCED = 103;
+  const MAX_UNSOURCED = 102;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 
