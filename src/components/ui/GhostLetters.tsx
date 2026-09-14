@@ -23,7 +23,13 @@ export function GhostLetters({ glyphs }: Props) {
 
   // Ink at low alpha rather than a tinted accent. Dark needs less, because a
   // light glyph on a dark ground reads stronger at equal alpha.
-  const opacity = isDark ? 0.05 : 0.08;
+  //
+  // Halved from 0.05/0.08. At the previous alpha the glyphs read as dark
+  // blotches rather than a watermark — on the name step one sat directly behind
+  // the avatar and title, and because each is bled off an edge they registered
+  // as smudges rather than as letters. A folio mark should be findable, not
+  // noticeable.
+  const opacity = isDark ? 0.025 : 0.04;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">

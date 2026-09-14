@@ -4,16 +4,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView, AnimatePresence } from 'moti';
 import Svg, { Circle } from 'react-native-svg';
+import Animated, { useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated';
 import { Check } from '../../components/icons';
 import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI, ARABIC_SCALE } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
 import { SPACE, RADIUS } from '../../components/design/spacing';
+import { ONBOARDING_CHROME_HEIGHT, TYPE } from '../../components/design/layout';
+import { categoriesForRole, phraseCountForRole } from '../../engine/roleCategories';
 import { GeoPattern } from '../../components/design/GeoPattern';
 import { HotelIcon, RetailIcon, RestaurantIcon, OfficeIcon, HealthcareIcon, DriverIcon, SecurityIcon, ProfessionalIcon, FriendsIcon, CultureIcon, DailyLifeIcon, CareerIcon } from '../../components/features/RoleGoalIcons';
 import { Companion } from '../../components/ui/Companion';
 import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
-import { FadeIn, ShimmerButton } from '../../components/ui';
+import { FadeIn, ShimmerButton, Screen } from '../../components/ui';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
 
@@ -68,6 +71,15 @@ const PROFESSION_CATEGORIES = [
   },
 ];
 
+/**
+ * The progress ring, animated on the UI thread.
+ *
+ * react-native-svg's Circle does not accept animated props directly; this is
+ * the standard wrapper that lets Reanimated drive strokeDashoffset without a
+ * React render per frame.
+ */
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 const goals = [
   { id: 'professional', label: STRINGS.onboarding.goals.professional.label, sub: STRINGS.onboarding.goals.professional.sub, Icon: ProfessionalIcon },
   { id: 'friends', label: STRINGS.onboarding.goals.friends.label, sub: STRINGS.onboarding.goals.friends.sub, Icon: FriendsIcon },
@@ -83,7 +95,7 @@ function GhostBtn({ children, onPress }: { children: string; onPress?: () => voi
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+      style={{ borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', borderWidth: 1, borderColor: C.BORDER }}
     >
       <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{children}</Text>
     </Pressable>
@@ -96,29 +108,45 @@ function GhostBtn({ children, onPress }: { children: string; onPress?: () => voi
  * The profile the learner is actually building. `PROFESSION_CATEGORIES` and
  * `goals` moved here with the cases -- nothing else reads them.
  */
-export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
+export function ProfileSteps({ screen, next, draft, hold }: OnboardingStepProps) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
   const {
     name, setName, gender, setGender, role, setRole,
     profession, setProfession, selectedGoals, toggleGoal, typedGreeting,
   } = draft;
-  const { holdProgress, holdComplete, startHold, endHold, circum } = hold;
+  const { holdProgress, holdComplete, isHolding, startHold, endHold, circum } = hold;
 
-  switch (step) {
+  // Both derive from the shared value, so they update on the UI thread without
+  // re-rendering this component. Declared unconditionally — hooks cannot live
+  // inside the switch below.
+  const ringProps = useAnimatedProps(() => ({
+    strokeDashoffset: circum * (1 - holdProgress.value),
+  }));
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: holdProgress.value * 0.18,
+    transform: [{ scale: 1 + holdProgress.value * 0.35 }],
+  }));
 
-      // Step 2: Name Input — consistent upward entrance
-      case 2:
+  switch (screen) {
+
+      // Name input — consistent upward entrance
+      case 'name':
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          // Lays itself out rather than using `Screen`: both steps are centred,
+          // non-scrolling compositions with their own horizontal margin. The top
+          // padding still comes from ONBOARDING_CHROME_HEIGHT so it tracks the
+          // chrome it is clearing — it was SPACE.huge, the same 64, but tied to
+          // nothing.
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT, paddingBottom: insets.bottom + SPACE.xl }}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', marginTop: 40, gap: 24 }}>
               <FadeIn delay={100}>
-                <Companion size={72} />
+                <Companion size={72} name={name} />
               </FadeIn>
               
               <FadeIn delay={200}>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourName}</Text>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourName}</Text>
                   <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.kafGreetingSub}</Text>
                 </View>
               </FadeIn>
@@ -132,15 +160,17 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                   accessibilityLabel="Your name"
                   autoCapitalize="words"
                   returnKeyType="done"
+                  // A ruled line, not a filled box. Sadaf separates by hairline
+                  // and space; a rounded fill here is the card language steps
+                  // 0-1 no longer use.
                   style={{
-                    fontFamily: FONT_LATIN_SEMI,
-                    fontSize: 18,
+                    fontFamily: FONT_HEADING_SEMI,
+                    fontSize: 22,
                     color: C.TEXT,
-                    padding: 16,
-                    borderRadius: 12,
-                    backgroundColor: C.SURFACE,
-                    borderWidth: 1,
-                    borderColor: C.BORDER,
+                    paddingVertical: SPACE.md,
+                    borderRadius: RADIUS.flat,
+                    borderBottomWidth: 1,
+                    borderBottomColor: name.trim() ? C.PRIMARY : C.BORDER2,
                     textAlign: 'center',
                   }}
                 />
@@ -148,7 +178,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
               <FadeIn delay={380} style={{ width: '100%' }}>
                 <View style={{ alignItems: 'center', gap: 10 }}>
-                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 15, color: C.TEXT }}>
+                  <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 16, color: C.TEXT }}>
                     {STRINGS.onboarding.genderQuestion}
                   </Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3, textAlign: 'center', lineHeight: 18 }}>
@@ -172,19 +202,20 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                             minHeight: 72,
                             paddingVertical: 12,
                             paddingHorizontal: 10,
-                            borderRadius: 14,
+                            borderRadius: RADIUS.flat,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: 4,
-                            backgroundColor: selected ? C.JADE_ACCENT_DIM : C.SURFACE,
-                            borderWidth: selected ? 1.5 : 1,
-                            borderColor: selected ? C.JADE_ACCENT_BORDER : C.BORDER,
+                            gap: SPACE.xs,
+                            // Flat. Selection is a border and a weight change,
+                            // matching the mode plates on step 1 — no fill.
+                            borderWidth: 1,
+                            borderColor: selected ? C.PRIMARY : C.BORDER,
                           }}
                         >
-                          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.JADE_ACCENT : C.TEXT }}>
+                          <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.PRIMARY : C.TEXT }}>
                             {opt.label}
                           </Text>
-                          <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(13 * ARABIC_SCALE), color: selected ? C.JADE_ACCENT : C.TEXT3 }}>
+                          <Text style={{ fontFamily: FONT_ARABIC, fontSize: Math.round(13 * ARABIC_SCALE), color: selected ? C.PRIMARY : C.TEXT3 }}>
                             {opt.example}
                           </Text>
                         </Pressable>
@@ -194,10 +225,15 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                 </View>
               </FadeIn>
 
+              {/* No FadeIn here. AnimatePresence can only drive an exit on its
+                  DIRECT child, and FadeIn's root is a plain View since the
+                  blank-screen fix — so wrapping this hid the MotiView's own
+                  `exit` and the greeting vanished instead of fading. The
+                  MotiView already carries the entrance, so FadeIn was doubling
+                  a translateY as well. */}
               <AnimatePresence>
                 {typedGreeting && (
-                  <FadeIn delay={0}>
-                    <MotiView
+                  <MotiView
                       key="greeting"
                       from={{ opacity: 0, translateY: 10 }}
                       animate={{ opacity: 1, translateY: 0 }}
@@ -220,8 +256,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           {name.length > 4 ? STRINGS.onboarding.welcomeName(name) : STRINGS.onboarding.keepTyping}
                         </Text>
                       </View>
-                    </MotiView>
-                  </FadeIn>
+                  </MotiView>
                 )}
               </AnimatePresence>
             </View>
@@ -233,17 +268,30 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
         );
 
       // Step 3: Role Selection — clean 2-column grid layout
-      case 3:
+      case 'role':
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          <Screen
+            // The role grid scrolls, the heading and the profession tray do not.
+            // Screen must therefore NOT scroll: two same-axis ScrollViews nested
+            // is a native gesture conflict, and only one of them would ever win.
+            scroll={false}
+            onboardingChrome
+            action={
+              <FadeIn delay={600}>
+                <ShimmerButton onPress={next} disabled={!role || !profession} accessibilityLabel={STRINGS.common.continue}>
+                  {STRINGS.common.continue}
+                </ShimmerButton>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsYourRole}</Text>
                 <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.roleTailored}</Text>
               </View>
             </FadeIn>
 
-            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingBottom: 16 }}>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, paddingBottom: 16 }}>
               {PROFESSION_CATEGORIES.map(({ id, label, Icon }, idx) => {
                 const selected = role === id;
                 const hasSelection = !!role;
@@ -268,37 +316,21 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           justifyContent: 'center',
                           paddingHorizontal: 12,
                           paddingVertical: 10,
-                          gap: 8,
-                          backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
-                          borderRadius: 20,
-                          borderWidth: selected ? 2 : 1,
-                          borderColor: selected ? C.JADE : C.BORDER,
+                          gap: SPACE.sm,
+                          // Flat, bordered, no fill and no gradient wash — the
+                          // same selection language as the mode plates.
+                          borderRadius: RADIUS.flat,
+                          borderWidth: 1,
+                          borderColor: selected ? C.PRIMARY : C.BORDER,
                           overflow: 'hidden'
                         }}
                       >
-                        {selected && (
-                          <LinearGradient
-                            colors={[C.JADE_SURFACE, 'transparent']}
-                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                          />
-                        )}
-
-                        <View style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 12,
-                          backgroundColor: selected ? C.JADE : C.BORDER,
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Icon size={16} color={selected ? C.BG : C.TEXT2} />
-                        </View>
+                        <Icon size={20} color={selected ? C.PRIMARY : C.TEXT3} />
 
                         <Text style={{
-                          fontFamily: FONT_LATIN_SEMI,
+                          fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI,
                           fontSize: 12,
-                          color: selected ? C.JADE2 : C.TEXT,
+                          color: selected ? C.PRIMARY : C.TEXT,
                           textAlign: 'center',
                         }} numberOfLines={1}>
                           {label}
@@ -333,18 +365,20 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           accessibilityRole="radio"
                           accessibilityState={{ selected: chipSelected }}
                           style={{
-                            paddingHorizontal: 14,
-                            paddingVertical: 8,
-                            borderRadius: 20,
-                            borderWidth: 1.5,
-                            borderColor: chipSelected ? C.JADE_ACCENT : C.BORDER,
-                            backgroundColor: chipSelected ? C.JADE_ACCENT_SURFACE : C.SURFACE,
+                            paddingHorizontal: SPACE.lg,
+                            paddingVertical: SPACE.sm,
+                            // Chips stay pill-shaped — RADIUS.pill is in the
+                            // budget precisely for interactive pills. The fill
+                            // is what goes.
+                            borderRadius: RADIUS.pill,
+                            borderWidth: 1,
+                            borderColor: chipSelected ? C.PRIMARY : C.BORDER,
                           }}
                         >
                           <Text style={{
-                            fontFamily: FONT_LATIN,
-                            fontSize: 13,
-                            color: chipSelected ? C.JADE_ACCENT : C.TEXT2,
+                            fontFamily: chipSelected ? FONT_LATIN_SEMI : FONT_LATIN,
+                            fontSize: 14,
+                            color: chipSelected ? C.PRIMARY : C.TEXT2,
                           }}>
                             {p}
                           </Text>
@@ -356,24 +390,81 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
               )}
             </AnimatePresence>
 
-            <FadeIn delay={600}>
-              <ShimmerButton onPress={next} disabled={!role || !profession}>{STRINGS.common.continue}</ShimmerButton>
-            </FadeIn>
-          </View>
+            {/* The payoff. The flow collected a role and a profession and then
+                never mentioned them again until the paywall; this reflects the
+                answer back on the screen that asked for it, which is a shorter
+                causal link than asking here and paying off a screen later.
+
+                Categories lead, count supports. Greetings and Everyday apply to
+                every job, so every role resolves to a similar total and the
+                number differentiates far less than the category list does. */}
+            {profession ? (
+              <FadeIn delay={80}>
+                <View
+                  style={{
+                    marginTop: SPACE.lg,
+                    paddingTop: SPACE.lg,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: C.BORDER,
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...TYPE.micro,
+                      fontFamily: FONT_LATIN_MEDIUM,
+                      letterSpacing: 1.6,
+                      textTransform: 'uppercase',
+                      color: C.TEXT3,
+                      marginBottom: SPACE.sm,
+                    }}
+                  >
+                    {STRINGS.onboarding.shiftHeading}
+                  </Text>
+                  <Text
+                    style={{
+                      ...TYPE.bodyLarge,
+                      fontFamily: FONT_LATIN_SEMI,
+                      color: C.TEXT,
+                      marginBottom: SPACE.xs,
+                    }}
+                  >
+                    {categoriesForRole(role).join(STRINGS.onboarding.shiftCategorySeparator)}
+                  </Text>
+                  <Text style={{ ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2 }}>
+                    {STRINGS.onboarding.shiftCount(phraseCountForRole(role))}
+                  </Text>
+                </View>
+              </FadeIn>
+            ) : null}
+
+          </Screen>
         );
 
       // Step 4: Goals Selection — consistent upward entrance
-      case 4:
+      case 'goals':
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24, gap: 16 }}>
+          <Screen
+            // Same as the role screen: the goal list owns the scrolling, so Screen must not.
+            scroll={false}
+            onboardingChrome
+            contentStyle={{ gap: SPACE.lg }}
+            action={
+              <FadeIn delay={600}>
+                <ShimmerButton onPress={next} disabled={selectedGoals.length === 0} accessibilityLabel={STRINGS.common.continue}>
+                  {STRINGS.common.continue}
+                </ShimmerButton>
+              </FadeIn>
+            }
+          >
             <FadeIn delay={100}>
               <View>
-                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 24, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 22, color: C.TEXT, marginBottom: 6 }}>{STRINGS.onboarding.whatsDrivesYou}</Text>
                 <Text style={{ fontFamily: FONT_LATIN_MEDIUM, fontSize: 14, color: C.TEXT2 }}>{STRINGS.onboarding.selectEverything}</Text>
               </View>
             </FadeIn>
 
-            <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
+            {/* Ruled rows, not stacked cards: a list of goals IS a list. */}
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACE.lg }}>
               {goals.map(({ id, label, sub, Icon }, idx) => {
                 const selected = selectedGoals.includes(id);
                 return (
@@ -382,26 +473,25 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                       onPress={() => toggleGoal(id)}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: selected }}
-                      accessibilityLabel={label}
+                      accessibilityLabel={`${label}. ${sub}`}
                       style={{
-                        flexDirection: 'row', alignItems: 'center', gap: 12,
-                        borderRadius: 16, padding: 14,
-                        backgroundColor: selected ? C.JADE_SURFACE : C.SURFACE,
-                        borderWidth: selected ? 2 : 1,
-                        borderColor: selected ? C.JADE : C.BORDER,
+                        flexDirection: 'row', alignItems: 'center', gap: SPACE.md,
+                        borderRadius: RADIUS.flat, paddingVertical: SPACE.lg,
+                        borderTopWidth: idx === 0 ? StyleSheet.hairlineWidth : 0,
+                        borderTopColor: C.BORDER,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: C.BORDER,
                       }}
                     >
-                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: selected ? C.JADE_DIM : C.BORDER, alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={18} color={selected ? C.JADE2 : C.TEXT2} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: selected ? C.TEXT2 : C.TEXT3 }}>{sub}</Text>
+                      <Icon size={20} color={selected ? C.PRIMARY : C.TEXT3} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontFamily: selected ? FONT_LATIN_BOLD : FONT_LATIN_SEMI, fontSize: 16, color: selected ? C.TEXT : C.TEXT2 }}>{label}</Text>
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20, color: C.TEXT3, marginTop: 2 }}>{sub}</Text>
                       </View>
                       <View style={{
-                        width: 26, height: 26, borderRadius: 13, borderWidth: 2,
-                        borderColor: selected ? C.JADE2 : C.BORDER2,
-                        backgroundColor: selected ? C.JADE2 : 'transparent',
+                        width: 24, height: 24, borderRadius: RADIUS.pill, borderWidth: 1,
+                        borderColor: selected ? C.PRIMARY : C.BORDER2,
+                        backgroundColor: selected ? C.PRIMARY : 'transparent',
                         alignItems: 'center', justifyContent: 'center'
                       }}>
                         <AnimatePresence>
@@ -439,23 +529,25 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                   </MotiView>
                 )}
               </AnimatePresence>
-              <FadeIn delay={600}>
-                <ShimmerButton onPress={next} disabled={selectedGoals.length === 0}>{STRINGS.common.continue}</ShimmerButton>
-              </FadeIn>
             </View>
-          </View>
+          </Screen>
         );
 
-      // Step 5: Commitment — consistent upward entrance
-      case 5:
+      // Commitment — consistent upward entrance
+      case 'commitment':
         return (
-          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 24 }}>
+          // Lays itself out rather than using `Screen`: both steps are centred,
+          // non-scrolling compositions with their own horizontal margin. The top
+          // padding still comes from ONBOARDING_CHROME_HEIGHT so it tracks the
+          // chrome it is clearing — it was SPACE.huge, the same 64, but tied to
+          // nothing.
+          <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + ONBOARDING_CHROME_HEIGHT, paddingBottom: insets.bottom + SPACE.xl }}>
             {/* Arabic geometric background pattern */}
             <GeoPattern opacity={0.035} color={C.JADE_ACCENT} size={48} />
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 }}>
               <FadeIn delay={100} style={{ zIndex: 2 }}>
-                <Companion size={72} />
+                <Companion size={72} name={name} />
               </FadeIn>
 
               <FadeIn delay={200} style={{ zIndex: 2 }}>
@@ -469,11 +561,15 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
 
               <FadeIn delay={300} style={{ zIndex: 2 }}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  {/* Outer ambient glow that grows with hold progress */}
-                  <MotiView
-                    animate={{ scale: 1 + holdProgress * 0.35, opacity: holdProgress * 0.18 }}
-                    transition={{ type: 'timing', duration: 80 }}
-                    style={{ position: 'absolute', width: 136, height: 136, borderRadius: 68, backgroundColor: C.JADE_ACCENT }}
+                  {/* Glow and ring both read the shared value directly, so the
+                      whole hold runs on the UI thread. The MotiView that used
+                      to sit here had its `animate` prop rewritten every frame,
+                      which restarted a 80ms animation 60 times a second. */}
+                  <Animated.View
+                    style={[
+                      { position: 'absolute', width: 136, height: 136, borderRadius: 68, backgroundColor: C.JADE_ACCENT },
+                      glowStyle,
+                    ]}
                   />
                   <Svg width={136} height={136} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
                     {/* Outer glow ring */}
@@ -481,10 +577,10 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                     {/* Track ring */}
                     <Circle cx={68} cy={68} r={52} fill="none" stroke={C.SURFACE} strokeWidth={8} />
                     {/* Progress ring */}
-                    <Circle cx={68} cy={68} r={52} fill="none"
+                    <AnimatedCircle cx={68} cy={68} r={52} fill="none"
                       stroke={holdComplete ? C.JADE2 : C.JADE_ACCENT} strokeWidth={8} strokeLinecap="round"
                       strokeDasharray={`${circum}`}
-                      strokeDashoffset={`${circum * (1 - holdProgress)}`} />
+                      animatedProps={ringProps} />
                   </Svg>
 
                   <Pressable
@@ -493,7 +589,7 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                     accessibilityRole="button"
                     accessibilityLabel={holdComplete ? 'Commitment made' : 'Hold to commit'}
                     accessibilityHint={holdComplete ? undefined : 'Press and hold for 2 seconds to make your commitment'}
-                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : holdProgress > 0 ? C.JADE_ACCENT : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
+                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: holdComplete ? C.JADE2 : isHolding ? C.JADE_ACCENT : C.BORDER2, overflow: 'hidden', zIndex: 2 }}
                   >
                     {holdComplete ? (
                       <MotiView from={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
@@ -501,30 +597,36 @@ export function ProfileSteps({ step, next, draft, hold }: OnboardingStepProps) {
                           <Check size={34} color={C.BG} />
                         </LinearGradient>
                       </MotiView>
-                    ) : holdProgress > 0 ? (
+                    ) : isHolding ? (
+                      /* The live percentage is gone. It could only be rendered by
+                         reading progress on the JS thread, which is the thing
+                         that made this stutter — and a number racing 0 to 100 in
+                         2.2 seconds is not readable anyway. The ring is the
+                         progress display; this is the instruction. */
                       <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{Math.round(holdProgress * 100)}%</Text>
+                        <Text numberOfLines={1} style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdKeepHolding}</Text>
                       </LinearGradient>
                     ) : (
                       <View
                         style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 12, color: C.TEXT2, letterSpacing: 1.2 }}>{STRINGS.common.done}</Text>
+                        <Text numberOfLines={1} style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 12, color: C.TEXT2, letterSpacing: 1.2 }}>{STRINGS.onboarding.holdToCommit}</Text>
                       </View>
                     )}
                   </Pressable>
                 </View>
               </FadeIn>
 
-              <AnimatePresence>
-                {!holdComplete && (
-                  <FadeIn delay={400} style={{ zIndex: 2 }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
-                      {STRINGS.onboarding.dailyHabit}
-                    </Text>
-                  </FadeIn>
-                )}
-              </AnimatePresence>
+              {/* No AnimatePresence: nothing here declares an `exit`, and
+                  FadeIn's plain-View root means it could not drive one anyway.
+                  The line just unmounts, which is what it already did. */}
+              {!holdComplete && (
+                <FadeIn delay={400} style={{ zIndex: 2 }}>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, textAlign: 'center', lineHeight: 20 }}>
+                    {STRINGS.onboarding.dailyHabit}
+                  </Text>
+                </FadeIn>
+              )}
             </View>
 
             <AnimatePresence>

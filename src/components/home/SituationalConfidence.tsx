@@ -264,7 +264,7 @@ export function SituationalConfidence({
     },
     situationName: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT,
       fontWeight: '600',
     },
@@ -275,7 +275,7 @@ export function SituationalConfidence({
     },
     levelText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: '700',
       letterSpacing: 0.3,
     },

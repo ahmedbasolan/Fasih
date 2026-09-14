@@ -196,8 +196,8 @@ export function PhraseBuilder({ english, arabic, wordTiles, onComplete }: Phrase
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   promptContainer: { marginBottom: 24 },
-  promptLabel: { fontFamily: FONT_LATIN_SEMI, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-  promptText: { fontFamily: FONT_HEADING_SEMI, fontSize: 20, lineHeight: 28 },
+  promptLabel: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  promptText: { fontFamily: FONT_HEADING_SEMI, fontSize: 22, lineHeight: 28 },
   instruction: { fontFamily: FONT_LATIN, fontSize: 11, textAlign: 'center', marginBottom: 12, opacity: 0.7 },
   
   // RTL layout for Arabic phrasing
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   
   resultCard: { padding: 20, borderRadius: 16, gap: 12 },
   resultText: { fontFamily: FONT_LATIN_BOLD, fontSize: 16 },
-  correctArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 24, textAlign: 'right' },
+  correctArabic: { fontFamily: FONT_ARABIC_BLACK, fontSize: 22, textAlign: 'right' },
   nextBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   nextBtnText: { fontFamily: FONT_HEADING_SEMI, fontSize: 16 }
 });
