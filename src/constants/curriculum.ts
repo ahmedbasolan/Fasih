@@ -156,6 +156,21 @@ export const TIER_BANDS: Readonly<Record<string, Range>> = {
   bad: { min: -9, max: -3 },
 };
 
+// ─── Route scripts (spec 2026-09-14) ─────────────────────────────────────────
+
+/**
+ * Decisions on every main path of a route script, whichever route it takes.
+ * Enough for an early choice to echo later; short enough (~6–8 min) to replay.
+ */
+export const DECISIONS_PER_RUN = 6;
+
+/**
+ * Share of scenes where the top-scoring choice may also be the longest Arabic
+ * line. Measured 2026-09-14: 36 of 40 legacy scenes, so "tap the longest
+ * answer" won almost every scenario. Above half, length is a tell.
+ */
+export const MAX_BEST_IS_LONGEST_SHARE = 0.5;
+
 // ─── Sources ─────────────────────────────────────────────────────────────────
 
 export interface SourceEntry {
