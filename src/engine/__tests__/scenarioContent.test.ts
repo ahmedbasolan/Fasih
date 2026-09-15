@@ -18,6 +18,15 @@ import { PHRASES } from '../../constants/phrases';
 import { darkTheme } from '../../components/design/tokens';
 import { allPhraseIds, relationshipScore } from '../scenarioEngine';
 import { enumerateRuns, routeScriptProblems } from '../scenarioRules';
+/**
+ * Impact bands live in `src/constants/curriculum.ts`.
+ *
+ * They used to be declared locally, which let this file and the
+ * `fasih-scenario-review` checklist disagree about what a "bad" choice costs —
+ * the checklist said −3..−9, this file said −1..−9, and the suite passed with
+ * three "bad" choices costing only −2. One home per rule.
+ */
+import { TIER_BANDS } from '../../constants/curriculum';
 import type { ScenarioScene, ScenarioChoice } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
@@ -31,16 +40,6 @@ const phraseIds = new Set(PHRASES.map(p => p.id));
 
 const impactOf = (c: ScenarioChoice) =>
   (c.impact?.trust ?? 0) + (c.impact?.respect ?? 0) + (c.impact?.culture ?? 0);
-
-/**
- * Impact bands now live in `src/constants/curriculum.ts`, imported here.
- *
- * They used to be declared locally, which let this file and the
- * `fasih-scenario-review` checklist disagree about what a "bad" choice costs —
- * the checklist said −3..−9, this file said −1..−9, and the suite passed with
- * three "bad" choices costing only −2. One home per rule.
- */
-import { TIER_BANDS } from '../../constants/curriculum';
 
 /**
  * Choices whose impact sits outside its tier band, recorded rather than fixed.

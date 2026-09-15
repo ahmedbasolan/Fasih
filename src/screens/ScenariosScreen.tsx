@@ -189,7 +189,8 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                 paddingVertical: SPACE.sm,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
-                borderColor: active ? C.PRIMARY : 'transparent',
+                // Same width either way, so the label doesn't shift; PRIMARY at zero alpha.
+                borderColor: active ? C.PRIMARY : `${C.PRIMARY}00`,
               }}
             >
               <Text
@@ -230,7 +231,6 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
             />
           )
         }
-        {...({ estimatedItemSize: 120 } as any)}
         contentContainerStyle={{
           paddingHorizontal: SCREEN_MARGIN,
           paddingBottom: TAB_LIST_SCROLL_BOTTOM,

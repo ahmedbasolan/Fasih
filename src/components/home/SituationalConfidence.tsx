@@ -388,7 +388,7 @@ export function SituationalConfidence({
                   </View>
                 </View>
                 <View style={styles.barTrack}>
-                  <View style={{ width: `${sit.score}%` as any, height: '100%' }}>
+                  <View style={{ width: `${sit.score}%` as const, height: '100%' }}>
                     <LinearGradient
                       colors={sit.level === 'not-started' ? [C.SURFACE, C.SURFACE] : colors.bar}
                       start={{ x: 0, y: 0 }}
