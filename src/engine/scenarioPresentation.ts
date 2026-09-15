@@ -122,6 +122,10 @@ export const MIN_COMPLETIONS_FOR_STATS = 100;
  * Reach percentages by ending id. Rows for ids the script doesn't have (old
  * type-keyed rows, deleted endings) are ignored entirely — they neither count
  * toward the floor nor show.
+ *
+ * Not rounded: 0.3 rounded to 0, and 0 is what hides the line — so the rarest
+ * endings, the ones the "you just did" copy exists for, never showed one. The
+ * STRINGS formatters round, and say "fewer than 1%" below it.
  */
 export function endingPercentages(
   rows: readonly { ending: string; count: number }[],
@@ -132,5 +136,5 @@ export function endingPercentages(
   const counted = rows.filter(r => known.has(r.ending));
   const total = counted.reduce((sum, r) => sum + r.count, 0);
   if (total < minCompletions) return {};
-  return Object.fromEntries(counted.map(r => [r.ending, Math.round((r.count / total) * 100)]));
+  return Object.fromEntries(counted.map(r => [r.ending, (r.count / total) * 100]));
 }

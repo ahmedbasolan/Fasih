@@ -150,8 +150,14 @@ describe('endingPercentages', () => {
     expect(endingPercentages([{ ending: 'a', count: MIN_COMPLETIONS_FOR_STATS - 1 }], known)).toEqual({});
   });
 
-  it('returns rounded percentages by ending id once it does', () => {
+  it('returns percentages by ending id once it does', () => {
     expect(endingPercentages([{ ending: 'a', count: 75 }, { ending: 'b', count: 25 }], known)).toEqual({ a: 75, b: 25 });
+  });
+
+  it('keeps a rare ending above zero — rounding it to 0 would hide its stat', () => {
+    const pct = endingPercentages([{ ending: 'a', count: 997 }, { ending: 'b', count: 3 }], known);
+    expect(pct.b).toBeGreaterThan(0);
+    expect(pct.b).toBeLessThan(1);
   });
 
   it('ignores rows for endings the script no longer has — they neither count nor show', () => {

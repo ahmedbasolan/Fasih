@@ -133,14 +133,11 @@ padding it with dialect words.
 ### Update 2026-09-14
 
 MVP cut `the-checkup`, `gym-consultation`, `hotel-guest` and `cafe-friends`
-(spec `docs/superpowers/specs/2026-09-14-butterfly-engine-mvp-design.md`). 9 level
-violations remain, across `coffee-invitation`, `eid-greeting`, `first-morning`,
-`social_elevator` and `social_taxi_ride` — all five are being rewritten under that
-spec. The register-vs-dialect axis above still matters: The Meeting will hit it.
+(spec `docs/superpowers/specs/2026-09-14-butterfly-engine-mvp-design.md`). What
+remains is `KNOWN_LEVEL_VIOLATIONS` in `languageContent.test.ts` — counted there, not
+here — and every scenario on it is being rewritten under that spec. The register-vs-dialect axis above still matters: The Meeting will hit it.
 
 ### Update 2026-09-15
 
-`coffee-invitation` rewritten as a route script: mean 5.00 morphemes, card max 9,
-3 clauses — inside Beginner, so its `meanMorphemes` and `morphemeCeiling` entries
-are gone. `first-morning` had already cleared. Remaining violations sit in
-`eid-greeting`, `social_elevator` and `social_taxi_ride`, all still to be rewritten.
+`coffee-invitation` is rewritten as a route script and now sits inside Beginner, so its
+entries have left `KNOWN_LEVEL_VIOLATIONS`.

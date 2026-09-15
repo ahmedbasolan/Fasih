@@ -113,20 +113,27 @@ export function HomeScreenNew({
 
   const weekDays = useMemo(() => getWeekDays(streakDays, lastActiveDate), [streakDays, lastActiveDate]);
 
-  // Featured scenario (first unlocked, uncompleted one for user's mode)
+  // Featured scenario (first playable, uncompleted one for user's mode)
   const userMode = useAppStore((s) => s.user?.mode) || 'career';
   const userGender = useAppStore((s) => s.user?.gender);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
+  const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
   const featured = useMemo(() => {
-    const all = filterScenariosForLearner(getAllScenarios(C), userGender);
-    const modeMatch = all.filter((s) => s.mode === userMode && !s.locked && !s.comingSoon);
+    // Playable means what ScenariosScreen means: access by position within the
+    // mode. This read an authored `locked` flag instead, which disagreed with the
+    // paywall — and the mission card opens a scenario without going through it.
+    const playable = filterScenariosForLearner(getAllScenarios(C), userGender)
+      .filter((s) => s.mode === userMode)
+      .filter((s, index) => hasScenarioAccess(index) && !s.comingSoon);
     // Pick first one not yet completed
-    const uncompleted = modeMatch.find((s) => !completedScenarios[s.id]);
-    return uncompleted ?? modeMatch[0] ?? getFeaturedScenario(C);
+    const uncompleted = playable.find((s) => !completedScenarios[s.id]);
+    return uncompleted ?? playable[0] ?? getFeaturedScenario(C);
   // isDark is the stable bool that determines C — prevents recomputing on every render
   // since C is a new object reference each render but isDark only changes on theme switch.
+  // subscriptionStatus and completedScenarios are what hasScenarioAccess reads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDark, userMode, userGender, completedScenarios]);
+  }, [isDark, userMode, userGender, completedScenarios, hasScenarioAccess, subscriptionStatus]);
 
   const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 

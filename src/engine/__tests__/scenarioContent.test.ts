@@ -250,12 +250,15 @@ describe('gender-restricted scenarios', () => {
     expect(catalog.filter(s => s.requiresGender).map(s => s.id)).toEqual([]);
   });
 
-  it('a gender-restricted script does not also carry arabicFeminine variants', () => {
-    // Both mechanisms solving the same problem in one script means one of them
-    // is dead code and the two will drift apart.
+  // Both mechanisms solving the same problem in one script means one of them is
+  // dead code and the two will drift apart.
+  const genderContradictions = (
+    list: { id: string; requiresGender?: 'male' | 'female' }[],
+    byId: Record<string, { scenes: { id: string; choices: { id: string; arabicFeminine?: string }[] }[] }>,
+  ): string[] => {
     const contradictions: string[] = [];
-    for (const meta of catalog.filter(s => s.requiresGender)) {
-      const script = scripts[meta.id];
+    for (const meta of list.filter(s => s.requiresGender)) {
+      const script = byId[meta.id];
       if (!script) continue;
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -263,7 +266,18 @@ describe('gender-restricted scenarios', () => {
         }
       }
     }
-    expect(contradictions).toEqual([]);
+    return contradictions;
+  };
+
+  it('a gender-restricted script does not also carry arabicFeminine variants', () => {
+    expect(genderContradictions(catalog, scripts)).toEqual([]);
+  });
+
+  // With nothing in the MVP catalog restricted, the check above runs an empty
+  // loop and would pass even if broken. This keeps it proving something.
+  it('the contradiction check catches a restricted script that has feminine variants', () => {
+    const fixture = { scenes: [{ id: 's1', choices: [{ id: 'a' }, { id: 'b', arabicFeminine: 'x' }] }] };
+    expect(genderContradictions([{ id: 'fx', requiresGender: 'female' }], { fx: fixture })).toEqual(['fx/s1/b']);
   });
 });
 
