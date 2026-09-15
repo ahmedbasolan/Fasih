@@ -153,7 +153,8 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
           {[
             [`${decisions}`, STRINGS.scenarios.decisionLabel(decisions)],
             [`${endings.length}`, STRINGS.scenarios.outcomeLabel(endings.length)],
-            [unlockedPhrases.length > 0 ? `${unlockedPhrases.length}` : '8+', STRINGS.scenarios.phraseLabel(8)],
+            // The real count. The fallback was a typed-in '8+'.
+            [`${unlockedPhrases.length}`, STRINGS.scenarios.phraseLabel(unlockedPhrases.length)],
           ].map(([v, l]) => (
             <View key={l} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
               <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: C.TEXT }}>{v}</Text>
