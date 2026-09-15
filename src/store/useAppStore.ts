@@ -23,7 +23,7 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress, ScenarioRunRecord } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
@@ -47,7 +47,7 @@ import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import { pickPersisted, signOutReset } from '../engine/persistedState';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns, mergeScenarioHistory,
+  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeRunCounts, mergeScenarioHistory,
 } from '../engine/syncMerge';
 import { appendScenarioRun } from '../engine/scenarioHistory';
 
@@ -124,6 +124,13 @@ function scheduleSync(fn: () => void, delayMs = 1500) {
     fn();
   }, delayMs);
 }
+
+/**
+ * The longest sign-out waits for flushScheduledSync. Past it the change stays
+ * unsent: losing one unsynced edit beats a Sign out button that hangs on a dead
+ * network.
+ */
+const SIGN_OUT_FLUSH_TIMEOUT_MS = 5000;
 
 /** Cancel a scheduled push. Returns whether one was pending. */
 function cancelScheduledSync(): boolean {
@@ -279,7 +286,7 @@ interface AppState {
   stats: UserStats;
   savedPhrases: string[];
   favoriteScenarios: string[];
-  completedScenarios: Record<string, { endingType: string; date: string }>;
+  completedScenarios: Record<string, ScenarioCompletion>;
   /**
    * Pattern ids (grammar.ts) → build progress. Never unset — "masters" at 3
    * correct builds. Persisted + synced.
@@ -316,7 +323,10 @@ interface AppState {
   lastSyncError: string | null;
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
-  /** Send a scheduled push now. Call before Clerk sign-out, while the session token still works. */
+  /**
+   * Send a scheduled push now — pulling first if the session hasn't — giving up
+   * after SIGN_OUT_FLUSH_TIMEOUT_MS. Call before Clerk sign-out, while the session token still works.
+   */
   flushScheduledSync: () => Promise<void>;
   dismissSyncError: () => void;
 
@@ -547,7 +557,22 @@ export const useAppStore = create<AppState>()(
       },
 
       flushScheduledSync: async () => {
-        if (cancelScheduledSync()) await get().syncToCloud();
+        if (!cancelScheduledSync()) return;
+        const flush = async () => {
+          const userId = get().clerkUserId;
+          // A push needs this session's pull first (see _pulledFor). Wait for it
+          // here: syncToCloud would only defer the push, and signOut resets the
+          // session before a deferred push is sent.
+          if (userId && _pulledFor !== userId) await get().syncFromCloud();
+          if (userId && _pulledFor === userId) await get().syncToCloud();
+        };
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<void>((resolve) => { timer = setTimeout(resolve, SIGN_OUT_FLUSH_TIMEOUT_MS); });
+        try {
+          await Promise.race([flush(), timeout]);
+        } finally {
+          clearTimeout(timer);
+        }
       },
 
       syncFromCloud: async () => {
@@ -653,7 +678,7 @@ export const useAppStore = create<AppState>()(
         const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
         const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
         const mergedEndingsFound = mergeEndingsFound(local.endingsFound, data.endings_found ?? {});
-        const mergedRuns = mergeScenarioRuns(local.scenarioRuns, data.scenario_runs ?? {});
+        const mergedRuns = mergeRunCounts(local.scenarioRuns, data.scenario_runs ?? {});
         const mergedHistory = mergeScenarioHistory(local.scenarioHistory, data.scenario_history ?? {});
 
         set({

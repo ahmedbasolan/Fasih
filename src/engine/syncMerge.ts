@@ -10,13 +10,8 @@
  * a record to keep when both sides have one.
  */
 
-import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioRunRecord } from '../types';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../types';
 import { MAX_RUNS_RECORDED } from './scenarioHistory';
-
-export interface ScenarioRun {
-  endingType: string;
-  date: string;
-}
 
 /**
  * Union of review cards. When both sides have studied a phrase, the card with
@@ -41,10 +36,10 @@ export function mergeReviews(
  * the *earlier* date is the true first completion.
  */
 export function mergeCompletions(
-  local: Record<string, ScenarioRun>,
-  cloud: Record<string, ScenarioRun>,
-): Record<string, ScenarioRun> {
-  const merged: Record<string, ScenarioRun> = { ...local };
+  local: Record<string, ScenarioCompletion>,
+  cloud: Record<string, ScenarioCompletion>,
+): Record<string, ScenarioCompletion> {
+  const merged: Record<string, ScenarioCompletion> = { ...local };
   for (const [id, cloudRun] of Object.entries(cloud)) {
     const localRun = merged[id];
     if (!localRun || cloudRun.date < localRun.date) merged[id] = cloudRun;
@@ -138,13 +133,19 @@ export function mergeEndingsFound(
  * same runs from before they diverged. The higher count never under-reports,
  * which is the side that matters for "is this a replay?".
  */
-export function mergeScenarioRuns(
+export function mergeRunCounts(
   local: Record<string, number>,
   cloud: Record<string, number>,
 ): Record<string, number> {
   const merged: Record<string, number> = { ...cloud };
   for (const [id, n] of Object.entries(local)) merged[id] = Math.max(n, cloud[id] ?? 0);
   return merged;
+}
+
+function isRunRecord(value: unknown): value is ScenarioRunRecord {
+  if (typeof value !== 'object' || value === null) return false;
+  const r = value as Record<string, unknown>;
+  return typeof r.on === 'string' && typeof r.endingId === 'string' && typeof r.endingType === 'string';
 }
 
 /**
@@ -166,8 +167,8 @@ export function mergeScenarioHistory(
   const key = (r: ScenarioRunRecord) => `${r.on}|${r.endingId}|${r.endingType}`;
   for (const id of new Set([...Object.keys(local), ...Object.keys(cloud)])) {
     // The cloud column is untyped JSONB; a malformed value must not throw mid-merge.
-    const localRuns = Array.isArray(local[id]) ? local[id] : [];
-    const cloudRuns = Array.isArray(cloud[id]) ? cloud[id] : [];
+    const localRuns = Array.isArray(local[id]) ? local[id].filter(isRunRecord) : [];
+    const cloudRuns = Array.isArray(cloud[id]) ? cloud[id].filter(isRunRecord) : [];
     const localCount = new Map<string, number>();
     for (const r of localRuns) localCount.set(key(r), (localCount.get(key(r)) ?? 0) + 1);
     const extra: ScenarioRunRecord[] = [];
