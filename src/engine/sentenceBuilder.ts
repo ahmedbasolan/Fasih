@@ -10,6 +10,7 @@ import type {
   GrammarPattern,
   GrammarSlot,
   Phrase,
+  ScenarioCompletion,
   SentenceResult,
   SoftSkill,
 } from '../types';
@@ -38,7 +39,7 @@ import { PHRASE_BY_ID } from '../constants/phrases';
  */
 export function getAvailablePatterns(
   _unlockedPhraseIds: string[],
-  completedScenarios: Record<string, { endingType: string; date: string }>,
+  completedScenarios: Record<string, ScenarioCompletion>,
   secretEndingsEarned: Record<string, string>,
   patterns: GrammarPattern[] = GRAMMAR_PATTERNS,
 ): GrammarPattern[] {

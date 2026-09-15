@@ -243,6 +243,15 @@ export interface ScenarioScene {
 }
 
 /**
+ * A scenario's completion record (`completedScenarios`): that it was finished,
+ * with an ending type and a timestamp. Not one run — see ScenarioRunRecord.
+ */
+export interface ScenarioCompletion {
+  endingType: string;
+  date: string;
+}
+
+/**
  * One completed run of a scenario. Its position in the scenario's history is
  * the run number. Kept for the learner and for replay metrics (spec 2026-09-14
  * §2.12; queries in supabase/queries/scenario_metrics.sql).
