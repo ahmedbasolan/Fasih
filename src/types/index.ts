@@ -84,7 +84,13 @@ export interface Scenario {
   endings: number;
   phrases: string;
   level: DifficultyLevel;
-  locked: boolean;
+  /**
+   * Behind the paywall for this learner. Computed by the screen listing it, from
+   * hasScenarioAccess — never authored in the catalog. An authored value
+   * disagreed with the paywall (eid-greeting said locked while sitting in a free
+   * slot) and Home trusted it.
+   */
+  locked?: boolean;
   comingSoon?: boolean;
   isOnboarding?: boolean;
   dialect?: string;
@@ -131,8 +137,19 @@ export interface ScenarioChoice {
   flag?: string;            // Flag set in state.flags when this choice is made
   requiredFlag?: string;    // If set, choice is only shown when this flag is already in state.flags
   impact?: ImpactMetrics;
-  next?: string;
+  /**
+   * Explicit next scene. `null` ends the main path — needed by a route-variant
+   * scene that is the last decision, which would otherwise fall through into
+   * its sibling variant next in the array.
+   */
+  next?: string | null;
   teachingHighlight?: string;
+  /**
+   * Route this choice leans toward, in a route script (see ScenarioScript.routes).
+   * The route chosen most often decides the destination; it is never shown
+   * during play. Only valid judgement-scene choices carry one.
+   */
+  route?: string;
 }
 
 // Branching tone: same scene, NPC warmth adapts to accumulated score
@@ -140,6 +157,54 @@ export interface TonedDialogue {
   arabic: string;
   roman: string;
   english: string;
+}
+
+/**
+ * `language` scenes have a right form (صباح النور answers صباح الخير).
+ * `judgement` scenes are social strategy: valid choices lead different ways.
+ */
+export type SceneKind = 'language' | 'judgement';
+
+/** NPC lines as a female learner hears them, for scenes that address the learner. */
+export interface FemaleLearnerLines extends TonedDialogue {
+  charDialogue?: {
+    warm: TonedDialogue;
+    neutral: TonedDialogue;
+    cold: TonedDialogue;
+  };
+}
+
+/** A destination a route script can end at. */
+export interface ScenarioRoute {
+  id: string;
+  label: string;
+}
+
+export type EndingTier = 'strong' | 'weak';
+
+/**
+ * One native-speaker review of a script's Arabic (spec 2026-09-14 §2.10).
+ *
+ * Absent means unreviewed — the state of every script until a reviewer working
+ * from docs/language/reviewer-brief.md signs off. Kept apart from phrase
+ * `source` on purpose: a source says where a form is attested, a review says a
+ * native speaker read these lines in context. Never record one on the project
+ * owner's approval (docs/language/authority.md, rule 5).
+ */
+export interface NativeReview {
+  dialect: 'emirati' | 'egyptian' | 'levantine';
+  /** Pseudonymous handle from the review log — not a real name. */
+  reviewer: string;
+  /** ISO date the review was completed. */
+  date: string;
+  scope: 'learner-lines' | 'npc-lines' | 'all-lines';
+}
+
+/** Phrases a scenario grants: `core` on any completion, plus the set for the ending reached. */
+export interface ScenarioPhrases {
+  core: string[];
+  /** Keyed by ScenarioEnding.id. */
+  byEnding: Record<string, string[]>;
 }
 
 export interface ScenarioScene {
@@ -165,9 +230,21 @@ export interface ScenarioScene {
   teachingNote?: string;
   choices: ScenarioChoice[];
   bonus?: boolean; // True if this is a bonus scene only shown for secret ending
+  /** Required in route scripts. */
+  kind?: SceneKind;
+  /**
+   * The fork: after this scene, go to the scene for the leading route (counting
+   * the choice just made). A choice's own `next` still wins.
+   */
+  nextByRoute?: Record<string, string>;
+  /** The NPC speaks to the learner in gendered forms here; requires `femaleLearner`. */
+  addressesLearner?: boolean;
+  femaleLearner?: FemaleLearnerLines;
 }
 
 export interface ScenarioEnding {
+  /** Stable id — what endingsFound and phrases.byEnding key on. Never reuse. */
+  id: string;
   min: number;
   title: string;
   arabic: string;
@@ -180,6 +257,12 @@ export interface ScenarioEnding {
   culturalJourney?: string[];
   secret?: boolean; // True if this is a secret ending requiring all flags + score threshold
   requiredFlags?: string[]; // Flag IDs required for secret ending (e.g., ['FLAG_1', 'FLAG_2'])
+  /** Route scripts: the destination this ending belongs to. Absent on the failure and hidden endings. */
+  route?: string;
+  /** Route scripts: strong or weak version of the destination. */
+  tier?: EndingTier;
+  /** Cultural hint pointing a replaying learner toward this ending. */
+  hint?: string;
 }
 
 export interface ScenarioScript {
@@ -191,9 +274,18 @@ export interface ScenarioScript {
   estimatedMinutes?: number;  // Estimated completion time
   scenes: ScenarioScene[];
   endings: ScenarioEnding[];
-  // IDs of phrases unlocked by completing this scenario (shown as rich cards on end screen)
-  phrasesUnlocked?: string[];
-  // 2-3 phrase IDs from phrasesUnlocked previewed as tap-to-hear chips in the
+  /**
+   * Declaring routes makes this a route script: destination by route tags,
+   * quality by meters (spec 2026-09-14 §2.1). Scripts without routes still use
+   * the legacy score ladder until they are rewritten.
+   */
+  routes?: ScenarioRoute[];
+  /** Route used when a run reaches the fork or the end without leaning anywhere. */
+  defaultRoute?: string;
+  phrases: ScenarioPhrases;
+  /** Native-speaker reviews of this script's Arabic. Absent = unreviewed. */
+  nativeReviews?: NativeReview[];
+  // 2-3 phrase IDs from phrases.core previewed as tap-to-hear chips in the
   // scenario intro — listen-only priming, no quiz. Hear now → earn later.
   primerPhrases?: string[];
 }

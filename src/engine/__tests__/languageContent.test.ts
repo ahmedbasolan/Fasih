@@ -39,6 +39,8 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
+import { isRouteScript, phrasesEarned } from '../scenarioEngine';
+import { enumerateRuns } from '../scenarioRules';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
@@ -75,6 +77,16 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/npc-warm`, scene.charDialogue.warm.arabic);
         add(`${id}/${scene.id}/npc-neutral`, scene.charDialogue.neutral.arabic);
         add(`${id}/${scene.id}/npc-cold`, scene.charDialogue.cold.arabic);
+      }
+      // What a female learner hears instead — same rules, or they are a back door.
+      if (scene.femaleLearner) {
+        add(`${id}/${scene.id}/npc-f`, scene.femaleLearner.arabic);
+        const toned = scene.femaleLearner.charDialogue;
+        if (toned) {
+          add(`${id}/${scene.id}/npc-f-warm`, toned.warm.arabic);
+          add(`${id}/${scene.id}/npc-f-neutral`, toned.neutral.arabic);
+          add(`${id}/${scene.id}/npc-f-cold`, toned.cold.arabic);
+        }
       }
       for (const c of scene.choices) {
         add(`${id}/${scene.id}/${c.id}`, c.arabic);
@@ -129,29 +141,11 @@ function choiceCards(scriptId: string): string[] {
  * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
  * any single playthrough visits five — counting scenes would have marked it two
  * turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending.
+ * only appear on a secret ending. Runs come from the real engine, so a route
+ * script's fork is followed exactly as the player follows it.
  */
 function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const script = scripts[scriptId];
-  const scenes = script.scenes;
-  const byId = new Map(scenes.map(s => [s.id, s]));
-  const lengths: number[] = [];
-
-  const walk = (sceneId: string | null, n: number, flags: Set<string>, depth: number) => {
-    const scene = sceneId ? byId.get(sceneId) : undefined;
-    if (!scene || depth > 25) { lengths.push(n); return; }
-    const visible = scene.choices.filter(c => !c.requiredFlag || flags.has(c.requiredFlag));
-    if (!visible.length) { lengths.push(n); return; }
-    const idx = scenes.findIndex(s => s.id === sceneId);
-    const counted = scene.bonus ? n : n + 1;
-    for (const c of visible) {
-      const next = new Set(flags);
-      if (c.flag) next.add(c.flag);
-      walk(c.next !== undefined ? c.next : (scenes[idx + 1]?.id ?? null), counted, next, depth + 1);
-    }
-  };
-
-  walk(scenes[0]?.id ?? null, 0, new Set(), 0);
+  const lengths = enumerateRuns(scripts[scriptId]).map(r => r.steps.length);
   return { min: Math.min(...lengths), max: Math.max(...lengths) };
 }
 
@@ -173,19 +167,17 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
  * Scenarios currently outside the band their declared level claims.
  *
  * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `coffee-invitation` /
- * `eid-greeting` sit just over the A1 mean once clitics are counted. (The
- * audit's worst offenders, the-checkup and gym-consultation, were cut for the MVP.)
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `eid-greeting` sits
+ * just over the A1 mean once clitics are counted. (The audit's worst offenders,
+ * the-checkup and gym-consultation, were cut for the MVP; coffee-invitation's
+ * two entries went with its 2026-09-15 rewrite.)
  *
  * Fixing one means either re-levelling the scenario or editing its content —
  * both content decisions, deliberately not made by this commit.
  */
 const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'coffee-invitation:meanMorphemes',
-  'coffee-invitation:morphemeCeiling',
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
-  'first-morning:maxClauses',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
   'social_taxi_ride:phrasesUnlocked',
@@ -340,13 +332,18 @@ describe('level gates', () => {
       if (!cards.length) continue;
 
       const turns = turnsPerPlaythrough(scriptId);
-      const phrases = (script.phrasesUnlocked ?? []).length;
+      // What one run can grant: core plus the largest single ending's set.
+      const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));
 
       // Both the shortest and longest playthrough must sit inside the band.
-      if (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns)) out.push(`${id}:turns`);
+      // Route scripts are exempt: their length is DECISIONS_PER_RUN for every
+      // level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
+      if (!isRouteScript(script) && (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns))) {
+        out.push(`${id}:turns`);
+      }
       if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
       if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
       if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
@@ -423,8 +420,10 @@ describe('provenance', () => {
    *
    * 136 → 103 on 2026-09-14 by DELETION, not sourcing: the 33 phrases of the four
    * scenarios cut for the MVP were all unsourced. Nothing got more verified.
+   * 103 → 102, also by deletion: fm-s1-7 duplicated core-4 (الله يعافيك) with a
+   * wrong gloss, and the First Morning rewrite no longer granted it.
    */
-  const MAX_UNSOURCED = 103;
+  const MAX_UNSOURCED = 102;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

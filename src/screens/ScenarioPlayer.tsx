@@ -20,7 +20,15 @@ import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
-import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
+import {
+  getTone, resolveNextScene, evaluateEnding, isChoiceVisible, phrasesEarned, allPhraseIds,
+  sceneAfterChoice, isRouteScript,
+} from '../engine/scenarioEngine';
+import {
+  choiceFeedback, npcLine, endingsProgress, destinationMoments, hintsToShow,
+  type ChoiceFeedback,
+} from '../engine/scenarioPresentation';
+import { DECISIONS_PER_RUN } from '../constants/curriculum';
 import { railMarks } from '../engine/marginRail';
 import type { RailMark } from '../engine/marginRail';
 import {
@@ -33,7 +41,7 @@ import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
 import { MarginRail } from '../components/scenario/MarginRail';
-import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioScript } from '../types';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, Phrase, Tone } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -45,16 +53,9 @@ interface Props {
 
 type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 
-/**
- * Phrase ids a scenario grants on completion.
- *
- * Single source of truth for both the result screen's "phrases unlocked" list
- * and the store writes that actually unlock them — those two used to be derived
- * separately, and only the display half existed.
- */
-function resolveUnlockedPhraseIds(script: ScenarioScript, scenarioId: string): string[] {
-  if (script.phrasesUnlocked?.length) return script.phrasesUnlocked;
-  return PHRASES.filter(p => p.scenarioSource === scenarioId).slice(0, 8).map(p => p.id);
+/** Phrase ids → library entries, dropping any id the library doesn't have. */
+function toPhrases(ids: string[]): Phrase[] {
+  return ids.map(id => PHRASES.find(p => p.id === id)).filter((p): p is Phrase => p !== undefined);
 }
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
@@ -100,16 +101,15 @@ function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; resp
 }
 
 // ─── Dialogue bubble ──────────────────────────────────────────────────────────
-function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; tone?: 'warm' | 'neutral' | 'cold' }) {
+function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioScene; tone?: Tone; gender: 'male' | 'female' | undefined }) {
   const { C } = useTheme();
   const accentText = C.JADE;
   const [arabicRevealed, setArabicRevealed] = useState(false);
   const [translationRevealed, setTranslationRevealed] = useState(false);
 
-  // Resolve the correct dialogue variant — warm/cold only if the scene defines charDialogue
-  const dialogue = (scene.charDialogue && tone !== 'neutral')
-    ? scene.charDialogue[tone]
-    : { arabic: scene.arabic, roman: scene.roman, english: scene.english };
+  // Tone variant (warm/cold only when authored), in the forms this learner is
+  // addressed in — a female learner hears شلونج, not شلونك.
+  const dialogue = npcLine(scene, tone, gender);
 
   const { displayed } = useTypewriter(translationRevealed ? dialogue.english : '', 28, 50);
   const { speakAs, isSpeaking: playingAudio } = useArabicTTS();
@@ -238,11 +238,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
   const { speak, isSpeaking } = useArabicTTS();
-  const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
+  // Subscribes to the cache itself: the ending stats are fetched once the result
+  // phase starts, so the screen has to re-render when they land.
+  const communityStatsCache = useAppStore((s) => s.communityStatsCache);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
   const user = useAppStore((s) => s.user);
   const activeScenarioState = useAppStore((s) => s.activeScenarioState);
+  const foundEndingIds = useAppStore((s) => s.endingsFound[scenarioId]);
+  const runCount = useAppStore((s) => s.scenarioRuns[scenarioId] ?? 0);
 
   // Track length is the scenario's authored decision count, not one derived from
   // the script — scripts branch, so the script's choice-scene count is an upper
@@ -303,6 +307,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // finalizeScenario() nulls the state the rail is derived from. Without this
   // the rail empties itself the instant the result appears.
   const [finalizedRail, setFinalizedRail] = useState<RailMark[] | null>(null);
+  // Same lock again: "what sent you here" reads choiceHistory, which is gone
+  // the moment finalizeScenario() runs.
+  const [finalizedMoments, setFinalizedMoments] = useState<ScenarioChoice[]>([]);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -339,8 +346,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [phase, step]);
 
   useEffect(() => {
-    if (phase === 'result') void fetchCommunityEndingStats(scenarioId);
-  }, [phase, scenarioId, fetchCommunityEndingStats]);
+    if (phase === 'result' && scriptData) {
+      void fetchCommunityEndingStats(scenarioId, scriptData.endings.map(e => e.id));
+    }
+  }, [phase, scenarioId, scriptData, fetchCommunityEndingStats]);
 
   useEffect(() => {
     if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
@@ -355,6 +364,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       { trust: 0, respect: 0, culture: 0 }
     ));
     setFinalizedRail(railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0));
+    setFinalizedMoments(destinationMoments(activeScenarioState.choiceHistory, scriptData, currEnding));
     setCompletionFired(true);
     finalizeScenario(currEnding);
     // Actually unlock the phrases the result screen is about to present as
@@ -362,7 +372,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // onboarding, so every phrase earned by finishing a scenario stayed
     // un-unlocked in the library and the two screens disagreed. One bulk write
     // rather than one per phrase — this fires as the result screen animates in.
-    unlockPhrases(resolveUnlockedPhraseIds(scriptData, scenarioId));
+    // Same function as the result screen's list, so the two cannot disagree.
+    unlockPhrases(phrasesEarned(scriptData, currEnding));
     trackScenarioCompleted({
       scenarioId,
       title: scriptData.title,
@@ -476,53 +487,23 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // choices flash visible for one frame using the previous scene's value.
     setChoicesVisible(false);
 
-    // Handle explicit branch from most recent choice
-    if (lastResolvedNextSceneId) {
-      const branchId = lastResolvedNextSceneId;
-      const targetIndex = scenes.findIndex(s => s.id === branchId);
-      setLastResolvedNextSceneId(null); // always clear, whether branch found or not
-      if (targetIndex !== -1) {
-        advanceScenarioScene(branchId);
-        setStep(targetIndex);
-        setPhase('scene');
-        return;
-      }
-      // targetIndex === -1: bad script data, fall through to linear progression
-    }
-    // Bonus scenes live in the same `scenes` array as everything else, so plain
-    // step + 1 walked straight into them — every player saw the bonus scene and
-    // the secret-ending gate below could never fire, because by the time
-    // nextStep passed the end, the bonus scene had already been played. Skip
-    // them here so they are only ever reachable through the gate.
-    let nextStep = step + 1;
-    while (nextStep < scenes.length && scenes[nextStep].bonus === true) nextStep++;
-
-    // Check bonus scene eligibility for secret ending
-    const isOnBonusScene = scenes[step]?.bonus === true;
-    if (!isOnBonusScene && nextStep >= scenes.length && scriptData && activeScenarioState) {
-      const secretEnding = scriptData.endings?.find(e => e.secret);
-      const requiredFlagsMet = !secretEnding?.requiredFlags ||
-        secretEnding.requiredFlags.every(f => activeScenarioState.flags.has(f));
-      if (secretEnding && requiredFlagsMet && relationshipScore(activeScenarioState) >= secretEnding.min) {
-        const bonusScene = scenes.find(s => s.bonus === true);
-        if (bonusScene) {
-          advanceScenarioScene(bonusScene.id);
-          setStep(scenes.indexOf(bonusScene));
-          setPhase('scene');
-          return;
-        }
-      }
-    }
-
-    if (nextStep >= scenes.length) {
+    // Where to go is an engine decision (sceneAfterChoice): next main-path
+    // scene, the bonus scene when the hidden ending was just earned, or the
+    // result. Following lastResolvedNextSceneId directly — as this used to —
+    // walked every player into a bonus scene sitting next in the array.
+    const target = activeScenarioState && scriptData
+      ? sceneAfterChoice(activeScenarioState, lastResolvedNextSceneId, scriptData)
+      : null;
+    setLastResolvedNextSceneId(null);
+    const targetIndex = target ? scenes.findIndex(s => s.id === target) : -1;
+    if (target === null || targetIndex === -1) {
       setPhase('result');
-    } else {
-      const nextScene = scenes[nextStep];
-      if (nextScene) advanceScenarioScene(nextScene.id);
-      setStep(nextStep);
-      setPhase('scene');
+      return;
     }
-  }, [step, scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
+    advanceScenarioScene(target);
+    setStep(targetIndex);
+    setPhase('scene');
+  }, [scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
     const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
@@ -550,6 +531,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // a replay's first painted frame showed the PREVIOUS run's rail, on the one
     // screen whose whole job is "here is what you just did".
     setFinalizedRail(null);
+    setFinalizedMoments([]);
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
@@ -612,9 +594,38 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
 
-  const unlockedPhrases = resolveUnlockedPhraseIds(scriptData, scenarioId)
-    .map(id => PHRASES.find(p => p.id === id))
-    .filter(Boolean) as typeof PHRASES;
+  // Intro: everything the scenario can teach. Result: what this run earned.
+  const learnablePhrases = toPhrases(allPhraseIds(scriptData));
+  const earnedPhrases = toPhrases(phrasesEarned(scriptData, ending));
+
+  // Endings collection + hints. The store already includes this run's ending
+  // by the time the result shows, so the count is current.
+  const foundIds = foundEndingIds ?? [];
+  const progress = endingsProgress(scriptData, foundIds);
+  const destinationLabel = scriptData.routes?.find(r => r.id === ending.route)?.label;
+
+  // Progress dots count decisions, not scenes: a route script's fork puts two
+  // variant scenes in the array for one decision.
+  const totalDecisions = isRouteScript(scriptData) ? DECISIONS_PER_RUN : (scenario?.decisions ?? mainScenes.length);
+  const decisionsMade = activeScenarioState?.choiceHistory.length ?? totalDecisions;
+
+  // What follows the choice on screen — drives "See final result" and the tone preview.
+  const upcomingSceneId = phase === 'choice-result' && activeScenarioState
+    ? sceneAfterChoice(activeScenarioState, lastResolvedNextSceneId, scriptData)
+    : null;
+  const upcomingScene = upcomingSceneId ? scenes.find(sc => sc.id === upcomingSceneId) ?? null : null;
+
+  const selectedChoice = scene && selectedChoiceId ? scene.choices.find(c => c.id === selectedChoiceId) : undefined;
+  const feedback: ChoiceFeedback | null = scene && selectedChoice ? choiceFeedback(scene, selectedChoice) : null;
+  const feedbackColor = (fb: ChoiceFeedback, choice: ScenarioChoice): string => {
+    switch (fb.kind) {
+      case 'misstep': return C.ERROR;
+      case 'correct': return C.JADE2;
+      case 'not-quite': return C.VIOLET2;
+      case 'reaction': return C.JADE_ACCENT;
+      default: return outcomeColor[choice.outcome];
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
@@ -625,12 +636,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           <View>
             <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
             <View style={{ flexDirection: 'row', gap: 3 }}>
-              {mainScenes.map((_: ScenarioScene, i: number) => (
+              {Array.from({ length: totalDecisions }, (_, i) => (
                 <MotiView
                   key={i}
                   animate={{
-                    width: i <= step && phase !== 'intro' ? 20 : 6,
-                    backgroundColor: i < step ? C.JADE2 : i === step && phase !== 'intro' ? C.JADE_ACCENT : C.TEXT3,
+                    width: i <= decisionsMade && phase !== 'intro' ? 20 : 6,
+                    backgroundColor: i < decisionsMade ? C.JADE2 : i === decisionsMade && phase === 'scene' ? C.JADE_ACCENT : C.TEXT3,
                   }}
                   transition={{ type: 'timing', duration: 260 }}
                   style={{ height: 3, borderRadius: 2 }}
@@ -673,7 +684,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             scenario={scenario}
             scenes={scenes}
             endings={endings}
-            unlockedPhrases={unlockedPhrases}
+            unlockedPhrases={learnablePhrases}
+            decisions={totalDecisions}
+            progress={progress}
+            hints={runCount > 0 ? hintsToShow(scriptData, foundIds, undefined) : []}
             onBegin={() => {
               trackScenarioStarted({ scenarioId, title: scriptData.title, category: scenario?.mode });
               setPhase('scene');
@@ -696,7 +710,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             <View style={{ flexDirection: 'row' }}>
               <MarginRail marks={railMarksForRun} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <DialogueBubble scene={scene} tone={sceneTone} />
+                <DialogueBubble scene={scene} tone={sceneTone} gender={user?.gender} />
 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
@@ -712,7 +726,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     .map((choice: ScenarioChoice, i: number) => {
                     const isSelected = selectedChoiceId === choice.id;
                     const isDimmed = !!selectedChoiceId && !isSelected;
-                    const color = outcomeColor[choice.outcome];
+                    const color = feedbackColor(choiceFeedback(scene, choice), choice);
                     const isChoicePlaying = playingChoiceId === choice.id;
                     const choiceArabic = arabicForUser(choice);
 
@@ -793,17 +807,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
         )}
 
         {/* ─── CHOICE RESULT ─── */}
-        {phase === 'choice-result' && selectedChoiceId && scene && (
+        {phase === 'choice-result' && selectedChoiceId && scene && feedback && (
           <ScenarioChoiceResultPhase
             scene={scene}
             selectedChoiceId={selectedChoiceId}
-            step={step}
-            scenes={scenes}
-            scriptData={scriptData}
+            feedback={feedback}
+            color={selectedChoice && feedback ? feedbackColor(feedback, selectedChoice) : C.TEXT3}
+            isLastStep={upcomingSceneId === null}
+            nextScene={upcomingScene}
             activeScenarioState={activeScenarioState}
-            lastResolvedNextSceneId={lastResolvedNextSceneId}
-            outcomeColor={outcomeColor}
             replaceName={replaceName}
+            arabicForUser={arabicForUser}
             onNext={next}
           />
         )}
@@ -818,10 +832,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             scenarioId={scenarioId}
             scriptData={scriptData}
             railMarks={finalizedRail ?? railMarksForRun}
-            unlockedPhrases={unlockedPhrases}
+            unlockedPhrases={earnedPhrases}
+            progress={progress}
+            destinationLabel={destinationLabel}
+            moments={finalizedMoments}
+            hints={hintsToShow(scriptData, foundIds, ending.id)}
+            arabicForUser={arabicForUser}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
-            getCommunityEndingStat={getCommunityEndingStat}
+            communityEndingPct={communityStatsCache[`${scenarioId}:${ending.id}`] ?? 0}
             isSpeaking={isSpeaking}
             playingPhraseId={playingPhraseId}
             onPlayEndPhrase={playEndPhrase}

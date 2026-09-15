@@ -47,7 +47,7 @@ import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import { pickPersisted, signOutReset } from '../engine/persistedState';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings,
+  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns,
 } from '../engine/syncMerge';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
@@ -56,6 +56,14 @@ const TRIAL_DAYS = 4;
 
 /** Number of scenarios a free user completes to earn full access. */
 const FREE_ACCESS_SCENARIO_COUNT = 3;
+
+/**
+ * Scenarios per mode a free learner can play: scenario 1 of each mode (spec
+ * 2026-09-14 §2.11). This used to reuse FREE_ACCESS_SCENARIO_COUNT, which is a
+ * completion count, not a position — and with three scenarios per mode, three
+ * free slots per mode paywalled nothing at all.
+ */
+const FREE_SCENARIOS_PER_MODE = 1;
 
 /**
  * XP awarded per action, toward the learner's daily goal.
@@ -92,10 +100,10 @@ function computeHasFullAccess(s: AccessFields): boolean {
   return Object.keys(s.completedScenarios).length >= FREE_ACCESS_SCENARIO_COUNT;
 }
 
+/** `scenarioIndex` is the scenario's position within its own mode's list. */
 function computeHasScenarioAccess(s: AccessFields, scenarioIndex: number): boolean {
   if (computeHasFullAccess(s)) return true;
-  // Otherwise only the first few scenarios are free.
-  return scenarioIndex < FREE_ACCESS_SCENARIO_COUNT;
+  return scenarioIndex < FREE_SCENARIOS_PER_MODE;
 }
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
@@ -155,6 +163,18 @@ const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
 
+/**
+ * Reviews whose phrase is still in the library.
+ *
+ * Deleting a phrase (the MVP cut removed 33) leaves its review behind in
+ * persisted and synced state. The practice deck draws only from PHRASES, so
+ * that card can never come up again — counted as due, it would stay due
+ * forever and inflate every due count and reminder.
+ */
+function liveReviews(reviews: Record<string, PhraseReviewData>): PhraseReviewData[] {
+  return Object.values(reviews).filter(r => PHRASE_BY_ID[r.phraseId] !== undefined);
+}
+
 // ─── Mastery computation (extracted to eliminate duplication + O(n²)) ─────────
 /**
  * Computes phrasesStudied, phrasesMastered, and categoryMastery from the current
@@ -166,7 +186,7 @@ function computeMastery(reviews: Record<string, PhraseReviewData>): {
   mastered: number;
   categoryMastery: Record<string, CategoryMastery>;
 } {
-  const allCards = Object.values(reviews);
+  const allCards = liveReviews(reviews);
   const studied = allCards.length;
   let mastered = 0;
 
@@ -230,6 +250,10 @@ interface AppState {
    * cannot lose it. Persisted + synced.
    */
   secretEndingsEarned: Record<string, string>;
+  /** scenarioId → ending ids ever reached. Only grows. Drives "3 of 5 found". Persisted + synced. */
+  endingsFound: Record<string, string[]>;
+  /** scenarioId → completed runs. A run with count > 1 is a replay. Persisted + synced. */
+  scenarioRuns: Record<string, number>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
@@ -254,9 +278,9 @@ interface AppState {
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
   communityStatsCache: Record<string, number>;
   getCommunityChoiceStat: (key: string) => number;
-  getCommunityEndingStat: (key: string) => number;
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
-  fetchCommunityEndingStats: (scenarioId: string) => Promise<void>;
+  /** Cache reach percentages as `scenarioId:endingId`; empty below the completion floor. */
+  fetchCommunityEndingStats: (scenarioId: string, endingIds: string[]) => Promise<void>;
   recordChoiceStat: (scenarioId: string, sceneId: string, choiceId: string) => Promise<void>;
 
   // Notifications
@@ -402,6 +426,8 @@ export const useAppStore = create<AppState>()(
       completedScenarios: {},
       patternProgress: {},
       secretEndingsEarned: {},
+      endingsFound: {},
+      scenarioRuns: {},
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
@@ -441,6 +467,8 @@ export const useAppStore = create<AppState>()(
             completed_scenarios: s.completedScenarios,
             pattern_progress: s.patternProgress,
             secret_endings_earned: s.secretEndingsEarned,
+            endings_found: s.endingsFound,
+            scenario_runs: s.scenarioRuns,
             saved_phrases: s.savedPhrases,
             unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
@@ -551,6 +579,8 @@ export const useAppStore = create<AppState>()(
         // merge on this path was moved off `s`.
         const mergedPatternProgress = mergePatternProgress(local.patternProgress, data.pattern_progress ?? {});
         const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
+        const mergedEndingsFound = mergeEndingsFound(local.endingsFound, data.endings_found ?? {});
+        const mergedRuns = mergeScenarioRuns(local.scenarioRuns, data.scenario_runs ?? {});
 
         set({
           user: data.user_profile ?? local.user,
@@ -559,6 +589,8 @@ export const useAppStore = create<AppState>()(
           completedScenarios: mergedCompleted,
           patternProgress: mergedPatternProgress,
           secretEndingsEarned: mergedSecrets,
+          endingsFound: mergedEndingsFound,
+          scenarioRuns: mergedRuns,
           // Union, consistent with the rule above: a save made on either device
           // survives. The trade-off is that un-saving while offline can be
           // undone by a cloud copy that predates it — recoverable with one tap,
@@ -647,7 +679,7 @@ export const useAppStore = create<AppState>()(
         set({ notificationsEnabled: true });
         const s = get();
         const hour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
+        const dueCount = liveReviews(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
         await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
         await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.stats.currentStreak);
@@ -662,7 +694,7 @@ export const useAppStore = create<AppState>()(
         const s = get();
         if (!s.notificationsEnabled) return;
         const preferredHour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
+        const dueCount = liveReviews(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
       },
 
@@ -862,8 +894,6 @@ export const useAppStore = create<AppState>()(
 
       getCommunityChoiceStat: (key: string) => get().communityStatsCache[key] ?? 0,
 
-      getCommunityEndingStat: (key: string) => get().communityStatsCache[key] ?? 0,
-
       fetchCommunityStats: async (scenarioId: string, sceneId: string) => {
         const stats = await getChoiceStats(scenarioId, sceneId);
         const entries: Record<string, number> = {};
@@ -873,11 +903,11 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
 
-      fetchCommunityEndingStats: async (scenarioId: string) => {
-        const stats = await getEndingStats(scenarioId);
+      fetchCommunityEndingStats: async (scenarioId: string, endingIds: string[]) => {
+        const stats = await getEndingStats(scenarioId, endingIds);
         const entries: Record<string, number> = {};
-        for (const [endingType, pct] of Object.entries(stats)) {
-          entries[`${scenarioId}:${endingType}`] = pct;
+        for (const [endingId, pct] of Object.entries(stats)) {
+          entries[`${scenarioId}:${endingId}`] = pct;
         }
         set((s) => ({ communityStatsCache: { ...s.communityStatsCache, ...entries } }));
       },
@@ -946,7 +976,7 @@ export const useAppStore = create<AppState>()(
 
       getDueReviews: () => {
         const today = todayISO();
-        return Object.values(get().phraseReviews).filter(r => r.nextReview <= today);
+        return liveReviews(get().phraseReviews).filter(r => r.nextReview <= today);
       },
 
       // ─── Active scenario run ────────────────────────────────────────────────────
@@ -1009,9 +1039,14 @@ export const useAppStore = create<AppState>()(
           ending.secret && !s.secretEndingsEarned[scenarioId]
             ? { ...s.secretEndingsEarned, [scenarioId]: ending.title }
             : s.secretEndingsEarned;
+        const found = s.endingsFound[scenarioId] ?? [];
         set({
           completedScenarios: completed,
           secretEndingsEarned: secrets,
+          endingsFound: found.includes(ending.id)
+            ? s.endingsFound
+            : { ...s.endingsFound, [scenarioId]: [...found, ending.id] },
+          scenarioRuns: { ...s.scenarioRuns, [scenarioId]: (s.scenarioRuns[scenarioId] ?? 0) + 1 },
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });
@@ -1020,7 +1055,7 @@ export const useAppStore = create<AppState>()(
         get().checkMilestones();
         get().addXP(XP_PER_SCENARIO);
         scheduleSync(() => get().syncToCloud());
-        void rcRecordEndingStat(scenarioId, ending.type);
+        void rcRecordEndingStat(scenarioId, ending.id);
       },
 
       abandonScenario: () => set({ activeScenarioState: null }),
@@ -1051,7 +1086,7 @@ export const useAppStore = create<AppState>()(
 export const useHasFullAccess = (): boolean =>
   useAppStore((s) => computeHasFullAccess(s));
 
-/** True when this scenario index is playable for the current learner. */
+/** True when the scenario at this position within its mode is playable for the current learner. */
 export const useHasScenarioAccess = (scenarioIndex: number): boolean =>
   useAppStore((s) => computeHasScenarioAccess(s, scenarioIndex));
 

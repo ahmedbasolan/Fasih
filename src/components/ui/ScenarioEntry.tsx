@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { Scenario } from '../../types';
+import type { EndingsProgress } from '../../engine/scenarioPresentation';
 import {
   FONT_ARABIC_SEMI,
   FONT_HEADING_SEMI,
@@ -19,6 +20,8 @@ interface ScenarioEntryProps {
   /** Sequence position, e.g. "01". Scenario order is the curriculum, so this is real information. */
   index: string;
   first?: boolean;
+  /** Endings collection for a written scenario; absent for coming-soon entries. */
+  endings?: EndingsProgress;
   onPress: (id: string) => void;
 }
 
@@ -29,8 +32,9 @@ const ARABIC_SIZE = 20;
  *
  * No meter. The card used to show a Trust/Vibe percentage, but it was a
  * hand-typed number per scenario, not anything the learner did — so it went.
+ * What it shows instead is real: how many endings this learner has found.
  */
-export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntryProps) {
+export function ScenarioEntry({ scenario, index, first, endings, onPress }: ScenarioEntryProps) {
   const { C } = useTheme();
   const {
     id, title, phrases, keyLine, locked, comingSoon,
@@ -84,6 +88,13 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
           color: C.TEXT3,
           fontVariant: ['tabular-nums'],
         },
+        endings: {
+          fontFamily: FONT_LATIN,
+          fontSize: 12,
+          color: C.TEXT3,
+          fontVariant: ['tabular-nums'],
+          marginTop: SPACE.xs,
+        },
         label: {
           fontFamily: FONT_LATIN_MEDIUM,
           fontSize: 11,
@@ -117,7 +128,8 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
   const a11yLabel = [
     title,
     comingSoon ? STRINGS.scenarios.comingSoonBadge : locked ? STRINGS.scenarios.lockedBadge : null,
-    STRINGS.scenarios.phrases(phrases),
+    comingSoon ? null : STRINGS.scenarios.phrases(phrases),
+    endings && !comingSoon ? STRINGS.scenarios.endingsSummary(endings) : null,
   ]
     .filter(Boolean)
     .join('. ');
@@ -141,7 +153,8 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
       ) : null}
 
       <View style={styles.meta}>
-        <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>
+        {/* An unwritten scenario has no phrases to count. */}
+        {comingSoon ? null : <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>}
 
         {/* Locked and coming-soon are different promises and say so. Locked
             content exists and is one tap from the paywall; coming-soon content
@@ -156,6 +169,10 @@ export function ScenarioEntry({ scenario, index, first, onPress }: ScenarioEntry
           </View>
         ) : null}
       </View>
+
+      {endings && !comingSoon ? (
+        <Text style={styles.endings}>{STRINGS.scenarios.endingsSummary(endings)}</Text>
+      ) : null}
     </Rule>
   );
 }
