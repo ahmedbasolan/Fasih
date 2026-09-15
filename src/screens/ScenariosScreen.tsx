@@ -38,7 +38,15 @@ type FilterTab = 'all' | 'saved';
 /** The list is grouped by mode, so it mixes section headings with entries. */
 type Row =
   | { kind: 'header'; mode: ScenarioMode }
-  | { kind: 'scenario'; scenario: Scenario; index: number; endings: EndingsProgress | undefined };
+  | {
+      kind: 'scenario';
+      scenario: Scenario;
+      /** Row order within the section, after the filter and the locked-last sort. */
+      index: number;
+      /** Position in the mode's curriculum — the number shown. Stable across sort and filter. */
+      position: number;
+      endings: EndingsProgress | undefined;
+    };
 
 function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -107,18 +115,19 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       // saved filter, or the free slots rebase onto whatever is left.
       const list = allScenarios
         .filter((s) => s.mode === mode)
-        .map((s, index) => ({ ...s, locked: !hasScenarioAccess(index) }))
-        .filter((s) => filterTab !== 'saved' || favoriteScenarios.includes(s.id))
+        .map((s, position) => ({ scenario: { ...s, locked: !hasScenarioAccess(position) }, position }))
+        .filter(({ scenario }) => filterTab !== 'saved' || favoriteScenarios.includes(scenario.id))
         // unlocked first, locked at the bottom
-        .sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+        .sort((a, b) => (a.scenario.locked === b.scenario.locked ? 0 : a.scenario.locked ? 1 : -1));
       if (list.length === 0) continue;
       out.push({ kind: 'header', mode });
-      list.forEach((scenario, index) => {
+      list.forEach(({ scenario, position }, index) => {
         const script = scripts[scenario.id];
         out.push({
           kind: 'scenario',
           scenario,
           index,
+          position,
           endings: script ? endingsProgress(script, endingsFound[scenario.id] ?? []) : undefined,
         });
       });
@@ -212,7 +221,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
           ) : (
             <ScenarioEntry
               scenario={row.scenario}
-              index={String(row.index + 1).padStart(2, '0')}
+              index={String(row.position + 1).padStart(2, '0')}
               first={row.index === 0}
               endings={row.endings}
               onPress={() =>
