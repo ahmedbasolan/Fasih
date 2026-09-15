@@ -9,18 +9,24 @@
  */
 import {
   getScenarioScripts,
+  getOnboardingScripts,
   getAllScenarios,
   isScenarioAvailableFor,
   filterScenariosForLearner,
 } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { darkTheme } from '../../components/design/tokens';
-import { allPhraseIds, isRouteScript, relationshipScore } from '../scenarioEngine';
-import { enumerateRuns, routeScriptProblems, type PlayedRun } from '../scenarioRules';
-import type { ScenarioScript, ScenarioScene, ScenarioChoice } from '../../types';
+import { allPhraseIds, relationshipScore } from '../scenarioEngine';
+import { enumerateRuns, routeScriptProblems } from '../scenarioRules';
+import type { ScenarioScene, ScenarioChoice } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
 const scriptEntries = Object.entries(scripts);
+/** Every script with scenes to check — the scenarios plus the onboarding café, which has no endings. */
+const sceneEntries: [string, { scenes: ScenarioScene[] }][] = [
+  ...scriptEntries,
+  ...Object.entries(getOnboardingScripts()),
+];
 const phraseIds = new Set(PHRASES.map(p => p.id));
 
 const impactOf = (c: ScenarioChoice) =>
@@ -43,10 +49,10 @@ import { TIER_BANDS } from '../../constants/curriculum';
  */
 const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [];
 
-const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, script: ScenarioScript, id: string) => void) => {
-  for (const [id, script] of scriptEntries) {
+const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, id: string) => void) => {
+  for (const [id, script] of sceneEntries) {
     for (const scene of script.scenes) {
-      for (const choice of scene.choices) fn(choice, scene, script, id);
+      for (const choice of scene.choices) fn(choice, scene, id);
     }
   }
 };
@@ -154,14 +160,14 @@ describe('scenario data integrity', () => {
 
   it('every playable scenario has a primer (hear now → earn later)', () => {
     const missing = scriptEntries
-      .filter(([, s]) => !s.id.startsWith('onboarding') && (s.primerPhrases ?? []).length === 0)
+      .filter(([, s]) => (s.primerPhrases ?? []).length === 0)
       .map(([id]) => id);
     expect(missing).toEqual([]);
   });
 
   it('every choice.next points at a real scene in the same script', () => {
     const broken: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const ids = new Set(script.scenes.map(s => s.id));
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -174,7 +180,7 @@ describe('scenario data integrity', () => {
 
   it('every requiredFlag is actually set by some earlier choice in the same script', () => {
     const orphans: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const settable = new Set(script.scenes.flatMap(s => s.choices.map(c => c.flag).filter(Boolean)));
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -293,7 +299,7 @@ describe('language hygiene', () => {
       const stripped = value.replace(/\[name\]/g, '').replace(/HIIT/g, '');
       if (/[A-Za-z]/.test(stripped)) offenders.push(`${label}: ${value}`);
     };
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       for (const scene of script.scenes) {
         check(`${id}/${scene.id} scene`, scene.arabic);
         for (const tone of ['warm', 'neutral', 'cold'] as const) {
@@ -304,6 +310,8 @@ describe('language hygiene', () => {
           check(`${id}/${scene.id}/${choice.id} fem`, choice.arabicFeminine);
         }
       }
+    }
+    for (const [id, script] of scriptEntries) {
       for (const ending of script.endings) check(`${id} ending "${ending.title}"`, ending.arabic);
     }
     expect(offenders).toEqual([]);
@@ -311,7 +319,7 @@ describe('language hygiene', () => {
 
   it('no stray double-quote artefacts in romanisation', () => {
     const offenders: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if (c.roman.includes('"')) offenders.push(`${id}/${s.id}/${c.id}: ${c.roman}`);
     });
     expect(offenders).toEqual([]);
@@ -319,7 +327,7 @@ describe('language hygiene', () => {
 
   it('every choice carries an explicit impact', () => {
     const missing: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if (!c.impact) missing.push(`${id}/${s.id}/${c.id}`);
     });
     expect(missing).toEqual([]);
@@ -332,7 +340,7 @@ describe('scoring discipline', () => {
   /** Choice keys currently outside their tier band. */
   const bandOffenders = (): string[] => {
     const out: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       const band = TIER_BANDS[c.outcome];
       const total = impactOf(c);
       if (total < band.min || total > band.max) out.push(`${id}/${s.id}/${c.id}`);
@@ -353,7 +361,7 @@ describe('scoring discipline', () => {
 
   it('no "good" or "excellent" choice has a negative total', () => {
     const offenders: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if ((c.outcome === 'good' || c.outcome === 'excellent') && impactOf(c) < 0) {
         offenders.push(`${id}/${s.id}/${c.id}`);
       }
@@ -363,7 +371,7 @@ describe('scoring discipline', () => {
 
   it('every scenario has at least one divergent choice (meters move opposite ways)', () => {
     const flat: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const hasDivergence = script.scenes.some(s =>
         s.choices.some(c => {
           const v = [c.impact?.trust ?? 0, c.impact?.respect ?? 0, c.impact?.culture ?? 0];
@@ -376,49 +384,16 @@ describe('scoring discipline', () => {
   });
 });
 
-// ─── Score-path table (every ending must be reachable) ───────────────────────
+// ─── Score paths ─────────────────────────────────────────────────────────────
 // Runs come from the real engine (scenarioRules.enumerateRuns), so fork routing,
 // route endings and bonus-scene skipping match the shipped player exactly.
-
-const tally = (run: PlayedRun) => ({
-  steps: run.steps.length,
-  excellents: run.steps.filter(s => s.choice.outcome === 'excellent').length,
-  goods: run.steps.filter(s => s.choice.outcome === 'good').length,
-  bads: run.steps.filter(s => s.choice.outcome === 'bad').length,
-});
 
 describe('score paths', () => {
   const table = scriptEntries.map(([id, script]) => {
     const runs = enumerateRuns(script);
     return { id, script, runs, reached: new Set(runs.map(r => r.ending.id)) };
   });
-  // Legacy scripts rank endings on one ladder; route scripts get their own
-  // rules below (routeScriptProblems), which cover reachability and missteps.
-  const legacy = table.filter(t => !isRouteScript(t.script));
-
-  it.each(legacy)('$id — every ending is reachable by some play-through', ({ script, reached }) => {
-    const unreachable = script.endings.map(e => e.id).filter(id => !reached.has(id));
-    expect(unreachable).toEqual([]);
-  });
-
-  it.each(legacy)('$id — the top ending does not require a flawless run', ({ script, runs }) => {
-    const top = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min)[0];
-    const imperfect = runs.filter(r => tally(r).excellents < r.steps.length && r.ending.id === top.id);
-    expect(imperfect.length).toBeGreaterThan(0);
-  });
-
-  // One bad moment in an otherwise strong run must not tank the learner. Runs
-  // that were bad AND passive (bad + coasting on neutrals) legitimately can.
-  it.each(legacy)('$id — one mistake in an otherwise good run does not reach the worst ending', ({ script, runs }) => {
-    const standard = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min);
-    const worst = standard[standard.length - 1];
-    const oneMistakeOtherwiseStrong = runs.filter(r => {
-      const t = tally(r);
-      return t.bads === 1 && t.goods + t.excellents === t.steps - 1 && r.ending.id === worst.id;
-    });
-    expect(oneMistakeOtherwiseStrong).toHaveLength(0);
-  });
-
+  // Reachability and one-misstep rules live in routeScriptProblems (below).
   it.each(table.filter(t => t.script.endings.some(e => e.secret)))(
     '$id — the secret ending is strictly harder than the best standard ending',
     ({ script, runs }) => {
@@ -436,11 +411,8 @@ describe('score paths', () => {
 // ─── Route scripts (spec 2026-09-14 §4) ──────────────────────────────────────
 
 describe('route scripts', () => {
-  // One test over all route scripts rather than it.each: until the first
-  // rewrite lands there are none, and it.each([]) is an error, not a pass.
-  it('every route script follows every route-script rule', () => {
+  it('every scenario follows every route-script rule', () => {
     const problems = scriptEntries
-      .filter(([, s]) => isRouteScript(s))
       .flatMap(([id, script]) => routeScriptProblems(script, phraseIds).map(p => `${id} — ${p}`));
     expect(problems).toEqual([]);
   });

@@ -415,12 +415,6 @@ interface AppState {
    * PatternProgress; a pattern "masters" at 3 correct builds.
    */
   recordPatternBuild: (patternId: string, correct: boolean) => void;
-  /**
-   * @deprecated Use finalizeScenario() instead. This action is superseded by
-   * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
-   * Will be removed in a future cleanup.
-   */
-  completeScenario: (scenarioId: string, endingType: string) => void;
   recordSceneProgress: (scenarioId: string, sceneIndex: number) => void;
   addJournalEntry: (entry: Omit<JournalEntry, 'id' | 'date'>) => void;
   checkMilestones: () => void;
@@ -955,20 +949,6 @@ export const useAppStore = create<AppState>()(
           return { patternProgress: { ...s.patternProgress, [patternId]: next } };
         });
         scheduleSync(() => get().syncToCloud());
-      },
-
-      /**
-       * @deprecated Use finalizeScenario() instead. This action is superseded by
-       * finalizeScenario which handles persistence, cloud sync, and analytics in one place.
-       * Will be removed in a future cleanup.
-       */
-      completeScenario: (scenarioId, endingType) => {
-        set((s) => {
-          const completed = { ...s.completedScenarios, [scenarioId]: { endingType, date: new Date().toISOString() } };
-          return { completedScenarios: completed, stats: { ...s.stats, scenariosCompleted: Object.keys(completed) } };
-        });
-        scheduleSync(() => get().syncToCloud());
-        void rcRecordEndingStat(scenarioId, endingType);
       },
 
       recordSceneProgress: (scenarioId, sceneIndex) => {

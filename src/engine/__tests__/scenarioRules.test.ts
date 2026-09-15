@@ -111,10 +111,6 @@ describe('routeScriptProblems', () => {
     expect(problems(validScript())).toEqual([]);
   });
 
-  it('ignores legacy scripts with no routes', () => {
-    expect(problems(broken(s => { delete s.routes; }))).toEqual([]);
-  });
-
   it('structure: every scene declares a kind', () => {
     expect(hasProblem(broken(s => { delete sceneOf(s, 's1').kind; }), 'kind')).toBe(true);
   });

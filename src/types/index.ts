@@ -230,7 +230,7 @@ export interface ScenarioScene {
   teachingNote?: string;
   choices: ScenarioChoice[];
   bonus?: boolean; // True if this is a bonus scene only shown for secret ending
-  /** Required in route scripts. */
+  /** Required on every decision scene of a ScenarioScript; absent on bonus and onboarding scenes. */
   kind?: SceneKind;
   /**
    * The fork: after this scene, go to the scene for the leading route (counting
@@ -280,7 +280,11 @@ export interface ScenarioEnding {
   hint?: string;
 }
 
-export interface ScenarioScript {
+/**
+ * The onboarding café: two linear scenes played by OnboardingScenarioPlayer.
+ * No endings and no routes — it is a first-contact demo, not a scenario run.
+ */
+export interface OnboardingScript {
   id: string;
   title: string;
   subtitle?: string;  // Setting description (e.g., "Airport → Hotel, nighttime")
@@ -288,16 +292,19 @@ export interface ScenarioScript {
   iconName?: string;  // Icon identifier for the scenario card
   estimatedMinutes?: number;  // Estimated completion time
   scenes: ScenarioScene[];
-  endings: ScenarioEnding[];
-  /**
-   * Declaring routes makes this a route script: destination by route tags,
-   * quality by meters (spec 2026-09-14 §2.1). Scripts without routes still use
-   * the legacy score ladder until they are rewritten.
-   */
-  routes?: ScenarioRoute[];
-  /** Route used when a run reaches the fork or the end without leaning anywhere. */
-  defaultRoute?: string;
+  phrases: Pick<ScenarioPhrases, 'core'>;
+}
+
+/**
+ * A playable scenario: destination by route tags, quality by meters (spec
+ * 2026-09-14 §2.1).
+ */
+export interface ScenarioScript extends OnboardingScript {
   phrases: ScenarioPhrases;
+  endings: ScenarioEnding[];
+  routes: ScenarioRoute[];
+  /** Route used when a run reaches the fork or the end without leaning anywhere. */
+  defaultRoute: string;
   /** Native-speaker reviews of this script's Arabic. Absent = unreviewed. */
   nativeReviews?: NativeReview[];
   // 2-3 phrase IDs from phrases.core previewed as tap-to-hear chips in the

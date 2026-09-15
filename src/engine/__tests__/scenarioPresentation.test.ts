@@ -50,7 +50,7 @@ describe('choiceFeedback', () => {
     expect(choiceFeedback(scene({ kind: 'judgement', choices: [top, other] }), other)).toEqual({ kind: 'reaction' });
   });
 
-  it('a legacy scene with no kind keeps its graded label', () => {
+  it('the bonus scene (no kind) keeps a plain outcome label', () => {
     const good = choice('a', 'good');
     expect(choiceFeedback(scene({ choices: [good] }), good)).toEqual({ kind: 'graded', outcome: 'good' });
   });
@@ -128,7 +128,7 @@ describe('hintsToShow', () => {
       ending('formal-strong', { route: 'formal', hint: 'formal hint' }),
       ending('hidden', { secret: true, hint: 'hidden hint' }),
       ending('failure', { type: 'failed' }),
-      ending('legacy'),
+      ending('no-hint'),
     ],
   } as ScenarioScript;
 

@@ -8,11 +8,9 @@
  * Runs are simulated with the real engine (applyChoice / resolveNextScene /
  * evaluateEnding), so a rule failing here means the shipped player would
  * behave that way too — not that a test-only re-implementation disagrees.
- *
- * Legacy scripts (no `routes`) are exempt until they are rewritten.
  */
 import type { ScenarioChoice, ScenarioEnding, ScenarioScene, ScenarioScript, ScenarioState } from '../types';
-import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, isRouteScript, mainPathTarget, resolveNextScene } from './scenarioEngine';
+import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, mainPathTarget, resolveNextScene } from './scenarioEngine';
 import { DECISIONS_PER_RUN, MAX_BEST_IS_LONGEST_SHARE } from '../constants/curriculum';
 
 export interface PlayedRun {
@@ -98,9 +96,8 @@ const TYPE_FOR_TIER = { strong: 'success', weak: 'mixed' } as const;
  * `phraseIds` is the phrase library's id set.
  */
 export function routeScriptProblems(script: ScenarioScript, phraseIds: ReadonlySet<string>): string[] {
-  if (!isRouteScript(script)) return [];
   const out: string[] = [];
-  const routes = new Set((script.routes ?? []).map(r => r.id));
+  const routes = new Set(script.routes.map(r => r.id));
   const sceneIds = new Set(script.scenes.map(s => s.id));
   const mainScenes = script.scenes.filter(s => !s.bonus);
 

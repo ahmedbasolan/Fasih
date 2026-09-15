@@ -1,5 +1,5 @@
 import type { ThemeColors } from '../components/design/tokens';
-import type { Scenario, ScenarioScript } from '../types';
+import type { OnboardingScript, Scenario, ScenarioScript } from '../types';
 
 // ─── Scenario catalog ────────────────────────────────────────────────────────
 // Romanisation: ' = ع  kh = خ  gh = غ  g = ق  h = ح  sh = ش
@@ -1556,16 +1556,21 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
       },
     ],
   },
+});
 
+// ─── Onboarding café scripts ─────────────────────────────────────────────────
+// Played by OnboardingScenarioPlayer: two linear scenes and a core phrase. No
+// endings — the ones these carried were never shown anywhere.
+const ONBOARDING_SCRIPTS: Record<'career' | 'social', OnboardingScript> = {
   // ── ONBOARDING: CAFÉ (Career Mode) ────────────────────────────────────────
-  'onboarding-cafe-career': {
+  career: {
     id: 'onboarding-cafe-career',
     title: 'Welcome to the Café',
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'], byEnding: {} },
+    phrases: { core: ['e_new1'] },
     scenes: [
       {
         id: 'c1', charName: 'Layla', charGender: 'female', setting: 'Small café — morning',
@@ -1593,40 +1598,17 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
     ],
-    endings: [
-      {
-        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
-        en: 'You\'ve got a mate at the café',
-        desc: 'Layla will remember you. Every time you come in, she\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: ['You opened with a proper greeting', 'You used "law samahti" — the Gulf please, in its feminine form for a female barista', 'You used "mashkura" — the feminine form of thanks, because Layla is female'],
-      },
-      {
-        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
-        en: 'Nice conversation',
-        desc: 'You ordered in Arabic, Layla appreciated the effort. Next time you come in, she\'ll say hello and might chat for a moment.',
-        color: C.JADE2, type: 'success',
-        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
-      },
-      {
-        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
-        en: 'All done',
-        desc: 'You got your coffee. Layla was professional. Next time you come in, it will be a similar interaction.',
-        color: C.VIOLET2, type: 'mixed',
-        culturalJourney: ['You communicated what you needed'],
-      },
-    ],
   },
 
   // ── ONBOARDING: CAFÉ (Social Mode) ────────────────────────────────────────
-  'onboarding-cafe-social': {
+  social: {
     id: 'onboarding-cafe-social',
     title: 'Welcome to the Café',
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'], byEnding: {} },
+    phrases: { core: ['e_new1'] },
     scenes: [
       {
         id: 'c1', charName: 'Omar', charGender: 'male', setting: 'Small café — morning',
@@ -1654,35 +1636,19 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
     ],
-    endings: [
-      {
-        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
-        en: 'You\'ve got a mate at the café',
-        desc: 'Omar will remember you. Every time you come in, he\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: ['You opened with a proper greeting', 'You used "law samaht" — the Gulf please, not the textbook من فضلك', 'You used the masculine form of thanks because Omar is male'],
-      },
-      {
-        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
-        en: 'Nice conversation',
-        desc: 'You ordered in Arabic, Omar appreciated the effort. Next time you come in, he\'ll say hello and might chat for a moment.',
-        color: C.JADE2, type: 'success',
-        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
-      },
-      {
-        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
-        en: 'All done',
-        desc: 'You got your coffee. Omar was professional. Next time you come in, it will be a similar interaction.',
-        color: C.VIOLET2, type: 'mixed',
-        culturalJourney: ['You communicated what you needed'],
-      },
-    ],
   },
-});
+};
 
-export function getScenarioScript(id: string, C: ThemeColors, mode?: 'career' | 'social'): ScenarioScript | undefined {
-  if (id === 'onboarding-cafe' && mode) {
-    return getScenarioScripts(C)[`${id}-${mode}`];
-  }
+export function getScenarioScript(id: string, C: ThemeColors): ScenarioScript | undefined {
   return getScenarioScripts(C)[id];
+}
+
+/** The onboarding café for this mode. The catalog carries one `onboarding-cafe` entry; the scripts are per mode. */
+export function getOnboardingScript(mode: 'career' | 'social'): OnboardingScript {
+  return ONBOARDING_SCRIPTS[mode];
+}
+
+/** Both onboarding café scripts, keyed by script id — for the content tests. */
+export function getOnboardingScripts(): Record<string, OnboardingScript> {
+  return Object.fromEntries(Object.values(ONBOARDING_SCRIPTS).map((s) => [s.id, s]));
 }
