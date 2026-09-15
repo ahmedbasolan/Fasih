@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Briefcase, Compass, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
+import { STRINGS } from '../../constants/strings';
 
 type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 
@@ -38,21 +39,21 @@ interface SituationResult extends SituationConfig {
 const SITUATIONS: SituationConfig[] = [
   {
     id: 'workplace',
-    label: 'Workplace',
+    label: STRINGS.homeSections.situations.workplace,
     icon: Briefcase,
     scenarioIds: ['first-morning', 'coffee-invitation', 'office-meeting'],
     phraseCategories: ['Workplace', 'Greetings', 'Hospitality'],
   },
   {
     id: 'getting-around',
-    label: 'Getting Around',
+    label: STRINGS.homeSections.situations.gettingAround,
     icon: Compass,
     scenarioIds: ['social_taxi_ride'],
     phraseCategories: ['Everyday', 'Food & Drink'],
   },
   {
     id: 'neighbours-celebrations',
-    label: 'Neighbours & Celebrations',
+    label: STRINGS.homeSections.situations.neighboursCelebrations,
     icon: Users,
     scenarioIds: ['social_elevator', 'eid-greeting'],
     phraseCategories: ['Social', 'Gratitude', 'Family'],

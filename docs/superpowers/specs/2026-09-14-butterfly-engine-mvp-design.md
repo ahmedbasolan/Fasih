@@ -58,6 +58,8 @@ Length must not signal quality (test, §4).
 
 - **6 decisions per run** on every route: ~2 language + ~4 judgement, ~6–8 min.
 - **One fork** near the midpoint: the leading route selects the variant of 1–2 scenes, then all routes merge into the finale. The finale NPC line varies by route.
+  - *Amended in branch 4:* "finale varies by route" is a second `nextByRoute` fork into route-specific last scenes, whose choices end the main path with `next: null` (a last variant would otherwise fall through into its sibling).
+  - *Amended in branch 4:* LEVEL_SPECS `turns` applies to legacy scripts only; route scripts are held to `DECISIONS_PER_RUN` at every level.
 - Hidden ending adds its **bonus scene** (existing mechanism).
 - Scenarios are standalone. **No cross-scenario state** in MVP.
 
@@ -174,7 +176,7 @@ New, applied to every **route** script (legacy scripts are exempt until their re
 5. Judgement scenes: ≥2 valid choices with different `route`s.
 6. Language scenes: no `route` tags; exactly one correct choice.
 7. Longest-line tell: max-impact choice is also the longest Arabic line in ≤50% of scenes.
-8. Fork variant scenes: every choice has `next` into the merge scene.
+8. Fork variant scenes: every choice has an explicit `next` (a scene, or `null` to end the main path).
 9. Every `nextByRoute` key is a declared route; every route has a destination ending.
 10. Every `byEnding` key is a real ending id; all phrase ids exist.
 11. No `%` or rarity claims in ending text or share copy.
