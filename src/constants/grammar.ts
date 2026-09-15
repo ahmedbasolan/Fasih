@@ -145,8 +145,10 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
     titleFeminine: 'شو / وين / ليش — what? where? why?',
     unlockedByScenario: '',
     softSkill: 'question',
+    // Glosses only, from e9–e12 in phrases.ts (UNSOURCED). The earlier note made
+    // a claim about what asking signals in the Gulf, with nothing behind it.
     goodImpressionNote:
-      'شو (what), وين (where), ليش (why) open conversations the Gulf way — asking about someone\'s day or plans shows you care enough to ask.',
+      'شو (what), وين (where), ليش (why) and متى (when) — each works on its own as a one-word question, as in the examples.',
     examples: [
       { phraseId: 'e9' }, // شو؟
       { phraseId: 'e11' }, // وين؟
@@ -175,8 +177,10 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
     // Was a gym-consultation secret unlock; the خلني quote phrase went with that script.
     unlockedByScenario: '',
     softSkill: 'offer',
+    // Glosses only, from a6 and h1 in phrases.ts (UNSOURCED). The earlier note made
+    // a claim about how an offer reads as hospitality, with nothing behind it.
     goodImpressionNote:
-      'تفضل is how you offer — a seat, a coffee, the way through a door. Pairing an offer with تفضل instead of a bare gesture is what makes it read as hospitality.',
+      'عطني (give me) asks for something; تفضل (please / here you go / come in) offers it — تفضلي to a woman.',
     examples: [{ phraseId: 'a6' }, { phraseId: 'h1' }], // عطني / تفضل
     template: {
       arabic: ['{phrase}'],

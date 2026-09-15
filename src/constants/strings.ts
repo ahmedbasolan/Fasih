@@ -54,7 +54,8 @@ export const STRINGS = {
     choosePathSub: 'Select your primary focus',
     // Step 6. All of these were hardcoded in the JSX.
     notifTitle: 'Never miss a day',
-    notifSub: 'Daily practice builds fluency 3× faster',
+    // Was "builds fluency 3× faster" — a number nobody measured.
+    notifSub: 'A short daily reminder to practise',
     notifStreak: 'Daily streak reminders',
     notifStreakSub: 'Keep your learning momentum going',
     notifScenarios: 'New scenario alerts',
@@ -223,7 +224,9 @@ export const STRINGS = {
     perMonth: '/month',
     // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
     thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
-    skipUnlock: 'Skip — unlock by completing 3 scenarios',
+    // Was "unlock by completing 3 scenarios". Only scenario 1 of each mode is
+    // free, so a free learner can complete two — the promise could not be kept.
+    skipUnlock: 'Skip — first scenario of each mode is free',
     skipWarningTitle: 'Are you sure you want to leave?',
     skipWarningMessage: "You've already set up your custom learning path and unlocked Gulf Arabic phrases. Skipping now means you won't save this progress.",
     skipWarningConfirm: 'Continue Without Saving',
@@ -254,13 +257,16 @@ export const STRINGS = {
       { day: 'Day 3', title: 'Habit Formation', desc: 'Receive personalized motivation to keep you going.' },
       { day: 'Day 4', title: 'Trial Ends', desc: 'Continue your journey with full premium benefits.' },
     ],
+    // No counts. '500+ expressions', '40+ situations' and '5 industries' were
+    // never true — the MVP ships six scenarios — and a count typed here goes
+    // stale the moment content changes.
     features: [
       { label: 'Voice Practice', sub: 'Unlimited sessions' },
-      { label: 'Phrase Library', sub: '500+ expressions' },
-      { label: 'All Scenarios', sub: '40+ situations' },
+      { label: 'Phrase Library', sub: 'The full library' },
+      { label: 'All Scenarios', sub: 'Career and social' },
       { label: 'Cultural Notes', sub: 'Deep context' },
       { label: 'Achievements', sub: 'Badges & levels' },
-      { label: 'Career Paths', sub: '5 industries' },
+      { label: 'Career Paths', sub: 'Workplace scenarios' },
     ],
   },
   home: {
@@ -430,6 +436,12 @@ export const STRINGS = {
     dailyPhrase: 'Daily Phrase',
     yourConfidence: 'Your Confidence',
     beginFirstScenario: 'Begin your first scenario',
+    // The situations on the Your Confidence card, keyed by situation id.
+    situations: {
+      workplace: 'Workplace',
+      gettingAround: 'Getting Around',
+      neighboursCelebrations: 'Neighbours & Celebrations',
+    },
   },
   scenarios: {
     title: 'Scenarios',
@@ -592,8 +604,13 @@ export const STRINGS = {
     feedbackMisstep: 'Cultural misstep',
     feedbackReaction: (npc: string) => `${npc}'s reaction`,
     feedbackRightForm: 'The form to use',
-    communityEnding: (pct: number) => `${pct}% of players reach this ending`,
-    communityEndingSecret: (pct: number) => `${pct}% of players find this ending — you just did`,
+    // `pct` is unrounded (see endingPercentages); only called when it is above 0.
+    communityEnding: (pct: number) =>
+      pct < 1 ? 'Fewer than 1% of players reach this ending' : `${Math.round(pct)}% of players reach this ending`,
+    communityEndingSecret: (pct: number) =>
+      pct < 1 ? 'Fewer than 1% of players find this ending — you just did' : `${Math.round(pct)}% of players find this ending — you just did`,
+    shareResult: 'Share your result',
+    shareHiddenEnding: 'Share your hidden ending',
     communityChoice: (pct: number) => `${pct}% of learners made this choice`,
     secretEndingExists: 'This scenario has a hidden ending.',
     secretEndingTeaser: 'There\'s a hidden ending you haven\'t found yet. Play again to look for it.',

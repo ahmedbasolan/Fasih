@@ -31,7 +31,7 @@ interface Props {
 // Hick's law / Occam's razor: 'Recommended' was defined as !s.locked — i.e.
 // 'All, minus the locked ones'. It recommended nothing, duplicated a view the
 // user already had, and its empty state claimed 'All scenarios coming soon!',
-// which can never be true while the first three are free. Two tabs that each
+// which can never be true while any scenario is free. Two tabs that each
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
 
