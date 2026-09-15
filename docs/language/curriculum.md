@@ -141,4 +141,5 @@ here — and every scenario on it is being rewritten under that spec. The regist
 ### Update 2026-09-15
 
 `coffee-invitation` is rewritten as a route script and now sits inside Beginner, so its
-entries have left `KNOWN_LEVEL_VIOLATIONS`.
+entries have left `KNOWN_LEVEL_VIOLATIONS`. By the end of the day the other four had
+followed (Taxi, Elevator, Eid; The Meeting is new), and the list is empty.

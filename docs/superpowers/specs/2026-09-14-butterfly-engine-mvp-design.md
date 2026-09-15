@@ -116,6 +116,7 @@ Destination names for 1, 2, 4, 5, 6 are content work in each scenario's branch.
 - **Sentence Builder** (Q26): stays. Gym-unlocked patterns re-home — أبي ___ / خلني → The Meeting; تفضل → Eid; `بـ + verb` → wherever the rewrite uses it. Pattern examples must be reviewed phrases.
   - *Amended in branch 1:* `abi-verb` and `b-future` were **removed**, not made library basics — every slot option came from gym dialogue, so as basics they could never be built. They return with The Meeting / whichever rewrite uses the form. `imperative-polite` lost its gym quote phrase and secret gate and is a library basic (عطني / تفضل) until Eid claims it.
   - *Amended in branch 6:* `abi-verb` (أبي ___) and a new `khalni-verb` (خلني ___) return, unlocked by The Meeting, built on four new unsourced phrases (mt-1..mt-4). That raises `MAX_UNSOURCED` 102 → 106 — the only deliberate rise, chosen over deferring the patterns. `b-future` stays out.
+  - *Amended in branch 9:* `imperative-polite` (عطني / تفضل) is unlocked by Eid, no longer a library basic.
 - **`impactPreview`** fake percentages on cards removed.
 
 ### 2.10 Language & audio (Q4, Q16, Q18, Q22, Q27)
