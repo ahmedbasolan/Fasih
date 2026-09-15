@@ -128,7 +128,7 @@ export function ScenarioEntry({ scenario, index, first, endings, onPress }: Scen
   const a11yLabel = [
     title,
     comingSoon ? STRINGS.scenarios.comingSoonBadge : locked ? STRINGS.scenarios.lockedBadge : null,
-    STRINGS.scenarios.phrases(phrases),
+    comingSoon ? null : STRINGS.scenarios.phrases(phrases),
     endings && !comingSoon ? STRINGS.scenarios.endingsSummary(endings) : null,
   ]
     .filter(Boolean)
@@ -153,7 +153,8 @@ export function ScenarioEntry({ scenario, index, first, endings, onPress }: Scen
       ) : null}
 
       <View style={styles.meta}>
-        <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>
+        {/* An unwritten scenario has no phrases to count. */}
+        {comingSoon ? null : <Text style={styles.metaText}>{STRINGS.scenarios.phrases(phrases)}</Text>}
 
         {/* Locked and coming-soon are different promises and say so. Locked
             content exists and is one tap from the paywall; coming-soon content
