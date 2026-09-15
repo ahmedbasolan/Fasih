@@ -50,8 +50,9 @@ Pushed by `syncToCloud()` in `src/store/useAppStore.ts`, keyed by `clerkUserId`:
 | `subscription_status`, `trial_started_at`, `trial_plan` | Entitlement state |
 
 **Gender** is collected for a functional reason — Arabic conjugates for the
-speaker's gender, so it determines which forms are taught and gates one scenario
-written for a single gender. Worth stating explicitly in the policy, since
+speaker's gender, so it determines which forms are taught and how characters
+address the learner. (The app can hide a scenario from one gender, but no
+current scenario uses that.) Worth stating explicitly in the policy, since
 gender can be treated as sensitive data under some regimes.
 
 **The journal is free-text authored by the user**, so it may contain anything
