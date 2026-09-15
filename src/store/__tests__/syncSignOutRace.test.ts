@@ -2,10 +2,14 @@
  * A sync request that outlives the session that started it must not write into
  * the next one. signOut clears the store while a pull or push can still be in
  * flight on a slow network; when that request resolves, the store already
- * belongs to nobody (or to the next account), and the only-grow merge rules
- * would make anything written into it permanent on the next push.
+ * belongs to nobody (or to the next account), and anything written into it
+ * would reach the next account's row on its next push.
+ *
+ * The push side has a second rule: a push is a full-row upsert, and the merge
+ * rules that protect data run on pull. So nothing is pushed before the session
+ * has pulled.
  */
-import { pullProgress, pushProgress, type CloudUserData } from '../../lib/syncService';
+import { CURRENT_SCHEMA_VERSION, pullProgress, pushProgress, type CloudUserData } from '../../lib/syncService';
 import { useAppStore } from '../useAppStore';
 
 // jest.mock calls are hoisted above the imports by babel-jest.
@@ -14,15 +18,16 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(async () => undefined),
   removeItem: jest.fn(async () => undefined),
 }));
+// The real syncService, with only the network calls replaced — so exports and
+// CURRENT_SCHEMA_VERSION can't drift from what the store actually imports.
+// supabase and analytics are stubbed only so the real module can load in jest
+// (a live client; Sentry's ESM build).
+jest.mock('../../lib/supabase', () => ({ supabase: {} }));
+jest.mock('../../lib/analytics', () => ({ reportServiceError: jest.fn() }));
 jest.mock('../../lib/syncService', () => ({
+  ...jest.requireActual('../../lib/syncService'),
   pushProgress: jest.fn(),
   pullProgress: jest.fn(),
-  recordChoiceStat: jest.fn(),
-  getChoiceStats: jest.fn(),
-  recordEndingStat: jest.fn(),
-  getEndingStats: jest.fn(),
-  deleteAccountData: jest.fn(),
-  CURRENT_SCHEMA_VERSION: 3,
 }));
 jest.mock('../../lib/purchases', () => ({
   configurePurchases: jest.fn(),
@@ -51,14 +56,21 @@ jest.mock('../../lib/onboardingAnalytics', () => ({
 const mockPull = pullProgress as jest.MockedFunction<typeof pullProgress>;
 const mockPush = pushProgress as jest.MockedFunction<typeof pushProgress>;
 
+type PullResult = Awaited<ReturnType<typeof pullProgress>>;
+type PushResult = Awaited<ReturnType<typeof pushProgress>>;
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((r) => { resolve = r; });
-  return { promise, resolve };
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
 }
 
+/** Lets a promise chain the test can't await (a push the pull released) run. */
+const settle = () => new Promise((r) => setTimeout(r, 0));
+
 const previousLearnerRow: CloudUserData = {
-  schema_version: 3,
+  schema_version: CURRENT_SCHEMA_VERSION,
   user_profile: {
     name: 'Learner A',
     mode: 'career',
@@ -80,6 +92,8 @@ const previousLearnerRow: CloudUserData = {
   completed_scenarios: { 'scenario-a': { endingType: 'good', date: '2026-09-01' } },
   pattern_progress: {},
   secret_endings_earned: { 'scenario-a': 'The Secret' },
+  endings_found: { 'scenario-a': ['ending-1'] },
+  scenario_runs: { 'scenario-a': 3 },
   saved_phrases: ['phrase-a'],
   unlocked_phrase_ids: ['phrase-a'],
   milestones: [],
@@ -90,22 +104,38 @@ const previousLearnerRow: CloudUserData = {
   trial_plan: null,
 };
 
+const signIn = (userId: string) => useAppStore.getState().setClerkUserId(userId);
+
+/** Sign in and finish the session's first pull, which pushes wait for. */
+async function signInAndPull(userId: string) {
+  signIn(userId);
+  mockPull.mockResolvedValueOnce({ data: null, error: null });
+  await useAppStore.getState().syncFromCloud();
+}
+
 beforeEach(async () => {
   mockPull.mockReset();
   mockPush.mockReset();
+  // Defaults, so a request a test didn't plan for resolves and fails an
+  // assertion rather than crashing the run on an undefined result.
+  mockPull.mockResolvedValue({ data: null, error: null });
+  mockPush.mockResolvedValue({ error: null });
   await useAppStore.getState().signOut();
-  useAppStore.setState({ isSyncing: false });
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 describe('syncFromCloud across a sign-out', () => {
   it('writes nothing from a pull that resolves after sign-out', async () => {
-    const pull = deferred<Awaited<ReturnType<typeof pullProgress>>>();
-    mockPull.mockReturnValue(pull.promise);
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
 
-    useAppStore.getState().setClerkUserId('user_a');
+    signIn('user_a');
     const syncing = useAppStore.getState().syncFromCloud();
     await useAppStore.getState().signOut();
-    useAppStore.getState().setClerkUserId('user_b');
+    signIn('user_b');
 
     pull.resolve({ data: previousLearnerRow, error: null });
     await syncing;
@@ -122,11 +152,27 @@ describe('syncFromCloud across a sign-out', () => {
     expect(s.isSyncing).toBe(false);
   });
 
-  it('does not surface the previous session’s pull error', async () => {
-    const pull = deferred<Awaited<ReturnType<typeof pullProgress>>>();
-    mockPull.mockReturnValue(pull.promise);
+  it('drops it even when the same learner signs straight back in — that session pulls for itself', async () => {
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
 
-    useAppStore.getState().setClerkUserId('user_a');
+    signIn('user_a');
+    const syncing = useAppStore.getState().syncFromCloud();
+    await useAppStore.getState().signOut();
+    signIn('user_a');
+
+    pull.resolve({ data: previousLearnerRow, error: null });
+    await syncing;
+
+    expect(useAppStore.getState().user).toBeNull();
+    expect(useAppStore.getState().completedScenarios).toEqual({});
+  });
+
+  it('does not surface the previous session’s pull error', async () => {
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
+
+    signIn('user_a');
     const syncing = useAppStore.getState().syncFromCloud();
     await useAppStore.getState().signOut();
 
@@ -137,10 +183,40 @@ describe('syncFromCloud across a sign-out', () => {
     expect(useAppStore.getState().isSyncing).toBe(false);
   });
 
-  it('still merges when the same learner is signed in', async () => {
-    mockPull.mockResolvedValue({ data: previousLearnerRow, error: null });
+  it('a stale pull does not clear the next session’s isSyncing', async () => {
+    const pullA = deferred<PullResult>();
+    const pullB = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pullA.promise).mockReturnValueOnce(pullB.promise);
 
-    useAppStore.getState().setClerkUserId('user_a');
+    signIn('user_a');
+    const syncingA = useAppStore.getState().syncFromCloud();
+    await useAppStore.getState().signOut();
+    signIn('user_b');
+    const syncingB = useAppStore.getState().syncFromCloud();
+
+    pullA.resolve({ data: previousLearnerRow, error: null });
+    await syncingA;
+    expect(useAppStore.getState().isSyncing).toBe(true);
+
+    pullB.resolve({ data: null, error: null });
+    await syncingB;
+    expect(useAppStore.getState().isSyncing).toBe(false);
+  });
+
+  it('a pull that throws still clears isSyncing and reports the error', async () => {
+    mockPull.mockRejectedValueOnce(new Error('Network request failed'));
+
+    signIn('user_a');
+    await useAppStore.getState().syncFromCloud();
+
+    expect(useAppStore.getState().isSyncing).toBe(false);
+    expect(useAppStore.getState().lastSyncError).toBe('Network request failed');
+  });
+
+  it('still merges for the learner who is signed in', async () => {
+    mockPull.mockResolvedValueOnce({ data: previousLearnerRow, error: null });
+
+    signIn('user_a');
     await useAppStore.getState().syncFromCloud();
 
     const s = useAppStore.getState();
@@ -150,12 +226,73 @@ describe('syncFromCloud across a sign-out', () => {
   });
 });
 
+describe('syncToCloud before the session has pulled', () => {
+  it('pulls first, then pushes the merged store — never the local one over the row', async () => {
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
+    mockPush.mockResolvedValue({ error: null });
+
+    signIn('user_a');
+    useAppStore.setState({ savedPhrases: ['phrase-local'] });
+    await useAppStore.getState().syncToCloud();
+
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockPull).toHaveBeenCalledWith('user_a');
+
+    pull.resolve({ data: previousLearnerRow, error: null });
+    await settle();
+
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('user_a', expect.objectContaining({
+      saved_phrases: expect.arrayContaining(['phrase-local', 'phrase-a']),
+      completed_scenarios: previousLearnerRow.completed_scenarios,
+    }));
+  });
+
+  it('waits for a pull already in flight instead of starting another', async () => {
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
+    mockPush.mockResolvedValue({ error: null });
+
+    signIn('user_a');
+    const syncing = useAppStore.getState().syncFromCloud();
+    await useAppStore.getState().syncToCloud();
+
+    pull.resolve({ data: null, error: null });
+    await syncing;
+    await settle();
+
+    expect(mockPull).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('isSyncing within one session', () => {
+  it('stays true until the last request in flight returns', async () => {
+    await signInAndPull('user_a');
+    const first = deferred<PushResult>();
+    const second = deferred<PushResult>();
+    mockPush.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    const pushingFirst = useAppStore.getState().syncToCloud();
+    const pushingSecond = useAppStore.getState().syncToCloud();
+
+    first.resolve({ error: null });
+    await pushingFirst;
+    expect(useAppStore.getState().isSyncing).toBe(true);
+
+    second.resolve({ error: null });
+    await pushingSecond;
+    expect(useAppStore.getState().isSyncing).toBe(false);
+  });
+});
+
 describe('syncToCloud across a sign-out', () => {
   it('does not surface the previous session’s push result', async () => {
-    const push = deferred<Awaited<ReturnType<typeof pushProgress>>>();
-    mockPush.mockReturnValue(push.promise);
+    await signInAndPull('user_a');
+    const push = deferred<PushResult>();
+    mockPush.mockReturnValueOnce(push.promise);
 
-    useAppStore.getState().setClerkUserId('user_a');
     const syncing = useAppStore.getState().syncToCloud();
     await useAppStore.getState().signOut();
 
@@ -166,5 +303,47 @@ describe('syncToCloud across a sign-out', () => {
     expect(mockPush).toHaveBeenCalledWith('user_a', expect.anything());
     expect(useAppStore.getState().lastSyncError).toBeNull();
     expect(useAppStore.getState().isSyncing).toBe(false);
+  });
+
+  it('does not surface a push that throws after sign-out', async () => {
+    await signInAndPull('user_a');
+    const push = deferred<PushResult>();
+    mockPush.mockReturnValueOnce(push.promise);
+
+    const syncing = useAppStore.getState().syncToCloud();
+    await useAppStore.getState().signOut();
+
+    push.reject(new Error('Network request failed'));
+    await syncing;
+
+    expect(useAppStore.getState().lastSyncError).toBeNull();
+    expect(useAppStore.getState().isSyncing).toBe(false);
+  });
+});
+
+describe('a scheduled push across a sign-out', () => {
+  it('is cancelled by signOut — it never fires into the next account', async () => {
+    await signInAndPull('user_a');
+    jest.useFakeTimers();
+
+    useAppStore.getState().toggleSavedPhrase('phrase-a');
+    await useAppStore.getState().signOut();
+    signIn('user_b');
+    await jest.advanceTimersByTimeAsync(5_000);
+
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockPull).toHaveBeenCalledTimes(1); // signInAndPull's own
+  });
+
+  it('is sent at once by flushScheduledSync, and only once', async () => {
+    await signInAndPull('user_a');
+    jest.useFakeTimers();
+
+    useAppStore.getState().toggleSavedPhrase('phrase-a');
+    await useAppStore.getState().flushScheduledSync();
+    await jest.advanceTimersByTimeAsync(5_000);
+
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('user_a', expect.objectContaining({ saved_phrases: ['phrase-a'] }));
   });
 });
