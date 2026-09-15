@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
 import { MotiView } from 'moti';
@@ -61,24 +61,31 @@ function toPhrases(ids: string[]): Phrase[] {
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
 function ImpactCol({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) {
   const { C } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    col: { flex: 1, alignItems: 'center', gap: 2, position: 'relative' },
+    label: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' },
+    value: { fontFamily: FONT_LATIN_BOLD, fontSize: 16 },
+    track: { width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' },
+    fill: { height: 3, borderRadius: 2 },
+  }), [C]);
   const absMax = Math.max(Math.abs(maxVal), 3);
   const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
   return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
+    <View style={styles.col}>
+      <Text style={styles.label}>{label}</Text>
       <MotiView
         key={`stat-${label}-${value}`}
         from={{ scale: 1.35, translateY: -4 }}
         animate={{ scale: 1, translateY: 0 }}
         transition={{ type: 'spring', damping: 15, stiffness: 200 }}
       >
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
+        <Text style={[styles.value, { color: value !== 0 ? color : C.TEXT3 }]}>{value > 0 ? `+${value}` : value}</Text>
       </MotiView>
-      <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
+      <View style={styles.track}>
         <MotiView
           animate={{ width: `${pct * 100}%` as const }}
           transition={{ type: 'timing', duration: 400 }}
-          style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
+          style={[styles.fill, { backgroundColor: color }]}
         />
       </View>
     </View>
@@ -87,15 +94,19 @@ function ImpactCol({ label, value, color, maxVal }: { label: string; value: numb
 
 function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; respect: number; culture: number; maxValues?: { trust: number; respect: number; culture: number } }) {
   const { C } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    bar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER },
+    divider: { width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 },
+  }), [C]);
   const max = maxValues ?? { trust: 12, respect: 12, culture: 12 };
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-      <ImpactCol label="Trust" value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
-      <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <ImpactCol label="Respect" value={respect} color={C.JADE2} maxVal={max.respect} />
-      <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <ImpactCol label="Culture" value={culture} color={C.VIOLET} maxVal={max.culture} />
+    <View style={styles.bar}>
+      <ImpactCol label={STRINGS.scenarios.trust} value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
+      <View style={styles.divider} />
+      <ImpactCol label={STRINGS.scenarios.respect} value={respect} color={C.JADE2} maxVal={max.respect} />
+      <View style={styles.divider} />
+      <ImpactCol label={STRINGS.scenarios.culture} value={culture} color={C.VIOLET} maxVal={max.culture} />
     </View>
   );
 }
@@ -103,9 +114,39 @@ function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; resp
 // ─── Dialogue bubble ──────────────────────────────────────────────────────────
 function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioScene; tone?: Tone; gender: 'male' | 'female' | undefined }) {
   const { C } = useTheme();
-  const accentText = C.JADE;
   const [arabicRevealed, setArabicRevealed] = useState(false);
   const [translationRevealed, setTranslationRevealed] = useState(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    wrapper: { marginBottom: 20 },
+    pill: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+      borderWidth: 1, alignSelf: 'flex-start',
+    },
+    setting: { backgroundColor: C.SURFACE, borderColor: C.BORDER },
+    settingDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE },
+    settingText: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2 },
+    toneBadge: { marginBottom: 12 },
+    toneDot: { width: 5, height: 5, borderRadius: 3 },
+    toneText: { fontFamily: FONT_LATIN, fontSize: 11, letterSpacing: 0.5 },
+    row: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+    avatar: {
+      width: 40, height: 40, borderRadius: 14,
+      backgroundColor: C.JADE_ACCENT_DIM,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    avatarInitial: { fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT },
+    body: { flex: 1 },
+    name: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 6 },
+    bubble: { borderRadius: 16, borderTopLeftRadius: 0, padding: 14, borderWidth: 1, minHeight: 72 },
+    waiting: { alignItems: 'center', justifyContent: 'center', flex: 1 },
+    arabic: { fontFamily: FONT_ARABIC, fontSize: 22, color: C.JADE, textAlign: 'right', lineHeight: 32, marginBottom: 6 },
+    roman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}80`, fontStyle: 'italic', marginBottom: 4 },
+    english: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 },
+    listen: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+    listenText: { fontFamily: FONT_LATIN, fontSize: 11 },
+  }), [C]);
 
   // Tone variant (warm/cold only when authored), in the forms this learner is
   // addressed in — a female learner hears شلونج, not شلونك.
@@ -129,70 +170,54 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
   }, [dialogue.arabic, scene.charGender, speakAs]);
 
   return (
-    <View style={{ marginBottom: 20 }}>
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-        backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-        alignSelf: 'flex-start', marginBottom: hasToneShift ? 8 : 14,
-      }}>
-        <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE }} />
-        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2 }}>{scene.setting}</Text>
+    <View style={styles.wrapper}>
+      <View style={[styles.pill, styles.setting, { marginBottom: hasToneShift ? 8 : 14 }]}>
+        <View style={styles.settingDot} />
+        <Text style={styles.settingText}>{scene.setting}</Text>
       </View>
 
       {/* Butterfly effect badge — only appears when past choices changed this NPC response */}
       {hasToneShift && (
         <View
-          style={{
-            flexDirection: 'row', alignItems: 'center', gap: 6,
-            alignSelf: 'flex-start', marginBottom: 12,
-            paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+          style={[styles.pill, styles.toneBadge, {
             backgroundColor: tone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
-            borderWidth: 1, borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
-          }}
+            borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
+          }]}
         >
-          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: toneColor, letterSpacing: 0.5 }}>
-            {tone === 'warm' ? 'Your choices shaped this response' : 'Your choices echo here'}
+          <View style={[styles.toneDot, { backgroundColor: toneColor }]} />
+          <Text style={[styles.toneText, { color: toneColor }]}>
+            {tone === 'warm' ? STRINGS.scenarios.toneShiftWarm : STRINGS.scenarios.toneShiftCold}
           </Text>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-        <View style={{
-          width: 40, height: 40, borderRadius: 14,
-          backgroundColor: C.JADE_ACCENT_DIM,
+      <View style={styles.row}>
+        <View style={[styles.avatar, {
           borderWidth: hasToneShift ? 1.5 : 1,
           borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT }}>{initial}</Text>
+        }]}>
+          <Text style={styles.avatarInitial}>{initial}</Text>
         </View>
 
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 6 }}>{scene.charName}</Text>
+        <View style={styles.body}>
+          <Text style={styles.name}>{scene.charName}</Text>
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
-            <View style={{
-              borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
+            <View style={[styles.bubble, {
               backgroundColor: tone === 'cold' ? C.SURFACE : C.JADE_ACCENT_SURFACE,
-              borderWidth: 1,
               borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
-              minHeight: 72,
-            }}>
+            }]}>
               {!arabicRevealed ? (
-                <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <View style={styles.waiting}>
                   <WaveBars isPlaying={playingAudio} size="md" color={C.JADE_ACCENT} />
                 </View>
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentText, textAlign: 'right', lineHeight: 32, marginBottom: 6 }}>
-                    {dialogue.arabic}
-                  </Text>
+                  <Text style={styles.arabic}>{dialogue.arabic}</Text>
                   <ThresholdSeam height={7} style={{ marginBottom: translationRevealed ? 8 : 0 }} />
                   {translationRevealed && (
                     <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>{`"${displayed}"`}</Text>
+                      <Text style={styles.roman}>{dialogue.roman}</Text>
+                      <Text style={styles.english}>{`"${displayed}"`}</Text>
                     </MotiView>
                   )}
                 </MotiView>
@@ -202,10 +227,10 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
 
           <Pressable
             onPress={() => speakAs(dialogue.arabic, scene.charGender)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}
+            style={styles.listen}
           >
             <WaveBars isPlaying={playingAudio} size="sm" color={playingAudio ? C.JADE2 : C.TEXT3} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: playingAudio ? C.JADE2 : C.TEXT3 }}>
+            <Text style={[styles.listenText, { color: playingAudio ? C.JADE2 : C.TEXT3 }]}>
               {playingAudio ? STRINGS.scenarios.playing : STRINGS.scenarios.listenVoice(scene.charGender)}
             </Text>
           </Pressable>
@@ -225,6 +250,31 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     [C]
   );
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => StyleSheet.create({
+    noMargin: { paddingHorizontal: 0 },
+    goBack: { borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER },
+    goBackText: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 },
+    screen: { flex: 1, backgroundColor: C.BG },
+    header: { paddingHorizontal: SCREEN_MARGIN, paddingBottom: 10, zIndex: 10 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+    headerTitle: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 },
+    dots: { flexDirection: 'row', gap: 3 },
+    dot: { height: 3, borderRadius: 2 },
+    exit: { width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' },
+    scrollContent: { paddingHorizontal: SCREEN_MARGIN },
+    sceneRow: { flexDirection: 'row' },
+    sceneBody: { flex: 1, minWidth: 0 },
+    chooseLabel: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' },
+    choices: { gap: 8 },
+    choiceCard: { borderRadius: 16, overflow: 'hidden' },
+    accentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderRadius: 2 },
+    choiceBody: { padding: 14 },
+    choiceArabic: { fontFamily: FONT_ARABIC, fontSize: 18, textAlign: 'right', marginBottom: 3, lineHeight: 26 },
+    choiceRoman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}70`, fontStyle: 'italic', marginBottom: 5 },
+    choiceEnglish: { fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20 },
+    choiceListen: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1 },
+    choiceListenText: { fontFamily: FONT_LATIN, fontSize: 11 },
+  }), [C]);
   // Doherty threshold: keep the player responsive under 400ms.
   // getScenarioScripts() is an arrow function returning a ~1,140-line object
   // literal, and getAllScenarios() spreads three more builders. Called bare in
@@ -443,7 +493,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // Helper to replace [name] placeholder with user's name
   const replaceName = useCallback((text: string): string => {
-    const userName = user?.name || 'friend';
+    const userName = user?.name || STRINGS.scenarios.nameFallback;
     return text.replace(/\[name\]/g, userName);
   }, [user?.name]);
 
@@ -541,15 +591,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       <Screen
         scroll={false}
         // EmptyState brings its own SCREEN_MARGIN — see ScenarioDetailScreen.
-        contentStyle={{ paddingHorizontal: 0 }}
+        contentStyle={styles.noMargin}
         action={
           <Pressable
             onPress={onExit}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
-            style={{ borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+            style={styles.goBack}
           >
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.goBack}</Text>
+            <Text style={styles.goBackText}>{STRINGS.scenarios.goBack}</Text>
           </Pressable>
         }
       >
@@ -624,14 +674,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View style={styles.screen}>
       <GhostLetters glyphs={['ك', 'ل', 'م']} />
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.lg, paddingBottom: 10, zIndex: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACE.lg }]}>
+        <View style={styles.headerRow}>
           <View>
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
-            <View style={{ flexDirection: 'row', gap: 3 }}>
+            <Text style={styles.headerTitle}>{scriptData.title}</Text>
+            <View style={styles.dots}>
               {Array.from({ length: totalDecisions }, (_, i) => (
                 <MotiView
                   key={i}
@@ -640,7 +690,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     backgroundColor: i < decisionsMade ? C.JADE2 : i === decisionsMade && phase === 'scene' ? C.JADE_ACCENT : C.TEXT3,
                   }}
                   transition={{ type: 'timing', duration: 260 }}
-                  style={{ height: 3, borderRadius: 2 }}
+                  style={styles.dot}
                 />
               ))}
             </View>
@@ -654,9 +704,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
               onExit();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Exit scenario"
+            accessibilityLabel={STRINGS.scenarios.exitScenario}
             hitSlop={8}
-            style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
+            style={styles.exit}
           >
             <X size={14} color={C.TEXT3} />
           </Pressable>
@@ -668,7 +718,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: SCREEN_MARGIN, paddingBottom: insets.bottom + SPACE.xl }}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + SPACE.xl }]}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
       >
@@ -703,9 +753,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 choice, so the run's shape is visible while it is still being
                 made. The engine has tracked this since it was written and
                 nothing rendered it. */}
-            <View style={{ flexDirection: 'row' }}>
+            <View style={styles.sceneRow}>
               <MarginRail marks={railMarksForRun} />
-              <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={styles.sceneBody}>
                 <DialogueBubble
                   key={`${scene.id}-${sceneTone}-${user?.gender ?? ''}`}
                   scene={scene}
@@ -716,12 +766,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
                 {!selectedChoiceId && (
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    {STRINGS.scenarios.chooseResponse}
-                  </Text>
+                  <Text style={styles.chooseLabel}>{STRINGS.scenarios.chooseResponse}</Text>
                 )}
 
-                <View style={{ gap: 8 }}>
+                <View style={styles.choices}>
                   {scene.choices
                     .filter((c: ScenarioChoice) => !activeScenarioState || isChoiceVisible(c, activeScenarioState))
                     .map((choice: ScenarioChoice, i: number) => {
@@ -738,20 +786,18 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         animate={{ opacity: isDimmed ? 0.22 : 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: isDimmed ? 220 : 200, delay: isDimmed ? 0 : i * 70 }}
                       >
-                        <View style={{
-                          borderRadius: 16,
+                        <View style={[styles.choiceCard, {
                           backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
                           borderWidth: isSelected ? 1.5 : 1,
                           borderColor: isSelected ? `${color}45` : C.BORDER,
-                          overflow: 'hidden',
-                        }}>
+                        }]}>
                           {/* Left accent bar */}
                           {isSelected && (
                             <MotiView
                               from={{ scaleY: 0 }}
                               animate={{ scaleY: 1 }}
                               transition={{ type: 'spring', damping: 18, stiffness: 200 }}
-                              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }}
+                              style={[styles.accentBar, { backgroundColor: color }]}
                             />
                           )}
 
@@ -763,14 +809,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                             accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
                             accessibilityState={{ selected: isSelected }}
                           >
-                            <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14, paddingBottom: selectedChoiceId ? 14 : 6 }}>
-                              <Text style={{ fontFamily: FONT_ARABIC, fontSize: 18, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
+                            <View style={[styles.choiceBody, {
+                              paddingLeft: isSelected ? 18 : 14,
+                              paddingBottom: selectedChoiceId ? 14 : 6,
+                            }]}>
+                              <Text style={[styles.choiceArabic, { color: isSelected ? color : accentColor }]}>
                                 {replaceName(choiceArabic)}
                               </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: `${accentColor}70`, fontStyle: 'italic', marginBottom: 5 }}>
-                                {replaceName(choice.roman)}
-                              </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: isSelected ? C.TEXT1_5 : C.TEXT2, lineHeight: 20 }}>
+                              <Text style={styles.choiceRoman}>{replaceName(choice.roman)}</Text>
+                              <Text style={[styles.choiceEnglish, { color: isSelected ? C.TEXT1_5 : C.TEXT2 }]}>
                                 {replaceName(choice.text)}
                               </Text>
                             </View>
@@ -785,12 +832,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               onPress={() => playChoice(choice.id, choiceArabic)}
                               hitSlop={8}
                               accessibilityRole="button"
-                              accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}
+                              accessibilityLabel={isChoicePlaying ? STRINGS.scenarios.playingAudio : STRINGS.scenarios.listenToChoice}
                               accessibilityState={{ selected: isChoicePlaying }}
-                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER }}
+                              style={[styles.choiceListen, {
+                                backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE,
+                                borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER,
+                              }]}
                             >
                               <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
+                              <Text style={[styles.choiceListenText, { color: isChoicePlaying ? C.JADE2 : C.TEXT3 }]}>
                                 {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
                               </Text>
                             </Pressable>
