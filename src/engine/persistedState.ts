@@ -107,6 +107,9 @@ export function signOutReset(defaultMilestones: readonly LearningMilestone[]) {
     milestones: defaultMilestones.map((m) => ({ ...m })),
     activeScenarioState: null,
     communityStatsCache: {},
+    // Otherwise a request in flight at sign-out left the next session showing
+    // "syncing" (and its Retry disabled) until that request came back.
+    isSyncing: false,
     lastSyncedAt: null,
     lastSyncError: null,
     recentSessionHours: [],

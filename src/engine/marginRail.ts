@@ -4,9 +4,9 @@ import type { ScenarioScript, ScenarioState, ChoiceOutcome } from '../types';
  * Total scenes in the script that present a choice.
  *
  * This is the UPPER BOUND on a run's decisions, not the count of them. Scripts
- * branch: `social_taxi_ride` has 7 choice-scenes but `c2_open`/`c2_effort` and
- * `c3_ronaldo`/`c3_dubai` are mutually exclusive, so any single run passes
- * through 5.
+ * branch: `first-morning` has 8 choice-scenes but `scene4-colleague`/
+ * `scene4-professional` and `scene6-colleague`/`scene6-professional` are mutually
+ * exclusive, so any single run passes through 6.
  *
  * That is why the rail's track length comes from `Scenario.decisions` — the
  * authored path length — rather than from here. An earlier draft derived the
