@@ -166,19 +166,14 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
 /**
  * Scenarios currently outside the band their declared level claims.
  *
- * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `eid-greeting` sits
- * just over the A1 mean once clitics are counted. (The audit's worst offenders,
- * the-checkup and gym-consultation, were cut for the MVP; coffee-invitation's
- * two entries went with its 2026-09-15 rewrite.)
+ * Each entry is `scenarioId:gate`. Empty since 2026-09-15: the 2026-09-03 audit's
+ * worst offenders (the-checkup, gym-consultation) were cut for the MVP, and the
+ * six MVP scenarios were rewritten as route scripts inside their bands.
  *
- * Fixing one means either re-levelling the scenario or editing its content —
- * both content decisions, deliberately not made by this commit.
+ * Any new entry is a content decision — re-level the scenario or edit its cards —
+ * and should be rare enough to explain in the commit that adds it.
  */
-const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'eid-greeting:meanMorphemes',
-  'eid-greeting:morphemeCeiling',
-];
+const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [];
 
 /**
  * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
