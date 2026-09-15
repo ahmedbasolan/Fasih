@@ -19,8 +19,8 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
   },
   {
     id: 'coffee-invitation', iconName: 'Coffee',
-    title: 'The Coffee Invitation', subtitle: 'Build trust with your Emirati colleague',
-    decisions: 3, endings: 4, phrases: '8', level: 'Beginner', locked: false,
+    title: 'The Coffee Invitation', subtitle: 'Two weeks in, a colleague asks you for coffee.',
+    decisions: 6, endings: 6, phrases: '12', level: 'Beginner', locked: false,
     color: C.JADE_ACCENT, gradientColors: ['#1A0F0A', '#0D0608'],
     arabicScene: 'قهوة',
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
@@ -355,61 +355,242 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
   },
 
   // ── CAREER 2: THE COFFEE INVITATION ────────────────────────────────────────
+  // Route script (spec 2026-09-14), built on the First Morning model.
+  //
+  // Destinations: `circle` (you become one of the ten o'clock coffee regulars)
+  // and `guide` (Hamad, eight years in, starts opening doors for you). Forks at
+  // scene3 (the refill) and scene5 (the finale line).
+  // Hidden: give the cup the small shake that means "enough" (scene3 c — not the
+  // top choice) AND admire his son with ما شاء الله (scene5).
+  //
+  // NOT NATIVE-REVIEWED. New lines here are authored, not sourced — the phrase
+  // sets reuse existing library entries only. See docs/language/reviewer-brief.md.
   'coffee-invitation': {
     id: 'coffee-invitation',
     title: 'The Coffee Invitation',
-    phrases: { core: ['w1', 'w2', 'w3', 's1', 'gr1', 'gr6', 'fm7', 's6'], byEnding: {} },
-    primerPhrases: ['w1', 's1', 'gr1'], // إن شاء الله / يلا نشرب قهوة / مشكور
+    estimatedMinutes: 7,
+    routes: [
+      { id: 'circle', label: 'Part of the circle' },
+      { id: 'guide', label: 'A guide at work' },
+    ],
+    defaultRoute: 'circle',
+    phrases: {
+      // يلا نشرب قهوة / قهوة / تسلم / ما شاء الله / إي
+      core: ['s1', 'f1', 'gr3', 'w2', 'e7'],
+      byEnding: {
+        // أهل / سوالف / تمر
+        'one-of-the-circle': ['fm1', 's9', 'f7'],
+        'a-guest-for-now': ['fm1', 's9', 'f7'],
+        // إذا ما عليك أمر / ما قصرت / الله يجزاك خير
+        'a-good-word': ['a3', 'gr7', 'gr6'],
+        'advice-not-yet-a-word': ['a3', 'gr7', 'gr6'],
+        // حياك الله — what the one who pours says
+        'the-dallah': ['g6'],
+      },
+    },
+    primerPhrases: ['s1', 'gr3', 'w2'], // يلا نشرب قهوة / تسلم / ما شاء الله
     scenes: [
       {
-        id: 'scene1', charName: 'Ahmed', charGender: 'male', setting: 'Office — break room',
-        arabic: 'يلا نشرب قهوة؟', roman: 'yalla nishrab gahwa?', english: 'Come on, shall we grab some coffee?',
-        teachingNote: 'A bare إن شاء الله, with no time attached, is how Gulf Arabic says no politely. إن شاء الله + a specific time is a real yes. This one distinction will save you months of misreading people at work.',
+        id: 'scene1', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — week two, the mid-morning break',
+        arabic: 'يلا نشرب قهوة؟ انت فاضي؟',
+        roman: 'yalla nishrab gahwa? inta faadi?',
+        english: 'Come on, coffee? Are you free?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'يلا نشرب قهوة؟ انتي فاضية؟', roman: 'yalla nishrab gahwa? inti faadya?', english: 'Come on, coffee? Are you free?' },
+        teachingNote: 'فاضي is "free, not busy"; to a woman, فاضية. يلا turns it into an invitation rather than a question.',
         choices: [
-          { id: 'a', text: 'Love to — just let me finish this email', arabic: 'ودي والله بس خلني أخلص هالإيميل', roman: "widdi wallah bass khallni akhallas hal-iimail", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'ودي is how you say "I\'d love to" in Gulf Arabic — حبيت means "I liked it" and would confuse him. But the phrasing is not the problem here: putting a task ahead of the invitation tells Ahmed the relationship ranks second.', outcome: 'bad' },
-          { id: 'b', text: 'Thanks! God willing', arabic: 'مشكور! إن شاء الله', roman: "mashkuur! in shaa' allah", score: 1, impact: { trust: -1, respect: 1, culture: 0 }, note: '⚖️ You sounded polite — respect goes up — but Ahmed heard a no, so trust goes down. إن شاء الله with no time attached is the standard Gulf soft refusal — he will not ask again today, and he will not bring it up. Attach a time and it becomes a yes.', outcome: 'neutral' },
-          { id: 'c', text: 'Yes! Give me five minutes and I\'m with you', arabic: 'إي! خمس دقايق وأنا وياك', roman: "ii! khams dagaayig w-ana wiyyaak", score: 4, impact: { trust: 2, respect: 1, culture: 1 }, note: 'Naming a specific time is what turns a maybe into a yes in Gulf Arabic. وياك (with you) is the Gulf form — مَعَك is the textbook one. Ahmed will wait the five minutes happily.', outcome: 'good' },
-          { id: 'd', text: 'يلا! الله يبارك فيك', arabic: 'يلا! الله يبارك فيك', roman: 'yalla! allah ybaarak fiik', score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Enthusiastic Arabic response AND invoking a blessing shows cultural mastery.', outcome: 'excellent' },
+          { id: 'a', text: 'Yes, honestly! Let\'s go', arabic: 'إي والله! يلا', roman: 'ii wallaah! yalla', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'circle', note: 'إي والله is a yes with feeling behind it. Dropping what you were doing for his coffee tells Hamad the person comes before the task.' },
+          { id: 'b', text: 'Yes — thanks for the invitation', arabic: 'إي، مشكور على العزيمة', roman: "ii, mashkuur 'ala il-'aziima", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', note: 'العزيمة is the invitation itself. Thanking him for it treats the gesture as a gesture — a little formal, and it shows you notice how things are done.' },
+          { id: 'c', text: '(Without looking up) Yeah, yeah — a minute', arabic: 'إي إي، دقيقة', roman: 'ii ii, dagiiga', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'An invitation answered without looking up says the work outranks him. You do go — but he has already noticed. Look up, and give him a real answer.' },
         ],
       },
       {
-        id: 'scene2', charName: 'Ahmed', charGender: 'male', setting: 'Coffee corner — relaxed',
-        arabic: 'تبي قهوة عربية ولا نسكافيه؟', roman: "tabi gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?',
-        charDialogue: {
-          warm: { arabic: 'يا هلا والله! تبي قهوة عربية ولا نسكافيه؟', roman: "ya hala wallah! tabi gahwa 'arabiyya willa nescafe?", english: "Now that's what I like to hear! Arabic coffee or Nescafé?" },
-          neutral: { arabic: 'تبي قهوة عربية ولا نسكافيه؟', roman: "tabi gahwa 'arabiyya willa nescafe?", english: 'Would you like Arabic coffee or Nescafé?' },
-          cold: { arabic: 'قهوة ولا نسكافيه؟', roman: "gahwa willa nescafe?", english: 'Coffee or Nescafé?' },
-        },
-        warmThreshold: 6, coldThreshold: 1,
+        id: 'scene2', kind: 'language', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad pours from the dallah for the table',
+        arabic: 'تفضل، قهوة بالهيل',
+        roman: 'tfaddal, gahwa bil-heel',
+        english: 'Here you go — coffee with cardamom.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'تفضلي، قهوة بالهيل', roman: 'tfaddali, gahwa bil-heel', english: 'Here you go — coffee with cardamom.' },
+        teachingNote: 'Arabic coffee is poured a little at a time and topped up. تفضل to a man, تفضلي to a woman.',
         choices: [
-          { id: 'a', text: "Just water — I'm not really a coffee person", arabic: 'بس ماي — ما أشرب قهوة وايد', roman: "bass maay — maa ashrab gahwa waayid", score: -4, impact: { trust: -1, respect: -2, culture: -1 }, note: 'Refusing a hospitality offer means rejecting the person, not just the drink.', outcome: 'bad' },
-          { id: 'b', text: 'Nescafé please', arabic: 'نسكافيه لو سمحت', roman: 'nescafe law samaht', score: 3, impact: { trust: 1, respect: 0, culture: 0 }, note: 'Neutral — you accepted which is good, but no cultural connection was made.', outcome: 'neutral' },
-          { id: 'c', text: "Whatever you're having — I'm with you", arabic: 'أنا معاك — نفس اللي تشربه', roman: "ana ma'aak — nafs illi tishrabah", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, note: 'أنا معاك (I\'m with you) shows deference to your host.', outcome: 'good' },
-          { id: 'd', text: 'Arabic coffee — mashaAllah, that smell', arabic: 'قهوة عربية — ما شاء الله على ريحتها', roman: "gahwa 'arabiyya — maa shaa' allah 'ala riihat-ha", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'Choosing the Arabic coffee and praising its aroma shows you value the ritual, not just the caffeine. ما شاء الله is the safe way to admire anything — it praises without inviting the evil eye.', outcome: 'excellent' },
+          { id: 'a', text: '(Take it in your right hand) Thank you', arabic: 'تسلم', roman: 'tislam', score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'excellent', note: 'تسلم — "may you be kept safe" — is the Gulf thanks for something handed to you. The right hand matters as much as the word: it is the hand you give and take with.' },
+          { id: 'b', text: 'Thanks', arabic: 'شكراً', roman: 'shukran', score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'شكراً works anywhere in the Arab world. When a Gulf colleague hands you something, though, تسلم is what they would say.' },
+          { id: 'c', text: 'Why only a little?', arabic: 'ليش شوي بس؟', roman: 'laish shwai bass?', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'The small pour is the hospitality, not stinginess — Arabic coffee comes a little at a time and the host keeps topping it up. Hamad hears a complaint about his coffee.' },
         ],
       },
       {
-        id: 'scene3', charName: 'Ahmed', charGender: 'male', setting: 'Coffee corner — deeper conversation',
-        arabic: 'عندك أهل هني ولا في بلدك؟', roman: "'indak ahal hini willa fi baladak?", english: 'Do you have family here or back home?',
+        id: 'scene3', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad goes round the table again',
+        arabic: 'تبي بعد؟',
+        roman: "tabi ba'd?",
+        english: 'Want some more?',
         charDialogue: {
-          warm: { arabic: 'والله ارتحت لك. عندك أهل هني ولا في بلدك؟', roman: "wallah irtaht lak. 'indak ahal hini willa fi baladak?", english: "Honestly, I feel at ease with you. Is your family here or back home?" },
-          neutral: { arabic: 'عندك أهل هني ولا في بلدك؟', roman: "'indak ahal hini willa fi baladak?", english: 'Do you have family here or back home?' },
-          cold: { arabic: 'أهلك هني؟', roman: "ahlak hini?", english: 'Your family here?' },
+          warm: { arabic: 'حياك الله! تبي بعد؟', roman: "hayyaak allaah! tabi ba'd?", english: 'Good to have you! Want some more?' },
+          neutral: { arabic: 'تبي بعد؟', roman: "tabi ba'd?", english: 'Want some more?' },
+          cold: { arabic: 'بعد؟', roman: "ba'd?", english: 'More?' },
         },
-        warmThreshold: 11, coldThreshold: 2,
+        warmThreshold: 9, coldThreshold: 3,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'تبين بعد؟',
+          roman: "tabiin ba'd?",
+          english: 'Want some more?',
+          charDialogue: {
+            warm: { arabic: 'حياج الله! تبين بعد؟', roman: "hayyaach allaah! tabiin ba'd?", english: 'Good to have you! Want some more?' },
+            neutral: { arabic: 'تبين بعد؟', roman: "tabiin ba'd?", english: 'Want some more?' },
+            cold: { arabic: 'بعد؟', roman: "ba'd?", english: 'More?' },
+          },
+        },
+        teachingNote: 'تبي / تبين is the Gulf "do you want"; بعد here means "more". Hamad will keep refilling until you give the cup a small shake.',
+        nextByRoute: { circle: 'scene4-circle', guide: 'scene4-guide' },
         choices: [
-          { id: 'a', text: 'I prefer not to discuss personal things at work', arabic: 'أفضل ما نتكلم عن أمور شخصية بالشغل', roman: "afaddal maa nitkallam 'an umuur shakhsiyya bish-shughul", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: 'Family questions are foundational, not personal, in Emirati culture.', outcome: 'bad' },
-          { id: 'b', text: 'Back home — I miss them a lot', arabic: 'في بلدي — وايد أشتاق لهم', roman: "fi baladi — waayid ashtaag lahum", score: 5, impact: { trust: 1, respect: 2, culture: 2 }, note: 'Expressing that you miss your family shows loyalty — a deeply admired value.', outcome: 'good' },
-          { id: 'c', text: 'Back home — and you? Are your kids well?', arabic: 'في بلدي. وأنت؟ عيالك بخير؟', roman: "fi baladi. wa inta? 'iyaalak b-khayr?", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Asking "are your children well?" shows you understand family is the centre of Emirati life.', outcome: 'good' },
-          { id: 'd', text: 'Thank God — back home, but always in my heart', arabic: 'الحمد لله — هم في بلدي، بس دايماً في قلبي', roman: "al-hamdu lillah — hum fi baladi, bass daayiman fi galbi", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: 'الحمد لله shows faith and contentment. Starting with it before expressing longing for family shows that gratitude to God comes before personal feelings — a deeply admired quality in Gulf culture.', outcome: 'excellent' },
+          { id: 'a', text: '(Hold out your cup) Yes — your coffee is good', arabic: 'إي، قهوتك حلوة', roman: 'ii, gahwatak hilwa', score: 7, impact: { trust: 3, respect: 2, culture: 2 }, outcome: 'good', route: 'circle', note: 'Holding the cup out again says you are in no hurry to leave. Praising the coffee praises the person who made it.' },
+          { id: 'b', text: '(Hold out your cup) Yes, thanks. Can I ask you something?', arabic: 'إي، تسلم. أقدر أسألك شي؟', roman: "ii, tislam. agdar as'alak shay?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', note: 'He has been here eight years. Using the second cup to ask him something tells Hamad his experience is worth something to you — being asked is taken as respect.' },
+          { id: 'c', text: '(Give the cup a small shake) Enough, thanks. Can I ask you something?', arabic: 'بس، تسلم. أقدر أسألك شي؟', roman: "bass, tislam. agdar as'alak shay?", score: 5, impact: { trust: -1, respect: 3, culture: 3 }, outcome: 'good', route: 'guide', flag: 'SHOOK_THE_CUP', note: 'The small shake is how the Gulf says "enough" without a word — Hamad sees you know it. You also cut the coffee a little short to talk, which he notices too.' },
+          { id: 'd', text: '(Put the cup down) No, I don\'t want any', arabic: 'لا، ما أبي', roman: 'laa, maa abi', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'ما أبي on its own refuses the host, not the coffee. To stop, give the cup a small shake as you hand it back — it says "enough, thank you" without a word.' },
+        ],
+      },
+      {
+        id: 'scene4-circle', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad sits down with the others',
+        arabic: 'شلون أهلك؟ كلهم بخير؟',
+        roman: 'shloon ahlak? kullhum b-khair?',
+        english: 'How is your family? All well?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'شلون أهلج؟ كلهم بخير؟', roman: 'shloon ahlich? kullhum b-khair?', english: 'How is your family? All well?' },
+        teachingNote: 'أهلك to a man, أهلج to a woman. Family is ordinary small talk in the Gulf — asked about as a whole, الأهل.',
+        choices: [
+          { id: 'a', text: 'Thank God, well. And how is your family?', arabic: 'الحمد لله، بخير. وأهلك شلونهم؟', roman: 'il-hamdu lillaah, b-khair. w-ahlak shloonhum?', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'circle', next: 'scene5', note: 'Asking back about his family — as a whole — is exactly the right size of question. Hamad starts telling you about his.' },
+          { id: 'b', text: 'Thank God. And how is your father?', arabic: 'الحمد لله. والوالد شلونه؟', roman: 'il-hamdu lillaah. w-il-waalid shloona?', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', next: 'scene5', note: 'الوالد — "the father" — is the respectful way to ask after someone\'s dad. Asking after a colleague\'s parents shows you know where respect flows in a Gulf family.' },
+          { id: 'c', text: 'And your wife? What\'s her name?', arabic: 'وحرمتك؟ شو اسمها؟', roman: 'w-hurmatak? shu ismha?', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Asking a Gulf man for his wife\'s name crosses a line of privacy, however friendly it is meant. Ask after الأهل and let him share what he wants to.' },
+        ],
+      },
+      {
+        id: 'scene4-guide', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad sits down with the others',
+        arabic: 'أنا هني من ثمان سنين. اسألني اللي تبي',
+        roman: 'ana hini min thmaan siniin. is\'alni illi tabi',
+        english: "I've been here eight years. Ask me whatever you like.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'أنا هني من ثمان سنين. اسأليني اللي تبين', roman: 'ana hini min thmaan siniin. is\'aliini illi tabiin', english: "I've been here eight years. Ask me whatever you like." },
+        teachingNote: 'اللي is the Gulf "whatever / that which". اسألني اللي تبي to a man, اسأليني اللي تبين to a woman.',
+        choices: [
+          { id: 'a', text: 'If you don\'t mind — who should I get to know here?', arabic: 'إذا ما عليك أمر، منو لازم أتعرف عليه؟', roman: "idha maa 'alaik amur, minu laazim at'arraf 'alaih?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', next: 'scene5', note: 'إذا ما عليك أمر is the politest way to ask for something. And asking who to know lets Hamad introduce you — which puts his name next to yours.' },
+          { id: 'b', text: 'First — where are you from?', arabic: 'أول شي، انت من وين؟', roman: 'awwal shay, inta min wain?', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'circle', next: 'scene5', note: 'You turned the offer back to him. For an Emirati, من وين opens his town, his family and a long story — you want to know Hamad, not only what he knows.' },
+          { id: 'c', text: 'How do I get promoted fast?', arabic: 'شلون أترقى بسرعة؟', roman: "shloon atraggaa b-sur'a?", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Two weeks in, asking for the shortcut over your first coffee makes the coffee about you. Here the relationship comes first; the doors follow it.' },
+        ],
+      },
+      {
+        id: 'scene5', kind: 'language', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad\'s phone buzzes',
+        arabic: 'شوف! ولدي، أول يوم له بالمدرسة',
+        roman: 'shuuf! wildi, awwal yoom lah bil-madrasa',
+        english: 'Look! My son — his first day at school.',
+        charDialogue: {
+          warm: { arabic: 'شوف شوف! ولدي سيف، أول يوم له بالمدرسة', roman: 'shuuf shuuf! wildi saif, awwal yoom lah bil-madrasa', english: 'Look, look! My son Saif — his first day at school.' },
+          neutral: { arabic: 'شوف! ولدي، أول يوم له بالمدرسة', roman: 'shuuf! wildi, awwal yoom lah bil-madrasa', english: 'Look! My son — his first day at school.' },
+          cold: { arabic: 'هذا ولدي. أول يوم بالمدرسة', roman: 'haadha wildi. awwal yoom bil-madrasa', english: "That's my son. First day at school." },
+        },
+        warmThreshold: 18, coldThreshold: 6,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'شوفي! ولدي، أول يوم له بالمدرسة',
+          roman: 'shuufi! wildi, awwal yoom lah bil-madrasa',
+          english: 'Look! My son — his first day at school.',
+          charDialogue: {
+            warm: { arabic: 'شوفي شوفي! ولدي سيف، أول يوم له بالمدرسة', roman: 'shuufi shuufi! wildi saif, awwal yoom lah bil-madrasa', english: 'Look, look! My son Saif — his first day at school.' },
+            neutral: { arabic: 'شوفي! ولدي، أول يوم له بالمدرسة', roman: 'shuufi! wildi, awwal yoom lah bil-madrasa', english: 'Look! My son — his first day at school.' },
+            cold: { arabic: 'هذا ولدي. أول يوم بالمدرسة', roman: 'haadha wildi. awwal yoom bil-madrasa', english: "That's my son. First day at school." },
+          },
+        },
+        teachingNote: 'Praise for a child, a home or a new car starts with ما شاء الله. The parent answers الله يبارك فيك. شوف to a man, شوفي to a woman.',
+        nextByRoute: { circle: 'scene6-circle', guide: 'scene6-guide' },
+        choices: [
+          { id: 'a', text: 'MashaAllah, God protect him', arabic: 'ما شاء الله، الله يحفظه', roman: "maa shaa' allaah, allaah yihfaza", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, outcome: 'excellent', flag: 'SAID_MASHALLAH', note: 'ما شاء الله admires without inviting envy, and الله يحفظه asks God to keep the boy safe. Hamad answers الله يبارك فيك — and you can see it meant something.' },
+          { id: 'b', text: 'So sweet! How old is he now?', arabic: 'والله حلو وايد! كم عمره الحين؟', roman: "wallaah hilu waayid! kam 'umra il-hiin?", score: 3, impact: { trust: 2, respect: 1, culture: 0 }, outcome: 'good', note: 'Warm, and the question keeps him talking. But praise for a child without ما شاء الله can leave a Gulf parent uneasy about the evil eye — say it first, then the compliment.' },
+          { id: 'c', text: '(Glance, nod, hand the phone back)', arabic: '—', roman: '(a glance and a nod)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'A father showing you his son\'s first school day is sharing something big. A nod hands it back unopened.' },
+        ],
+      },
+      {
+        id: 'scene6-circle', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad rinses the cups',
+        arabic: 'كل يوم الساعة عشر، قهوة وسوالف هني. تعال ويانا',
+        roman: "kill yoom is-saa'a 'ashar, gahwa w-sawaalif hini. ta'aal wiyyaana",
+        english: 'Every day at ten — coffee and a chat, right here. Come join us.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'كل يوم الساعة عشر، قهوة وسوالف هني. تعالي ويانا', roman: "kill yoom is-saa'a 'ashar, gahwa w-sawaalif hini. ta'aali wiyyaana", english: 'Every day at ten — coffee and a chat, right here. Come join us.' },
+        teachingNote: 'سوالف is easy, rambling conversation. تعال to a man, تعالي to a woman; ويانا is "with us".',
+        choices: [
+          { id: 'a', text: 'God willing! And tomorrow I\'ll bring dates', arabic: 'إن شاء الله! وباكر أييب تمر', roman: "in shaa' allaah! w-baachir ayiib tamar", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'circle', next: null, note: 'Bringing something to share turns a guest into a regular — and dates are the classic partner to Arabic coffee. أييب is أجيب with the Emirati ج→ي.' },
+          { id: 'b', text: 'Sure. Who else comes?', arabic: 'أكيد. منو يشرب ويانا بعد؟', roman: "akiid. minu yishrab wiyyaana ba'd?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', next: null, note: 'Asking who else comes treats the circle as a map of the office — useful, and Hamad will tell you. It keeps the coffee a little closer to work.' },
+          { id: 'c', text: 'Every day? That\'s a lot of work time', arabic: 'كل يوم؟ هذا وايد من وقت الدوام', roman: "kill yoom? haadha waayid min wagt id-dawaam", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'The ten o\'clock coffee is not time off — it is where the office actually talks. Counting it as lost time tells the circle you would rather not be in it.' },
+        ],
+      },
+      {
+        id: 'scene6-guide', kind: 'judgement', charName: 'Hamad', charGender: 'male', setting: 'Staff room — Hamad rinses the cups',
+        arabic: 'باكر بكلم المدير عنك',
+        roman: "baachir bakallim il-mudiir 'annak",
+        english: "Tomorrow I'll talk to the manager about you.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'باكر بكلم المدير عنج', roman: "baachir bakallim il-mudiir 'annich", english: "Tomorrow I'll talk to the manager about you." },
+        teachingNote: 'The بـ on بكلم is the Gulf future: "I will talk". عنك to a man, عنج to a woman.',
+        choices: [
+          { id: 'a', text: 'That\'s so good of you! May God reward you', arabic: 'ما قصرت! الله يجزاك خير', roman: 'maa gassart! allaah yijzaak khair', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'guide', next: null, note: 'ما قصرت thanks him for going out of his way; الله يجزاك خير is the deepest thanks there is. It fits — Hamad is spending his name on you.' },
+          { id: 'b', text: 'Don\'t trouble yourself — the coffee was enough', arabic: 'لا تتعب نفسك، القهوة كفاية', roman: "laa tit'ab nafsak, il-gahwa kifaaya", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'circle', next: null, note: 'لا تتعب نفسك is the polite first refusal — Hamad will insist. You have told him the coffee was about him, not what he can do for you.' },
+          { id: 'c', text: 'Great — and tell him I want a raise', arabic: 'زين، وقل له أبي زيادة', roman: 'zain, w-gul lah abi ziyaada', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'He offered to put his name next to yours. Loading a demand onto it in week two spends his name for him.' },
+        ],
+      },
+      {
+        id: 'scene7-bonus', bonus: true, charName: 'Hamad', charGender: 'male', setting: 'Staff room — ten o\'clock the next morning',
+        arabic: 'خذ الدلة. اليوم انت تصب',
+        roman: 'khudh id-dalla. il-yoom inta tsibb',
+        english: 'Take the dallah. Today, you pour.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'خذي الدلة. اليوم انتي تصبين', roman: 'khudhi id-dalla. il-yoom inti tsibbiin', english: 'Take the dallah. Today, you pour.' },
+        teachingNote: 'The dallah stays in the left hand; cups go out with the right. The eldest is served first — or you start from your right.',
+        choices: [
+          { id: 'a', text: '(Serve the eldest first) Please, Abu Saeed', arabic: 'تفضل يا بو سعيد', roman: "tfaddal ya bu sa'iid", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'بو سعيد — "father of Saeed" — addresses a man by his eldest son\'s name, with respect. Serving the eldest first honours the whole room.' },
+          { id: 'b', text: '(Start from your right) Please, welcome', arabic: 'تفضل، حياك الله', roman: 'tfaddal, hayyaak allaah', score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'Starting from the right is the other old rule, and حياك الله welcomes each person as you pour. Done with the right hand, either order is done right.' },
         ],
       },
     ],
     endings: [
-      { id: 'family-partnership', min: 22, title: 'Family Partnership', arabic: 'أنت من أهلنا', roman: 'inta min ahlna', en: "You're one of us now", desc: 'Ahmed invites you to meet his family. You\'ve crossed from colleague to friend.', color: C.JADE_ACCENT, type: 'exceptional' },
-      { id: 'job-referral', min: 13, title: 'Job Referral', arabic: 'إن شاء الله خير', roman: "in shaa' allah khair", en: 'God willing, only good things', desc: 'Ahmed mentions a great opening and says he\'ll personally recommend you.', color: C.JADE2, type: 'success' },
-      { id: 'transactional-colleague', min: 3, title: 'Transactional Colleague', arabic: 'زين، شوف', roman: 'zayn, shuuf', en: "OK, we'll see", desc: 'A pleasant chat but the relationship stays professional.', color: C.VIOLET2, type: 'mixed' },
-      { id: 'missed-connection', min: 0, title: 'Missed Connection', arabic: 'بكرة إن شاء الله', roman: "bukra in shaa' allah", en: "Tomorrow, God willing", desc: 'Cultural missteps created distance. Ahmed politely closes the conversation.', color: C.ERROR, type: 'failed' },
+      {
+        id: 'the-dallah', min: 30, secret: true, requiredFlags: ['SHOOK_THE_CUP', 'SAID_MASHALLAH'],
+        title: 'The Dallah', arabic: 'الدلة', roman: 'id-dalla', en: 'The coffee pot',
+        desc: 'At ten the next morning, in front of everyone, Hamad hands you the dallah. You gave your cup the small shake that means "enough", and you met his son\'s photo with ما شاء الله — two quiet moments that show someone who has watched how things are done. In the Gulf, the one who pours is the host. Today, that is you.',
+        color: C.CULTURAL_GOLD, type: 'exceptional',
+        hint: 'Coffee has a language without words — learn how to say "enough". And admire a child the way a Gulf parent hopes to hear it.',
+      },
+      {
+        id: 'one-of-the-circle', min: 28, route: 'circle', tier: 'strong',
+        title: 'One of the Circle', arabic: 'قهوة وسوالف', roman: 'gahwa w-sawaalif', en: 'Coffee and conversation',
+        desc: 'By Thursday, someone at the ten o\'clock coffee asks where you are when you are late. You took what Hamad offered, asked after his family and brought something back. The coffee circle is where the office news travels first — and now it travels to you.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Stay for the second cup, ask after the family, and bring something to share.',
+      },
+      {
+        id: 'a-guest-for-now', min: 12, route: 'circle', tier: 'weak',
+        title: 'A Guest, For Now', arabic: 'يا هلا', roman: 'ya hala', en: 'Welcome',
+        desc: 'Hamad likes you, and the invitation stands. A few moments came out awkward, though, so at the ten o\'clock coffee you are still a guest rather than one of the circle. Guests get the coffee; regulars get the news.',
+        color: C.JADE2, type: 'mixed',
+        hint: 'Warmth is the right instinct — land the small courtesies too: the right thanks for the cup, the right words for his son.',
+      },
+      {
+        id: 'a-good-word', min: 28, route: 'guide', tier: 'strong',
+        title: 'A Good Word', arabic: 'الله يجزاك خير', roman: 'allaah yijzaak khair', en: 'May God reward you',
+        desc: 'The next morning Hamad mentions you to the manager — by name, with something good attached. You treated his eight years as worth learning from and showed you can follow how things are done. In the Gulf, a good word from the right person opens doors a CV cannot.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Treat his years here as worth learning from: ask politely, ask who to know, and take help with a blessing.',
+      },
+      {
+        id: 'advice-not-yet-a-word', min: 12, route: 'guide', tier: 'weak',
+        title: 'Advice, Not Yet a Word', arabic: 'إن شاء الله خير', roman: "in shaa' allaah khair", en: 'God willing, good things',
+        desc: 'Hamad gave you good advice and meant it. A few exchanges fell flat, though, so he is not ready to put his name next to yours with the manager yet. Advice is free; a good word is earned.',
+        color: C.VIOLET2, type: 'mixed',
+        hint: 'Asking is the right instinct — show him you have learned how things are done here, and the word follows.',
+      },
+      {
+        id: 'just-a-coffee', min: 0,
+        title: 'Just a Coffee', arabic: 'الله يسهل', roman: 'allaah ysahhil', en: 'God make it easy',
+        desc: 'Hamad finished his cup, rinsed it and went back to work. Nothing went badly wrong, but nothing landed either — and a coffee invitation that goes nowhere is not always offered again.',
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 
