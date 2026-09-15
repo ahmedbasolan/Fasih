@@ -104,6 +104,14 @@ describe('enumerateRuns / greedyRun', () => {
     expect(run.steps.map(st => `${st.sceneId}/${st.choice.id}`)).toEqual(['s1/a', 's2/a', 's3/a', 's4w/a', 's5/a', 's6/a']);
     expect(run.ending.id).toBe('warm-strong');
   });
+
+  it('fails loudly past the run cap instead of checking the rules on a partial set', () => {
+    // 3 choices × 11 linear scenes = 177,147 paths.
+    const huge = broken(s => {
+      s.scenes = Array.from({ length: 11 }, (_, i) => ({ ...sceneOf(s, 's1'), id: `s${i}` }));
+    });
+    expect(() => enumerateRuns(huge)).toThrow('fixture');
+  });
 });
 
 describe('routeScriptProblems', () => {
