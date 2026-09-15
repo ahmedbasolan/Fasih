@@ -138,9 +138,9 @@ function choiceCards(scriptId: string): string[] {
 /**
  * Turns a learner actually plays, as a [shortest, longest] pair.
  *
- * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
- * any single playthrough visits five — counting scenes would have marked it two
- * turns longer than a learner ever experiences. Bonus scenes are excluded: they
+ * Not `scenes.length`. `first-morning` declares eight main scenes but forks twice,
+ * so any single playthrough visits six — counting scenes would have marked it
+ * two turns longer than a learner ever experiences. Bonus scenes are excluded: they
  * only appear on a secret ending. Runs come from the real engine, so a route
  * script's fork is followed exactly as the player follows it.
  */
@@ -180,8 +180,6 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
   'eid-greeting:morphemeCeiling',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
-  'social_taxi_ride:phrasesUnlocked',
-  'social_taxi_ride:turns',
 ];
 
 /**
