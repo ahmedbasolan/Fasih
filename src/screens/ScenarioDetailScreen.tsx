@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
-import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
+import { Bookmark } from '../components/icons';
+import { FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
 import { useTheme } from '../hooks/useTheme';
 import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader, Screen } from '../components/ui';
@@ -10,7 +10,6 @@ import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
 import { STRINGS } from '../constants/strings';
 import { DECISIONS_PER_RUN } from '../constants/curriculum';
-import { isRouteScript } from '../engine/scenarioEngine';
 import { endingsProgress } from '../engine/scenarioPresentation';
 
 interface Props {
@@ -73,13 +72,10 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     );
   }
 
-  // Decisions, not scenes: a route script's fork puts two variant scenes in
-  // the array for one decision. And no bonus scenes — listing one announces
-  // the hidden ending's reward before anyone has found it. A route script
-  // shows no scene list at all: its scene settings would give the branches away.
-  const routeScript = isRouteScript(script);
-  const decisions = routeScript ? DECISIONS_PER_RUN : scenario.decisions;
-  const listedScenes = routeScript ? [] : script.scenes.filter((sc) => !sc.bonus);
+  // Decisions, not scenes: the fork puts two variant scenes in the array for
+  // one decision. No scene list either — the scene settings would give the
+  // branches away, and a bonus scene would announce the hidden ending's reward.
+  const decisions = DECISIONS_PER_RUN;
   const progress = endingsProgress(script, foundEndingIds ?? []);
 
   return (
@@ -142,8 +138,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               started from the beginning. Rows that look tappable and don't do
               what they promise are worse than rows that don't look tappable
               (Jakob's law), and offering N identical-looking entry points to
-              one destination is a choice that isn't one (Hick's law).
-              The list is now a progress display; this is the way in. */}
+              one destination is a choice that isn't one (Hick's law). */}
           <PrimaryButton
             onPress={() => onSceneSelect(0)}
             accessibilityLabel={isCompleted
@@ -155,70 +150,6 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
           </PrimaryButton>
-
-          {/* Scenes list — progress, not navigation. */}
-          <View style={{ gap: 16 }}>
-            {routeScript ? null : listedScenes.length === 0 ? (
-              <EmptyState
-                title={STRINGS.scenarios.noScenesTitle}
-                subtitle={STRINGS.scenarios.noScenesSub}
-              />
-            ) : (
-              listedScenes.map((scene, index) => {
-                const isLocked = index > scenesUnlocked && !isCompleted;
-                const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
-                return (
-                  <View
-                    key={scene.id}
-                    accessible
-                    accessibilityLabel={`${STRINGS.scenarios.sceneNumber(index + 1)}, ${scene.setting}, ${
-                      isDone ? STRINGS.scenarios.sceneDone
-                      : isLocked ? STRINGS.scenarios.sceneLocked
-                      : STRINGS.scenarios.sceneNext
-                    }`}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: C.SURFACE,
-                      borderRadius: 24,
-                      padding: 16,
-                      borderWidth: 1,
-                      borderColor: C.BORDER,
-                      opacity: isLocked ? 0.55 : 1,
-                    }}
-                  >
-                    <View style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 16,
-                      backgroundColor: isLocked ? C.SURFACE2 : isDone ? C.JADE_DIM : C.JADE_ACCENT_DIM,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 16
-                    }}>
-                      {isLocked ? (
-                        <Lock size={20} color={C.TEXT3} />
-                      ) : isDone ? (
-                        <CheckCircle2 size={20} color={C.JADE} />
-                      ) : (
-                        <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
-                      )}
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
-                        {STRINGS.scenarios.sceneNumber(index + 1)}
-                      </Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
-                        {scene.setting}
-                      </Text>
-                    </View>
-
-                  </View>
-                );
-              })
-            )}
-          </View>
         </SheetPanel>
     </Screen>
   );

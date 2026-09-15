@@ -14,7 +14,7 @@ import { getTone } from '../../engine/scenarioEngine';
 import type { ChoiceFeedback } from '../../engine/scenarioPresentation';
 import type { ScenarioChoice, ScenarioScene, ScenarioState } from '../../types';
 
-/** Legacy scenes (no `kind`) keep their old grade labels. */
+/** The bonus scene (no `kind`) keeps a plain outcome label. */
 const outcomeLabel: Record<string, string> = {
   excellent: 'Excellent',
   good: 'Good choice',

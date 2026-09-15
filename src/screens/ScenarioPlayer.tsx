@@ -22,7 +22,7 @@ import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
 import {
   getTone, resolveNextScene, evaluateEnding, isChoiceVisible, phrasesEarned, allPhraseIds,
-  sceneAfterChoice, isRouteScript,
+  sceneAfterChoice,
 } from '../engine/scenarioEngine';
 import {
   choiceFeedback, npcLine, endingsProgress, destinationMoments, hintsToShow,
@@ -400,10 +400,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = useMemo(() => scriptData?.scenes ?? [], [scriptData?.scenes]);
-  // Progress dots represent the main path only — a bonus scene is a reward for
-  // the secret ending, not a step the learner is expected to reach, so showing
-  // a dot for it makes every normal run look unfinished.
-  const mainScenes = useMemo(() => scenes.filter((sc) => sc.bonus !== true), [scenes]);
   const scene = scenes[step];
   const endings = scriptData?.endings ?? [];
 
@@ -602,11 +598,11 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // by the time the result shows, so the count is current.
   const foundIds = foundEndingIds ?? [];
   const progress = endingsProgress(scriptData, foundIds);
-  const destinationLabel = scriptData.routes?.find(r => r.id === ending.route)?.label;
+  const destinationLabel = scriptData.routes.find(r => r.id === ending.route)?.label;
 
-  // Progress dots count decisions, not scenes: a route script's fork puts two
-  // variant scenes in the array for one decision.
-  const totalDecisions = isRouteScript(scriptData) ? DECISIONS_PER_RUN : (scenario?.decisions ?? mainScenes.length);
+  // Progress dots count decisions, not scenes: the fork puts two variant scenes
+  // in the array for one decision, and the bonus scene is not a decision.
+  const totalDecisions = DECISIONS_PER_RUN;
   const decisionsMade = activeScenarioState?.choiceHistory.length ?? totalDecisions;
 
   // What follows the choice on screen — drives "See final result" and the tone preview.
@@ -826,11 +822,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
         {phase === 'result' && (
           <ScenarioResultPhase
             ending={ending}
-            endings={endings}
             impact={impact}
             total={total}
             scenarioId={scenarioId}
-            scriptData={scriptData}
             railMarks={finalizedRail ?? railMarksForRun}
             unlockedPhrases={earnedPhrases}
             progress={progress}

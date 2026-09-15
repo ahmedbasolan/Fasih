@@ -15,7 +15,7 @@ import { STRINGS } from '../../constants/strings';
 import { GRAMMAR_PATTERNS } from '../../constants/grammar';
 import type { RailMark } from '../../engine/marginRail';
 import type { EndingHint, EndingsProgress } from '../../engine/scenarioPresentation';
-import type { Phrase, ScenarioChoice, ScenarioEnding, ScenarioScript } from '../../types';
+import type { Phrase, ScenarioChoice, ScenarioEnding } from '../../types';
 
 // ─── PhraseCard ───────────────────────────────────────────────────────────────
 // Only used on the result screen, so it lives here alongside its only consumer.
@@ -52,11 +52,9 @@ function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
 
 interface Props {
   ending: ScenarioEnding;
-  endings: ScenarioEnding[];
   impact: { trust: number; respect: number; culture: number };
   total: number;
   scenarioId: string;
-  scriptData: ScenarioScript;
   /**
    * The completed run, one mark per decision. Locked by the player before
    * `finalizeScenario()` nulls the live state — see `finalizedRail` there.
@@ -67,7 +65,7 @@ interface Props {
   unlockedPhrases: Phrase[];
   /** Endings found so far, this run included. */
   progress: EndingsProgress;
-  /** Route label of the ending's destination; undefined for hidden, failure and legacy endings. */
+  /** Route label of the ending's destination; undefined for the hidden and failure endings. */
   destinationLabel: string | undefined;
   /** Choices this run made toward the destination — "what sent you here". */
   moments: ScenarioChoice[];
@@ -93,7 +91,7 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ScenarioResultPhase({
-  ending, endings, impact, total, scenarioId, scriptData,
+  ending, impact, total, scenarioId,
   railMarks, unlockedPhrases, progress, destinationLabel, moments, hints, arabicForUser,
   toneHistory, culturalJourneyNotes,
   communityEndingPct: communityPct, isSpeaking, playingPhraseId,
@@ -102,20 +100,16 @@ export function ScenarioResultPhase({
   const { C, G } = useTheme();
   const violetColor = C.VIOLET;
 
-  // Route endings name their destination; the hidden and failure endings of a
-  // route script say what they are; legacy endings keep "<Type> Outcome".
+  // A destination ending names its destination; the hidden and failure endings say what they are.
   const eyebrow = destinationLabel
     ? STRINGS.scenarios.destinationEyebrow(destinationLabel, ending.tier)
     : ending.secret ? STRINGS.scenarios.hiddenEndingEyebrow
-    : scriptData.routes?.length && ending.type === 'failed' ? STRINGS.scenarios.failedEndingEyebrow
-    : `${ending.type.charAt(0).toUpperCase() + ending.type.slice(1)} Outcome`;
+    : STRINGS.scenarios.failedEndingEyebrow;
   const impactValues = [
-    { label: 'Trust',   value: impact.trust,   color: C.CULTURAL_GOLD },
-    { label: 'Respect', value: impact.respect, color: C.JADE2 },
-    { label: 'Culture', value: impact.culture, color: C.VIOLET },
+    { label: STRINGS.scenarios.trust,   value: impact.trust,   color: C.CULTURAL_GOLD },
+    { label: STRINGS.scenarios.respect, value: impact.respect, color: C.JADE2 },
+    { label: STRINGS.scenarios.culture, value: impact.culture, color: C.VIOLET },
   ];
-  const sortedImpact = [...impactValues].sort((a, b) => b.value - a.value);
-  const hasDivergence = sortedImpact[0].value - sortedImpact[2].value >= 8;
 
   return (
     <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 360 }}>
@@ -150,7 +144,7 @@ export function ScenarioResultPhase({
           </View>
         </View>
 
-        {/* What sent you here — route endings only */}
+        {/* What sent you here — destination endings only */}
         {moments.length > 0 && (
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 40 }}>
             <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 10 }}>
@@ -187,18 +181,6 @@ export function ScenarioResultPhase({
                   </Text>
                 </View>
               ))}
-            </View>
-          </MotiView>
-        )}
-
-        {/* Secret ending teaser — legacy scripts, which have no hints */}
-        {hints.length === 0 && !scriptData.routes?.length && !ending.secret && endings.some(e => e.secret) && (
-          <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
-            <View style={{ borderRadius: 14, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2 }} />
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 }}>
-                {STRINGS.scenarios.secretEndingTeaser}
-              </Text>
             </View>
           </MotiView>
         )}
@@ -303,17 +285,6 @@ export function ScenarioResultPhase({
               </View>
             ))}
           </View>
-          {/* "Balance all three" is legacy advice. In a route script a lopsided
-              run is a destination, not a mistake, so the tip would contradict it. */}
-          {hasDivergence && !scriptData.routes?.length && (
-            <View style={{ borderRadius: 12, padding: 12, backgroundColor: `${sortedImpact[0].color}15`, borderWidth: 1, borderColor: `${sortedImpact[0].color}30` }}>
-              <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, textAlign: 'center', lineHeight: 18 }}>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sortedImpact[0].color }}>{sortedImpact[0].label}</Text> is your strongest area (+{sortedImpact[0].value}),{' '}
-                but <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sortedImpact[2].color }}>{sortedImpact[2].label}</Text> needs work ({sortedImpact[2].value > 0 ? '+' : ''}{sortedImpact[2].value}).{' '}
-                Try choices that balance all three dimensions.
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Final score */}
