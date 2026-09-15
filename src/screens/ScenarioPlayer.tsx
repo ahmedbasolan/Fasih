@@ -16,7 +16,7 @@ import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
 import { GhostLetters, Screen } from '../components/ui';
 import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
-import { PHRASES } from '../constants/phrases';
+import { PHRASE_BY_ID } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
@@ -55,7 +55,7 @@ type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 
 /** Phrase ids → library entries, dropping any id the library doesn't have. */
 function toPhrases(ids: string[]): Phrase[] {
-  return ids.map(id => PHRASES.find(p => p.id === id)).filter((p): p is Phrase => p !== undefined);
+  return ids.map(id => PHRASE_BY_ID[id]).filter((p): p is Phrase => p !== undefined);
 }
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────

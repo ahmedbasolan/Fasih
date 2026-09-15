@@ -118,11 +118,18 @@ export function getTone(
  * back to `defaultRoute`.
  */
 export function leadingRoute(state: ScenarioState, script: ScenarioScript): string {
+  return leadingRouteOf(state.choiceHistory, script);
+}
+
+/** A choice made at a scene — all the route tally needs from a history entry. */
+type ChoiceMade = Pick<ScenarioState['choiceHistory'][number], 'sceneId' | 'choiceId'>;
+
+function leadingRouteOf(picks: readonly ChoiceMade[], script: ScenarioScript): string {
   const sceneById = new Map(script.scenes.map(s => [s.id, s]));
   const count = new Map<string, number>();
   const lastSeen = new Map<string, number>();
 
-  state.choiceHistory.forEach(({ sceneId, choiceId }, i) => {
+  picks.forEach(({ sceneId, choiceId }, i) => {
     const route = sceneById.get(sceneId)?.choices.find(c => c.id === choiceId)?.route;
     if (!route) return;
     count.set(route, (count.get(route) ?? 0) + 1);
@@ -155,16 +162,13 @@ export function resolveNextScene(
 ): string | null {
   if (choice.next !== undefined) return choice.next;
   const idx = script.scenes.findIndex(s => s.id === state.currentSceneId);
-  const fork = script.scenes[idx]?.nextByRoute;
+  if (idx < 0) return null;
+  const fork = script.scenes[idx].nextByRoute;
   if (fork) {
-    const withPending: ScenarioState = {
-      ...state,
-      choiceHistory: [
-        ...state.choiceHistory,
-        { sceneId: state.currentSceneId, choiceId: choice.id, npcId: '', timestamp: '' },
-      ],
-    };
-    const route = leadingRoute(withPending, script);
+    const route = leadingRouteOf(
+      [...state.choiceHistory, { sceneId: state.currentSceneId, choiceId: choice.id }],
+      script,
+    );
     if (fork[route]) return fork[route];
   }
   return script.scenes[idx + 1]?.id ?? null;
