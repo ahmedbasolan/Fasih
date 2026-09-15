@@ -12,6 +12,7 @@ import { useArabicTTS } from '../../hooks/useArabicTTS';
 import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { PHRASE_BY_ID } from '../../constants/phrases';
+import type { EndingHint, EndingsProgress } from '../../engine/scenarioPresentation';
 import type { Scenario, ScenarioEnding, ScenarioScene, ScenarioScript, Phrase } from '../../types';
 
 interface Props {
@@ -20,14 +21,18 @@ interface Props {
   scenes: ScenarioScene[];
   endings: ScenarioEnding[];
   unlockedPhrases: Phrase[];
+  /** Decisions per run — not scenes, which a fork doubles up. */
+  decisions: number;
+  progress: EndingsProgress;
+  /** Hints toward endings not found yet. Empty on a first play, so it stays fresh. */
+  hints: EndingHint[];
   onBegin: () => void;
 }
 
-export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlockedPhrases, onBegin }: Props) {
+export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhrases, decisions, progress, hints, onBegin }: Props) {
   const { C, G } = useTheme();
   const { speak } = useArabicTTS();
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const nonBonusSceneCount = scenes.filter(s => !s.bonus).length;
 
   // Primer phrases preview the ones this scenario will unlock — resolve from the
   // library directly since they are not owned yet (hear now → earn later).
@@ -146,9 +151,10 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
         {/* Stats: decisions / outcomes / phrases */}
         <View style={{ width: '100%', flexDirection: 'row', gap: 10 }}>
           {[
-            [`${nonBonusSceneCount}`, STRINGS.scenarios.decisionLabel(nonBonusSceneCount)],
+            [`${decisions}`, STRINGS.scenarios.decisionLabel(decisions)],
             [`${endings.length}`, STRINGS.scenarios.outcomeLabel(endings.length)],
-            [unlockedPhrases.length > 0 ? `${unlockedPhrases.length}` : '8+', STRINGS.scenarios.phraseLabel(8)],
+            // The real count. The fallback was a typed-in '8+'.
+            [`${unlockedPhrases.length}`, STRINGS.scenarios.phraseLabel(unlockedPhrases.length)],
           ].map(([v, l]) => (
             <View key={l} style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
               <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 22, color: C.TEXT }}>{v}</Text>
@@ -157,13 +163,25 @@ export function ScenarioIntroPhase({ scriptData, scenario, scenes, endings, unlo
           ))}
         </View>
 
-        {/* Secret ending hint */}
-        {scriptData.endings.some(e => e.secret) && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
-            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 }} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 }}>
-              {STRINGS.scenarios.secretEndingExists}
+        {/* Endings collection — "0 of 5 endings found · 1 hidden" */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
+          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 }} />
+          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 }}>
+            {STRINGS.scenarios.endingsSummary(progress)}
+          </Text>
+        </View>
+
+        {/* Hints — replays only */}
+        {hints.length > 0 && (
+          <View style={{ width: '100%', borderRadius: 14, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 8 }}>
+            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT2, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+              {STRINGS.scenarios.hintsTitle}
             </Text>
+            {hints.map((h) => (
+              <Text key={h.endingId} style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 19 }}>
+                {h.hidden ? `${STRINGS.scenarios.hintHidden}: ` : ''}{h.hint}
+              </Text>
+            ))}
           </View>
         )}
 

@@ -7,8 +7,12 @@ import {
   impactTotal,
   npcRelationship,
   relationshipScore,
+  leadingRoute,
+  phrasesEarned,
+  allPhraseIds,
+  sceneAfterChoice,
 } from '../scenarioEngine';
-import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript } from '../../types';
+import type { ScenarioState, ScenarioChoice, ScenarioScene, ScenarioScript, ScenarioEnding } from '../../types';
 
 /** Build an impactByNpc map from plain totals, splitting each across the three meters. */
 function impactOf(trust: number, respect: number, culture: number) {
@@ -224,11 +228,12 @@ function makeScript(overrides: Partial<ScenarioScript> = {}): ScenarioScript {
       { ...makeScene(), id: 'scene-3', choices: [makeChoice()] },
     ],
     endings: [
-      { min: 20, title: 'Exceptional', arabic: 'ممتاز', roman: 'mumtaz', en: 'Exceptional', desc: 'Excellent outcome', color: '#00FF00', type: 'exceptional' },
-      { min: 10, title: 'Good',        arabic: 'جيد',   roman: 'jayid',  en: 'Good',        desc: 'Good outcome',      color: '#FFFF00', type: 'success'     },
-      { min: 0,  title: 'Mixed',       arabic: 'مقبول', roman: 'maqbul', en: 'Mixed',       desc: 'Mixed outcome',     color: '#FFA500', type: 'mixed'       },
-      { min: -99,title: 'Failed',      arabic: 'فشل',   roman: 'fashal', en: 'Failed',      desc: 'Failed outcome',    color: '#FF0000', type: 'failed'      },
+      { id: 'exceptional', min: 20, title: 'Exceptional', arabic: 'ممتاز', roman: 'mumtaz', en: 'Exceptional', desc: 'Excellent outcome', color: '#00FF00', type: 'exceptional' },
+      { id: 'good', min: 10, title: 'Good',        arabic: 'جيد',   roman: 'jayid',  en: 'Good',        desc: 'Good outcome',      color: '#FFFF00', type: 'success'     },
+      { id: 'mixed', min: 0,  title: 'Mixed',       arabic: 'مقبول', roman: 'maqbul', en: 'Mixed',       desc: 'Mixed outcome',     color: '#FFA500', type: 'mixed'       },
+      { id: 'failed', min: -99,title: 'Failed',      arabic: 'فشل',   roman: 'fashal', en: 'Failed',      desc: 'Failed outcome',    color: '#FF0000', type: 'failed'      },
     ],
+    phrases: { core: [], byEnding: {} },
     ...overrides,
   };
 }
@@ -241,6 +246,11 @@ describe('resolveNextScene', () => {
     const choice = makeChoice({ next: 'scene-3' });
     const script = makeScript();
     expect(resolveNextScene(state, choice, script)).toBe('scene-3');
+  });
+
+  it('returns null when the choice ends the main path with next: null', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 'scene-1' };
+    expect(resolveNextScene(state, makeChoice({ next: null }), makeScript())).toBeNull();
   });
 
   it('returns the next scene in order when choice has no next', () => {
@@ -315,7 +325,7 @@ describe('evaluateEnding', () => {
       endings: [
         ...makeScript().endings,
         {
-          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
           desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
           secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
         },
@@ -332,7 +342,7 @@ describe('evaluateEnding', () => {
       endings: [
         ...makeScript().endings,
         {
-          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
           desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
           secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
         },
@@ -348,7 +358,7 @@ describe('evaluateEnding', () => {
       endings: [
         ...makeScript().endings,
         {
-          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
           desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
           secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
         },
@@ -363,7 +373,7 @@ describe('evaluateEnding', () => {
     const script = makeScript({
       endings: [
         {
-          min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
           desc: 'Only ending', color: '#8B00FF', type: 'exceptional' as const,
           secret: true, requiredFlags: [],
         },
@@ -448,5 +458,220 @@ describe('getTone per-NPC', () => {
 
   it('treats an NPC not yet met as a blank slate (score 0)', () => {
     expect(getTone(twoNpcState, 'Unknown', sceneWithDialogue)).toBe('cold');
+  });
+});
+
+// ─── Route scripts (spec 2026-09-14 §2.1) ─────────────────────────────────────
+
+function routeEnding(overrides: Partial<ScenarioEnding> & Pick<ScenarioEnding, 'id' | 'min' | 'type'>): ScenarioEnding {
+  return {
+    title: overrides.id, arabic: 'ا', roman: 'a', en: overrides.id, desc: 'd', color: '#000000',
+    ...overrides,
+  };
+}
+
+/**
+ * s1 → s2 → s3 (fork) → s4w | s4f → s5. Choice `w` leans warm, `f` leans
+ * formal, `x` has no route.
+ */
+function makeRouteScript(overrides: Partial<ScenarioScript> = {}): ScenarioScript {
+  const w = makeChoice({ id: 'w', route: 'warm' });
+  const f = makeChoice({ id: 'f', route: 'formal' });
+  const x = makeChoice({ id: 'x' });
+  return {
+    id: 'route-scenario',
+    title: 'Route Scenario',
+    routes: [{ id: 'warm', label: 'Warm' }, { id: 'formal', label: 'Formal' }],
+    defaultRoute: 'warm',
+    scenes: [
+      makeScene({ id: 's1', choices: [w, f, x] }),
+      makeScene({ id: 's2', choices: [w, f, x] }),
+      makeScene({ id: 's3', choices: [w, f, x], nextByRoute: { warm: 's4w', formal: 's4f' } }),
+      makeScene({ id: 's4w', choices: [{ ...w, next: 's5' }] }),
+      makeScene({ id: 's4f', choices: [{ ...f, next: 's5' }] }),
+      makeScene({ id: 's5', choices: [x] }),
+    ],
+    endings: [
+      routeEnding({ id: 'hidden', min: 20, type: 'exceptional', secret: true, requiredFlags: ['A', 'B'] }),
+      routeEnding({ id: 'warm-strong', min: 15, type: 'success', route: 'warm', tier: 'strong' }),
+      routeEnding({ id: 'warm-weak', min: 5, type: 'mixed', route: 'warm', tier: 'weak' }),
+      routeEnding({ id: 'formal-strong', min: 12, type: 'success', route: 'formal', tier: 'strong' }),
+      routeEnding({ id: 'formal-weak', min: 4, type: 'mixed', route: 'formal', tier: 'weak' }),
+      routeEnding({ id: 'failure', min: 0, type: 'failed' }),
+    ],
+    phrases: { core: ['p-core'], byEnding: { 'warm-strong': ['p-warm'], hidden: ['p-hidden', 'p-core'] } },
+    ...overrides,
+  };
+}
+
+/** History of choice ids made at the given scenes, in order. */
+function withHistory(state: ScenarioState, picks: [sceneId: string, choiceId: string][]): ScenarioState {
+  return {
+    ...state,
+    choiceHistory: picks.map(([sceneId, choiceId]) => ({ sceneId, choiceId, npcId: 'Ahmed', timestamp: '' })),
+  };
+}
+
+describe('leadingRoute', () => {
+  const script = makeRouteScript();
+
+  it('is null for a legacy script with no routes', () => {
+    expect(leadingRoute(makeEmptyState(), makeScript())).toBeNull();
+  });
+
+  it('falls back to defaultRoute when no tagged choice has been made', () => {
+    expect(leadingRoute(withHistory(makeEmptyState(), [['s1', 'x']]), script)).toBe('warm');
+  });
+
+  it('picks the route tagged most often', () => {
+    const state = withHistory(makeEmptyState(), [['s1', 'f'], ['s2', 'w'], ['s3', 'f']]);
+    expect(leadingRoute(state, script)).toBe('formal');
+  });
+
+  it('breaks a tie with the most recent tagged choice', () => {
+    expect(leadingRoute(withHistory(makeEmptyState(), [['s1', 'w'], ['s2', 'f']]), script)).toBe('formal');
+    expect(leadingRoute(withHistory(makeEmptyState(), [['s1', 'f'], ['s2', 'w']]), script)).toBe('warm');
+  });
+
+  it('looks choices up by scene — the same choice id in another scene is a different choice', () => {
+    const tagged = makeRouteScript({
+      scenes: [
+        makeScene({ id: 's1', choices: [makeChoice({ id: 'a', route: 'formal' })] }),
+        makeScene({ id: 's2', choices: [makeChoice({ id: 'a' })] }),
+      ],
+    });
+    expect(leadingRoute(withHistory(makeEmptyState(), [['s1', 'a'], ['s2', 'a']]), tagged)).toBe('formal');
+  });
+});
+
+describe('resolveNextScene — fork', () => {
+  const script = makeRouteScript();
+  const formal = script.scenes[2].choices[1];
+  const warm = script.scenes[2].choices[0];
+
+  it('sends the run to the leading route’s scene, counting the choice being made', () => {
+    // One warm tag so far; choosing formal at the fork ties 1–1 and the pending
+    // choice is the most recent, so formal wins.
+    const state = withHistory({ ...makeEmptyState(), currentSceneId: 's3' }, [['s1', 'w']]);
+    expect(resolveNextScene(state, formal, script)).toBe('s4f');
+    expect(resolveNextScene(state, warm, script)).toBe('s4w');
+  });
+
+  it('uses defaultRoute at the fork when nothing leans anywhere', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 's3' };
+    expect(resolveNextScene(state, script.scenes[2].choices[2], script)).toBe('s4w');
+  });
+
+  it('a choice’s own next still beats the fork', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 's3' };
+    expect(resolveNextScene(state, { ...formal, next: 's5' }, script)).toBe('s5');
+  });
+
+  it('variant scenes merge back through their choices’ next', () => {
+    const state = { ...makeEmptyState(), currentSceneId: 's4w' };
+    expect(resolveNextScene(state, script.scenes[3].choices[0], script)).toBe('s5');
+  });
+});
+
+describe('evaluateEnding — route scripts', () => {
+  const script = makeRouteScript();
+  const run = (score: number, picks: [string, string][], flags: string[] = []) =>
+    withHistory(stateWithRelationship(score, { flags: new Set(flags) }), picks);
+
+  it('returns the strong version of the leading destination when the meters clear its min', () => {
+    expect(evaluateEnding(run(15, [['s1', 'w']]), script).id).toBe('warm-strong');
+    expect(evaluateEnding(run(12, [['s1', 'f']]), script).id).toBe('formal-strong');
+  });
+
+  it('returns the weak version below the strong min', () => {
+    expect(evaluateEnding(run(14, [['s1', 'w']]), script).id).toBe('warm-weak');
+  });
+
+  it('the same score lands on different destinations depending on the route', () => {
+    expect(evaluateEnding(run(13, [['s1', 'w']]), script).id).toBe('warm-weak');
+    expect(evaluateEnding(run(13, [['s1', 'f']]), script).id).toBe('formal-strong');
+  });
+
+  it('returns the failure ending below the destination’s weak min', () => {
+    expect(evaluateEnding(run(4, [['s1', 'w']]), script).id).toBe('failure');
+    expect(evaluateEnding(run(4, [['s1', 'f']]), script).id).toBe('formal-weak');
+  });
+
+  it('the hidden ending still needs its flags AND its score', () => {
+    expect(evaluateEnding(run(20, [['s1', 'w']], ['A', 'B']), script).id).toBe('hidden');
+    expect(evaluateEnding(run(20, [['s1', 'w']], ['A']), script).id).toBe('warm-strong');
+    expect(evaluateEnding(run(19, [['s1', 'w']], ['A', 'B']), script).id).toBe('warm-strong');
+  });
+
+  it('uses defaultRoute when the run never leaned anywhere', () => {
+    expect(evaluateEnding(run(15, [['s1', 'x']]), script).id).toBe('warm-strong');
+  });
+
+  it('throws when the leading route has no strong/weak pair', () => {
+    const broken = makeRouteScript({ endings: script.endings.filter(e => e.id !== 'formal-weak') });
+    expect(() => evaluateEnding(run(1, [['s1', 'f']]), broken)).toThrow('route-scenario');
+  });
+});
+
+describe('phrasesEarned / allPhraseIds', () => {
+  const script = makeRouteScript();
+  const endingById = (id: string) => script.endings.find(e => e.id === id)!;
+
+  it('grants core phrases on any ending, failure included', () => {
+    expect(phrasesEarned(script, endingById('failure'))).toEqual(['p-core']);
+  });
+
+  it('adds the phrases of the ending reached, without duplicates', () => {
+    expect(phrasesEarned(script, endingById('warm-strong'))).toEqual(['p-core', 'p-warm']);
+    expect(phrasesEarned(script, endingById('hidden'))).toEqual(['p-core', 'p-hidden']);
+  });
+
+  it('allPhraseIds lists everything the scenario can teach, once each', () => {
+    expect(allPhraseIds(script)).toEqual(['p-core', 'p-warm', 'p-hidden']);
+  });
+});
+
+// ─── sceneAfterChoice ─────────────────────────────────────────────────────────
+
+describe('sceneAfterChoice', () => {
+  // s1 → s2 → end. The bonus scene sits between them in the array (as authors
+  // place them) and plays only after the main path, on the hidden ending.
+  const script = makeScript({
+    scenes: [
+      makeScene({ id: 's1', choices: [makeChoice()] }),
+      makeScene({ id: 'bonus', bonus: true, choices: [makeChoice()] }),
+      makeScene({ id: 's2', choices: [makeChoice()] }),
+    ],
+    endings: [
+      ...makeScript().endings,
+      {
+        id: 'secret', min: 10, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
+        desc: 'd', color: '#8B00FF', type: 'exceptional' as const, secret: true, requiredFlags: ['A'],
+      },
+    ],
+  });
+  const at = (sceneId: string, extra: Partial<ScenarioState> = {}) => ({ ...makeEmptyState(), currentSceneId: sceneId, ...extra });
+  const earned = { flags: new Set(['A']), impactByNpc: { Ahmed: impactOf(10, 0, 0) } };
+
+  it('goes to the resolved scene', () => {
+    expect(sceneAfterChoice(at('s1'), 's2', script)).toBe('s2');
+  });
+
+  it('never walks into a bonus scene on the main path — it skips past it', () => {
+    expect(sceneAfterChoice(at('s1'), 'bonus', script)).toBe('s2');
+    expect(sceneAfterChoice(at('s1', earned), 'bonus', script)).toBe('s2');
+  });
+
+  it('ends the run when the main path is over and the hidden ending is not earned', () => {
+    expect(sceneAfterChoice(at('s2', { flags: new Set(['A']) }), null, script)).toBeNull();
+    expect(sceneAfterChoice(at('s2', { impactByNpc: { Ahmed: impactOf(10, 0, 0) } }), null, script)).toBeNull();
+  });
+
+  it('plays the bonus scene when the main path is over and the hidden ending is earned', () => {
+    expect(sceneAfterChoice(at('s2', earned), null, script)).toBe('bonus');
+  });
+
+  it('the bonus scene is always the last thing played', () => {
+    expect(sceneAfterChoice(at('bonus', earned), 's2', script)).toBeNull();
   });
 });
