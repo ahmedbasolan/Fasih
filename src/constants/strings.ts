@@ -597,6 +597,25 @@ export const STRINGS = {
     feedbackMisstep: 'Cultural misstep',
     feedbackReaction: (npc: string) => `${npc}'s reaction`,
     feedbackRightForm: 'The form to use',
+    // The bonus scene has no kind, so its choice keeps a plain outcome label.
+    choiceOutcome: { excellent: 'Excellent', good: 'Good choice', neutral: 'Neutral', bad: 'Cultural misstep' },
+    youSaid: 'You Said',
+    culturalInsight: 'Cultural Insight',
+    noteFallback: 'A solid choice in this context. Keep it up!',
+    impactLabel: 'Impact',
+    impactShort: {
+      trust: (n: number) => `T: ${n}`,
+      respect: (n: number) => `R: ${n}`,
+      culture: (n: number) => `C: ${n}`,
+    },
+    tonePreviewWarm: (npc: string) => `${npc} will be more open with you in the next scene`,
+    tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
+    seeFinalResult: 'See Final Result',
+    shareFallbackTitle: 'a Fasih scenario',
+    shareHiddenMessage: (scenario: string, arabic: string, en: string) =>
+      `I just discovered the secret ending in "${scenario}" on Fasih 🔑\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It`,
+    shareMessage: (score: number, scenario: string, ending: string, arabic: string, en: string) =>
+      `I scored ${score} in "${scenario}" and unlocked "${ending}"\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`,
     // `pct` is unrounded (see endingPercentages); only called when it is above 0.
     communityEnding: (pct: number) =>
       pct < 1 ? 'Fewer than 1% of players reach this ending' : `${Math.round(pct)}% of players reach this ending`,

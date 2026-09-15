@@ -502,10 +502,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
-    const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
+    const scenarioTitle = scriptData?.title ?? STRINGS.scenarios.shareFallbackTitle;
     const message = isSecret
-      ? `I just discovered the secret ending in "${scenarioTitle}" on Fasih 🔑\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It`
-      : `I scored ${finalTotal} in "${scenarioTitle}" and unlocked "${endingTitle}"\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`;
+      ? STRINGS.scenarios.shareHiddenMessage(scenarioTitle, endingArabic, endingEn)
+      : STRINGS.scenarios.shareMessage(finalTotal, scenarioTitle, endingTitle, endingArabic, endingEn);
     try {
       await Share.share({ message });
     } catch { /* user dismissed share sheet — no-op */ }
@@ -678,7 +678,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           <ScenarioIntroPhase
             scriptData={scriptData}
             scenario={scenario}
-            scenes={scenes}
             endings={endings}
             unlockedPhrases={learnablePhrases}
             decisions={totalDecisions}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { MotiView } from 'moti';
 import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2, Blocks, Sparkles } from '../icons';
@@ -100,6 +100,21 @@ export function ScenarioResultPhase({
   const { C, G } = useTheme();
   const violetColor = C.VIOLET;
 
+  // The destination sections. The older sections below still style inline.
+  const styles = useMemo(() => StyleSheet.create({
+    momentsCard: { borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 10 },
+    momentsTitle: { fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 },
+    momentsSub: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 },
+    moment: { gap: 2 },
+    momentArabic: { fontFamily: FONT_ARABIC, fontSize: 18, color: C.JADE, textAlign: 'right', lineHeight: 26 },
+    momentEnglish: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 },
+    hintsCard: { borderRadius: 14, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, gap: 10 },
+    hintsTitle: { fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 0.9 },
+    hintRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+    hintDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2, marginTop: 6 },
+    hintText: { fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 },
+  }), [C]);
+
   // A destination ending names its destination; the hidden and failure endings say what they are.
   const eyebrow = destinationLabel
     ? STRINGS.scenarios.destinationEyebrow(destinationLabel, ending.tier)
@@ -147,19 +162,15 @@ export function ScenarioResultPhase({
         {/* What sent you here — destination endings only */}
         {moments.length > 0 && (
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 40 }}>
-            <View style={{ borderRadius: 16, padding: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 10 }}>
+            <View style={styles.momentsCard}>
               <View>
-                <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT3, textTransform: 'uppercase', letterSpacing: 0.9 }}>
-                  {STRINGS.scenarios.momentsTitle}
-                </Text>
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>
-                  {STRINGS.scenarios.momentsSub}
-                </Text>
+                <Text style={styles.momentsTitle}>{STRINGS.scenarios.momentsTitle}</Text>
+                <Text style={styles.momentsSub}>{STRINGS.scenarios.momentsSub}</Text>
               </View>
               {moments.map((m, i) => (
-                <View key={`${m.id}-${i}`} style={{ gap: 2 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 18, color: C.JADE, textAlign: 'right', lineHeight: 26 }}>{arabicForUser(m)}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 18 }}>{m.text}</Text>
+                <View key={`${m.id}-${i}`} style={styles.moment}>
+                  <Text style={styles.momentArabic}>{arabicForUser(m)}</Text>
+                  <Text style={styles.momentEnglish}>{m.text}</Text>
                 </View>
               ))}
             </View>
@@ -169,14 +180,12 @@ export function ScenarioResultPhase({
         {/* Hints toward endings not found yet */}
         {hints.length > 0 && (
           <MotiView from={{ opacity: 0, translateY: 6 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 340, delay: 60 }}>
-            <View style={{ borderRadius: 14, padding: 14, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER, gap: 10 }}>
-              <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.VIOLET2, textTransform: 'uppercase', letterSpacing: 0.9 }}>
-                {STRINGS.scenarios.hintsTitle}
-              </Text>
+            <View style={styles.hintsCard}>
+              <Text style={styles.hintsTitle}>{STRINGS.scenarios.hintsTitle}</Text>
               {hints.map((h) => (
-                <View key={h.endingId} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.VIOLET2, marginTop: 6 }} />
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.VIOLET2, flex: 1, lineHeight: 19 }}>
+                <View key={h.endingId} style={styles.hintRow}>
+                  <View style={styles.hintDot} />
+                  <Text style={styles.hintText}>
                     {h.hidden ? `${STRINGS.scenarios.hintHidden}: ` : ''}{h.hint}
                   </Text>
                 </View>
