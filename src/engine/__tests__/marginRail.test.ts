@@ -39,10 +39,10 @@ describe('authored decision counts are within their script', () => {
    * The first draft of this suite asserted `Scenario.decisions` equalled the
    * script's choice-scene count, and it failed on three scenarios. The data
    * was right and the assertion was wrong: scripts branch, so the choice-scene
-   * count is the upper bound on a run, not the length of one. `social_taxi_ride`
-   * has 7 choice-scenes, of which `c2_open`/`c2_effort` and
-   * `c3_ronaldo`/`c3_dubai` are mutually exclusive, so a run makes 5 decisions
-   * — exactly what its metadata says.
+   * count is the upper bound on a run, not the length of one. `first-morning`
+   * has 8 choice-scenes, of which the two `scene4-*` and two `scene6-*` fork
+   * variants are mutually exclusive, so a run makes 6 decisions — exactly what
+   * its metadata says.
    *
    * This still catches what it needs to: a decisions count of 0, or one larger
    * than the script could possibly deliver.

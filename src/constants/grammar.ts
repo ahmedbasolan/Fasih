@@ -32,11 +32,11 @@ export const PROFESSION_POOLS: Record<string, { label: string; wordPool: string[
 };
 
 // ─── Patterns ────────────────────────────────────────────────────────────────
-// 7 patterns. abi-verb (أبي ___) and b-future (بـ + verb) were cut with
-// gym-consultation — every slot option they had came from its dialogue, so they
-// could not be built. They return when a rewritten MVP scenario uses the form
-// (spec 2026-09-14 §2.9). Continuous قاعد stays deferred until a scenario's
-// dialogue naturally contains it.
+// 9 patterns. abi-verb (أبي ___) was cut with gym-consultation and returned with
+// The Meeting, alongside khalni-verb (خلني ___), both built on its verb phrases
+// (spec 2026-09-14 §2.9). b-future (بـ + verb) is still out until a rewrite
+// grants phrases to build it from. Continuous قاعد stays deferred until a
+// scenario's dialogue naturally contains it.
 //
 // `template` — assembly frame. Each entry is a fixed word or `{slotId}` in
 // Arabic-reading order (right to left in Arabic, left to right in roman/english).
@@ -63,6 +63,56 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
         label: 'word to describe yourself',
         accepts: 'adjective',
         options: ['e1', 'e15', 'f4', 'f5'], // زين، حلو، يووعان، عطشان
+      },
+    ],
+  },
+
+  {
+    id: 'abi-verb',
+    title: 'أبي ___ — I want to ___',
+    titleFeminine: 'أبي ___ — I want to ___',
+    unlockedByScenario: 'office-meeting',
+    softSkill: 'request',
+    goodImpressionNote:
+      'أبي is the everyday Gulf "I want" (not أريد). In a meeting, أبي plus a verb is a clear ask — direct without being rude.',
+    examples: [{ phraseId: 'f8' }], // أبي آكل
+    source: 'office-meeting:scene3 أبي أمسكها بنفسي',
+    template: {
+      arabic: ['أبي', '{verb}'],
+      roman: ['abi', '{verb}'],
+      english: ['I want to', '{verb}'],
+    },
+    slots: [
+      {
+        id: 'verb',
+        label: 'something you want to do',
+        accepts: 'verb',
+        options: ['mt-3', 'mt-4'], // أحاول، أساعد
+      },
+    ],
+  },
+
+  {
+    id: 'khalni-verb',
+    title: 'خلني ___ — let me ___',
+    titleFeminine: 'خلني ___ — let me ___',
+    unlockedByScenario: 'office-meeting',
+    softSkill: 'offer',
+    goodImpressionNote:
+      'خلني is the Gulf "let me". خلني أساعد offers help without pushing; خلني أحاول asks permission and offers a plan in one breath.',
+    examples: [{ phraseId: 'mt-2' }], // خلني أفكر فيها
+    source: 'office-meeting:scene4-sponsor خلني أساعدك فيها / scene4-voice خلني أحاول شهر واحد / scene6-voice خلني أفكر فيها',
+    template: {
+      arabic: ['خلني', '{verb}'],
+      roman: ['khallni', '{verb}'],
+      english: ['let me', '{verb}'],
+    },
+    slots: [
+      {
+        id: 'verb',
+        label: 'something you offer to do',
+        accepts: 'verb',
+        options: ['mt-3', 'mt-4'], // أحاول، أساعد
       },
     ],
   },

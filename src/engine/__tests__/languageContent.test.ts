@@ -138,9 +138,9 @@ function choiceCards(scriptId: string): string[] {
 /**
  * Turns a learner actually plays, as a [shortest, longest] pair.
  *
- * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
- * any single playthrough visits five — counting scenes would have marked it two
- * turns longer than a learner ever experiences. Bonus scenes are excluded: they
+ * Not `scenes.length`. `first-morning` declares eight main scenes but forks twice,
+ * so any single playthrough visits six — counting scenes would have marked it
+ * two turns longer than a learner ever experiences. Bonus scenes are excluded: they
  * only appear on a secret ending. Runs come from the real engine, so a route
  * script's fork is followed exactly as the player follows it.
  */
@@ -167,22 +167,19 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
  * Scenarios currently outside the band their declared level claims.
  *
  * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `coffee-invitation` /
- * `eid-greeting` sit just over the A1 mean once clitics are counted. (The
- * audit's worst offenders, the-checkup and gym-consultation, were cut for the MVP.)
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `eid-greeting` sits
+ * just over the A1 mean once clitics are counted. (The audit's worst offenders,
+ * the-checkup and gym-consultation, were cut for the MVP; coffee-invitation's
+ * two entries went with its 2026-09-15 rewrite.)
  *
  * Fixing one means either re-levelling the scenario or editing its content —
  * both content decisions, deliberately not made by this commit.
  */
 const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'coffee-invitation:meanMorphemes',
-  'coffee-invitation:morphemeCeiling',
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
   'social_elevator:phrasesUnlocked',
   'social_elevator:turns',
-  'social_taxi_ride:phrasesUnlocked',
-  'social_taxi_ride:turns',
 ];
 
 /**
@@ -423,8 +420,12 @@ describe('provenance', () => {
    * scenarios cut for the MVP were all unsourced. Nothing got more verified.
    * 103 → 102, also by deletion: fm-s1-7 duplicated core-4 (الله يعافيك) with a
    * wrong gloss, and the First Morning rewrite no longer granted it.
+   * 102 → 106 on 2026-09-15, the one deliberate RISE: The Meeting's mt-1..mt-4
+   * (الحمد لله على السلامة, خلني أفكر فيها, أحاول, أساعد). The أبي / خلني
+   * patterns could not return without them (spec §2.9), and Ahmed chose that over
+   * deferring the patterns. They go to the Emirati reviewer with the scenario.
    */
-  const MAX_UNSOURCED = 102;
+  const MAX_UNSOURCED = 106;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 
