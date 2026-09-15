@@ -41,7 +41,7 @@ import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
 import { MarginRail } from '../components/scenario/MarginRail';
-import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, Phrase, Tone } from '../types';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioState, Phrase, Tone } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -76,7 +76,7 @@ function ImpactCol({ label, value, color, maxVal }: { label: string; value: numb
       </MotiView>
       <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
         <MotiView
-          animate={{ width: `${pct * 100}%` as any }}
+          animate={{ width: `${pct * 100}%` as const }}
           transition={{ type: 'timing', duration: 400 }}
           style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
         />
@@ -119,9 +119,9 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
   const hasToneShift = !!scene.charDialogue && tone !== 'neutral';
   const toneColor = tone === 'warm' ? C.JADE_ACCENT : C.TEXT3;
 
+  // Runs once per line: the parent keys this component on what picks the line
+  // (scene, tone, gender), so a new line remounts it with the reveal reset.
   useEffect(() => {
-    setArabicRevealed(false);
-    setTranslationRevealed(false);
     speakAs(dialogue.arabic, scene.charGender);
     const t1 = setTimeout(() => setArabicRevealed(true), 900);
     const t2 = setTimeout(() => setTranslationRevealed(true), 2200);
@@ -351,8 +351,10 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     }
   }, [phase, scenarioId, scriptData, fetchCommunityEndingStats]);
 
-  useEffect(() => {
-    if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
+  // Locks the result and records the completion. Called from next() as the
+  // run moves to the result phase — an event, so it is not an effect.
+  const finalizeRun = useCallback(() => {
+    if (!scriptData || completionFired || !activeScenarioState) return;
     const currEnding = evaluateEnding(activeScenarioState, scriptData);
     setFinalizedEnding(currEnding);
     setFinalizedImpact(Object.values(activeScenarioState.impactByNpc).reduce(
@@ -388,7 +390,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, scenario, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
+  }, [completionFired, scenarioId, scriptData, scenario, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
@@ -403,18 +405,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scene = scenes[step];
   const endings = scriptData?.endings ?? [];
 
-  // Record NPC tone the moment each scene is entered (engine-driven)
-  useEffect(() => {
-    if (phase !== 'scene' || !scene?.charDialogue || !activeScenarioState) return;
-    setToneHistory(prev => {
-      if (prev.some(t => t.sceneId === scene.id)) return prev;
-      const entryTone = getTone(activeScenarioState, scene.charName, scene);
-      return [...prev, { sceneId: scene.id, tone: entryTone }];
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, phase]);
-
-
+  // Record the NPC's tone as a scene is entered, for the end-screen arc. Called
+  // where a scene is entered (onBegin, next), not from an effect.
+  const recordEntryTone = useCallback((entered: ScenarioScene, state: ScenarioState) => {
+    if (!entered.charDialogue) return;
+    setToneHistory(prev => (prev.some(t => t.sceneId === entered.id)
+      ? prev
+      : [...prev, { sceneId: entered.id, tone: getTone(state, entered.charName, entered) }]));
+  }, []);
 
   // Calculate max possible meter values for this scenario (for bar scaling)
   const maxMeterValues = useMemo(() => {
@@ -493,13 +491,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setLastResolvedNextSceneId(null);
     const targetIndex = target ? scenes.findIndex(s => s.id === target) : -1;
     if (target === null || targetIndex === -1) {
+      finalizeRun();
       setPhase('result');
       return;
     }
+    if (activeScenarioState) recordEntryTone(scenes[targetIndex], activeScenarioState);
     advanceScenarioScene(target);
     setStep(targetIndex);
     setPhase('scene');
-  }, [scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
+  }, [scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene, finalizeRun, recordEntryTone]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
     const scenarioTitle = scriptData?.title ?? STRINGS.scenarios.shareFallbackTitle;
@@ -685,6 +685,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             hints={runCount > 0 ? hintsToShow(scriptData, foundIds, undefined) : []}
             onBegin={() => {
               trackScenarioStarted({ scenarioId, title: scriptData.title, category: scenario?.mode });
+              if (scene && activeScenarioState) recordEntryTone(scene, activeScenarioState);
               setPhase('scene');
             }}
           />
@@ -705,7 +706,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             <View style={{ flexDirection: 'row' }}>
               <MarginRail marks={railMarksForRun} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <DialogueBubble scene={scene} tone={sceneTone} gender={user?.gender} />
+                <DialogueBubble
+                  key={`${scene.id}-${sceneTone}-${user?.gender ?? ''}`}
+                  scene={scene}
+                  tone={sceneTone}
+                  gender={user?.gender}
+                />
 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>

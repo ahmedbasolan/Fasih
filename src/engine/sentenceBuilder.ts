@@ -8,7 +8,6 @@
  */
 import type {
   GrammarPattern,
-  GrammarSlot,
   Phrase,
   ScenarioCompletion,
   SentenceResult,

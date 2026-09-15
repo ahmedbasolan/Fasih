@@ -138,8 +138,8 @@ function choiceCards(scriptId: string): string[] {
 }
 
 /** Catalog entries that have a script and are not exempt from level gates. */
-function gatedScenarios(): Array<{ id: string; scriptId: string; level: DifficultyLevel }> {
-  const out: Array<{ id: string; scriptId: string; level: DifficultyLevel }> = [];
+function gatedScenarios(): { id: string; scriptId: string; level: DifficultyLevel }[] {
+  const out: { id: string; scriptId: string; level: DifficultyLevel }[] = [];
   for (const meta of catalog) {
     if (LEVEL_EXEMPT_SCENARIOS.includes(meta.id)) continue;
     if (!scripts[meta.id]) continue; // comingSoon scenarios have no script yet
