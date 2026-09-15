@@ -21,7 +21,21 @@ interface Props {
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
+    noMargin: { paddingHorizontal: 0 },
+    goBack: {
+      borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
+      backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
+    },
+    goBackText: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 },
+    sheet: { backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    decisions: { fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT },
+    saveButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     meta: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 },
+    duration: { marginBottom: SPACE.sm },
+    endings: { marginBottom: 24 },
+    description: { fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 },
+    primary: { marginBottom: 28 },
   }), [C]);
 
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
@@ -49,18 +63,15 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         scroll={false}
         // EmptyState is flex: 1, centres itself, and applies SCREEN_MARGIN of
         // its own. Screen's margin on top of that indents it to 40.
-        contentStyle={{ paddingHorizontal: 0 }}
+        contentStyle={styles.noMargin}
         action={
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
-            style={{
-              borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
-              backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-            }}
+            style={styles.goBack}
           >
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
+            <Text style={styles.goBackText}>
               {STRINGS.scenarios.goBack}
             </Text>
           </Pressable>
@@ -87,7 +98,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
       // ScreenHeader applies the top inset itself, and both it and the sheet
       // below run edge to edge and set their own horizontal padding.
       headerHandlesTopInset
-      contentStyle={{ paddingHorizontal: 0 }}
+      contentStyle={styles.noMargin}
     >
         {/* ── Header ──
             Was a 450pt illustrated hero with white text over a black scrim.
@@ -102,35 +113,35 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         />
 
         {/* ── Content Section ── */}
-        <SheetPanel radius={RADIUS.sheet} overlap={0} style={{ backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl }}>
+        <SheetPanel radius={RADIUS.sheet} overlap={0} style={styles.sheet}>
           {/* Metadata Row.
               The save toggle used to live as a translucent circle on the hero.
               With the hero gone it sits here, beside the scene count, where it
               is on the paper rather than floating over an image. */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT }}>
+          <View style={styles.metaRow}>
+            <Text style={styles.decisions}>
               {STRINGS.scenarios.decisions(decisions)}
             </Text>
             <Pressable
               onPress={() => toggleFavoriteScenario(scenarioId)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
+              accessibilityLabel={isSaved ? STRINGS.scenarios.unsaveScenario : STRINGS.scenarios.saveScenario}
               accessibilityState={{ selected: isSaved }}
-              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+              style={styles.saveButton}
             >
               <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
             </Pressable>
           </View>
-          <Text style={[styles.meta, { marginBottom: SPACE.sm }]}>
+          <Text style={[styles.meta, styles.duration]}>
             {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, decisions * 2))}
           </Text>
-          <Text style={[styles.meta, { marginBottom: 24 }]}>
+          <Text style={[styles.meta, styles.endings]}>
             {STRINGS.scenarios.endingsSummary(progress)}
           </Text>
 
           {/* Description */}
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 }}>
+          <Text style={styles.description}>
             {scenario.kafIntro || scenario.subtitle}
           </Text>
 
@@ -147,7 +158,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
             accessibilityLabel={isCompleted
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
-            style={{ marginBottom: 28 }}
+            style={styles.primary}
           >
             {isCompleted
               ? STRINGS.scenarios.playAgain
