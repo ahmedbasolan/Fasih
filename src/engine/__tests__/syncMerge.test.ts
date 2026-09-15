@@ -8,9 +8,11 @@ import {
   mergeSecretEndings,
   mergeEndingsFound,
   mergeScenarioRuns,
+  mergeScenarioHistory,
   type ScenarioRun,
 } from '../syncMerge';
-import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress } from '../../types';
+import { MAX_RUNS_RECORDED } from '../scenarioHistory';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioRunRecord } from '../../types';
 
 const card = (phraseId: string, lastReviewed: string, extra: Partial<PhraseReviewData> = {}): PhraseReviewData => ({
   phraseId,
@@ -184,5 +186,37 @@ describe('mergeScenarioRuns', () => {
   // runs from before they diverged. The larger count never under-reports.
   it('keeps the higher run count per scenario', () => {
     expect(mergeScenarioRuns({ a: 3, b: 1 }, { a: 2, b: 4, c: 1 })).toEqual({ a: 3, b: 4, c: 1 });
+  });
+});
+
+describe('mergeScenarioHistory', () => {
+  const run = (endingId: string, on: string, endingType: ScenarioRunRecord['endingType'] = 'success'): ScenarioRunRecord =>
+    ({ endingId, endingType, on });
+
+  it('keeps the shared runs once and adds each device\'s own runs, in date order', () => {
+    const shared = [run('x', '2026-09-01'), run('y', '2026-09-02')];
+    const local = { a: [...shared, run('z', '2026-09-04')] };
+    const cloud = { a: [...shared, run('w', '2026-09-03')] };
+    expect(mergeScenarioHistory(local, cloud).a).toEqual([
+      run('x', '2026-09-01'), run('y', '2026-09-02'), run('w', '2026-09-03'), run('z', '2026-09-04'),
+    ]);
+  });
+
+  it('keeps a genuinely repeated run: the same ending twice on one day on one device', () => {
+    const twice = [run('x', '2026-09-01'), run('x', '2026-09-01')];
+    expect(mergeScenarioHistory({ a: twice }, { a: [run('x', '2026-09-01')] }).a).toEqual(twice);
+  });
+
+  it('an empty cloud never erases local history, and a cloud-only scenario comes through', () => {
+    const merged = mergeScenarioHistory({ a: [run('x', '2026-09-01')] }, { b: [run('y', '2026-09-02')] });
+    expect(merged).toEqual({ a: [run('x', '2026-09-01')], b: [run('y', '2026-09-02')] });
+  });
+
+  it('keeps the earliest runs when the union passes the cap — run 1 and run 2 are what replay is measured on', () => {
+    const local = { a: Array.from({ length: MAX_RUNS_RECORDED }, (_, i) => run(`l${i}`, '2026-09-10')) };
+    const cloud = { a: [run('early', '2026-09-01')] };
+    const merged = mergeScenarioHistory(local, cloud).a;
+    expect(merged).toHaveLength(MAX_RUNS_RECORDED);
+    expect(merged[0]).toEqual(run('early', '2026-09-01'));
   });
 });

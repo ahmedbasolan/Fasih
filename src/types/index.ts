@@ -242,6 +242,21 @@ export interface ScenarioScene {
   femaleLearner?: FemaleLearnerLines;
 }
 
+/**
+ * One completed run of a scenario. Its position in the scenario's history is
+ * the run number. Kept for the learner and for replay metrics (spec 2026-09-14
+ * §2.12; queries in supabase/queries/scenario_metrics.sql).
+ */
+export interface ScenarioRunRecord {
+  endingId: string;
+  endingType: ScenarioEnding['type'];
+  /**
+   * Local calendar day, YYYY-MM-DD. A day, never a timestamp: enough to tell a
+   * replay within 7 days, too coarse to line up against anything else.
+   */
+  on: string;
+}
+
 export interface ScenarioEnding {
   /** Stable id — what endingsFound and phrases.byEnding key on. Never reuse. */
   id: string;
