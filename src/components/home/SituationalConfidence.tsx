@@ -3,10 +3,9 @@
  *
  * Replaces WeeklyXP on the home screen.
  * Shows readiness across real UAE situations, calculated from:
- *   - completedScenarios (50% weight per completed scenario mapped to situation)
- *   - categoryMastery accuracy (50% weight from phrase practice)
- *
- * Data comes entirely from existing useAppStore — no new store fields needed.
+ *   - the situation's scenarios: best ending reached + endings found
+ *     (engine/situationalConfidence.ts)
+ *   - categoryMastery accuracy from phrase practice
  */
 
 import React, { useMemo, useState } from 'react';
@@ -16,6 +15,8 @@ import { ChevronRight, Briefcase, Compass, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import { STRINGS } from '../../constants/strings';
+import { getScenarioScripts } from '../../constants/scenarios';
+import { scenarioConfidenceWeight } from '../../engine/situationalConfidence';
 
 type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 
@@ -60,22 +61,6 @@ const SITUATIONS: SituationConfig[] = [
   },
 ];
 
-/**
- * How much a completed scenario counts toward confidence, by its ending.
- *
- * Keyed by ScenarioEnding['type']. The old inline ladder tested for
- * 'success_strong', which is not a member of that union — the branch was dead
- * and plain 'success', the most common good outcome, silently fell through to
- * the neutral 1.0. `src/engine/__tests__/scenarioContent.test.ts` now asserts
- * every authored ending uses a known type.
- */
-const ENDING_WEIGHTS: Record<string, number> = {
-  exceptional: 1.2,
-  success: 1.1,
-  mixed: 1.0,
-  failed: 0.6,
-};
-
 function getConfidenceLevel(score: number): ConfidenceLevel {
   if (score >= 70) return 'confident';
   if (score >= 40) return 'familiar';
@@ -97,9 +82,13 @@ interface SituationalConfidenceProps {
 export function SituationalConfidence({
   limit = 5,
 }: SituationalConfidenceProps) {
-  const { C } = useTheme();
+  const { C, isDark } = useTheme();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
+  const endingsFound       = useAppStore((s) => s.endingsFound);
   const stats              = useAppStore((s) => s.stats);
+  // Only the endings are read. isDark is the stable bool that determines C.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scripts = useMemo(() => getScenarioScripts(C), [isDark]);
   const [expanded, setExpanded] = useState(false);
 
   const situations = useMemo<SituationResult[]>(() => {
@@ -116,10 +105,14 @@ export function SituationalConfidence({
       if (totalScenarios > 0) {
         let weighted = 0;
         for (const id of sit.scenarioIds) {
-          const run = completedScenarios[id];
-          if (!run) continue;
+          const weight = scenarioConfidenceWeight(
+            scripts[id]?.endings ?? [],
+            endingsFound[id] ?? [],
+            completedScenarios[id]?.endingType,
+          );
+          if (weight === null) continue;
           scenariosCompleted++;
-          weighted += (100 / totalScenarios) * (ENDING_WEIGHTS[run.endingType] ?? 1);
+          weighted += (100 / totalScenarios) * weight;
         }
         scenarioPart = Math.min(weighted, 100);
       }
@@ -151,7 +144,7 @@ export function SituationalConfidence({
         scenariosCompleted,
       };
     });
-  }, [completedScenarios, stats.categoryMastery]);
+  }, [scripts, completedScenarios, endingsFound, stats.categoryMastery]);
 
   const sorted = useMemo(() => {
     return [...situations].sort((a, b) => {
