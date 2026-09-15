@@ -77,7 +77,8 @@ So every length gate uses `countMorphemes` from
 ## What the gates measure, and why each one exists
 
 - **turns** — computed as the actual playthrough length, not `scenes.length`.
-  `social_taxi_ride` declares seven scenes but branches, so a learner plays five.
+  A route script declares more scenes than it plays: `first-morning` has eight main
+  scenes, and a learner plays six.
 - **phrasesUnlocked** — vocabulary load per scenario.
 - **meanMorphemes** — typical utterance complexity.
 - **morphemeCeiling** — the outlier guard. A scenario can have a gentle average and

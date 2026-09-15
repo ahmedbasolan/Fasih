@@ -42,11 +42,11 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
 export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'social_taxi_ride', iconName: 'Zap',
-    title: 'The Taxi Ride', subtitle: 'Airport → Hotel, a late-night conversation',
-    decisions: 5, endings: 4, phrases: '5', level: 'Beginner',
+    title: 'The Taxi Ride', subtitle: 'Your first night in Dubai. Your driver is Egyptian.',
+    decisions: 6, endings: 6, phrases: '12', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A1208', '#0D0A05'],
     arabicScene: 'تاكسي',
-    kafIntro: 'You just landed in Dubai. Your driver is warm and chatty. Make conversation!',
+    kafIntro: 'Youssef speaks Egyptian. Understand him, answer in Gulf Arabic — that is how Dubai really talks.',
     mode: 'social',
     dialect: 'Egyptian',
   },
@@ -965,115 +965,218 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
   },
 
-  // ── SOCIAL 1: TAXI RIDE ─────────────────────────────────────────────────────
+  // ── SOCIAL 1: THE TAXI RIDE ────────────────────────────────────────────────
+  // Route script (spec 2026-09-14). Your first night living in Dubai; Youssef,
+  // the driver, speaks Egyptian. His lines are for recognising — the learner
+  // always answers in Khaleeji (docs/language/authority.md, other dialects).
+  //
+  // Destinations: `friend` (a friend in the city) and `insider` (the city from
+  // the inside). Forks at scene3 (his story) and scene5 (the finale line).
+  // Hidden: bless him with being reunited with his kids (scene3 c — not the top
+  // choice) AND answer his مبروك with الله يبارك فيك (scene5).
+  //
+  // NOT NATIVE-REVIEWED. Youssef's lines need the Egyptian reviewer; the learner's
+  // lines need the Emirati reviewer. Phrase sets reuse library entries only.
   'social_taxi_ride': {
     id: 'social_taxi_ride',
     title: 'The Taxi Ride',
-    subtitle: 'Airport → Hotel, nighttime',
-    kafIntro: 'You just landed in Dubai. Your driver Youssef is Egyptian — warm, chatty, and ready to talk. He speaks Egyptian; you answer in Gulf Arabic. Learning to hold that conversation is the whole point.',
-    iconName: 'car',
-    estimatedMinutes: 8,
-    phrases: { core: ['tx-1', 'tx-2', 'tx-3', 'core-2', 'core-3'], byEnding: {} },
-    primerPhrases: ['tx-1', 'tx-3', 'core-2'], // الله يحفظ عائلتك / شو يابك دبي؟ / شخبارك؟
+    estimatedMinutes: 7,
+    routes: [
+      { id: 'friend', label: 'A friend in the city' },
+      { id: 'insider', label: 'The city from the inside' },
+    ],
+    defaultRoute: 'friend',
+    phrases: {
+      // الله يسلمك / انت منين؟ / مبروك / الله يبارك فيك / هني
+      core: ['g10', 'tx-2', 's5', 's6', 'e13'],
+      byEnding: {
+        // شو يابك دبي؟ / عيال / متى
+        'a-friend-in-the-city': ['tx-3', 'fm7', 'e12'],
+        'a-friendly-ride': ['tx-3', 'fm7', 'e12'],
+        // وين / هناك / زين
+        'the-city-from-the-inside': ['e11', 'e14', 'e1'],
+        'a-few-tips': ['e11', 'e14', 'e1'],
+        // الله يحفظ عائلتك
+        'for-the-kids': ['tx-1'],
+      },
+    },
+    primerPhrases: ['g10', 'tx-2', 's6'], // الله يسلمك / انت منين؟ / الله يبارك فيك
     scenes: [
       {
-        id: 'c1', charName: 'Youssef', charGender: 'male', setting: 'Dubai Airport pickup',
-        arabic: 'أهلاً وسهلاً! أنا يوسف، السواق بتاعك. تعال تعال يا باشا!',
-        roman: "ahlan wa sahlan! ana yusuf, as-suwwaq bita'ak. ta'aal ta'aal ya basha!",
-        english: "Welcome! I'm Youssef, your driver. Come, come, boss!",
-        teachingNote: "Youssef speaks Egyptian — بتاعك (yours) where a Gulf speaker says حقّك, and يا باشا as a friendly 'boss'. You do not need to imitate him. Understand Egyptian, answer in Khaleeji: that is exactly how Dubai actually works.",
+        id: 'scene1', kind: 'language', charName: 'Youssef', charGender: 'male', setting: 'Dubai Airport — your first night living here',
+        arabic: 'حمد الله على السلامة! أنا يوسف. اتفضل، العربية هنا',
+        roman: "hamdilla 'as-salaama! ana yuusif. itfaddal, il-'arabiyya hina",
+        english: "Welcome — thank God you got here safely! I'm Youssef. Come, the car's here.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'حمد الله على السلامة! أنا يوسف. اتفضلي، العربية هنا', roman: "hamdilla 'as-salaama! ana yuusif. itfaddali, il-'arabiyya hina", english: "Welcome — thank God you got here safely! I'm Youssef. Come, the car's here." },
+        teachingNote: 'Egyptian العربية is "the car" (Gulf: السيارة), and اتفضل is his تفضل. حمد الله على السلامة welcomes a safe arrival in both dialects — and the answer is the same in both: الله يسلمك.',
         choices: [
-          { id: 'a', text: 'Hello Youssef! How are you doing?', arabic: 'هلا يا يوسف! شلونك؟', roman: 'hala ya yusuf! shloonak?', score: 3, impact: { trust: 2, respect: 2, culture: 2 }, note: "شلونك is the Gulf 'how are you' — Youssef would say إزيك, and a Levantine would say كيفك. Answering him in Khaleeji is not a mismatch; it is you speaking your own Arabic. His eyebrows jump up and he grabs your bag before you can protest.", outcome: 'excellent', next: 'c2_open' },
-          { id: 'b', text: 'Hello, thanks', arabic: 'هلا، مشكور', roman: 'hala, mashkuur', score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: 'هلا and مشكور are both solidly Gulf — short but genuine. (مرحبا would have been Levantine, and شكراً is the textbook form.) Youssef nods approvingly and opens the back door.', outcome: 'good', next: 'c2_open' },
-          { id: 'c', text: 'Just nod, hand him your bag', arabic: '—', roman: '(you nod and get in the car)', score: -1, impact: { trust: -1, respect: -1, culture: -1 }, note: "Youssef's grin shrinks a little. He loads your bag quietly, glancing at you in the rearview mirror as he starts driving.", outcome: 'bad', next: 'c2_effort' },
+          { id: 'a', text: 'God keep you, Youssef', arabic: 'الله يسلمك يا يوسف', roman: 'allaah yisallmak ya yuusif', score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'excellent', note: 'الله يسلمك answers a welcome-back in Cairo and in Dubai alike. You understood his Egyptian and answered in your own Arabic — the whole skill of this ride.' },
+          { id: 'b', text: 'Hey Youssef, thanks', arabic: 'هلا والله يا يوسف، مشكور', roman: 'hala wallaah ya yuusif, mashkuur', score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Warm and Gulf. But حمد الله على السلامة is a blessing, and it has its own answer: الله يسلمك.' },
+          { id: 'c', text: '(Hand him your bag without a word)', arabic: '—', roman: '(you hand over your bag)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'He welcomed you to the country and got a suitcase. A greeting in the Arab world asks for one back, whoever is carrying the bags.' },
         ],
       },
       {
-        id: 'c2_open', charName: 'Youssef', charGender: 'male', setting: 'On Sheikh Zayed Road',
-        arabic: 'قولي يا حبيبي — اسمك إيه وانت منين أصلاً؟',
-        roman: "'uli ya habibi — ismak eh w-inta minein aslan?",
-        english: "Tell me habibi — what's your name and where are you originally from?",
-        teachingNote: "Two Egyptian markers to recognise: قولي comes out as 'uli — the ق drops to a glottal stop, where Gulf keeps a hard g (gul). And منين (minein) is Egyptian for 'from where'; you would say من وين (min wayn).",
+        id: 'scene2', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'Sheikh Zayed Road — the city lights start',
+        arabic: 'إنت منين؟ وجاي تعيش هنا ولا زيارة؟',
+        roman: "inta minein? w-gaay ti'iish hina walla ziyaara?",
+        english: 'Where are you from? And are you here to live, or visiting?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'إنتي منين؟ وجاية تعيشي هنا ولا زيارة؟', roman: "inti minein? w-gaaya ti'iishi hina walla ziyaara?", english: 'Where are you from? And are you here to live, or visiting?' },
+        teachingNote: 'منين is Egyptian "from where" — you would say من وين. هنا is his "here"; yours is هني. To a woman: إنتي… جاية تعيشي.',
         choices: [
-          { id: 'a', text: "I'm [name]. I'm from Portugal", arabic: 'أنا [name]. أنا من البرتغال', roman: 'ana [name]. ana min al-burtughaal', score: 3, impact: { trust: 2, respect: 2, culture: 2 }, note: "Youssef nearly swerves the car. He slaps the steering wheel and turns around with wide eyes.", outcome: 'excellent', next: 'c3_ronaldo', teachingHighlight: "البرتغال (al-Burtughaal) — country names shift in Arabic. Portugal becomes al-Burtughaal." },
-          { id: 'b', text: "I'm [name]. And you — you're Egyptian?", arabic: 'أنا [name]. وانت؟ مصري صح؟', roman: 'ana [name]. w-inta? masri sah?', score: 2, impact: { trust: 2, respect: 1, culture: 1 }, note: "Recognising someone's dialect is a compliment everywhere in the Gulf — it says you were listening closely enough to place him. Youssef laughs and taps his chest proudly.", outcome: 'good', next: 'c3_dubai' },
-          { id: 'c', text: "I'm from Europe", arabic: 'أنا من أوروبا', roman: 'ana min uurubba', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "A whole continent is not an answer. Youssef squints at the mirror, trying to read you, lets out a small laugh and moves on.", outcome: 'neutral', next: 'c3_dubai' },
+          { id: 'a', text: 'I\'m going to live here. And you — what brought you to Dubai?', arabic: 'بعيش هني. وانت شو يابك دبي؟', roman: "ba'iish hini. w-inta shu yaabak dubay?", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'friend', note: 'Turning the question back to him says you care about his story, not just the fare. شو يابك is the Emirati form of his إيه اللي جابك.' },
+          { id: 'b', text: 'I\'m going to live here. Where\'s a good area to live?', arabic: 'بعيش هني. وين أحسن مكان أسكن فيه؟', roman: "ba'iish hini. wain ahsan makaan askin fiih?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'insider', note: 'A driver of eight years knows every neighbourhood by rent, traffic and noise. Asking him treats him as the expert he is.' },
+          { id: 'c', text: 'Why are you asking?', arabic: 'ليش تسأل؟', roman: 'laish tis\'al?', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'A driver asking where you are from is being friendly, not nosy — it is how a ride in Dubai starts. Suspicion ends the conversation before it begins.' },
         ],
       },
       {
-        id: 'c2_effort', charName: 'Youssef', charGender: 'male', setting: 'Breaking the silence',
-        arabic: 'أول مرة في دبي ولا جاي قبل كدا؟',
-        roman: 'awwil marra fi dubai wala gay abl kida?',
-        english: 'First time in Dubai or have you been before?',
-        teachingNote: "'جاي قبل كدا' (gaay abl kida) is Egyptian for 'been here before'. In Gulf Arabic that idea comes out as ييت من قبل (yeet min gabil) — جاء becomes ياء, the same يـ-for-جـ swap you hear in يديد.",
-        choices: [
-          { id: 'a', text: 'First time! Everything is new to me', arabic: 'أول مرة! كل شي يديد عليّ', roman: "awwal marra! kil shay ydiid 'alayy", score: 2, impact: { trust: 1, respect: 1, culture: 1 }, note: "يديد instead of جديد is pure Emirati and Youssef will clock it instantly. He lights up — a first-timer is his favourite kind of passenger.", outcome: 'good', next: 'c3_dubai' },
-          { id: 'b', text: "I've been before", arabic: 'ييت من قبل', roman: 'yeet min gabil', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef nods slowly. Not much to work with, but he's not giving up yet.", outcome: 'neutral', next: 'c3_dubai' },
-        ],
-      },
-      {
-        id: 'c3_ronaldo', charName: 'Youssef', charGender: 'male', setting: 'The football moment',
-        arabic: 'البرتغال يعني... رونالدو! طبعاً بتحبه صح؟ أحسن لاعب في التاريخ!',
-        roman: "al-burtughaal ya'ni... ronaldo! tab'an bithibbu sah? ahsan laa'ib fi at-taariikh!",
-        english: 'Portugal means... Ronaldo! Obviously you love him right? Best player in history!',
-        teachingNote: "A real social fork. Enthusiastic agreement wins the moment and costs a little honesty; a nuanced opinion earns more lasting respect. Watch the meters move in different directions here — that is deliberate.",
-        choices: [
-          { id: 'a', text: 'Of course! Ronaldo is number one!', arabic: 'طبعاً! رونالدو رقم واحد!', roman: "tab'an! ronaldo ragam waahid!", score: 3, impact: { trust: -1, respect: 2, culture: 3 }, note: "⚖️ Youssef ERUPTS — horn, steering wheel, the lot. Matching someone's enthusiasm is genuine social skill and it reads as culturally fluent. But you did not mean it, and reflexive agreement is a habit that quietly costs you later.", outcome: 'good', next: 'c4' },
-          { id: 'b', text: "Haha... I'm with Messi honestly", arabic: 'هههه... أنا مع ميسي بصراحة', roman: "hahaha... ana ma'a messi b-saraaha", score: 2, impact: { trust: 3, respect: 1, culture: 1 }, note: "بصراحة (honestly) is a licence to disagree without offence — it flags that you are being straight with someone, not picking a fight. Youssef freezes for three seconds, then shakes his head like you insulted his mother's cooking. He respects it.", outcome: 'good', next: 'c4' },
-          { id: 'c', text: "I don't really follow football", arabic: 'ما أتابع كورة وايد', roman: "ma ataabi' koora waayid", score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Honest but a conversational dead end. Youssef deflates like someone let the air out of him and stares at the road.", outcome: 'neutral', next: 'c4' },
-          { id: 'd', text: "He's good but not the best", arabic: 'كويس بس مو الأحسن', roman: "kwayyis bas muu il-ahsan", score: 1, impact: { trust: 2, respect: 2, culture: 2 }, note: "مو is the Gulf negator for adjectives — مو الأحسن, not ما الأحسن. A nuanced take delivered warmly is the sweet spot: honest without deflating him. Youssef sizes you up in the mirror with new respect.", outcome: 'excellent', next: 'c4' },
-        ],
-      },
-      {
-        id: 'c3_dubai', charName: 'Youssef', charGender: 'male', setting: 'Passing the Marina',
-        arabic: 'شايف المارينا دي؟ أنا لما جيت دبي أول مرة من ٨ سنين — مكانش فيه أي حاجة هنا!',
-        roman: "shayif al-marina di? ana lamma geit dubay awwil marra min 8 sineen — makansh fiiha ay haaga hina!",
-        english: "See this Marina? When I first came to Dubai 8 years ago — there was nothing here!",
-        teachingNote: "'من ٨ سنين' (min 8 sineen) is Egyptian for '8 years ago'; you would say من ٨ سنوات. Note هنا (hina) too — the Gulf form is هني (hini).",
-        choices: [
-          { id: 'a', text: 'MashaAllah! Eight years — Dubai became your home', arabic: 'ما شاء الله! ثمان سنوات — صارت دبي بيتك', roman: "maa shaa' allah! thamaan sanawaat — saarat dubay baitak", score: 3, impact: { trust: 2, respect: 2, culture: 2 }, note: "Naming what someone built rather than what they lost is the warmest move available here. Something softens in Youssef's face — he wasn't expecting it.", outcome: 'excellent', next: 'c4' },
-          { id: 'b', text: 'Is your family here or in Egypt?', arabic: 'أهلك هني ولا في مصر؟', roman: "ahlak hini walla fi masr?", score: 2, impact: { trust: 2, respect: 1, culture: 1 }, note: "أهل is the everyday Gulf word for family — warmer and far more common than عائلة. And هني, not هنا. Youssef flashes a phone photo of two kids in school uniforms at the next red light.", outcome: 'good', next: 'c4' },
-          { id: 'c', text: 'Yeah, Dubai changed a lot', arabic: 'إي، دبي تغيرت وايد', roman: "ii, dubay tghayyarat waayid", score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "True, but flat. He agrees, nods, and goes back to the road.", outcome: 'neutral', next: 'c4' },
-        ],
-      },
-      {
-        id: 'c4', charName: 'Youssef', charGender: 'male', setting: 'Near Business Bay',
-        arabic: 'وانت — إيه اللي جابك دبي؟ شغل ولا سياحة؟',
-        roman: "w-inta — eh illi gaabak dubay? shughl walla siyaaha?",
-        english: 'And you — what brought you to Dubai? Work or tourism?',
-        teachingNote: "Egyptian asks إيه اللي جابك (eh illi gaabak). The Gulf version of exactly this question is شو يابك (shu yaabak) — جاب becomes ياب, the same swap as يديد. Same question, two accents.",
-        choices: [
-          { id: 'a', text: 'Work. Got any good Dubai stories?', arabic: 'شغل. عندك سوالف حلوة من دبي؟', roman: "shughl. 'indak sawaalif hilwa min dubay?", score: 3, impact: { trust: 2, respect: 2, culture: 2 }, note: "سوالف is the Gulf word for stories and chat — much more natural here than قصص. Youssef's face lights up: nobody ever asks him for HIS stories.", outcome: 'excellent', next: 'c5' },
-          { id: 'b', text: 'Work. Thank God', arabic: 'شغل. الحمد لله', roman: 'shughl. al-hamdu lillah', score: 2, impact: { trust: 1, respect: 1, culture: 1 }, note: "Short, but الحمد لله is the right closer — it turns a bare fact into contentment. Youssef nods respectfully.", outcome: 'good', next: 'c5' },
-          { id: 'c', text: 'A bit of tourism', arabic: 'سياحة شوي', roman: 'siyaaha shway', score: 1, impact: { trust: 0, respect: 1, culture: 0 }, note: "شوي is the Gulf 'a little' (Egyptians say شوية). Youssef immediately switches to tour-guide mode, pointing at everything.", outcome: 'neutral', next: 'c5' },
-          { id: 'd', text: 'Glance at your phone, half-answer', arabic: '—', roman: '(you check your phone and give a vague nod)', score: -2, impact: { trust: -1, respect: -1, culture: -1 }, note: "Youssef catches the phone check in the mirror. The energy drains from the car. He turns up the radio.", outcome: 'bad', next: 'c5' },
-        ],
-      },
-      {
-        id: 'c5', charName: 'Youssef', charGender: 'male', setting: 'Hotel arrival',
-        arabic: 'يا بطل — وصلنا! والله كانت رحلة حلوة. لو احتجت أي حاجة في دبي — كلمني!',
-        roman: "ya batal — wasalna! wallah kaanit rihla hilwa. law ihtagt ay haaga fi dubay — kallimni!",
-        english: "Champ — we're here! Wallahi it was a nice ride. If you need anything in Dubai — call me!",
+        id: 'scene3', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'Sheikh Zayed Road — Youssef turns the radio down',
+        arabic: 'أنا من إسكندرية. بقالي تمن سنين هنا، والعيال في مصر',
+        roman: "ana min iskandariyya. ba'aali taman siniin hina, wil-'iyaal fi masr",
+        english: "I'm from Alexandria. I've been here eight years, and the kids are in Egypt.",
         charDialogue: {
-          warm: { arabic: 'يا بطل — وصلنا! والله رحلة حلوة قوي، بجد. لو احتجت أي حاجة في دبي — كلمني، أنا أخوك!', roman: "ya batal — wasalna! wallah rihla hilwa 'awi, bi-gadd. law ihtagt ay haaga fi dubay — kallimni, ana akhuuk!", english: "Champ — we're here! Honestly, a really lovely ride. If you need anything in Dubai — call me, I'm your brother!" },
-          neutral: { arabic: 'يا بطل — وصلنا! والله كانت رحلة حلوة. لو احتجت أي حاجة في دبي — كلمني!', roman: "ya batal — wasalna! wallah kaanit rihla hilwa. law ihtagt ay haaga fi dubay — kallimni!", english: "Champ — we're here! Wallahi it was a nice ride. If you need anything in Dubai — call me!" },
-          cold: { arabic: 'وصلنا. مع السلامة.', roman: "wasalna. ma'a as-salaama.", english: "We're here. Goodbye." },
+          warm: { arabic: 'أنا من إسكندرية. بقالي تمن سنين هنا، والعيال في مصر. وحشوني أوي', roman: "ana min iskandariyya. ba'aali taman siniin hina, wil-'iyaal fi masr. wahashuuni 'awi", english: "I'm from Alexandria. I've been here eight years, and the kids are in Egypt. I miss them so much." },
+          neutral: { arabic: 'أنا من إسكندرية. بقالي تمن سنين هنا، والعيال في مصر', roman: "ana min iskandariyya. ba'aali taman siniin hina, wil-'iyaal fi masr", english: "I'm from Alexandria. I've been here eight years, and the kids are in Egypt." },
+          cold: { arabic: 'من إسكندرية. العيال في مصر', roman: "min iskandariyya. il-'iyaal fi masr", english: 'From Alexandria. The kids are in Egypt.' },
         },
-        warmThreshold: 15, coldThreshold: 3,
-        teachingNote: "قوي ('awi) is Egyptian for 'very' — the Gulf equivalent is وايد (waayid). By now you should be able to hear which is which without being told.",
+        warmThreshold: 9, coldThreshold: 3,
+        teachingNote: 'بقالي ("I have been… for") and تمن ("eight") are Egyptian; أوي is his وايد. العيال — the kids — is the same word in both.',
+        nextByRoute: { friend: 'scene4-friend', insider: 'scene4-insider' },
         choices: [
-          { id: 'a', text: 'God keep you safe, Youssef! May God protect your family', arabic: 'الله يسلمك يا يوسف! الله يحفظ أهلك', roman: "allah yisallmak ya yusuf! allah yihfaz ahlak", score: 4, impact: { trust: 3, respect: 3, culture: 3 }, note: "Blessing a man's family lands deeper than thanking him — especially with someone whose family is the whole reason he is here. Youssef goes still, then grabs your hand with both of his.", outcome: 'excellent' },
-          { id: 'b', text: 'Thanks Youssef! Take care of yourself', arabic: 'مشكور يا يوسف! خلي بالك من نفسك', roman: "mashkuur ya yusuf! khalli baalak min nafsak", score: 2, impact: { trust: 1, respect: 1, culture: 1 }, note: "Warm and personal — using his name is what lifts it above a generic thanks. He gives you a genuine smile and a wave.", outcome: 'good' },
-          { id: 'c', text: 'Thanks', arabic: 'مشكور', roman: 'mashkuur', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Youssef gives a polite nod. Another passenger, another ride. The door closes.", outcome: 'neutral' },
-          { id: 'd', text: 'Leave without a word', arabic: '—', roman: '(you get out, grab your bag and walk away)', score: -2, impact: { trust: -1, respect: -1, culture: -1 }, note: "Youssef watches you walk into the hotel without looking back. He sits there for a moment, then mutters to himself.", outcome: 'bad' },
+          { id: 'a', text: 'MashaAllah! And how are the kids?', arabic: 'ما شاء الله! وشلونهم العيال؟', roman: "maa shaa' allaah! w-shloonhum il-'iyaal?", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, outcome: 'good', route: 'friend', note: 'You admired what he has built here and asked after the reason for it. Youssef\'s shoulders drop — he likes talking about his kids.' },
+          { id: 'b', text: 'Eight years! You must know Dubai inside out', arabic: 'ثمان سنين! أكيد تعرف دبي زين', roman: "thmaan siniin! akiid ti'arf dubay zain", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'insider', note: 'You heard eight years as experience. Youssef sits up a little — nobody asks a driver what he knows.' },
+          { id: 'c', text: 'May God bring you back together with them soon', arabic: 'الله يجمعك فيهم عن قريب', roman: "allaah yijma'ak fiihum 'an gariib", score: 5, impact: { trust: 3, respect: 0, culture: 2 }, outcome: 'good', route: 'friend', flag: 'BLESSED_THE_REUNION', note: 'الله يجمعك فيهم is the blessing for someone living far from family. You skipped the small talk and went straight to what the eight years cost him.' },
+          { id: 'd', text: 'Away from your kids? I couldn\'t do it', arabic: 'بعيد عن عيالك؟ أنا ما أقدر', roman: "b'iid 'an 'iyaalak? ana maa agdar", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', note: 'He is here because of his kids, not in spite of them. Saying you could not do it sounds like a judgement on the choice his family depends on.' },
+        ],
+      },
+      {
+        id: 'scene4-friend', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'A red light near Business Bay',
+        arabic: 'بكلمهم فيديو كل يوم، بس مش زي ما تشوفهم',
+        roman: "bakallimhum vidyu kull yoom, bass mish zayy ma tshuufhum",
+        english: "I video-call them every day, but it's not like seeing them.",
+        teachingNote: 'مش زي is Egyptian "not like" — Gulf would say مب مثل. The بـ on بكلمهم marks a habit in Egyptian; in Gulf Arabic the same بـ usually means "will".',
+        choices: [
+          { id: 'a', text: 'True. When will you visit them?', arabic: 'صح. متى بتزورهم؟', roman: 'sah. mita bitzuurhum?', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'friend', next: 'scene5', note: 'Asking when he goes home gives him something to look forward to out loud. بتزورهم — "will you visit them" — is the Gulf future.' },
+          { id: 'b', text: 'And where do you go on your day off?', arabic: 'ووين تروح يوم عطلتك؟', roman: "w-wain truuh yoom 'utlatak?", score: 5, impact: { trust: -1, respect: 3, culture: 3 }, outcome: 'good', route: 'insider', next: 'scene5', note: 'A driver\'s day off is where the best local places are, and he is glad to share them. You did step away from his kids to ask, though — he noticed the change of subject.' },
+          { id: 'c', text: 'Honestly, I don\'t like video calls', arabic: 'أنا بصراحة ما أحب مكالمات الفيديو', roman: 'ana b-saraaha maa ahibb mukaalamaat il-vidyu', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'He told you how he stays close to his children, and you answered with your preferences. The moment was his.' },
+        ],
+      },
+      {
+        id: 'scene4-insider', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'A red light near Business Bay',
+        arabic: 'دبي دي أنا حافظها شارع شارع. عايز تعرف إيه؟',
+        roman: "dubayy di ana haafizha shaari' shaari'. 'aayiz ti'raf eeh?",
+        english: 'I know this Dubai street by street. What do you want to know?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'دبي دي أنا حافظها شارع شارع. عايزة تعرفي إيه؟', roman: "dubayy di ana haafizha shaari' shaari'. 'ayza ti'rafi eeh?", english: 'I know this Dubai street by street. What do you want to know?' },
+        teachingNote: 'عايز is Egyptian "want" — عايزة to a woman. In Gulf Arabic that is تبي / تبين. إيه is his شو.',
+        choices: [
+          { id: 'a', text: 'Where can I eat good, cheap food?', arabic: 'وين آكل أكل زين ورخيص؟', roman: "wain aakil akil zain w-rikhiis?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'insider', next: 'scene5', note: 'The one question every driver in Dubai can answer better than any app. Youssef is already listing places before the light changes.' },
+          { id: 'b', text: 'What do you love about Dubai?', arabic: 'انت شو تحب في دبي؟', roman: 'inta shu tihibb fi dubay?', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'friend', next: 'scene5', note: 'You asked about him, not the map. Eight years in, nobody has asked Youssef what he loves about the place.' },
+          { id: 'c', text: 'No need — I have Google Maps', arabic: 'ما يحتاج، عندي خرائط جوجل', roman: "maa yihtaaj, 'indi kharaayit google", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'He offered eight years of the city. The map knows the streets; Youssef knows which shawarma is worth the queue.' },
+        ],
+      },
+      {
+        id: 'scene5', kind: 'language', charName: 'Youssef', charGender: 'male', setting: 'The exit for your new neighbourhood',
+        arabic: 'يعني شقة جديدة وحياة جديدة؟ مبروك!',
+        roman: "ya'ni sha''a gdiida w-hayaa gdiida? mabruuk!",
+        english: 'So — a new flat and a new life? Congratulations!',
+        charDialogue: {
+          warm: { arabic: 'يعني شقة جديدة وحياة جديدة؟ ألف مبروك!', roman: "ya'ni sha''a gdiida w-hayaa gdiida? alf mabruuk!", english: 'So — a new flat and a new life? A thousand congratulations!' },
+          neutral: { arabic: 'يعني شقة جديدة وحياة جديدة؟ مبروك!', roman: "ya'ni sha''a gdiida w-hayaa gdiida? mabruuk!", english: 'So — a new flat and a new life? Congratulations!' },
+          cold: { arabic: 'شقة جديدة؟ مبروك', roman: "sha''a gdiida? mabruuk", english: 'A new flat? Congratulations.' },
+        },
+        warmThreshold: 18, coldThreshold: 6,
+        teachingNote: 'Egyptians say جديدة with a hard g (gdiida); Emiratis often say يديدة. مبروك is the same in both, and so is its answer: الله يبارك فيك.',
+        nextByRoute: { friend: 'scene6-friend', insider: 'scene6-insider' },
+        choices: [
+          { id: 'a', text: 'May God bless you', arabic: 'الله يبارك فيك', roman: 'allaah yibaarik fiik', score: 7, impact: { trust: 2, respect: 2, culture: 3 }, outcome: 'excellent', flag: 'ANSWERED_MABROOK', note: 'مبروك is a blessing, and الله يبارك فيك sends one straight back. It is the exchange you will use for every new job, flat and baby in Dubai.' },
+          { id: 'b', text: 'Thanks — God willing, all good things', arabic: 'مشكور، إن شاء الله خير', roman: "mashkuur, in shaa' allaah khair", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Kind, and إن شاء الله خير is a nice wish. But مبروك has a set answer, and Youssef is waiting for it: الله يبارك فيك.' },
+          { id: 'c', text: 'It\'s nothing — just a flat', arabic: 'مب شي، بس شقة', roman: 'mub shay, bass shigga', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'Brushing off a مبروك refuses the good wish along with it. Take the blessing, and give one back.' },
+        ],
+      },
+      {
+        id: 'scene6-friend', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'Outside your building',
+        arabic: 'وصلنا يا باشا! خد رقمي، لو احتجت أي حاجة كلمني',
+        roman: "wasalna ya baasha! khud ra'ami, law ihtagt ay haaga kallimni",
+        english: "Here we are, boss! Take my number — if you need anything, call me.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'وصلنا يا مدام! خدي رقمي، لو احتجتي أي حاجة كلميني', roman: "wasalna ya madaam! khudi ra'ami, law ihtagti ay haaga kallimiini", english: "Here we are, madam! Take my number — if you need anything, call me." },
+        teachingNote: 'Egyptian خد رقمي is Gulf خذ رقمي, and حاجة ("thing") is Gulf شي. Listen for the ق in رقمي: Egyptians swallow it, Emiratis say g.',
+        choices: [
+          { id: 'a', text: 'Of course! And when you see the kids, give them my salaam', arabic: 'أكيد! وإذا شفت العيال، سلم عليهم', roman: "akiid! w-idha shift il-'iyaal, sallim 'alaihum", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'friend', next: null, note: 'Sending your greetings to his children makes you part of the story he will tell them. سلم عليهم — "greet them for me" — is how families pass on warmth.' },
+          { id: 'b', text: 'Thanks! I\'ll call you if I get lost in Dubai', arabic: 'تسلم! وبتصل فيك إذا ضعت في دبي', roman: "tislam! w-battasil fiik idha dhi't fi dubay", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'insider', next: null, note: 'You took the number as the local lifeline it is. In a new city, a driver who knows every shortcut is worth more than any app.' },
+          { id: 'c', text: 'No need — I have the taxi app', arabic: 'ما أحتاج، عندي تطبيق التاكسي', roman: "maa ahtaaj, 'indi tatbiig it-taksi", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'He offered himself, not a service. Turning it down for an app tells him the last forty minutes were just a transaction.' },
+        ],
+      },
+      {
+        id: 'scene6-insider', kind: 'judgement', charName: 'Youssef', charGender: 'male', setting: 'Outside your building',
+        arabic: 'وصلنا! وعلى فكرة، أحسن شاورما في دبي في آخر الشارع ده',
+        roman: "wasalna! w-'ala fikra, ahsan shawirma fi dubayy fi aakhir ish-shaari' da",
+        english: "We're here! And by the way — the best shawarma in Dubai is at the end of this street.",
+        teachingNote: 'ده is Egyptian "this" (masculine) — Gulf says هذا. على فكرة, "by the way", is shared by both.',
+        choices: [
+          { id: 'a', text: 'Really? Tomorrow I\'ll go eat there', arabic: 'صدق؟ باكر بروح آكل هناك', roman: 'sidg? baachir baruuh aakil hinaak', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'insider', next: null, note: 'You took his tip seriously enough to plan around it. صدق؟ is the Gulf "really?", and باكر بروح is a promise with a day in it.' },
+          { id: 'b', text: 'Thanks! You\'re the first person I know in Dubai', arabic: 'تسلم! انت أول واحد أعرفه في دبي', roman: "tislam! inta awwal waahid a'arfa fi dubay", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'friend', next: null, note: 'You told him what the ride meant, not just where it ended. On your first night, that is true — and he will remember hearing it.' },
+          { id: 'c', text: 'Shawarma? No, I don\'t eat at places like that', arabic: 'شاورما؟ لا، أنا ما آكل من هالأماكن', roman: "shaawirma? laa, ana maa aakil min hal-amaakin", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'He shared his favourite place and you looked down on it. In Dubai the best food is often in exactly those places.' },
+        ],
+      },
+      {
+        id: 'scene7-bonus', bonus: true, charName: 'Youssef', charGender: 'male', setting: 'Outside your building — you reach for your wallet',
+        arabic: 'والله ما آخد منك ولا درهم',
+        roman: "wallaahi ma aakhud minnak wala dirham",
+        english: "By God, I won't take a single dirham from you.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'والله ما آخد منك ولا درهم', roman: "wallaahi ma aakhud minnik wala dirham", english: "By God, I won't take a single dirham from you." },
+        teachingNote: 'Refusing the fare is a real courtesy in Egypt and the Gulf — and the expected answer is to insist. Paying is how you honour his work.',
+        choices: [
+          { id: 'a', text: 'By God, that\'s not right — this is yours', arabic: 'والله ما يصير، هذا حقك', roman: "wallaah maa yisiir, haadha haggak", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'ما يصير — "it isn\'t right" — insists without arguing. He refused once, as custom asks; you insisted, as custom asks. Now he can take it.' },
+          { id: 'b', text: 'OK — then this is for the kids. God protect your family', arabic: 'زين، حق العيال. الله يحفظ عائلتك', roman: "zain, hagg il-'iyaal. allaah yihfaz 'aa'iltak", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'Handing it over as a gift for his children lets him accept without losing face. حق العيال — "for the kids" — is how the Gulf gives money that cannot be refused.' },
         ],
       },
     ],
     endings: [
-      { id: 'best-ride-ever', min: 24, title: 'Best Ride Ever', arabic: 'أحسن رحلة!', roman: "ahsan rihla!", en: 'What a ride!', desc: "You didn't just take a taxi — you made a friend. Youssef gave you his number and will genuinely pick up when you call. You also did something harder than it looks: you understood Egyptian and answered in Khaleeji, all the way to the hotel.", color: C.JADE_ACCENT, type: 'exceptional' },
-      { id: 'good-chat', min: 13, title: 'Good Chat', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa', en: 'Nice conversation', desc: "A genuinely pleasant ride. Youssef enjoyed talking to you and wished you well.", color: C.JADE2, type: 'success' },
-      { id: 'forgettable-ride', min: 3, title: 'Forgettable Ride', arabic: 'رحلة عادية', roman: "rihla 'aadiyya", en: 'Just a ride', desc: "Youssef drove you to the hotel. That's about it. Another passenger in a long day of passengers.", color: C.VIOLET2, type: 'mixed' },
-      { id: 'awkward-silence', min: 0, title: 'Awkward Silence', arabic: 'سكوت محرج', roman: 'sukoot muhrij', en: 'Uncomfortable silence', desc: "Youssef gave up trying. The last 20 minutes were just Amr Diab on the radio and the sound of traffic.", color: C.ERROR, type: 'failed' },
+      {
+        id: 'for-the-kids', min: 30, secret: true, requiredFlags: ['BLESSED_THE_REUNION', 'ANSWERED_MABROOK'],
+        title: 'For the Kids', arabic: 'حق العيال', roman: "hagg il-'iyaal", en: 'For the kids',
+        desc: 'At your building Youssef pushes your money back — he will not take a dirham. You blessed a father living far from his children, and you answered his مبروك the way someone from home would. You insist, as you should, and he finally takes it for his kids. Your first night in Dubai, and a stranger has already treated you like family.',
+        color: C.CULTURAL_GOLD, type: 'exceptional',
+        hint: 'Bless a father for the family he misses — and give a مبروك the answer it gets at home.',
+      },
+      {
+        id: 'a-friend-in-the-city', min: 28, route: 'friend', tier: 'strong',
+        title: 'A Friend in the City', arabic: 'رقم يوسف', roman: 'ragam yuusif', en: "Youssef's number",
+        desc: 'Youssef\'s number is in your phone before you reach the lift, and he meant every word. You asked about his kids, not just his car, and answered him in your own Arabic all the way home. Your first night in Dubai, and you already know someone who will pick up.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Ask about the man behind the wheel — where he is from, and who he misses.',
+      },
+      {
+        id: 'a-friendly-ride', min: 12, route: 'friend', tier: 'weak',
+        title: 'A Friendly Ride', arabic: 'الله معاك', roman: "allaah ma'aak", en: 'God be with you',
+        desc: 'Youssef liked you, and said so. A few answers came out awkward, though, so at the door it is a warm goodbye rather than a number. Friendly is a good start for night one.',
+        color: C.JADE2, type: 'mixed',
+        hint: 'Warmth is the right instinct — land the small courtesies too, and a ride becomes a contact.',
+      },
+      {
+        id: 'the-city-from-the-inside', min: 28, route: 'insider', tier: 'strong',
+        title: 'The City From the Inside', arabic: 'أحسن شاورما', roman: 'ahsan shaawirma', en: 'The best shawarma',
+        desc: 'By the time you reach your building you have a list no guidebook has: where to live, where to eat, which road to avoid at six. You treated eight years of driving these streets as expertise, and Youssef handed it over gladly.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Treat him as the expert he is: ask where to live, where to eat, how the city works.',
+      },
+      {
+        id: 'a-few-tips', min: 12, route: 'insider', tier: 'weak',
+        title: 'A Few Tips', arabic: 'على طول', roman: "'ala tuul", en: 'Straight ahead',
+        desc: 'Youssef pointed out a couple of places, but some of your answers fell flat and the tips dried up before your exit. You know a little more of the city than you did at the airport.',
+        color: C.VIOLET2, type: 'mixed',
+        hint: 'Curiosity is the right instinct — show him you are listening, and he will keep talking.',
+      },
+      {
+        id: 'just-a-fare', min: 0,
+        title: 'Just a Fare', arabic: 'وصلنا', roman: 'wasalna', en: "We're here",
+        desc: 'Youssef stopped trying somewhere around the second exit. The rest of the ride was the radio and the meter, and at your building it was just a fare.',
+        color: C.ERROR, type: 'failed',
+      },
     ],
   },
 
