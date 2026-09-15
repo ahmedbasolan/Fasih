@@ -10,7 +10,8 @@
  * a record to keep when both sides have one.
  */
 
-import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress } from '../types';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioRunRecord } from '../types';
+import { MAX_RUNS_RECORDED } from './scenarioHistory';
 
 export interface ScenarioRun {
   endingType: string;
@@ -143,5 +144,42 @@ export function mergeScenarioRuns(
 ): Record<string, number> {
   const merged: Record<string, number> = { ...cloud };
   for (const [id, n] of Object.entries(local)) merged[id] = Math.max(n, cloud[id] ?? 0);
+  return merged;
+}
+
+/**
+ * Run history per scenario, merged as a multiset. Both sides usually share the
+ * runs from before they diverged, so a run appearing on both is kept once; a
+ * run only one side has is added. Identical runs (same ending, same day) are
+ * counted, not collapsed — the side with more of them wins — so two real replays
+ * on one day survive. The one case this under-counts: each device making the
+ * same run on the same day while offline from the other.
+ *
+ * The result is in date order (a stable sort keeps same-day runs in their
+ * recorded order) and keeps the earliest MAX_RUNS_RECORDED.
+ */
+export function mergeScenarioHistory(
+  local: Record<string, ScenarioRunRecord[]>,
+  cloud: Record<string, ScenarioRunRecord[]>,
+): Record<string, ScenarioRunRecord[]> {
+  const merged: Record<string, ScenarioRunRecord[]> = {};
+  const key = (r: ScenarioRunRecord) => `${r.on}|${r.endingId}|${r.endingType}`;
+  for (const id of new Set([...Object.keys(local), ...Object.keys(cloud)])) {
+    // The cloud column is untyped JSONB; a malformed value must not throw mid-merge.
+    const localRuns = Array.isArray(local[id]) ? local[id] : [];
+    const cloudRuns = Array.isArray(cloud[id]) ? cloud[id] : [];
+    const localCount = new Map<string, number>();
+    for (const r of localRuns) localCount.set(key(r), (localCount.get(key(r)) ?? 0) + 1);
+    const extra: ScenarioRunRecord[] = [];
+    const seen = new Map<string, number>();
+    for (const r of cloudRuns) {
+      const k = key(r);
+      seen.set(k, (seen.get(k) ?? 0) + 1);
+      if (seen.get(k)! > (localCount.get(k) ?? 0)) extra.push(r);
+    }
+    merged[id] = [...localRuns, ...extra]
+      .sort((a, b) => a.on.localeCompare(b.on))
+      .slice(0, MAX_RUNS_RECORDED);
+  }
   return merged;
 }
