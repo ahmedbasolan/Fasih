@@ -29,16 +29,12 @@ export const getCareerScenarios = (C: ThemeColors): Scenario[] => [
   },
   {
     id: 'office-meeting', iconName: 'Briefcase',
-    title: 'The First Introduction', subtitle: 'Make a lasting impression at a formal meeting',
-    // Not written yet, so there is nothing to count: these were 12 / 5 / '25+',
-    // typed in for a script that does not exist. ScenarioEntry shows no counts
-    // for a coming-soon row.
-    decisions: 0, endings: 0, phrases: '0', level: 'Intermediate',
+    title: 'The Meeting', subtitle: 'Your manager has fifteen minutes. You have an idea.',
+    decisions: 6, endings: 8, phrases: '15', level: 'Intermediate',
     color: C.VIOLET2, gradientColors: ['#110A1C', '#080510'],
     arabicScene: 'اجتماع',
-    kafIntro: 'In Gulf business culture, how you introduce yourself matters far more than your resume.',
+    kafIntro: 'In a Gulf office, how you raise an idea matters as much as the idea itself.',
     mode: 'career',
-    comingSoon: true,
     dialect: 'Emirati Gulf',
   },
 ];
@@ -592,6 +588,283 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         id: 'just-a-coffee', min: 0,
         title: 'Just a Coffee', arabic: 'الله يسهل', roman: 'allaah ysahhil', en: 'God make it easy',
         desc: 'Hamad finished his cup, rinsed it and went back to work. Nothing went badly wrong, but nothing landed either — and a coffee invitation that goes nowhere is not always offered again.',
+        color: C.ERROR, type: 'failed',
+      },
+    ],
+  },
+
+  // ── CAREER 3: THE MEETING ──────────────────────────────────────────────────
+  // Route script (spec 2026-09-14), three destinations: `sponsor` (Rashid speaks
+  // for you upstairs), `voice` (he starts asking what you think) and `ownership`
+  // (he hands you the work). Forks at scene3 (the pitch) and scene5 (the finale).
+  // Hidden: give the team the credit for your idea (scene3 c — not the top
+  // choice) AND answer his ما شاء الله with a blessing (scene5).
+  //
+  // NOT NATIVE-REVIEWED. mt-1..mt-4 are new and unsourced; every other phrase is
+  // an existing library entry. See docs/language/reviewer-brief.md.
+  'office-meeting': {
+    id: 'office-meeting',
+    title: 'The Meeting',
+    estimatedMinutes: 8,
+    routes: [
+      { id: 'sponsor', label: 'A sponsor upstairs' },
+      { id: 'voice', label: 'A trusted voice' },
+      { id: 'ownership', label: 'Given the responsibility' },
+    ],
+    defaultRoute: 'sponsor',
+    phrases: {
+      // طال عمرك / الحمد لله على السلامة / توني واصل / اجتماع / الله يبارك فيك / إن شاء الله / زين
+      core: ['core-1', 'mt-1', 'w7', 'w5', 's6', 'w1', 'e1'],
+      byEnding: {
+        // على كيفك / الله يسعدك / أساعد
+        'a-name-upstairs': ['a2', 'gr5', 'mt-4'],
+        'liked-not-backed': ['a2', 'gr5', 'mt-4'],
+        // خلني أفكر فيها / أحاول
+        'the-one-he-asks': ['mt-2', 'mt-3'],
+        'heard-not-asked': ['mt-2', 'mt-3'],
+        // مشروع / متى / أساعد
+        'the-project-is-yours': ['w6', 'e12', 'mt-4'],
+        'slowly-slowly': ['w6', 'e12', 'mt-4'],
+        // عندك أمر — accepting the kunya without overstepping it
+        'call-me-bu-khalid': ['h4'],
+      },
+    },
+    primerPhrases: ['core-1', 'mt-1', 's6'], // طال عمرك / الحمد لله على السلامة / الله يبارك فيك
+    scenes: [
+      {
+        id: 'scene1', kind: 'language', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Sunday, 9 AM',
+        arabic: 'هلا والله! تفضل اقعد. شلونك؟',
+        roman: "hala wallaah! tfaddal ig'id. shloonak?",
+        english: 'Welcome! Come in, sit down. How are you?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'هلا والله! تفضلي اقعدي. شلونج؟', roman: "hala wallaah! tfaddali ig'idi. shloonich?", english: 'Welcome! Come in, sit down. How are you?' },
+        teachingNote: 'Rashid is your senior manager. طال عمرك is how Gulf Arabic honours rank or age — safer than his first name, which his peers use.',
+        choices: [
+          { id: 'a', text: 'Thank God, I\'m well — sir', arabic: 'الحمد لله بخير، طال عمرك', roman: "il-hamdu lillaah b-khair, taal 'umrak", score: 7, impact: { trust: 2, respect: 3, culture: 2 }, outcome: 'excellent', note: 'طال عمرك — "may your life be long" — does what "sir" does in English, and more warmly. With a senior manager it tells him you know who you are talking to.' },
+          { id: 'b', text: 'Fine, thank God, thanks. And how are you?', arabic: 'زين والحمد لله، مشكور. وانت شلونك؟', roman: 'zain w-il-hamdu lillaah, mashkuur. w-inta shloonak?', score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Friendly and correct — with a colleague. With the manager, the question back is fine, but it needs طال عمرك to mark the rank.' },
+          { id: 'c', text: 'Hi Rashid! All good', arabic: 'هلا راشد! كل شي تمام', roman: 'hala raashid! kill shay tamaam', score: -4, impact: { trust: -1, respect: -2, culture: -1 }, outcome: 'bad', note: 'His first name on its own, from a new starter, skips a step he has not offered. Gulf offices are warm, but rank is still spoken out loud.' },
+        ],
+      },
+      {
+        id: 'scene2', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid pushes a pile of papers aside',
+        arabic: 'توني راجع من السفر، وعندي اجتماع بعد شوي',
+        roman: "tawni raaji' min is-safar, w-'indi ijtimaa' ba'd shwai",
+        english: 'I just got back from a trip, and I have a meeting shortly.',
+        teachingNote: 'توني is the Gulf "I just". Anyone back from travel, or from hospital, is greeted with الحمد لله على السلامة before anything else.',
+        choices: [
+          { id: 'a', text: 'Welcome back! I hope it was a good trip', arabic: 'الحمد لله على السلامة! إن شاء الله كانت سفرة حلوة', roman: "il-hamdu lillaah 'ala is-salaama! in shaa' allaah kaanat safra hilwa", score: 6, impact: { trust: 3, respect: 2, culture: 1 }, outcome: 'good', route: 'sponsor', note: 'You welcomed him back and asked after the trip before your own agenda. Rashid relaxes — this is going to be a conversation, not a request.' },
+          { id: 'b', text: 'Welcome back. What matters most to you right now?', arabic: 'الحمد لله على السلامة. شو أهم شي عندك الحين؟', roman: "il-hamdu lillaah 'ala is-salaama. shu ahamm shay 'indak il-hiin?", score: 6, impact: { trust: 1, respect: 2, culture: 3 }, outcome: 'good', route: 'voice', note: 'Asking what matters to him first lets you pitch in his terms. He notices you are thinking about the team, not only yourself.' },
+          { id: 'c', text: 'Welcome back. If you like, I can take something off your plate', arabic: 'الحمد لله على السلامة. إذا تبي، أشيل عنك شي', roman: "il-hamdu lillaah 'ala is-salaama. idha tabi, ashiil 'annak shay", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'ownership', note: 'Offering to carry some of his load, right after the greeting, is initiative he can see. أشيل عنك is "I\'ll lift it off you".' },
+          { id: 'd', text: 'OK. Let\'s get to the point', arabic: 'زين. خلنا ندخل في الموضوع', roman: "zain. khallna nidkhal fil-mawdhuu'", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'He has just told you he is back from a trip. Skipping الحمد لله على السلامة to get to business reads as caring about the meeting more than the man.' },
+        ],
+      },
+      {
+        id: 'scene3', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid sits back',
+        arabic: 'قلت لي عندك فكرة عن أول أسبوع للموظف اليديد. تفضل',
+        roman: "gilt li 'indak fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddal",
+        english: "You said you had an idea about a new starter's first week. Go ahead.",
+        charDialogue: {
+          warm: { arabic: 'يلا، قلت لي عندك فكرة عن أول أسبوع للموظف اليديد. تفضل، أسمعك', roman: "yalla, gilt li 'indak fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddal, asma'ak", english: "Right — you said you had an idea about a new starter's first week. Go ahead, I'm listening." },
+          neutral: { arabic: 'قلت لي عندك فكرة عن أول أسبوع للموظف اليديد. تفضل', roman: "gilt li 'indak fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddal", english: "You said you had an idea about a new starter's first week. Go ahead." },
+          cold: { arabic: 'عندك فكرة؟ تفضل', roman: "'indak fikra? tfaddal", english: 'You have an idea? Go on.' },
+        },
+        warmThreshold: 10, coldThreshold: 3,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'قلتي لي عندج فكرة عن أول أسبوع للموظف اليديد. تفضلي',
+          roman: "gilti li 'indich fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddali",
+          english: "You said you had an idea about a new starter's first week. Go ahead.",
+          charDialogue: {
+            warm: { arabic: 'يلا، قلتي لي عندج فكرة عن أول أسبوع للموظف اليديد. تفضلي، أسمعج', roman: "yalla, gilti li 'indich fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddali, asma'ich", english: "Right — you said you had an idea about a new starter's first week. Go ahead, I'm listening." },
+            neutral: { arabic: 'قلتي لي عندج فكرة عن أول أسبوع للموظف اليديد. تفضلي', roman: "gilti li 'indich fikra 'an awwal usbuu' lil-muwazzaf il-ydiid. tfaddali", english: "You said you had an idea about a new starter's first week. Go ahead." },
+            cold: { arabic: 'عندج فكرة؟ تفضلي', roman: "'indich fikra? tfaddali", english: 'You have an idea? Go on.' },
+          },
+        },
+        teachingNote: 'عندك to a man, عندج to a woman. An idea at work is also a question of face: whose way it changes, and who gets the credit.',
+        nextByRoute: { sponsor: 'scene4-sponsor', voice: 'scene4-voice', ownership: 'scene4-ownership' },
+        choices: [
+          { id: 'a', text: 'A simple plan — and I want to run it myself', arabic: 'خطة بسيطة، وأبي أمسكها بنفسي', roman: 'khutta basiita, w-abi amsikha b-nafsi', score: 7, impact: { trust: 1, respect: 3, culture: 3 }, outcome: 'good', route: 'ownership', note: 'A concrete idea and a clear ask in one breath. أبي plus a verb is the everyday Gulf "I want to" — direct, and in a meeting like this, welcome.' },
+          { id: 'b', text: 'I\'ve noticed new starters get lost in week one. What do you think?', arabic: 'لاحظت إن اليديد يضيع أول أسبوع. شو رايك؟', roman: "laahazt inn il-ydiid ydhii' awwal usbuu'. shu raayak?", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'good', route: 'voice', note: 'An observation, then his view — before your solution. It invites him in rather than handing him a verdict.' },
+          { id: 'c', text: 'The idea came from the team — I just put it together', arabic: 'الفكرة من الفريق، وأنا بس رتبتها', roman: 'il-fikra min il-fariig, w-ana bass rattabtha', score: 5, impact: { trust: 3, respect: -1, culture: 3 }, outcome: 'good', route: 'sponsor', flag: 'CREDITED_THE_TEAM', note: 'Sharing the credit costs you the spotlight today. It also tells Rashid you will not climb over the people around you — something a Gulf manager weighs heavily.' },
+          { id: 'd', text: 'The way we do it now is wrong. It has to change', arabic: 'الطريقة الحين غلط، ولازم تتغير', roman: 'it-tariiga il-hiin ghalat, w-laazim titghayyar', score: -4, impact: { trust: -1, respect: -2, culture: -1 }, outcome: 'bad', note: 'The current way is somebody\'s way — possibly his. Calling it wrong makes him defend it instead of hearing you. Say what would help, not who got it wrong.' },
+        ],
+      },
+      {
+        id: 'scene4-sponsor', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid taps the desk',
+        arabic: 'المدير العام يحب الأفكار اليديدة. بعرضها عليه',
+        roman: "il-mudiir il-'aam yhibb il-afkaar il-ydiida. ba'ridhha 'alaih",
+        english: "The general manager likes new ideas. I'll put it to him.",
+        teachingNote: 'The بـ on بعرضها is the Gulf future: "I will present it". A manager who carries your idea upstairs is lending you his name.',
+        choices: [
+          { id: 'a', text: 'As you see fit, sir — you know best how to put it', arabic: 'على كيفك، طال عمرك. انت أدرى شلون تعرضها', roman: "'ala kaifak, taal 'umrak. inta adra shloon ti'ridhha", score: 6, impact: { trust: 3, respect: 2, culture: 1 }, outcome: 'good', route: 'sponsor', next: 'scene5', note: 'على كيفك hands him the lead, and انت أدرى — "you know better" — trusts his judgement upstairs. He will fight harder for an idea he feels is partly his.' },
+          { id: 'b', text: 'Let me help you with it', arabic: 'خلني أساعدك فيها', roman: "khallni asaa'dak fiiha", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'ownership', next: 'scene5', note: 'خلني — "let me" — offers without pushing. You stay close to the work without taking it back from him.' },
+          { id: 'c', text: 'Just don\'t forget to say it\'s my idea', arabic: 'بس لا تنسى تقول إنها فكرتي', roman: 'bass laa tinsa tguul innaha fikrati', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Asking for the credit before he has even gone upstairs tells Rashid you are counting. In the Gulf, credit tends to find the person who does not ask for it.' },
+        ],
+      },
+      {
+        id: 'scene4-voice', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid frowns',
+        arabic: 'سوينا شي مثله قبل، وما نفع',
+        roman: "sawwaina shay mithla gabl, w-maa nifa'",
+        english: "We did something like this before, and it didn't work.",
+        teachingNote: 'Disagreeing with a senior starts by agreeing with something true. صح، بس… — "right, but…" — keeps his face and your point.',
+        choices: [
+          { id: 'a', text: 'True — but things may be different now. What went wrong?', arabic: 'صح، بس يمكن الحين غير. شو اللي ما نفع؟', roman: "sah, bass yimkin il-hiin ghair. shu illi maa nifa'?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'voice', next: 'scene5', note: 'You agreed with what was true, then asked him to teach you what failed. That is disagreement that keeps the other person\'s face.' },
+          { id: 'b', text: 'Let me try it for one month and report back', arabic: 'خلني أحاول شهر واحد، وأرد لك خبر', roman: 'khallni ahaawil shahar waahid, w-arudd lak khabar', score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'good', route: 'ownership', next: 'scene5', note: 'A small trial with an end date lowers the risk he is being asked to take. خلني أحاول — "let me try" — asks permission and offers a plan at once.' },
+          { id: 'c', text: 'No — you just did it wrong', arabic: 'لا، انتو سويتوها غلط', roman: 'laa, intu sawwaituuha ghalat', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Telling a senior manager his team did it wrong turns your idea into an accusation. Even if it is true, he now has to defend the past instead of hearing the plan.' },
+        ],
+      },
+      {
+        id: 'scene4-ownership', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid checks his calendar',
+        arabic: 'زين، بس عندك وقت؟ شغلك وايد',
+        roman: "zain, bass 'indak wagt? shughlak waayid",
+        english: 'OK, but do you have the time? You have plenty on.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'زين، بس عندج وقت؟ شغلج وايد', roman: "zain, bass 'indich wagt? shughlich waayid", english: 'OK, but do you have the time? You have plenty on.' },
+        teachingNote: 'شغلك to a man, شغلج to a woman. He is not refusing — he is checking whether you have thought it through.',
+        choices: [
+          { id: 'a', text: 'Yes — I\'ve sorted my time. I\'ll start on Sunday', arabic: 'إي، رتبت وقتي. أبدا يوم الأحد', roman: 'ii, rattabt wagti. abda yoom il-ahad', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'ownership', next: 'scene5', note: 'A day answers the question behind his question. Plans with a date attached are the ones a Gulf manager believes.' },
+          { id: 'b', text: 'Honestly, I\'d need help with one part', arabic: 'صراحة، أحتاج مساعدة في شي واحد', roman: "saraaha, ahtaaj musaa'ada fi shay waahid", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'good', route: 'voice', next: 'scene5', note: 'Admitting the one part you cannot carry alone makes the rest of your plan more believable — and invites his advice.' },
+          { id: 'c', text: 'Of course — nobody in the team is better than me', arabic: 'أكيد، ما في أحد في الفريق أحسن مني', roman: 'akiid, maa fii ahad fil-fariig ahsan minni', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Praising yourself to your manager puts you against your own team. In the Gulf, others praise you; you say الحمد لله.' },
+        ],
+      },
+      {
+        id: 'scene5', kind: 'language', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid nods slowly',
+        arabic: 'ما شاء الله عليك، فكرة زينة',
+        roman: "maa shaa' allaah 'alaik, fikra zaina",
+        english: 'MashaAllah — a good idea.',
+        charDialogue: {
+          warm: { arabic: 'ما شاء الله عليك! والله فكرة زينة', roman: "maa shaa' allaah 'alaik! wallaah fikra zaina", english: 'MashaAllah! Honestly, a good idea.' },
+          neutral: { arabic: 'ما شاء الله عليك، فكرة زينة', roman: "maa shaa' allaah 'alaik, fikra zaina", english: 'MashaAllah — a good idea.' },
+          cold: { arabic: 'ما شاء الله. نشوف', roman: "maa shaa' allaah. nshuuf", english: "MashaAllah. We'll see." },
+        },
+        warmThreshold: 20, coldThreshold: 8,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'ما شاء الله عليج، فكرة زينة',
+          roman: "maa shaa' allaah 'alaich, fikra zaina",
+          english: 'MashaAllah — a good idea.',
+          charDialogue: {
+            warm: { arabic: 'ما شاء الله عليج! والله فكرة زينة', roman: "maa shaa' allaah 'alaich! wallaah fikra zaina", english: 'MashaAllah! Honestly, a good idea.' },
+            neutral: { arabic: 'ما شاء الله عليج، فكرة زينة', roman: "maa shaa' allaah 'alaich, fikra zaina", english: 'MashaAllah — a good idea.' },
+            cold: { arabic: 'ما شاء الله. نشوف', roman: "maa shaa' allaah. nshuuf", english: "MashaAllah. We'll see." },
+          },
+        },
+        teachingNote: 'When someone says ما شاء الله about you or your work, the answer is a blessing back — الله يبارك فيك — not a thank-you. عليك to a man, عليج to a woman.',
+        nextByRoute: { sponsor: 'scene6-sponsor', voice: 'scene6-voice', ownership: 'scene6-ownership' },
+        choices: [
+          { id: 'a', text: 'May God bless you, sir', arabic: 'الله يبارك فيك، طال عمرك', roman: "allaah yibaarik fiik, taal 'umrak", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, outcome: 'excellent', flag: 'BLESSED_BACK', note: 'A blessing for a blessing, and طال عمرك keeps the rank. You took the praise without holding on to it.' },
+          { id: 'b', text: 'Thank you so much, sir — that\'s kind of you', arabic: 'مشكور وايد، طال عمرك، هذا من ذوقك', roman: "mashkuur waayid, taal 'umrak, haadha min dhoogak", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Gracious, and من ذوقك — "that is your good taste" — is a nice touch. But ما شاء الله is a blessing, and in the Gulf a blessing is answered with one: الله يبارك فيك.' },
+          { id: 'c', text: 'I know — I worked really hard on it', arabic: 'أدري، تعبت عليها وايد', roman: "adri, ti'abt 'alaiha waayid", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'Agreeing with praise of yourself turns his compliment into your boast. Hand it back with a blessing instead.' },
+        ],
+      },
+      {
+        id: 'scene6-sponsor', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid stands up',
+        arabic: 'باكر بذكر اسمك عند المدير العام',
+        roman: "baachir badhkur ismak 'ind il-mudiir il-'aam",
+        english: "Tomorrow I'll mention your name to the general manager.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'باكر بذكر اسمج عند المدير العام', roman: "baachir badhkur ismich 'ind il-mudiir il-'aam", english: "Tomorrow I'll mention your name to the general manager." },
+        teachingNote: 'اسمك to a man, اسمج to a woman. بذكر is "I will mention" — the Gulf بـ future again.',
+        choices: [
+          { id: 'a', text: 'May God make you happy, sir. I won\'t forget it', arabic: 'الله يسعدك، طال عمرك. ما أنساها لك', roman: "allaah yis'idak, taal 'umrak. maa ansaaha lak", score: 6, impact: { trust: 3, respect: 2, culture: 1 }, outcome: 'good', route: 'sponsor', next: null, note: 'الله يسعدك blesses the man, and ما أنساها لك — "I won\'t forget this" — promises loyalty. That is what a sponsor is really backing.' },
+          { id: 'b', text: 'And if you have any notes before then, tell me', arabic: 'وإذا عندك ملاحظة قبل، قول لي', roman: "w-idha 'indak mulaahza gabl, gul li", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'voice', next: null, note: 'Inviting his notes before he goes upstairs makes it a better idea — and tells him your pride will not get in the way.' },
+          { id: 'c', text: 'And the promotion — when?', arabic: 'والترقية متى؟', roman: 'w-it-targiya mita?', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'He offered to put your name in front of the general manager. Asking what you get for it, today, turns the favour into a transaction.' },
+        ],
+      },
+      {
+        id: 'scene6-voice', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid closes the folder',
+        arabic: 'خلني أفكر فيها، إن شاء الله',
+        roman: "khallni afakkir fiiha, in shaa' allaah",
+        english: 'Let me think about it, God willing.',
+        teachingNote: 'خلني أفكر فيها with a bare إن شاء الله and no day is often a polite "not yet" — or a "no". What you say next decides which.',
+        choices: [
+          { id: 'a', text: 'God willing. Shall I come back to you on Sunday?', arabic: 'إن شاء الله. أمر عليك يوم الأحد؟', roman: "in shaa' allaah. amurr 'alaik yoom il-ahad?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'ownership', next: null, note: 'You accepted his إن شاء الله and gently attached a day to it. A date turns a maybe into something he will answer — without you pushing.' },
+          { id: 'b', text: 'Of course. And if something bothers you about it, tell me honestly', arabic: 'أكيد. وإذا عندك شي عليها، قول لي بصراحة', roman: "akiid. w-idha 'indak shay 'alaiha, gul li b-saraaha", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'good', route: 'voice', next: null, note: 'You invited the real objection. A manager who stalls often has one he is too polite to say — you just made it safe to say it.' },
+          { id: 'c', text: 'So is that a yes or a no?', arabic: 'يعني إي ولا لا؟', roman: "ya'ni ii willa laa?", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'Forcing a straight yes or no makes him choose between being blunt and losing face. He will choose the polite no.' },
+        ],
+      },
+      {
+        id: 'scene6-ownership', kind: 'judgement', charName: 'Rashid', charGender: 'male', setting: 'Your manager\'s office — Rashid smiles',
+        arabic: 'زين، المشروع لك. متى تبدا؟',
+        roman: "zain, il-mashruu' lak. mita tibda?",
+        english: 'Fine — the project is yours. When do you start?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'زين، المشروع لج. متى تبدين؟', roman: "zain, il-mashruu' lich. mita tibdiin?", english: 'Fine — the project is yours. When do you start?' },
+        teachingNote: 'لك to a man, لج to a woman. He asked "when" — the answer needs a day in it.',
+        choices: [
+          { id: 'a', text: 'From tomorrow, God willing', arabic: 'من باكر، إن شاء الله', roman: "min baachir, in shaa' allaah", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'ownership', next: null, note: 'إن شاء الله with a day attached is a real commitment. Rashid hears a start date, and so does everyone he tells.' },
+          { id: 'b', text: 'Whenever suits you, sir', arabic: 'متى ما تبي، طال عمرك', roman: "mita ma tabi, taal 'umrak", score: 6, impact: { trust: 3, respect: 2, culture: 1 }, outcome: 'good', route: 'sponsor', next: null, note: 'Leaving the timing to him honours his lead. He will pick the date — and keep an eye on how you do.' },
+          { id: 'c', text: 'God willing', arabic: 'إن شاء الله', roman: "in shaa' allaah", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'He asked when. A bare إن شاء الله, with no day, sounds exactly like the polite stall — from the person who just asked for the project.' },
+        ],
+      },
+      {
+        id: 'scene7-bonus', bonus: true, charName: 'Rashid', charGender: 'male', setting: 'The corridor — a week later',
+        arabic: 'من اليوم، قول لي بو خالد',
+        roman: 'min il-yoom, gul li bu khaalid',
+        english: 'From today, call me Bu Khalid.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'من اليوم، قولي لي بو خالد', roman: 'min il-yoom, guuli li bu khaalid', english: 'From today, call me Bu Khalid.' },
+        teachingNote: 'بو خالد — "father of Khalid" — is how friends and equals address him. Being invited to use it is a senior Emirati letting you closer.',
+        choices: [
+          { id: 'a', text: 'At your service, Bu Khalid', arabic: 'عندك أمر، يا بو خالد', roman: "'indak amur, ya bu khaalid", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'عندك أمر — "command me" — accepts the closeness and keeps the respect. You took the step he offered, and no further.' },
+          { id: 'b', text: 'I\'m honoured, Bu Khalid', arabic: 'تشرفت، يا بو خالد', roman: 'tsharraft, ya bu khaalid', score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'تشرفت — "I am honoured" — shows you know what the kunya means. Use it from now on; going back to his first name would undo it.' },
+        ],
+      },
+    ],
+    endings: [
+      {
+        id: 'call-me-bu-khalid', min: 30, secret: true, requiredFlags: ['CREDITED_THE_TEAM', 'BLESSED_BACK'],
+        title: 'Call Me Bu Khalid', arabic: 'بو خالد', roman: 'bu khaalid', en: 'Father of Khalid',
+        desc: 'A week later Rashid stops you in the corridor: from now on, call him بو خالد. You gave the team the credit for your idea, and when he praised you, you answered with a blessing instead of holding on to it. A senior Emirati offers his kunya to people he trusts to stay humble. You are one of them now.',
+        color: C.CULTURAL_GOLD, type: 'exceptional',
+        hint: 'Credit finds the person who does not ask for it — and praise is answered with a blessing, not a thank-you.',
+      },
+      {
+        id: 'a-name-upstairs', min: 28, route: 'sponsor', tier: 'strong',
+        title: 'A Name Upstairs', arabic: 'طال عمرك', roman: "taal 'umrak", en: 'May your life be long',
+        desc: 'The next day the general manager asks who came up with the first-week plan, and Rashid gives your name — with his own beside it. You honoured his rank, let him lead, and made the idea one he was proud to carry. A senior who speaks for you opens doors you could not knock on yourself.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Let him lead: honour the rank, welcome him back properly, and let him carry the idea upstairs.',
+      },
+      {
+        id: 'liked-not-backed', min: 12, route: 'sponsor', tier: 'weak',
+        title: 'Liked, Not Yet Backed', arabic: 'الله يوفقك', roman: 'allaah ywaffgak', en: 'May God grant you success',
+        desc: 'Rashid likes you, and says so. A few moments landed awkwardly, though, so when the general manager asks for new ideas, yours is not the one he mentions — yet.',
+        color: C.JADE2, type: 'mixed',
+        hint: 'Deference is the right instinct — land the courtesies too, so he is proud to carry your name.',
+      },
+      {
+        id: 'the-one-he-asks', min: 28, route: 'voice', tier: 'strong',
+        title: 'The One He Asks', arabic: 'بصراحة', roman: 'b-saraaha', en: 'Honestly',
+        desc: 'At the next team meeting Rashid turns to you: what do you think? You disagreed without making him wrong, and asked what failed before instead of dismissing it. A manager who can hear your honest view without losing face keeps asking for it.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Agree with what is true, then say what you see — and ask what went wrong last time.',
+      },
+      {
+        id: 'heard-not-asked', min: 12, route: 'voice', tier: 'weak',
+        title: 'Heard, Not Yet Asked', arabic: 'نشوف', roman: 'nshuuf', en: "We'll see",
+        desc: 'Rashid listened, and some of it stuck. A few exchanges came out blunt or half-formed, though, so for now your views get a nod rather than a question.',
+        color: C.VIOLET2, type: 'mixed',
+        hint: 'Honesty is the right instinct — start with صح، بس… so he never has to defend himself to hear you.',
+      },
+      {
+        id: 'the-project-is-yours', min: 28, route: 'ownership', tier: 'strong',
+        title: 'The Project Is Yours', arabic: 'من باكر', roman: 'min baachir', en: 'From tomorrow',
+        desc: 'By Sunday the first-week plan has your name on it, and new starters are being sent your way. You made a clear ask, showed you had thought about your time, and put a day on every promise. The person who attaches a date to إن شاء الله is the one who gets handed the work.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Ask clearly, answer the question behind his question, and put a day on every إن شاء الله.',
+      },
+      {
+        id: 'slowly-slowly', min: 12, route: 'ownership', tier: 'weak',
+        title: 'Slowly, Slowly', arabic: 'شوي شوي', roman: 'shwai shwai', en: 'Slowly, slowly',
+        desc: 'Rashid lets you try part of it, carefully. A couple of answers left him unsure you had thought it through, so for now the project stays his, with you helping.',
+        color: C.VIOLET2, type: 'mixed',
+        hint: 'Initiative is the right instinct — back it with a plan and a date, and he will hand over more.',
+      },
+      {
+        id: 'a-polite-god-willing', min: 0,
+        title: 'A Polite "God Willing"', arabic: 'إن شاء الله', roman: "in shaa' allaah", en: 'God willing',
+        desc: 'Rashid thanked you, said إن شاء الله, and never brought it up again. Nothing was refused out loud — in a Gulf office it often is not. The idea simply went quiet.',
         color: C.ERROR, type: 'failed',
       },
     ],
