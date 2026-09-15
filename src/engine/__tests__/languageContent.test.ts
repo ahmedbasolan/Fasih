@@ -422,8 +422,12 @@ describe('provenance', () => {
    * scenarios cut for the MVP were all unsourced. Nothing got more verified.
    * 103 → 102, also by deletion: fm-s1-7 duplicated core-4 (الله يعافيك) with a
    * wrong gloss, and the First Morning rewrite no longer granted it.
+   * 102 → 106 on 2026-09-15, the one deliberate RISE: The Meeting's mt-1..mt-4
+   * (الحمد لله على السلامة, خلني أفكر فيها, أحاول, أساعد). The أبي / خلني
+   * patterns could not return without them (spec §2.9), and Ahmed chose that over
+   * deferring the patterns. They go to the Emirati reviewer with the scenario.
    */
-  const MAX_UNSOURCED = 102;
+  const MAX_UNSOURCED = 106;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 
