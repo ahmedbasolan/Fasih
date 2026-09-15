@@ -47,6 +47,11 @@ export interface LevelSpec {
   readonly cefr: CEFRBand;
   /** CEFR-style descriptor. Safe to show in the UI. */
   readonly canDo: string;
+  /**
+   * Legacy scripts only. A route script makes DECISIONS_PER_RUN decisions at
+   * every level (spec 2026-09-14 Q10); levels still differ on card complexity,
+   * phrases and dialect features. Remove once every script is a route script.
+   */
   readonly turns: Range;
   readonly phrasesUnlocked: Range;
   /**

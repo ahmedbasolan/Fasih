@@ -76,7 +76,12 @@ interface Props {
   arabicForUser: (choice: ScenarioChoice) => string;
   toneHistory: { sceneId: string; tone: 'warm' | 'neutral' | 'cold' }[];
   culturalJourneyNotes: string[];
-  getCommunityEndingStat: (key: string) => number;
+  /**
+   * Share of players who reached this ending; 0 when there is no data. A value,
+   * not a getter: the stats arrive after this screen mounts, and a getter read
+   * once at render never saw them.
+   */
+  communityEndingPct: number;
   isSpeaking: boolean;
   playingPhraseId: string | null;
   onPlayEndPhrase: (phraseId: string, arabic: string) => void;
@@ -91,12 +96,11 @@ export function ScenarioResultPhase({
   ending, endings, impact, total, scenarioId, scriptData,
   railMarks, unlockedPhrases, progress, destinationLabel, moments, hints, arabicForUser,
   toneHistory, culturalJourneyNotes,
-  getCommunityEndingStat, isSpeaking, playingPhraseId,
+  communityEndingPct: communityPct, isSpeaking, playingPhraseId,
   onPlayEndPhrase, onRestart, onExit, onShare,
 }: Props) {
   const { C, G } = useTheme();
   const violetColor = C.VIOLET;
-  const communityPct = getCommunityEndingStat(`${scenarioId}:${ending.id}`);
 
   // Route endings name their destination; the hidden and failure endings of a
   // route script say what they are; legacy endings keep "<Type> Outcome".
@@ -299,7 +303,9 @@ export function ScenarioResultPhase({
               </View>
             ))}
           </View>
-          {hasDivergence && (
+          {/* "Balance all three" is legacy advice. In a route script a lopsided
+              run is a destination, not a mistake, so the tip would contradict it. */}
+          {hasDivergence && !scriptData.routes?.length && (
             <View style={{ borderRadius: 12, padding: 12, backgroundColor: `${sortedImpact[0].color}15`, borderWidth: 1, borderColor: `${sortedImpact[0].color}30` }}>
               <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, textAlign: 'center', lineHeight: 18 }}>
                 <Text style={{ fontFamily: FONT_LATIN_BOLD, color: sortedImpact[0].color }}>{sortedImpact[0].label}</Text> is your strongest area (+{sortedImpact[0].value}),{' '}
@@ -422,13 +428,13 @@ export function ScenarioResultPhase({
         <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 300, delay: 460 }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Share your result"
+            accessibilityLabel={ending.secret ? STRINGS.scenarios.shareHiddenEnding : STRINGS.scenarios.shareResult}
             onPress={() => onShare(ending.title, ending.arabic, ending.en, !!ending.secret, total)}
             style={{ borderRadius: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: ending.secret ? `${C.VIOLET}18` : `${C.JADE}14`, borderWidth: 1, borderColor: ending.secret ? `${C.VIOLET}35` : `${C.JADE}30` }}
           >
             <ArrowRight size={14} color={ending.secret ? C.VIOLET2 : C.JADE2} style={{ transform: [{ rotate: '-45deg' }] }} />
             <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: ending.secret ? C.VIOLET2 : C.JADE2 }}>
-              {ending.secret ? 'Share your hidden ending' : 'Share your result'}
+              {ending.secret ? STRINGS.scenarios.shareHiddenEnding : STRINGS.scenarios.shareResult}
             </Text>
           </Pressable>
         </MotiView>

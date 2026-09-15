@@ -58,6 +58,14 @@ const TRIAL_DAYS = 4;
 const FREE_ACCESS_SCENARIO_COUNT = 3;
 
 /**
+ * Scenarios per mode a free learner can play: scenario 1 of each mode (spec
+ * 2026-09-14 §2.11). This used to reuse FREE_ACCESS_SCENARIO_COUNT, which is a
+ * completion count, not a position — and with three scenarios per mode, three
+ * free slots per mode paywalled nothing at all.
+ */
+const FREE_SCENARIOS_PER_MODE = 1;
+
+/**
  * XP awarded per action, toward the learner's daily goal.
  *
  * The home screen used to show `scenariosCompleted.length * 50` against
@@ -92,10 +100,10 @@ function computeHasFullAccess(s: AccessFields): boolean {
   return Object.keys(s.completedScenarios).length >= FREE_ACCESS_SCENARIO_COUNT;
 }
 
+/** `scenarioIndex` is the scenario's position within its own mode's list. */
 function computeHasScenarioAccess(s: AccessFields, scenarioIndex: number): boolean {
   if (computeHasFullAccess(s)) return true;
-  // Otherwise only the first few scenarios are free.
-  return scenarioIndex < FREE_ACCESS_SCENARIO_COUNT;
+  return scenarioIndex < FREE_SCENARIOS_PER_MODE;
 }
 
 // ─── Journal ID counter ───────────────────────────────────────────────────────
@@ -155,6 +163,18 @@ const MILESTONE_CHECKS: Record<string, MilestoneChecker> = {
   'mastered-5': (s) => s.stats.phrasesMastered >= 5,
 };
 
+/**
+ * Reviews whose phrase is still in the library.
+ *
+ * Deleting a phrase (the MVP cut removed 33) leaves its review behind in
+ * persisted and synced state. The practice deck draws only from PHRASES, so
+ * that card can never come up again — counted as due, it would stay due
+ * forever and inflate every due count and reminder.
+ */
+function liveReviews(reviews: Record<string, PhraseReviewData>): PhraseReviewData[] {
+  return Object.values(reviews).filter(r => PHRASE_BY_ID[r.phraseId] !== undefined);
+}
+
 // ─── Mastery computation (extracted to eliminate duplication + O(n²)) ─────────
 /**
  * Computes phrasesStudied, phrasesMastered, and categoryMastery from the current
@@ -166,7 +186,7 @@ function computeMastery(reviews: Record<string, PhraseReviewData>): {
   mastered: number;
   categoryMastery: Record<string, CategoryMastery>;
 } {
-  const allCards = Object.values(reviews);
+  const allCards = liveReviews(reviews);
   const studied = allCards.length;
   let mastered = 0;
 
@@ -258,7 +278,6 @@ interface AppState {
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
   communityStatsCache: Record<string, number>;
   getCommunityChoiceStat: (key: string) => number;
-  getCommunityEndingStat: (key: string) => number;
   fetchCommunityStats: (scenarioId: string, sceneId: string) => Promise<void>;
   /** Cache reach percentages as `scenarioId:endingId`; empty below the completion floor. */
   fetchCommunityEndingStats: (scenarioId: string, endingIds: string[]) => Promise<void>;
@@ -642,7 +661,7 @@ export const useAppStore = create<AppState>()(
         set({ notificationsEnabled: true });
         const s = get();
         const hour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
+        const dueCount = liveReviews(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(hour, s.stats.currentStreak, dueCount);
         await scheduleReEngagementIfNeeded(s.lastActiveDate, s.user?.name ?? '');
         await scheduleStreakRiskIfNeeded(s.lastActiveDate, s.stats.currentStreak);
@@ -657,7 +676,7 @@ export const useAppStore = create<AppState>()(
         const s = get();
         if (!s.notificationsEnabled) return;
         const preferredHour = derivePreferredHour(s.recentSessionHours);
-        const dueCount = Object.values(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
+        const dueCount = liveReviews(s.phraseReviews).filter(r => r.nextReview <= todayISO()).length;
         await scheduleDailyReminder(preferredHour, s.stats.currentStreak, dueCount).catch(() => {});
       },
 
@@ -857,8 +876,6 @@ export const useAppStore = create<AppState>()(
 
       getCommunityChoiceStat: (key: string) => get().communityStatsCache[key] ?? 0,
 
-      getCommunityEndingStat: (key: string) => get().communityStatsCache[key] ?? 0,
-
       fetchCommunityStats: async (scenarioId: string, sceneId: string) => {
         const stats = await getChoiceStats(scenarioId, sceneId);
         const entries: Record<string, number> = {};
@@ -941,7 +958,7 @@ export const useAppStore = create<AppState>()(
 
       getDueReviews: () => {
         const today = todayISO();
-        return Object.values(get().phraseReviews).filter(r => r.nextReview <= today);
+        return liveReviews(get().phraseReviews).filter(r => r.nextReview <= today);
       },
 
       // ─── Active scenario run ────────────────────────────────────────────────────
@@ -1051,7 +1068,7 @@ export const useAppStore = create<AppState>()(
 export const useHasFullAccess = (): boolean =>
   useAppStore((s) => computeHasFullAccess(s));
 
-/** True when this scenario index is playable for the current learner. */
+/** True when the scenario at this position within its mode is playable for the current learner. */
 export const useHasScenarioAccess = (scenarioIndex: number): boolean =>
   useAppStore((s) => computeHasScenarioAccess(s, scenarioIndex));
 

@@ -84,7 +84,13 @@ export interface Scenario {
   endings: number;
   phrases: string;
   level: DifficultyLevel;
-  locked: boolean;
+  /**
+   * Behind the paywall for this learner. Computed by the screen listing it, from
+   * hasScenarioAccess — never authored in the catalog. An authored value
+   * disagreed with the paywall (eid-greeting said locked while sitting in a free
+   * slot) and Home trusted it.
+   */
+  locked?: boolean;
   comingSoon?: boolean;
   isOnboarding?: boolean;
   dialect?: string;
@@ -131,7 +137,12 @@ export interface ScenarioChoice {
   flag?: string;            // Flag set in state.flags when this choice is made
   requiredFlag?: string;    // If set, choice is only shown when this flag is already in state.flags
   impact?: ImpactMetrics;
-  next?: string;
+  /**
+   * Explicit next scene. `null` ends the main path — needed by a route-variant
+   * scene that is the last decision, which would otherwise fall through into
+   * its sibling variant next in the array.
+   */
+  next?: string | null;
   teachingHighlight?: string;
   /**
    * Route this choice leans toward, in a route script (see ScenarioScript.routes).
@@ -170,6 +181,24 @@ export interface ScenarioRoute {
 }
 
 export type EndingTier = 'strong' | 'weak';
+
+/**
+ * One native-speaker review of a script's Arabic (spec 2026-09-14 §2.10).
+ *
+ * Absent means unreviewed — the state of every script until a reviewer working
+ * from docs/language/reviewer-brief.md signs off. Kept apart from phrase
+ * `source` on purpose: a source says where a form is attested, a review says a
+ * native speaker read these lines in context. Never record one on the project
+ * owner's approval (docs/language/authority.md, rule 5).
+ */
+export interface NativeReview {
+  dialect: 'emirati' | 'egyptian' | 'levantine';
+  /** Pseudonymous handle from the review log — not a real name. */
+  reviewer: string;
+  /** ISO date the review was completed. */
+  date: string;
+  scope: 'learner-lines' | 'npc-lines' | 'all-lines';
+}
 
 /** Phrases a scenario grants: `core` on any completion, plus the set for the ending reached. */
 export interface ScenarioPhrases {
@@ -254,6 +283,8 @@ export interface ScenarioScript {
   /** Route used when a run reaches the fork or the end without leaning anywhere. */
   defaultRoute?: string;
   phrases: ScenarioPhrases;
+  /** Native-speaker reviews of this script's Arabic. Absent = unreviewed. */
+  nativeReviews?: NativeReview[];
   // 2-3 phrase IDs from phrases.core previewed as tap-to-hear chips in the
   // scenario intro — listen-only priming, no quiz. Hear now → earn later.
   primerPhrases?: string[];
