@@ -178,8 +178,6 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
 const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
-  'social_elevator:phrasesUnlocked',
-  'social_elevator:turns',
 ];
 
 /**
