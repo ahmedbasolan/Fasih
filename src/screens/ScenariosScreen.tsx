@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import {
@@ -72,6 +72,18 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   const endingsFound = useAppStore((s) => s.endingsFound);
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
+
+  const styles = useMemo(() => StyleSheet.create({
+    modeHeader: {
+      fontFamily: FONT_LATIN_MEDIUM,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: C.TEXT3,
+      paddingTop: SPACE.xl,
+      paddingBottom: SPACE.sm,
+    },
+  }), [C]);
 
   // Both modes, always (spec 2026-09-14 Q19): with six scenarios, hiding the
   // other mode's three made a paid app look half-empty — and a career learner
@@ -194,18 +206,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
         getItemType={(row: Row) => row.kind}
         renderItem={({ item: row }: { item: Row }) =>
           row.kind === 'header' ? (
-            <Text
-              accessibilityRole="header"
-              style={{
-                fontFamily: FONT_LATIN_MEDIUM,
-                fontSize: 11,
-                letterSpacing: 1.6,
-                textTransform: 'uppercase',
-                color: C.TEXT3,
-                paddingTop: SPACE.xl,
-                paddingBottom: SPACE.sm,
-              }}
-            >
+            <Text accessibilityRole="header" style={styles.modeHeader}>
               {row.mode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
             </Text>
           ) : (

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowRight, Volume2 } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,12 +13,11 @@ import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { PHRASE_BY_ID } from '../../constants/phrases';
 import type { EndingHint, EndingsProgress } from '../../engine/scenarioPresentation';
-import type { Scenario, ScenarioEnding, ScenarioScene, ScenarioScript, Phrase } from '../../types';
+import type { Scenario, ScenarioEnding, ScenarioScript, Phrase } from '../../types';
 
 interface Props {
   scriptData: ScenarioScript;
   scenario: Scenario | undefined;
-  scenes: ScenarioScene[];
   endings: ScenarioEnding[];
   unlockedPhrases: Phrase[];
   /** Decisions per run — not scenes, which a fork doubles up. */
@@ -33,6 +32,16 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
   const { C, G } = useTheme();
   const { speak } = useArabicTTS();
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  // The endings sections. The older sections below still style inline.
+  const styles = useMemo(() => StyleSheet.create({
+    endingsPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER },
+    endingsDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 },
+    endingsText: { fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 },
+    hintsCard: { width: '100%', borderRadius: 14, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 8 },
+    hintsTitle: { fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT2, letterSpacing: 0.4, textTransform: 'uppercase' },
+    hintText: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 19 },
+  }), [C]);
 
   // Primer phrases preview the ones this scenario will unlock — resolve from the
   // library directly since they are not owned yet (hear now → earn later).
@@ -164,21 +173,17 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
         </View>
 
         {/* Endings collection — "0 of 5 endings found · 1 hidden" */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: C.VIOLET_SURFACE, borderWidth: 1, borderColor: C.VIOLET_BORDER }}>
-          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.VIOLET2 }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.VIOLET2 }}>
-            {STRINGS.scenarios.endingsSummary(progress)}
-          </Text>
+        <View style={styles.endingsPill}>
+          <View style={styles.endingsDot} />
+          <Text style={styles.endingsText}>{STRINGS.scenarios.endingsSummary(progress)}</Text>
         </View>
 
         {/* Hints — replays only */}
         {hints.length > 0 && (
-          <View style={{ width: '100%', borderRadius: 14, padding: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, gap: 8 }}>
-            <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.TEXT2, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-              {STRINGS.scenarios.hintsTitle}
-            </Text>
+          <View style={styles.hintsCard}>
+            <Text style={styles.hintsTitle}>{STRINGS.scenarios.hintsTitle}</Text>
             {hints.map((h) => (
-              <Text key={h.endingId} style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, lineHeight: 19 }}>
+              <Text key={h.endingId} style={styles.hintText}>
                 {h.hidden ? `${STRINGS.scenarios.hintHidden}: ` : ''}{h.hint}
               </Text>
             ))}

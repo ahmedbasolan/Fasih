@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Bookmark } from '../components/icons';
 import { FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
@@ -20,7 +20,10 @@ interface Props {
 
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
-  
+  const styles = useMemo(() => StyleSheet.create({
+    meta: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 },
+  }), [C]);
+
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
   // the whole scenario corpus on every call, and calling them in the render
   // body meant doing that on every re-render. See the note there.
@@ -119,10 +122,10 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
             </Pressable>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: SPACE.sm }}>
+          <Text style={[styles.meta, { marginBottom: SPACE.sm }]}>
             {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, decisions * 2))}
           </Text>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
+          <Text style={[styles.meta, { marginBottom: 24 }]}>
             {STRINGS.scenarios.endingsSummary(progress)}
           </Text>
 
