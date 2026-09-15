@@ -136,3 +136,8 @@ MVP cut `the-checkup`, `gym-consultation`, `hotel-guest` and `cafe-friends`
 (spec `docs/superpowers/specs/2026-09-14-butterfly-engine-mvp-design.md`). What
 remains is `KNOWN_LEVEL_VIOLATIONS` in `languageContent.test.ts` — counted there, not
 here — and every scenario on it is being rewritten under that spec. The register-vs-dialect axis above still matters: The Meeting will hit it.
+
+### Update 2026-09-15
+
+`coffee-invitation` is rewritten as a route script and now sits inside Beginner, so its
+entries have left `KNOWN_LEVEL_VIOLATIONS`.

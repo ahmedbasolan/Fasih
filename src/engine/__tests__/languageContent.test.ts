@@ -167,16 +167,15 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
  * Scenarios currently outside the band their declared level claims.
  *
  * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `coffee-invitation` /
- * `eid-greeting` sit just over the A1 mean once clitics are counted. (The
- * audit's worst offenders, the-checkup and gym-consultation, were cut for the MVP.)
+ * 2026-09-03 difficulty audit, recomputed on morphemes: `eid-greeting` sits
+ * just over the A1 mean once clitics are counted. (The audit's worst offenders,
+ * the-checkup and gym-consultation, were cut for the MVP; coffee-invitation's
+ * two entries went with its 2026-09-15 rewrite.)
  *
  * Fixing one means either re-levelling the scenario or editing its content —
  * both content decisions, deliberately not made by this commit.
  */
 const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'coffee-invitation:meanMorphemes',
-  'coffee-invitation:morphemeCeiling',
   'eid-greeting:meanMorphemes',
   'eid-greeting:morphemeCeiling',
   'social_elevator:phrasesUnlocked',
