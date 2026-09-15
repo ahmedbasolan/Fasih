@@ -118,7 +118,47 @@ let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _customerInfoUnsub: (() => void) | null = null;
 function scheduleSync(fn: () => void, delayMs = 1500) {
   if (_syncTimer) clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(fn, delayMs);
+  _syncTimer = setTimeout(() => {
+    _syncTimer = null;
+    fn();
+  }, delayMs);
+}
+
+/** Cancel a scheduled push. Returns whether one was pending. */
+function cancelScheduledSync(): boolean {
+  if (!_syncTimer) return false;
+  clearTimeout(_syncTimer);
+  _syncTimer = null;
+  return true;
+}
+
+// ─── Sync session ─────────────────────────────────────────────────────────────
+// A sync request can outlive the session that started it: signOut runs while a
+// pull or push is still in flight on a slow network. Each request records the
+// epoch it started in, and signOut starts a new one, so an older result is
+// dropped without writing anything — not even isSyncing, which by then belongs
+// to the next session's own requests.
+let _syncEpoch = 0;
+/** Requests in flight this epoch. isSyncing mirrors it, so one finishing can't clear another's flag. */
+let _syncsInFlight = 0;
+/**
+ * The learner whose cloud row this epoch has pulled.
+ *
+ * A push is a full-row upsert (pushProgress). The merge rules that stop data
+ * being lost run on pull, on the device — so a push before this session's first
+ * pull replaces the learner's cloud progress with whatever this device holds,
+ * which after a sign-out is a freshly reset store.
+ */
+let _pulledFor: string | null = null;
+/** A push was asked for before the pull; the pull sends it once it has merged. */
+let _pushDeferred = false;
+
+function resetSyncSession() {
+  cancelScheduledSync();
+  _syncEpoch++;
+  _syncsInFlight = 0;
+  _pulledFor = null;
+  _pushDeferred = false;
 }
 
 // ─── Milestones ──────────────────────────────────────────────────────────────
@@ -273,6 +313,8 @@ interface AppState {
   lastSyncError: string | null;
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
+  /** Send a scheduled push now. Call before Clerk sign-out, while the session token still works. */
+  flushScheduledSync: () => Promise<void>;
   dismissSyncError: () => void;
 
   // Community stats (key = `scenarioId:sceneId:choiceId` or `scenarioId:endingType`)
@@ -457,9 +499,19 @@ export const useAppStore = create<AppState>()(
       syncToCloud: async () => {
         const s = get();
         if (!s.clerkUserId) return;
+        // Never before this session's first pull — see _pulledFor. Start the pull
+        // (unless one is already running) and let it send this push once merged.
+        if (_pulledFor !== s.clerkUserId) {
+          _pushDeferred = true;
+          if (_syncsInFlight === 0) void get().syncFromCloud();
+          return;
+        }
+        const epoch = _syncEpoch;
+        _syncsInFlight++;
         set({ isSyncing: true });
+        let error: string | null;
         try {
-          const { error } = await pushProgress(s.clerkUserId, {
+          ({ error } = await pushProgress(s.clerkUserId, {
             schema_version: CURRENT_SCHEMA_VERSION,
             user_profile: s.user,
             stats: s.stats,
@@ -477,46 +529,68 @@ export const useAppStore = create<AppState>()(
             subscription_status: s.subscriptionStatus,
             trial_started_at: s.trialStartedAt,
             trial_plan: s.trialPlan,
-          });
-          // The payload was snapshotted with its owner before the await, so it
-          // can only reach that learner's row. Only the status can leak: if
-          // signOut ran meanwhile, this result describes the previous session,
-          // and signOutReset has just cleared lastSyncedAt/lastSyncError.
-          if (get().clerkUserId !== s.clerkUserId) {
-            set({ isSyncing: false });
-          } else if (error) {
-            set({ isSyncing: false, lastSyncError: error });
-          } else {
-            set({ isSyncing: false, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
-          }
+          }));
         } catch (e) {
-          if (get().clerkUserId !== s.clerkUserId) {
-            set({ isSyncing: false });
-          } else {
-            set({ isSyncing: false, lastSyncError: e instanceof Error ? e.message : 'Sync failed' });
-          }
+          error = e instanceof Error ? e.message : 'Sync failed';
         }
+        // Signed out since: this result describes the previous session. Its
+        // payload was snapshotted with its owner, so it could only reach that
+        // learner's row — only the status would leak, into the next session.
+        if (epoch !== _syncEpoch) return;
+        _syncsInFlight--;
+        if (get().clerkUserId !== s.clerkUserId) {
+          set({ isSyncing: _syncsInFlight > 0 });
+        } else if (error) {
+          set({ isSyncing: _syncsInFlight > 0, lastSyncError: error });
+        } else {
+          set({ isSyncing: _syncsInFlight > 0, lastSyncedAt: new Date().toISOString(), lastSyncError: null });
+        }
+      },
+
+      flushScheduledSync: async () => {
+        if (cancelScheduledSync()) await get().syncToCloud();
       },
 
       syncFromCloud: async () => {
         const s = get();
         if (!s.clerkUserId) return;
+        const epoch = _syncEpoch;
+        _syncsInFlight++;
         set({ isSyncing: true });
-        const { data, error } = await pullProgress(s.clerkUserId);
-        // signOut can run while the pull is in flight. If it did, this row
-        // belongs to the previous learner and the store has already been reset
-        // for the next one — merging it in would hand them that progress, and
-        // their next syncToCloud would push it into their own row for good.
+        let pulled: Awaited<ReturnType<typeof pullProgress>>;
+        try {
+          pulled = await pullProgress(s.clerkUserId);
+        } catch (e) {
+          pulled = { data: null, error: e instanceof Error ? e.message : 'Sync failed' };
+        }
+        // signOut ran while the pull was in flight: this row belongs to the
+        // previous learner and the store has been reset for the next one.
+        // Merging it in would hand them that progress, and their next push would
+        // write it into their own row for good. Dropped even if the same learner
+        // signed straight back in — that session runs its own pull.
+        if (epoch !== _syncEpoch) return;
+        _syncsInFlight--;
         if (get().clerkUserId !== s.clerkUserId) {
-          set({ isSyncing: false });
+          set({ isSyncing: _syncsInFlight > 0 });
           return;
         }
+        const { data, error } = pulled;
         if (error) {
-          set({ isSyncing: false, lastSyncError: error });
+          set({ isSyncing: _syncsInFlight > 0, lastSyncError: error });
           return;
         }
-        set({ isSyncing: false, lastSyncError: null });
-        if (!data) return;
+        set({ isSyncing: _syncsInFlight > 0, lastSyncError: null });
+        _pulledFor = s.clerkUserId;
+        // Pushes are safe from here on; send the one that waited for this pull.
+        const sendDeferredPush = () => {
+          if (!_pushDeferred) return;
+          _pushDeferred = false;
+          void get().syncToCloud();
+        };
+        if (!data) {
+          sendDeferredPush();
+          return;
+        }
 
         // Additive-only changes (a new column defaulting via asRecord/asArray)
         // merge safely even from a stale row. A future shape-changing migration
@@ -605,6 +679,7 @@ export const useAppStore = create<AppState>()(
           trialPlan: data.trial_plan ?? local.trialPlan,
           lastSyncedAt: new Date().toISOString(),
         });
+        sendDeferredPush();
       },
 
       // Auth
@@ -637,6 +712,10 @@ export const useAppStore = create<AppState>()(
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setClerkUserId: (id) => set({ clerkUserId: id }),
       signOut: async () => {
+        // First, before any await: from here nothing in flight may write into
+        // this store, and a scheduled push must not fire into the reset one.
+        // Flush it beforehand with flushScheduledSync, while the token works.
+        resetSyncSession();
         await logoutPurchasesUser();
         await cancelAllNotifications();
         // Drop the RevenueCat listener too. Left registered, it keeps firing
@@ -658,6 +737,10 @@ export const useAppStore = create<AppState>()(
         // Clerk session token, so removing the Clerk user before this point
         // would revoke that token and strand the row — owned by nobody, with
         // no way for the user (or anyone) to retry the deletion.
+        //
+        // Sync stops before that: a scheduled push, or one a pull releases,
+        // landing after the delete would upsert the row straight back.
+        resetSyncSession();
         const { error } = await deleteAccountData();
         if (error) return { error };
 

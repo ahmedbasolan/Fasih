@@ -48,6 +48,11 @@ export default function Index() {
             });
           })
           .finally(() => {
+            // Only for the learner this chain started for. If they signed out
+            // meanwhile, the store dropped their pull — and recording today here
+            // would write their activity into the signed-out store, or the next
+            // account's, before that account's own pull.
+            if (useAppStore.getState().clerkUserId !== userId) return;
             recordDailyActivity();
             checkMilestones();
           });
