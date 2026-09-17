@@ -218,20 +218,22 @@ describe('getTone', () => {
 
 // ─── Shared script fixture ────────────────────────────────────────────────────
 
+/** A linear three-scene script with one route — for tests that don't involve the fork. */
 function makeScript(overrides: Partial<ScenarioScript> = {}): ScenarioScript {
   return {
     id: 'test-scenario',
     title: 'Test Scenario',
+    routes: [{ id: 'main', label: 'Main' }],
+    defaultRoute: 'main',
     scenes: [
       { ...makeScene(), id: 'scene-1', choices: [makeChoice()] },
       { ...makeScene(), id: 'scene-2', choices: [makeChoice()] },
       { ...makeScene(), id: 'scene-3', choices: [makeChoice()] },
     ],
     endings: [
-      { id: 'exceptional', min: 20, title: 'Exceptional', arabic: 'ممتاز', roman: 'mumtaz', en: 'Exceptional', desc: 'Excellent outcome', color: '#00FF00', type: 'exceptional' },
-      { id: 'good', min: 10, title: 'Good',        arabic: 'جيد',   roman: 'jayid',  en: 'Good',        desc: 'Good outcome',      color: '#FFFF00', type: 'success'     },
-      { id: 'mixed', min: 0,  title: 'Mixed',       arabic: 'مقبول', roman: 'maqbul', en: 'Mixed',       desc: 'Mixed outcome',     color: '#FFA500', type: 'mixed'       },
-      { id: 'failed', min: -99,title: 'Failed',      arabic: 'فشل',   roman: 'fashal', en: 'Failed',      desc: 'Failed outcome',    color: '#FF0000', type: 'failed'      },
+      { id: 'strong', min: 10, title: 'Strong', arabic: 'ا', roman: 'a', en: 'Strong', desc: 'd', color: '#00FF00', type: 'success', route: 'main', tier: 'strong' },
+      { id: 'weak', min: 0, title: 'Weak', arabic: 'ا', roman: 'a', en: 'Weak', desc: 'd', color: '#FFA500', type: 'mixed', route: 'main', tier: 'weak' },
+      { id: 'failure', min: -99, title: 'Failure', arabic: 'ا', roman: 'a', en: 'Failure', desc: 'd', color: '#FF0000', type: 'failed' },
     ],
     phrases: { core: [], byEnding: {} },
     ...overrides,
@@ -267,14 +269,14 @@ describe('resolveNextScene', () => {
     expect(resolveNextScene(state, choice, script)).toBeNull();
   });
 
-  // Characterizes existing (surprising) behavior — do not "fix" this without
-  // checking callers first: findIndex returns -1 for an unknown sceneId, and
-  // -1 + 1 = 0, so this silently returns the FIRST scene's id instead of null.
-  it('returns the first scene id (not null) when currentSceneId matches no scene in the script', () => {
+  // It used to return the FIRST scene here (findIndex -1, plus 1 = 0), which
+  // would restart the run. Callers (ScenarioPlayer, scenarioRules) only pass a
+  // scene of the script, so this is a guard: a run on a stale scene id ends.
+  it('returns null when currentSceneId matches no scene in the script', () => {
     const state = { ...makeEmptyState(), currentSceneId: 'does-not-exist' };
     const choice = makeChoice({ next: undefined });
     const script = makeScript();
-    expect(resolveNextScene(state, choice, script)).toBe('scene-1');
+    expect(resolveNextScene(state, choice, script)).toBeNull();
   });
 });
 
@@ -284,104 +286,6 @@ describe('resolveNextScene', () => {
 function stateWithRelationship(n: number, extra: Partial<ScenarioState> = {}): ScenarioState {
   return { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(n, 0, 0) }, ...extra };
 }
-
-describe('evaluateEnding', () => {
-  it('returns exceptional ending when relationship score is 20+', () => {
-    const ending = evaluateEnding(stateWithRelationship(22), makeScript());
-    expect(ending.type).toBe('exceptional');
-  });
-
-  it('returns success ending when relationship score is 10-19', () => {
-    const ending = evaluateEnding(stateWithRelationship(12), makeScript());
-    expect(ending.type).toBe('success');
-  });
-
-  it('returns mixed ending when relationship score is 0-9', () => {
-    const ending = evaluateEnding(stateWithRelationship(4), makeScript());
-    expect(ending.type).toBe('mixed');
-  });
-
-  it('falls back to last ending when no standard ending matches', () => {
-    const ending = evaluateEnding(stateWithRelationship(-50), makeScript());
-    expect(ending.type).toBe('failed');
-  });
-
-  it('sums the relationship across every NPC in the run', () => {
-    const state = {
-      ...makeEmptyState(),
-      impactByNpc: { Ahmed: impactOf(4, 4, 4), Sara: impactOf(4, 3, 3) },
-    };
-    expect(evaluateEnding(state, makeScript()).type).toBe('exceptional'); // 12 + 10 = 22
-  });
-
-  it('ignores totalScore — a high XP run with a burnt relationship still fails', () => {
-    const state = { ...stateWithRelationship(-5), totalScore: 90, scoreByNpc: { Ahmed: 90 } };
-    expect(evaluateEnding(state, makeScript()).type).toBe('failed');
-  });
-
-  it('returns secret ending when requiredFlags met AND score >= min', () => {
-    const state = stateWithRelationship(25, { flags: new Set(['FLAG_A', 'FLAG_B']) });
-    const script = makeScript({
-      endings: [
-        ...makeScript().endings,
-        {
-          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
-          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
-          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
-        },
-      ],
-    });
-    const ending = evaluateEnding(state, script);
-    expect(ending.secret).toBe(true);
-    expect(ending.title).toBe('Secret');
-  });
-
-  it('does NOT return secret ending when requiredFlags not all set', () => {
-    const state = stateWithRelationship(25, { flags: new Set(['FLAG_A']) });
-    const script = makeScript({
-      endings: [
-        ...makeScript().endings,
-        {
-          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
-          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
-          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
-        },
-      ],
-    });
-    const ending = evaluateEnding(state, script);
-    expect(ending.secret).not.toBe(true);
-  });
-
-  it('does NOT return secret ending when score is below secret min', () => {
-    const state = stateWithRelationship(15, { flags: new Set(['FLAG_A', 'FLAG_B']) });
-    const script = makeScript({
-      endings: [
-        ...makeScript().endings,
-        {
-          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
-          desc: 'Rare ending', color: '#8B00FF', type: 'exceptional' as const,
-          secret: true, requiredFlags: ['FLAG_A', 'FLAG_B'],
-        },
-      ],
-    });
-    const ending = evaluateEnding(state, script);
-    expect(ending.secret).not.toBe(true);
-  });
-
-  it('throws when script has no standard (non-secret) endings', () => {
-    const state = makeEmptyState();
-    const script = makeScript({
-      endings: [
-        {
-          id: 'secret', min: 20, title: 'Secret', arabic: 'سري', roman: 'sirri', en: 'Secret',
-          desc: 'Only ending', color: '#8B00FF', type: 'exceptional' as const,
-          secret: true, requiredFlags: [],
-        },
-      ],
-    });
-    expect(() => evaluateEnding(state, script)).toThrow('evaluateEnding: script "test-scenario" has no standard endings');
-  });
-});
 
 // ─── isChoiceVisible ─────────────────────────────────────────────────────────
 
@@ -515,10 +419,6 @@ function withHistory(state: ScenarioState, picks: [sceneId: string, choiceId: st
 describe('leadingRoute', () => {
   const script = makeRouteScript();
 
-  it('is null for a legacy script with no routes', () => {
-    expect(leadingRoute(makeEmptyState(), makeScript())).toBeNull();
-  });
-
   it('falls back to defaultRoute when no tagged choice has been made', () => {
     expect(leadingRoute(withHistory(makeEmptyState(), [['s1', 'x']]), script)).toBe('warm');
   });
@@ -605,6 +505,19 @@ describe('evaluateEnding — route scripts', () => {
 
   it('uses defaultRoute when the run never leaned anywhere', () => {
     expect(evaluateEnding(run(15, [['s1', 'x']]), script).id).toBe('warm-strong');
+  });
+
+  it('sums the relationship across every NPC in the run', () => {
+    const state = withHistory(
+      { ...makeEmptyState(), impactByNpc: { Ahmed: impactOf(4, 4, 0), Sara: impactOf(4, 3, 0) } },
+      [['s1', 'w']],
+    );
+    expect(evaluateEnding(state, script).id).toBe('warm-strong'); // 8 + 7 = 15
+  });
+
+  it('ignores totalScore — a high XP run with a burnt relationship still fails', () => {
+    const state = withHistory({ ...stateWithRelationship(-5), totalScore: 90, scoreByNpc: { Ahmed: 90 } }, [['s1', 'w']]);
+    expect(evaluateEnding(state, script).id).toBe('failure');
   });
 
   it('throws when the leading route has no strong/weak pair', () => {

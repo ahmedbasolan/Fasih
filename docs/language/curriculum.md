@@ -76,9 +76,10 @@ So every length gate uses `countMorphemes` from
 
 ## What the gates measure, and why each one exists
 
-- **turns** — computed as the actual playthrough length, not `scenes.length`.
-  A route script declares more scenes than it plays: `first-morning` has eight main
-  scenes, and a learner plays six.
+- **Run length is not a level gate.** Every scenario makes `DECISIONS_PER_RUN`
+  decisions at every level (spec 2026-09-14 Q10), checked by `routeScriptProblems`.
+  Levels differ on the gates below. The old per-level `turns` range went when the
+  last pre-route script was rewritten.
 - **phrasesUnlocked** — vocabulary load per scenario.
 - **meanMorphemes** — typical utterance complexity.
 - **morphemeCeiling** — the outlier guard. A scenario can have a gentle average and

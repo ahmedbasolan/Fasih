@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
-import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Bookmark } from '../components/icons';
+import { FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
 import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
 import { useTheme } from '../hooks/useTheme';
 import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader, Screen } from '../components/ui';
@@ -10,7 +10,6 @@ import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
 import { STRINGS } from '../constants/strings';
 import { DECISIONS_PER_RUN } from '../constants/curriculum';
-import { isRouteScript } from '../engine/scenarioEngine';
 import { endingsProgress } from '../engine/scenarioPresentation';
 
 interface Props {
@@ -21,7 +20,24 @@ interface Props {
 
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
-  
+  const styles = useMemo(() => StyleSheet.create({
+    noMargin: { paddingHorizontal: 0 },
+    goBack: {
+      borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
+      backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
+    },
+    goBackText: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 },
+    sheet: { backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    decisions: { fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT },
+    saveButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    meta: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 },
+    duration: { marginBottom: SPACE.sm },
+    endings: { marginBottom: 24 },
+    description: { fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 },
+    primary: { marginBottom: 28 },
+  }), [C]);
+
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
   // the whole scenario corpus on every call, and calling them in the render
   // body meant doing that on every re-render. See the note there.
@@ -47,18 +63,15 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         scroll={false}
         // EmptyState is flex: 1, centres itself, and applies SCREEN_MARGIN of
         // its own. Screen's margin on top of that indents it to 40.
-        contentStyle={{ paddingHorizontal: 0 }}
+        contentStyle={styles.noMargin}
         action={
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.goBack}
-            style={{
-              borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
-              backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-            }}
+            style={styles.goBack}
           >
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
+            <Text style={styles.goBackText}>
               {STRINGS.scenarios.goBack}
             </Text>
           </Pressable>
@@ -73,13 +86,10 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
     );
   }
 
-  // Decisions, not scenes: a route script's fork puts two variant scenes in
-  // the array for one decision. And no bonus scenes — listing one announces
-  // the hidden ending's reward before anyone has found it. A route script
-  // shows no scene list at all: its scene settings would give the branches away.
-  const routeScript = isRouteScript(script);
-  const decisions = routeScript ? DECISIONS_PER_RUN : scenario.decisions;
-  const listedScenes = routeScript ? [] : script.scenes.filter((sc) => !sc.bonus);
+  // Decisions, not scenes: the fork puts two variant scenes in the array for
+  // one decision. No scene list either — the scene settings would give the
+  // branches away, and a bonus scene would announce the hidden ending's reward.
+  const decisions = DECISIONS_PER_RUN;
   const progress = endingsProgress(script, foundEndingIds ?? []);
 
   return (
@@ -88,7 +98,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
       // ScreenHeader applies the top inset itself, and both it and the sheet
       // below run edge to edge and set their own horizontal padding.
       headerHandlesTopInset
-      contentStyle={{ paddingHorizontal: 0 }}
+      contentStyle={styles.noMargin}
     >
         {/* ── Header ──
             Was a 450pt illustrated hero with white text over a black scrim.
@@ -103,35 +113,35 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
         />
 
         {/* ── Content Section ── */}
-        <SheetPanel radius={RADIUS.sheet} overlap={0} style={{ backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl }}>
+        <SheetPanel radius={RADIUS.sheet} overlap={0} style={styles.sheet}>
           {/* Metadata Row.
               The save toggle used to live as a translucent circle on the hero.
               With the hero gone it sits here, beside the scene count, where it
               is on the paper rather than floating over an image. */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT }}>
+          <View style={styles.metaRow}>
+            <Text style={styles.decisions}>
               {STRINGS.scenarios.decisions(decisions)}
             </Text>
             <Pressable
               onPress={() => toggleFavoriteScenario(scenarioId)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
+              accessibilityLabel={isSaved ? STRINGS.scenarios.unsaveScenario : STRINGS.scenarios.saveScenario}
               accessibilityState={{ selected: isSaved }}
-              style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+              style={styles.saveButton}
             >
               <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
             </Pressable>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: SPACE.sm }}>
+          <Text style={[styles.meta, styles.duration]}>
             {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, decisions * 2))}
           </Text>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
+          <Text style={[styles.meta, styles.endings]}>
             {STRINGS.scenarios.endingsSummary(progress)}
           </Text>
 
           {/* Description */}
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 }}>
+          <Text style={styles.description}>
             {scenario.kafIntro || scenario.subtitle}
           </Text>
 
@@ -142,83 +152,18 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               started from the beginning. Rows that look tappable and don't do
               what they promise are worse than rows that don't look tappable
               (Jakob's law), and offering N identical-looking entry points to
-              one destination is a choice that isn't one (Hick's law).
-              The list is now a progress display; this is the way in. */}
+              one destination is a choice that isn't one (Hick's law). */}
           <PrimaryButton
             onPress={() => onSceneSelect(0)}
             accessibilityLabel={isCompleted
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
-            style={{ marginBottom: 28 }}
+            style={styles.primary}
           >
             {isCompleted
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
           </PrimaryButton>
-
-          {/* Scenes list — progress, not navigation. */}
-          <View style={{ gap: 16 }}>
-            {routeScript ? null : listedScenes.length === 0 ? (
-              <EmptyState
-                title={STRINGS.scenarios.noScenesTitle}
-                subtitle={STRINGS.scenarios.noScenesSub}
-              />
-            ) : (
-              listedScenes.map((scene, index) => {
-                const isLocked = index > scenesUnlocked && !isCompleted;
-                const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
-                return (
-                  <View
-                    key={scene.id}
-                    accessible
-                    accessibilityLabel={`${STRINGS.scenarios.sceneNumber(index + 1)}, ${scene.setting}, ${
-                      isDone ? STRINGS.scenarios.sceneDone
-                      : isLocked ? STRINGS.scenarios.sceneLocked
-                      : STRINGS.scenarios.sceneNext
-                    }`}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: C.SURFACE,
-                      borderRadius: 24,
-                      padding: 16,
-                      borderWidth: 1,
-                      borderColor: C.BORDER,
-                      opacity: isLocked ? 0.55 : 1,
-                    }}
-                  >
-                    <View style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 16,
-                      backgroundColor: isLocked ? C.SURFACE2 : isDone ? C.JADE_DIM : C.JADE_ACCENT_DIM,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 16
-                    }}>
-                      {isLocked ? (
-                        <Lock size={20} color={C.TEXT3} />
-                      ) : isDone ? (
-                        <CheckCircle2 size={20} color={C.JADE} />
-                      ) : (
-                        <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
-                      )}
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
-                        {STRINGS.scenarios.sceneNumber(index + 1)}
-                      </Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
-                        {scene.setting}
-                      </Text>
-                    </View>
-
-                  </View>
-                );
-              })
-            )}
-          </View>
         </SheetPanel>
     </Screen>
   );

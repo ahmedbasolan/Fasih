@@ -347,4 +347,33 @@ describe('a scheduled push across a sign-out', () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith('user_a', expect.objectContaining({ saved_phrases: ['phrase-a'] }));
   });
+
+  it('flushScheduledSync pulls first when the session has not, and sends the push before it returns', async () => {
+    const pull = deferred<PullResult>();
+    mockPull.mockReturnValueOnce(pull.promise);
+    signIn('user_a');
+    useAppStore.getState().toggleSavedPhrase('phrase-a');
+
+    let flushed = false;
+    const flushing = useAppStore.getState().flushScheduledSync().then(() => { flushed = true; });
+    await settle();
+    expect(flushed).toBe(false); // still waiting on the pull — sign-out must not run yet
+
+    pull.resolve({ data: null, error: null });
+    await flushing;
+    expect(mockPush).toHaveBeenCalledWith('user_a', expect.objectContaining({ saved_phrases: ['phrase-a'] }));
+  });
+
+  it('flushScheduledSync gives up on a hung request, so sign-out is never held open', async () => {
+    await signInAndPull('user_a');
+    jest.useFakeTimers();
+    mockPush.mockReturnValueOnce(new Promise(() => {}));
+
+    useAppStore.getState().toggleSavedPhrase('phrase-a');
+    let flushed = false;
+    void useAppStore.getState().flushScheduledSync().then(() => { flushed = true; });
+    await jest.advanceTimersByTimeAsync(10_000);
+
+    expect(flushed).toBe(true);
+  });
 });

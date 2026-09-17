@@ -16,7 +16,7 @@
  * also asserted to be exactly right — fixing a violation without removing it
  * from its list fails too, so the lists cannot rot into permanent excuses.
  */
-import { getScenarioScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
+import { getScenarioScripts, getOnboardingScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { STRINGS } from '../../constants/strings';
 import { darkTheme } from '../../components/design/tokens';
@@ -39,11 +39,11 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
-import { isRouteScript, phrasesEarned } from '../scenarioEngine';
-import { enumerateRuns } from '../scenarioRules';
+import { phrasesEarned } from '../scenarioEngine';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
+const onboardingScripts = getOnboardingScripts();
 const catalog = [...getAllScenarios(darkTheme), ...getOnboardingScenarios(darkTheme)];
 
 // ─── Collecting learner-facing Arabic ────────────────────────────────────────
@@ -70,7 +70,7 @@ function learnerFacingLines(): Line[] {
 
   for (const p of PHRASES) add(`phrase:${p.id}`, p.arabic);
 
-  for (const [id, script] of Object.entries(scripts)) {
+  for (const [id, script] of [...Object.entries(scripts), ...Object.entries(onboardingScripts)]) {
     for (const scene of script.scenes) {
       add(`${id}/${scene.id}/npc`, scene.arabic);
       if (scene.charDialogue) {
@@ -93,6 +93,8 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/${c.id}-fem`, c.arabicFeminine);
       }
     }
+  }
+  for (const [id, script] of Object.entries(scripts)) {
     for (const e of script.endings) add(`${id}/ending:${e.type}`, e.arabic);
   }
 
@@ -135,28 +137,13 @@ function choiceCards(scriptId: string): string[] {
     .filter(a => countArabicWords(a) > 0);
 }
 
-/**
- * Turns a learner actually plays, as a [shortest, longest] pair.
- *
- * Not `scenes.length`. `first-morning` declares eight main scenes but forks twice,
- * so any single playthrough visits six — counting scenes would have marked it
- * two turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending. Runs come from the real engine, so a route
- * script's fork is followed exactly as the player follows it.
- */
-function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const lengths = enumerateRuns(scripts[scriptId]).map(r => r.steps.length);
-  return { min: Math.min(...lengths), max: Math.max(...lengths) };
-}
-
 /** Catalog entries that have a script and are not exempt from level gates. */
-function gatedScenarios(): Array<{ id: string; scriptId: string; level: DifficultyLevel }> {
-  const out: Array<{ id: string; scriptId: string; level: DifficultyLevel }> = [];
+function gatedScenarios(): { id: string; scriptId: string; level: DifficultyLevel }[] {
+  const out: { id: string; scriptId: string; level: DifficultyLevel }[] = [];
   for (const meta of catalog) {
     if (LEVEL_EXEMPT_SCENARIOS.includes(meta.id)) continue;
-    const scriptId = scripts[meta.id] ? meta.id : `${meta.id}-career`;
-    if (!scripts[scriptId]) continue; // comingSoon scenarios have no script yet
-    out.push({ id: meta.id, scriptId, level: meta.level });
+    if (!scripts[meta.id]) continue; // comingSoon scenarios have no script yet
+    out.push({ id: meta.id, scriptId: meta.id, level: meta.level });
   }
   return out;
 }
@@ -202,7 +189,6 @@ describe('curriculum spec is internally consistent', () => {
     const inverted: string[] = [];
     for (const spec of Object.values(LEVEL_SPECS)) {
       const ranges = {
-        turns: spec.turns,
         phrasesUnlocked: spec.phrasesUnlocked,
         meanMorphemes: spec.meanMorphemes,
       };
@@ -322,19 +308,14 @@ describe('level gates', () => {
       const cards = choiceCards(scriptId);
       if (!cards.length) continue;
 
-      const turns = turnsPerPlaythrough(scriptId);
       // What one run can grant: core plus the largest single ending's set.
       const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));
 
-      // Both the shortest and longest playthrough must sit inside the band.
-      // Route scripts are exempt: their length is DECISIONS_PER_RUN for every
-      // level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
-      if (!isRouteScript(script) && (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns))) {
-        out.push(`${id}:turns`);
-      }
+      // Run length is not a level gate: every scenario makes DECISIONS_PER_RUN
+      // decisions at every level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
       if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
       if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
       if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
@@ -357,7 +338,7 @@ describe('level gates', () => {
   });
 
   it('exempt scenarios are genuinely exempt and genuinely exist', () => {
-    const allIds = new Set([...Object.keys(scripts), ...catalog.map(c => c.id)]);
+    const allIds = new Set([...Object.keys(scripts), ...Object.keys(onboardingScripts), ...catalog.map(c => c.id)]);
     const missing = LEVEL_EXEMPT_SCENARIOS.filter(id => !allIds.has(id));
     expect(missing).toEqual([]);
   });

@@ -7,12 +7,11 @@ import {
   mergePatternProgress,
   mergeSecretEndings,
   mergeEndingsFound,
-  mergeScenarioRuns,
+  mergeRunCounts,
   mergeScenarioHistory,
-  type ScenarioRun,
 } from '../syncMerge';
 import { MAX_RUNS_RECORDED } from '../scenarioHistory';
-import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioRunRecord } from '../../types';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../../types';
 
 const card = (phraseId: string, lastReviewed: string, extra: Partial<PhraseReviewData> = {}): PhraseReviewData => ({
   phraseId,
@@ -60,7 +59,7 @@ describe('mergeReviews', () => {
 });
 
 describe('mergeCompletions', () => {
-  const run = (date: string, endingType = 'success'): ScenarioRun => ({ endingType, date });
+  const run = (date: string, endingType = 'success'): ScenarioCompletion => ({ endingType, date });
 
   it('keeps the earlier completion date as the true first completion', () => {
     const local = { s1: run('2026-09-05T10:00:00.000Z') };
@@ -181,11 +180,11 @@ describe('mergeEndingsFound', () => {
   });
 });
 
-describe('mergeScenarioRuns', () => {
+describe('mergeRunCounts', () => {
   // Counts can't be summed safely — both sides may already include the same
   // runs from before they diverged. The larger count never under-reports.
   it('keeps the higher run count per scenario', () => {
-    expect(mergeScenarioRuns({ a: 3, b: 1 }, { a: 2, b: 4, c: 1 })).toEqual({ a: 3, b: 4, c: 1 });
+    expect(mergeRunCounts({ a: 3, b: 1 }, { a: 2, b: 4, c: 1 })).toEqual({ a: 3, b: 4, c: 1 });
   });
 });
 
@@ -218,5 +217,12 @@ describe('mergeScenarioHistory', () => {
     const merged = mergeScenarioHistory(local, cloud).a;
     expect(merged).toHaveLength(MAX_RUNS_RECORDED);
     expect(merged[0]).toEqual(run('early', '2026-09-01'));
+  });
+
+  it('drops a malformed cloud record instead of throwing — the column is untyped JSONB', () => {
+    const cloud = { a: [null, { endingId: 'x' }, 'junk', run('y', '2026-09-02')] } as unknown as Record<string, ScenarioRunRecord[]>;
+    expect(mergeScenarioHistory({ a: [run('x', '2026-09-01')] }, cloud).a).toEqual([
+      run('x', '2026-09-01'), run('y', '2026-09-02'),
+    ]);
   });
 });

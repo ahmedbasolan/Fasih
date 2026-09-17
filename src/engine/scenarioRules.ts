@@ -8,11 +8,9 @@
  * Runs are simulated with the real engine (applyChoice / resolveNextScene /
  * evaluateEnding), so a rule failing here means the shipped player would
  * behave that way too — not that a test-only re-implementation disagrees.
- *
- * Legacy scripts (no `routes`) are exempt until they are rewritten.
  */
 import type { ScenarioChoice, ScenarioEnding, ScenarioScene, ScenarioScript, ScenarioState } from '../types';
-import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, isRouteScript, mainPathTarget, resolveNextScene } from './scenarioEngine';
+import { applyChoice, evaluateEnding, impactTotal, isChoiceVisible, mainPathTarget, resolveNextScene } from './scenarioEngine';
 import { DECISIONS_PER_RUN, MAX_BEST_IS_LONGEST_SHARE } from '../constants/curriculum';
 
 export interface PlayedRun {
@@ -21,7 +19,11 @@ export interface PlayedRun {
   ending: ScenarioEnding;
 }
 
-/** Hard ceiling on enumerated runs; well above 4 choices × 6 decisions × a fork. */
+/**
+ * Hard ceiling on enumerated runs; well above 4 choices × 6 decisions × a fork.
+ * Past it enumeration throws: every path rule would otherwise be checked on a
+ * partial set, and reachability would report endings as unreachable.
+ */
 const MAX_RUNS = 60000;
 const MAX_DEPTH = 30;
 
@@ -49,12 +51,18 @@ function walk(script: ScenarioScript, pick: Picker): PlayedRun[] {
   const first = script.scenes.find(s => !s.bonus);
   if (!first) return runs;
 
+  const record = (run: PlayedRun) => {
+    if (runs.length >= MAX_RUNS) {
+      throw new Error(`enumerateRuns: script "${script.id}" has more than ${MAX_RUNS} paths — the rules can't check it`);
+    }
+    runs.push(run);
+  };
+
   const step = (state: ScenarioState, steps: PlayedRun['steps'], depth: number) => {
-    if (runs.length >= MAX_RUNS) return;
     const scene = byId.get(state.currentSceneId);
     const visible = scene ? scene.choices.filter(c => isChoiceVisible(c, state)) : [];
     if (!scene || visible.length === 0 || depth >= MAX_DEPTH) {
-      runs.push({ steps, state, ending: evaluateEnding(state, script) });
+      record({ steps, state, ending: evaluateEnding(state, script) });
       return;
     }
     for (const choice of pick(visible)) {
@@ -63,7 +71,7 @@ function walk(script: ScenarioScript, pick: Picker): PlayedRun[] {
       const applied = applyChoice(state, choice, scene.charName, '');
       const nextSteps = [...steps, { sceneId: scene.id, choice }];
       if (target === null) {
-        runs.push({ steps: nextSteps, state: applied, ending: evaluateEnding(applied, script) });
+        record({ steps: nextSteps, state: applied, ending: evaluateEnding(applied, script) });
         continue;
       }
       step(
@@ -98,9 +106,8 @@ const TYPE_FOR_TIER = { strong: 'success', weak: 'mixed' } as const;
  * `phraseIds` is the phrase library's id set.
  */
 export function routeScriptProblems(script: ScenarioScript, phraseIds: ReadonlySet<string>): string[] {
-  if (!isRouteScript(script)) return [];
   const out: string[] = [];
-  const routes = new Set((script.routes ?? []).map(r => r.id));
+  const routes = new Set(script.routes.map(r => r.id));
   const sceneIds = new Set(script.scenes.map(s => s.id));
   const mainScenes = script.scenes.filter(s => !s.bonus);
 
