@@ -94,6 +94,7 @@ const previousLearnerRow: CloudUserData = {
   secret_endings_earned: { 'scenario-a': 'The Secret' },
   endings_found: { 'scenario-a': ['ending-1'] },
   scenario_runs: { 'scenario-a': 3 },
+  scenario_history: { 'scenario-a': [{ endingId: 'ending-1', endingType: 'success', on: '2026-09-01' }] },
   saved_phrases: ['phrase-a'],
   unlocked_phrase_ids: ['phrase-a'],
   milestones: [],

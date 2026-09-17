@@ -23,7 +23,7 @@ import {
   presentCustomerCenter as rcPresentCustomerCenter,
   addCustomerInfoListener,
 } from '../lib/purchases';
-import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, JournalEntry, LearningMilestone, PhraseCategory, CategoryMastery, SubscriptionStatus, ScenarioState, ScenarioChoice, ScenarioEnding, PatternProgress, ScenarioRunRecord } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { PHRASE_CATEGORIES, PHRASE_BY_ID, PHRASES_PER_CATEGORY } from '../constants/phrases';
 import {
@@ -47,8 +47,9 @@ import { shouldRecordOnboarding } from '../engine/onboardingAnalytics';
 import { pickPersisted, signOutReset } from '../engine/persistedState';
 import {
   mergeReviews, mergeCompletions, mergeJournal, mergeMilestones, mergeIds,
-  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns,
+  mergePatternProgress, mergeSecretEndings, mergeEndingsFound, mergeScenarioRuns, mergeScenarioHistory,
 } from '../engine/syncMerge';
+import { appendScenarioRun } from '../engine/scenarioHistory';
 
 // ─── Trial duration ───────────────────────────────────────────────────────────
 // Single source of truth — used in hasFullAccess AND hasScenarioAccess.
@@ -294,6 +295,8 @@ interface AppState {
   endingsFound: Record<string, string[]>;
   /** scenarioId → completed runs. A run with count > 1 is a replay. Persisted + synced. */
   scenarioRuns: Record<string, number>;
+  /** scenarioId → each run's ending and day, in order (engine/scenarioHistory.ts). Persisted + synced. */
+  scenarioHistory: Record<string, ScenarioRunRecord[]>;
   sceneProgress: Record<string, number>; // scenarioId → scenes completed count
   lastActiveDate: string | null;
   streakFreezes: number;
@@ -470,6 +473,7 @@ export const useAppStore = create<AppState>()(
       secretEndingsEarned: {},
       endingsFound: {},
       scenarioRuns: {},
+      scenarioHistory: {},
       sceneProgress: {},
       lastActiveDate: null,
       streakFreezes: 0,
@@ -521,6 +525,7 @@ export const useAppStore = create<AppState>()(
             secret_endings_earned: s.secretEndingsEarned,
             endings_found: s.endingsFound,
             scenario_runs: s.scenarioRuns,
+            scenario_history: s.scenarioHistory,
             saved_phrases: s.savedPhrases,
             unlocked_phrase_ids: s.unlockedPhraseIds,
             milestones: s.milestones,
@@ -655,6 +660,7 @@ export const useAppStore = create<AppState>()(
         const mergedSecrets = mergeSecretEndings(local.secretEndingsEarned, data.secret_endings_earned ?? {});
         const mergedEndingsFound = mergeEndingsFound(local.endingsFound, data.endings_found ?? {});
         const mergedRuns = mergeScenarioRuns(local.scenarioRuns, data.scenario_runs ?? {});
+        const mergedHistory = mergeScenarioHistory(local.scenarioHistory, data.scenario_history ?? {});
 
         set({
           user: data.user_profile ?? local.user,
@@ -665,6 +671,7 @@ export const useAppStore = create<AppState>()(
           secretEndingsEarned: mergedSecrets,
           endingsFound: mergedEndingsFound,
           scenarioRuns: mergedRuns,
+          scenarioHistory: mergedHistory,
           // Union, consistent with the rule above: a save made on either device
           // survives. The trade-off is that un-saving while offline can be
           // undone by a cloud copy that predates it — recoverable with one tap,
@@ -1130,6 +1137,11 @@ export const useAppStore = create<AppState>()(
             ? s.endingsFound
             : { ...s.endingsFound, [scenarioId]: [...found, ending.id] },
           scenarioRuns: { ...s.scenarioRuns, [scenarioId]: (s.scenarioRuns[scenarioId] ?? 0) + 1 },
+          scenarioHistory: appendScenarioRun(s.scenarioHistory, scenarioId, {
+            endingId: ending.id,
+            endingType: ending.type,
+            on: todayISO(),
+          }),
           stats: { ...s.stats, scenariosCompleted: Object.keys(completed) },
           activeScenarioState: null,
         });

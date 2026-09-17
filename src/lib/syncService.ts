@@ -21,7 +21,7 @@
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress, ScenarioRunRecord } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { reportServiceError } from './analytics';
 import { endingPercentages } from '../engine/scenarioPresentation';
@@ -68,8 +68,9 @@ function asArray<T>(raw: unknown): T[] {
  * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
  *          3 = added pattern_progress + secret_endings_earned (Sentence Builder);
  *          4 = added endings_found + scenario_runs (replay loop, migration 011)
+ *          5 = added scenario_history (dated runs for replay metrics, migration 012)
  */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
@@ -90,6 +91,7 @@ export interface CloudUserData {
   secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
   endings_found: Record<string, string[]>;            // scenarioId → ending ids ever reached ("3 of 5 found")
   scenario_runs: Record<string, number>;              // scenarioId → completed runs (replays = runs > 1)
+  scenario_history: Record<string, ScenarioRunRecord[]>; // scenarioId → each run's ending + day, in order
   saved_phrases: string[];
   unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
@@ -121,6 +123,7 @@ export async function pushProgress(
         secret_endings_earned: data.secret_endings_earned,
         endings_found: data.endings_found,
         scenario_runs: data.scenario_runs,
+        scenario_history: data.scenario_history,
         saved_phrases: data.saved_phrases,
         unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
@@ -174,6 +177,7 @@ export async function pullProgress(
       secret_endings_earned: asRecord<string>(data.secret_endings_earned),
       endings_found: asRecord<string[]>(data.endings_found),
       scenario_runs: asRecord<number>(data.scenario_runs),
+      scenario_history: asRecord<ScenarioRunRecord[]>(data.scenario_history),
       saved_phrases: asArray<string>(data.saved_phrases),
       unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
       milestones: asArray<LearningMilestone>(data.milestones),
