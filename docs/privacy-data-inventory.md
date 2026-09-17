@@ -41,6 +41,7 @@ Pushed by `syncToCloud()` in `src/store/useAppStore.ts`, keyed by `clerkUserId`:
 | `completed_scenarios` | Which scenarios were finished and which ending was reached |
 | `endings_found` | Every ending id reached per scenario, across all runs |
 | `scenario_runs` | How many times each scenario was completed |
+| `scenario_history` | Each completed run of a scenario, in order: the ending reached and the **day** (a date, no time), up to 20 runs per scenario |
 | `saved_phrases` | Bookmarked phrase IDs |
 | `unlocked_phrase_ids` | Phrases earned through scenarios |
 | `milestones` | Achievements reached, with dates |
@@ -55,6 +56,15 @@ gender can be treated as sensitive data under some regimes.
 
 **The journal is free-text authored by the user**, so it may contain anything
 they choose to write. Policies should treat it as user-generated content.
+
+**Learning data is also analysed in aggregate.** `completed_scenarios`,
+`endings_found`, `scenario_runs` and `scenario_history` are queried across all
+rows to measure replays and ending discovery
+(`supabase/queries/scenario_metrics.sql`). The queries run in the Supabase
+dashboard, not the app, and nothing is sent to a third party. The policy should
+say the learning record is used to improve the scenarios. It is not covered by
+the Profile screen's analytics toggle: that toggle governs only the anonymous
+onboarding answers.
 
 ---
 
