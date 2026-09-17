@@ -21,7 +21,7 @@
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress, ScenarioRunRecord } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
 import { reportServiceError } from './analytics';
 import { endingPercentages } from '../engine/scenarioPresentation';
@@ -86,7 +86,7 @@ export interface CloudUserData {
   user_profile: UserProfile | null;
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
-  completed_scenarios: Record<string, { endingType: string; date: string }>;
+  completed_scenarios: Record<string, ScenarioCompletion>;
   pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
   secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
   endings_found: Record<string, string[]>;            // scenarioId → ending ids ever reached ("3 of 5 found")
@@ -169,7 +169,7 @@ export async function pullProgress(
       user_profile: data.user_profile ?? null,
       stats: normalizeStats(data.stats),
       phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
-      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
+      completed_scenarios: asRecord<ScenarioCompletion>(data.completed_scenarios),
       // Grammar-engine columns get the same treatment as everything else here:
       // `?? {}` only guards null, and these arrive from the same untyped
       // supabase-js payload that made a bare `data.stats` crash the app.

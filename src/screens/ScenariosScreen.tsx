@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import {
@@ -38,7 +38,15 @@ type FilterTab = 'all' | 'saved';
 /** The list is grouped by mode, so it mixes section headings with entries. */
 type Row =
   | { kind: 'header'; mode: ScenarioMode }
-  | { kind: 'scenario'; scenario: Scenario; index: number; endings: EndingsProgress | undefined };
+  | {
+      kind: 'scenario';
+      scenario: Scenario;
+      /** Row order within the section, after the filter and the locked-last sort. */
+      index: number;
+      /** Position in the mode's curriculum — the number shown. Stable across sort and filter. */
+      position: number;
+      endings: EndingsProgress | undefined;
+    };
 
 function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -73,6 +81,61 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
 
+  const styles = useMemo(() => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.BG },
+    tabs: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SCREEN_MARGIN,
+      paddingBottom: SPACE.md,
+      gap: SPACE.sm,
+    },
+    tab: {
+      paddingHorizontal: SPACE.md,
+      paddingVertical: SPACE.sm,
+      borderRadius: RADIUS.pill,
+      borderWidth: 1,
+    },
+    tabLabel: { fontSize: 14 },
+    listContent: {
+      paddingHorizontal: SCREEN_MARGIN,
+      paddingBottom: TAB_LIST_SCROLL_BOTTOM,
+    },
+    empty: { alignItems: 'center', paddingTop: SPACE.xxxl, gap: SPACE.md },
+    emptyText: {
+      fontFamily: FONT_HEADING_SEMI,
+      fontSize: 14,
+      color: C.TEXT2,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACE.md,
+      paddingVertical: SPACE.xl,
+    },
+    footerCopy: { flex: 1 },
+    footerTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT },
+    footerSub: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs },
+    unlock: {
+      fontFamily: FONT_LATIN_MEDIUM,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: C.PRIMARY,
+    },
+    modeHeader: {
+      fontFamily: FONT_LATIN_MEDIUM,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: C.TEXT3,
+      paddingTop: SPACE.xl,
+      paddingBottom: SPACE.sm,
+    },
+  }), [C]);
+
   // Both modes, always (spec 2026-09-14 Q19): with six scenarios, hiding the
   // other mode's three made a paid app look half-empty — and a career learner
   // still rides taxis. The learner's own mode is listed first.
@@ -95,18 +158,19 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       // saved filter, or the free slots rebase onto whatever is left.
       const list = allScenarios
         .filter((s) => s.mode === mode)
-        .map((s, index) => ({ ...s, locked: !hasScenarioAccess(index) }))
-        .filter((s) => filterTab !== 'saved' || favoriteScenarios.includes(s.id))
+        .map((s, position) => ({ scenario: { ...s, locked: !hasScenarioAccess(position) }, position }))
+        .filter(({ scenario }) => filterTab !== 'saved' || favoriteScenarios.includes(scenario.id))
         // unlocked first, locked at the bottom
-        .sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+        .sort((a, b) => (a.scenario.locked === b.scenario.locked ? 0 : a.scenario.locked ? 1 : -1));
       if (list.length === 0) continue;
       out.push({ kind: 'header', mode });
-      list.forEach((scenario, index) => {
+      list.forEach(({ scenario, position }, index) => {
         const script = scripts[scenario.id];
         out.push({
           kind: 'scenario',
           scenario,
           index,
+          position,
           endings: script ? endingsProgress(script, endingsFound[scenario.id] ?? []) : undefined,
         });
       });
@@ -132,7 +196,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View style={styles.screen}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
       {/* The eyebrow is the running head: it says which mode you are in on
@@ -144,15 +208,7 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
       />
 
       {/* ── Tabs row ── */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: SPACE.md,
-          gap: SPACE.sm,
-        }}
-      >
+      <View style={styles.tabs}>
         {TABS.map(({ id, label }) => {
           const active = filterTab === id;
           return (
@@ -163,20 +219,14 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
               accessibilityState={{ selected: active }}
               accessibilityLabel={label}
               hitSlop={8}
-              style={{
-                paddingHorizontal: SPACE.md,
-                paddingVertical: SPACE.sm,
-                borderRadius: RADIUS.pill,
-                borderWidth: 1,
-                borderColor: active ? C.PRIMARY : 'transparent',
-              }}
+              // Same border width either way, so the label doesn't shift; PRIMARY at zero alpha.
+              style={[styles.tab, { borderColor: active ? C.PRIMARY : `${C.PRIMARY}00` }]}
             >
               <Text
-                style={{
+                style={[styles.tabLabel, {
                   fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
-                  fontSize: 14,
                   color: active ? C.PRIMARY : C.TEXT3,
-                }}
+                }]}
               >
                 {label}
               </Text>
@@ -194,24 +244,13 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
         getItemType={(row: Row) => row.kind}
         renderItem={({ item: row }: { item: Row }) =>
           row.kind === 'header' ? (
-            <Text
-              accessibilityRole="header"
-              style={{
-                fontFamily: FONT_LATIN_MEDIUM,
-                fontSize: 11,
-                letterSpacing: 1.6,
-                textTransform: 'uppercase',
-                color: C.TEXT3,
-                paddingTop: SPACE.xl,
-                paddingBottom: SPACE.sm,
-              }}
-            >
+            <Text accessibilityRole="header" style={styles.modeHeader}>
               {row.mode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
             </Text>
           ) : (
             <ScenarioEntry
               scenario={row.scenario}
-              index={String(row.index + 1).padStart(2, '0')}
+              index={String(row.position + 1).padStart(2, '0')}
               first={row.index === 0}
               endings={row.endings}
               onPress={() =>
@@ -220,28 +259,16 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
             />
           )
         }
-        {...({ estimatedItemSize: 120 } as any)}
-        contentContainerStyle={{
-          paddingHorizontal: SCREEN_MARGIN,
-          paddingBottom: TAB_LIST_SCROLL_BOTTOM,
-        }}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         // Fix black square flash on Android
         removeClippedSubviews={false}
         ListEmptyComponent={() => (
-          <View style={{ alignItems: 'center', paddingTop: SPACE.xxxl, gap: SPACE.md }}>
+          <View style={styles.empty}>
             {filterTab === 'saved'
               ? <Heart size={24} strokeWidth={1.5} color={C.TEXT3} fill="transparent" />
               : <Search size={24} strokeWidth={1.5} color={C.TEXT3} />}
-            <Text
-              style={{
-                fontFamily: FONT_HEADING_SEMI,
-                fontSize: 14,
-                color: C.TEXT2,
-                textAlign: 'center',
-                lineHeight: 20,
-              }}
-            >
+            <Text style={styles.emptyText}>
               {filterTab === 'saved'
                 ? STRINGS.scenarios.noFavourites
                 : STRINGS.scenarios.noResults}
@@ -267,38 +294,25 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
                         ? STRINGS.scenarios.lockedCount(paywalledCount)
                         : undefined
                     }
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: SPACE.md,
-                      paddingVertical: SPACE.xl,
-                    }}
+                    style={styles.footer}
                   >
                     {paywalledCount > 0
                       ? <Lock size={20} strokeWidth={1.5} color={C.PRIMARY} />
                       : <CheckCircle2 size={20} strokeWidth={1.5} color={C.TEXT3} />}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
+                    <View style={styles.footerCopy}>
+                      <Text style={styles.footerTitle}>
                         {paywalledCount > 0
                           ? STRINGS.scenarios.lockedCount(paywalledCount)
                           : STRINGS.scenarios.comingSoon(comingSoonCount, comingSoonScenarios[0]?.mode ?? userMode)}
                       </Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs }}>
+                      <Text style={styles.footerSub}>
                         {paywalledCount > 0
                           ? STRINGS.scenarios.lockedSub
                           : STRINGS.scenarios.writingNext}
                       </Text>
                     </View>
                     {paywalledCount > 0 ? (
-                      <Text
-                        style={{
-                          fontFamily: FONT_LATIN_MEDIUM,
-                          fontSize: 11,
-                          letterSpacing: 1.6,
-                          textTransform: 'uppercase',
-                          color: C.PRIMARY,
-                        }}
-                      >
+                      <Text style={styles.unlock}>
                         {STRINGS.scenarios.unlock}
                       </Text>
                     ) : null}

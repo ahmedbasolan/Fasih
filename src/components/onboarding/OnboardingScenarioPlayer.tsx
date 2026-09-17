@@ -10,11 +10,11 @@ import { ChevronRight } from '../icons';
 import { ShimmerButton } from '../ui';
 import { STRINGS } from '../../constants/strings';
 import { FONT_HEADING_SEMI } from '../design/tokens';
-import type { ScenarioScript, ScenarioChoice, Phrase } from '../../types';
+import type { OnboardingScript, ScenarioChoice, Phrase } from '../../types';
 import { PHRASES } from '../../constants/phrases';
 
 interface OnboardingScenarioPlayerProps {
-  script: ScenarioScript;
+  script: OnboardingScript;
   onComplete?: (unlockedPhraseIds: string[]) => void;
 }
 
