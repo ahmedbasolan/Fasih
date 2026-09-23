@@ -1570,7 +1570,7 @@ const ONBOARDING_SCRIPTS: Record<'career' | 'social', OnboardingScript> = {
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'] },
+    phrases: { core: ['core-5'] },
     scenes: [
       {
         id: 'c1', charName: 'Layla', charGender: 'female', setting: 'Small café — morning',
@@ -1608,7 +1608,7 @@ const ONBOARDING_SCRIPTS: Record<'career' | 'social', OnboardingScript> = {
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'] },
+    phrases: { core: ['core-5'] },
     scenes: [
       {
         id: 'c1', charName: 'Omar', charGender: 'male', setting: 'Small café — morning',
