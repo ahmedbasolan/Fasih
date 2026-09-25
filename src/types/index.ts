@@ -351,10 +351,13 @@ export type SourceId =
   | 'leung-2024'
   | 'routledge-comprehensive'
   | 'alramsa'
-  | 'ramsa-corpus-2026'
+  | 'ramsa-paper-2026'
   | 'emirati-social-media-2024'
   | 'qafisheh-1977'
   | 'holes-1990'
+  | 'ntelitheos-idrissi-2017'
+  | 'szreder-derrick-2024'
+  | 'wiktionary-gulf-arabic'
   | 'fasih-internal';
 
 /**

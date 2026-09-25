@@ -193,27 +193,55 @@ export const SOURCES: Readonly<Record<SourceId, SourceEntry>> = {
     title: 'Leung, Ntelitheos & Al Kaabi — Basic Emirati Arabic: A Grammar and Workbook (Routledge)',
     year: 2024,
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
-    note: 'Emirati-specific, current, IPA + Arabic script, examples from native speakers.',
+    note:
+      'Emirati-specific, current, IPA + Arabic script, examples from native speakers — by ' +
+      'description, not by having read it. NOT YET READ DIRECTLY (purchasable; no preview ' +
+      'accessible as of 2026-09-03). Every existing citation to this id is UNVERIFIED — see ' +
+      'the fem-2sg-ch and here-hini entries in DIALECT_FEATURES, flagged inline.',
   },
   'routledge-comprehensive': {
     id: 'routledge-comprehensive',
-    title: 'Emirati Arabic: A Comprehensive Grammar (Routledge)',
-    year: 2022,
+    title: 'Leung, Ntelitheos & Al Kaabi — Emirati Arabic: A Comprehensive Grammar (Routledge)',
+    year: 2020, // verified via publisher record quoted in Wikipedia's citation list, 29/30 Dec 2020.
+                // An earlier version of this file guessed 2022. Not read directly — see note.
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
+    note:
+      'NOT YET READ DIRECTLY. Every citation to this source in DIALECT_FEATURES so far was ' +
+      'written as a plausible placeholder, not verified against the actual text — this is a ' +
+      'purchasable academic reference (ISBN 978-0-367-22080-8), not something available online. ' +
+      'Treat every existing citation to this id as UNVERIFIED until someone has actually read ' +
+      'the cited page.',
   },
   alramsa: {
     id: 'alramsa',
     title: 'Al Ramsa Institute published materials (Dubai)',
-    year: 2023,
+    year: 2016, // the one specific, dated Al Ramsa work independently confirmed to exist:
+                // Al Fardan, Hanan (2016) "Spoken Emirati", Al Ramsa Institute, pp.8-10 —
+                // per Wikipedia's citation list. NOT read directly.
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
-    note: 'Nine levels, A1–B3, scenario-organised. Taught to expats in Dubai now.',
+    note:
+      'UNVERIFIED PLACEHOLDER, and this note exists to say so plainly. An earlier version of ' +
+      'this file gave this entry "year: 2023" with no specific work behind it — a guess dressed ' +
+      'as a citation, exactly the failure mode this project exists to prevent. Every existing ' +
+      'DIALECT_FEATURES citation to this id (وايد، أبي، زين، شو، شلون) is flagged inline as ' +
+      'unverified. The institute publishes real, purchasable, current material (a 120-page ' +
+      'phrasebook, ongoing Instagram/YouTube content) but none of it has been read for this ' +
+      'project. Buying "Spoken Emirati" or the phrasebook is the direct way to firm this up.',
   },
-  'ramsa-corpus-2026': {
-    id: 'ramsa-corpus-2026',
-    title: 'Ramsa: Emirati Arabic Speech Corpus (arXiv:2603.08125), CC BY 4.0',
+  'ramsa-paper-2026': {
+    id: 'ramsa-paper-2026',
+    title: 'Al-Sabbagh, Ramsa: A Sociolinguistically Rich Emirati Arabic Speech Corpus (arXiv:2603.08125)',
     year: 2026,
     validFor: ['morphosyntax', 'lexeme', 'usage', 'register'],
-    note: '41h, 157 speakers, Urban/Bedouin/Shihhi. Attested contemporary speech, and the only free source in the contemporary tier.',
+    note:
+      'THE PAPER ONLY, which is CC BY 4.0 — cite its printed example utterances and ' +
+      'its documented phonological substitutions. The CORPUS ITSELF IS NOT USABLE HERE: ' +
+      'per its §9, interview data is restricted to "qualified researchers for ' +
+      'noncommercial scholarly use" under an institutional Data Use Agreement, and the ' +
+      'broadcast portion is not distributed at all for copyright reasons. Fasih is a ' +
+      'paid app, so the noncommercial condition rules it out even with a DUA. An earlier ' +
+      'version of this file wrongly described the corpus as CC BY 4.0 and free; that ' +
+      'licence covers the paper.',
   },
   'emirati-social-media-2024': {
     id: 'emirati-social-media-2024',
@@ -235,6 +263,57 @@ export const SOURCES: Readonly<Record<SourceId, SourceEntry>> = {
     year: 1990,
     validFor: ['morphosyntax'],
     note: 'RESTRICTED: structure only, as above.',
+  },
+  'ntelitheos-idrissi-2017': {
+    id: 'ntelitheos-idrissi-2017',
+    title:
+      'Ntelitheos & Idrissi — "Language Growth in Child Emirati Arabic", ch. 9 in ' +
+      'Perspectives on Arabic Linguistics XXIX [Studies in Arabic Linguistics 5], ' +
+      'John Benjamins, pp. 229–248. DOI 10.1075/sal.5.10nte',
+    year: 2017,
+    validFor: ['morphosyntax'],
+    note:
+      'ACTUALLY READ (open-access PDF, faculty.uaeu.ac.ae/dimitrios_n/lang_growth.pdf, ' +
+      '2026-09-03) — the one source in this table that is. A child-language-acquisition study, ' +
+      'not a phrasebook: restricted to morphosyntax because its lexical content is mostly ' +
+      "child speech ERRORS on the way to an adult target, not attested adult usage. Two adult " +
+      'target forms it does state directly: بيت "bayt/bait" (house; its own worked example ' +
+      'transcribes البيت as DET#bajt) and the masc/fem pair أبيض "abyad" / بيضة "beeda" (white).',
+  },
+  'szreder-derrick-2024': {
+    id: 'szreder-derrick-2024',
+    title:
+      'Szreder & Derrick — "Phonological conditioning of affricate variability in Emirati ' +
+      'Arabic", Journal of the International Phonetic Association 54(1), pp. 146–164. ' +
+      'DOI 10.1017/S0025100323000166',
+    year: 2024,
+    validFor: ['morphosyntax'],
+    note:
+      'Read via abstract + UAEU research-repository record, not the full paywalled text — cite ' +
+      'only the finding stated at that level of detail: /k/ → [tʃ] ("ch") affrication is, per ' +
+      'the authors, "a completed phonemic change" in Emirati Arabic (elicited from 20 native ' +
+      'speakers), distinct from the still-variable /dʒ/ → [j] alternation. Does NOT confirm this ' +
+      'for any specific morpheme (e.g. the 2fs suffix) — see fem-2sg-ch below.',
+  },
+  'wiktionary-gulf-arabic': {
+    id: 'wiktionary-gulf-arabic',
+    title: 'English Wiktionary, entries carrying an explicit "Gulf Arabic" language header',
+    year: 2026, // access-dated, not publication-dated — a live wiki has no fixed edition.
+                // Treat as "current as checked on the date in the citing locator."
+    validFor: ['lexeme', 'usage'],
+    note:
+      'DIFFERENT TIER from every other entry in this table: community-maintained, not ' +
+      'peer-reviewed. Genuinely checked (fetched and read), not guessed — the load-bearing ' +
+      'rule is different from why leung-2024/alramsa are flagged unverified above. Three ' +
+      'conditions before citing it: (1) the page must carry an explicit "Gulf Arabic" ' +
+      'language section — NOT bare "Arabic" (=MSA), and not a neighbouring dialect (Iraqi, ' +
+      'Hijazi, Levantine all showed up as false leads while checking this on 2026-09-03); ' +
+      '(2) "Gulf Arabic" on Wiktionary is PAN-GULF (its one confirmed pronunciation example ' +
+      'was tagged Kuwait specifically) — cite `origin: \'gulf-koine\'`, never `\'emirati\'`, ' +
+      'unless something else independently ties the form to Emirati specifically; ' +
+      '(3) an ABSENT entry proves nothing — coverage is patchy (أبي, أبغى, مشكور, شو all had ' +
+      'no Gulf Arabic section when checked, which is a documentation gap, not a sign any of ' +
+      'those words are wrong) and must never be cited as evidence against a form.',
   },
   'fasih-internal': {
     id: 'fasih-internal',
@@ -290,6 +369,32 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'ـج — Emirati 2nd person feminine suffix (عندج، لج)',
     pattern: /(?:لج|عندج|بيتج|شلونج|عليج|منج|حالج|أسألج|يعافيج)(?![؀-ۿ])/,
     claim: 'morphosyntax',
+    // ⚠ STILL UNRESOLVED — needs a native ruling, see docs/language/authority.md §"open
+    // question." Updated 2026-09-03 with a real (if incomplete) finding, not just a flag:
+    //
+    // Fasih's OWN romanisation of this suffix is "-ich" (e.g. عندج -> 'indich, in
+    // scenarios.ts), i.e. a voiceless AFFRICATE [tʃ], not the plain fricative [ʃ] the
+    // Ramsa paper's example showed for a different word (عرفتك -> عرفتش, §4.2.2).
+    // Szreder & Derrick (2024, peer-reviewed, JIPA) independently establish that /k/ -> [tʃ]
+    // affrication is "a completed phonemic change" in Emirati Arabic generally, in a
+    // front-vowel-conditioned environment — which the -ik suffix (front vowel /i/) fits.
+    // That is genuine, real corroboration for Fasih's -ich choice, from a source actually
+    // read, not just a plausible guess.
+    //
+    // A THIRD data point, added 2026-09-03: Wiktionary's Gulf Arabic entry for شلون spells
+    // the feminine "how are you" as شلونچ — using چ (the dedicated affricate letter, /tʃ/),
+    // NOT plain ج (jiim) and NOT ش (shin). That is the parallel word to this exact suffix.
+    //
+    // Net effect of all three points together: the weight of evidence now leans toward
+    // [tʃ]/"-ich" as the correct SOUND (matching Fasih's own romanisation), and toward چ —
+    // not the plain ج Fasih currently writes throughout scenarios.ts/phrases.ts — as the
+    // correct SCRIPT LETTER for it. That would be a real, actionable finding (Fasih's
+    // Arabic script may be using the wrong letter for a sound it already gets right in
+    // romanisation) — but it is NOT something to silently mass-replace: it rests on one
+    // Wiktionary entry for one word, "chi" availability/readability across the app's fonts
+    // hasn't been checked, and it should be confirmed by a native speaker or a genuinely
+    // read academic source before touching the ~10 scenario/phrase files that use ج here.
+    // The underlying source citation (leung-2024) remains UNVERIFIED — not read.
     source: 'leung-2024',
   },
   {
@@ -297,14 +402,27 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'الحين — Gulf "now" (vs MSA الآن)',
     pattern: /الحين/,
     claim: 'lexeme',
-    source: 'alramsa',
+    // Ramsa §4.2.3 attests it with realisations il-heen / il-heena.
+    source: 'ramsa-paper-2026',
+  },
+  {
+    id: 'q-to-g-shift',
+    label: 'ق → g (عقب → عگب/ugub، قهوة → gahwa)',
+    pattern: /(?:عقب|قهوة|گهوة|جدام|يقدر)/,
+    claim: 'morphosyntax',
+    // Ramsa §4.2.2 lists /q/ → /g/ among Emirati phonological substitutions.
+    source: 'ramsa-paper-2026',
   },
   {
     id: 'intensifier-waayid',
     label: 'وايد — Gulf intensifier (vs MSA جداً/كثيراً)',
     pattern: /وايد/,
     claim: 'lexeme',
-    source: 'alramsa',
+    // Confirmed 2026-09-03: Wiktionary carries an explicit Gulf Arabic entry for وايد
+    // (wāyid), IPA /waː.jɪd/, glossed "very / a lot of / too much", with an example
+    // sentence. Pan-Gulf per that entry, not Emirati-specific — hence origin left at
+    // gulf-koine on the phrase this now sources (e6), not emirati.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'recent-taw',
@@ -318,13 +436,15 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'ج → ي shift (يديد for جديد، ياب for جاب)',
     pattern: /(?:يديد|يديدة|ياب|يابت|يايب)/,
     claim: 'morphosyntax',
-    source: 'leung-2024',
+    // Ramsa §4.2.2 gives this exact example: جديد (jadiid) → يديد (yadiid).
+    source: 'ramsa-paper-2026',
   },
   {
     id: 'want-abi',
     label: 'أبي / أبغي — Gulf "I want" (vs MSA أريد)',
     pattern: /(^|[^؀-ۿ])(?:أبي|ابي|أبغي|ابغي|تبي|تبغي|يبي|يبغي)([^؀-ۿ]|$)/,
     claim: 'lexeme',
+    // ⚠ UNVERIFIED — see intensifier-waayid above for what that means.
     source: 'alramsa',
   },
   {
@@ -332,20 +452,33 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'زين — Gulf "good/fine" (vs MSA حسناً/جيد)',
     pattern: /(^|[^؀-ۿ])زين([^؀-ۿ]|$)/,
     claim: 'lexeme',
-    source: 'alramsa',
+    // Ramsa §4.2.3 "Variation as Produced" names زين (zeen) and إنزين (inzeen) directly as
+    // contemporary Emirati discourse markers — actually read, not a placeholder. The same
+    // citation sources phrase e1 in phrases.ts.
+    source: 'ramsa-paper-2026',
   },
   {
     id: 'here-hini',
     label: 'هني — Emirati "here" (vs pan-Arabic هنا)',
     pattern: /(^|[^؀-ۿ])هني([^؀-ۿ]|$)/,
     claim: 'lexeme',
-    source: 'leung-2024',
+    // Confirmed 2026-09-03: Wiktionary carries a Gulf Arabic entry for هني, "here" — but
+    // its pronunciation example is tagged Kuwait specifically, so this label's "Emirati"
+    // framing is pan-Gulf-confirmed, not Emirati-confirmed. leung-2024 (still unverified)
+    // remains the citation actually claiming the Emirati-specific point.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'what-shu',
     label: 'شو / وش — Gulf "what" (vs MSA ماذا)',
     pattern: /(^|[^؀-ۿ])(?:شو|وش|شنو)([^؀-ۿ]|$)/,
     claim: 'lexeme',
+    // ⚠ STILL UNVERIFIED. Checked Wiktionary 2026-09-03 specifically for this — شو has
+    // entries for North/South Levantine and Tunisian Arabic, but NO Gulf Arabic section.
+    // Per the wiktionary-gulf-arabic SOURCES note, an absence proves nothing (coverage
+    // gap, not refutation) — so this stays on the unverified alramsa placeholder rather
+    // than being marked wrong. Genuinely checked and still open, which is different from
+    // never having been checked.
     source: 'alramsa',
   },
   {
@@ -353,7 +486,12 @@ export const DIALECT_FEATURES: readonly DialectFeature[] = [
     label: 'شلون — Gulf "how" (vs MSA كيف)',
     pattern: /شلون/,
     claim: 'lexeme',
-    source: 'alramsa',
+    // Confirmed 2026-09-03: Wiktionary's Gulf Arabic entry gives شلونك؟ (šlōnik, to a
+    // male) and شلونچ؟ (šlōnič, to a female) "how are you?" verbatim — matching Fasih's
+    // own g3 phrase and its pronTip ("For a female: shloonich") exactly, spelling the
+    // feminine form with چ (the affricate letter), which bears on the fem-2sg-ch question
+    // above.
+    source: 'wiktionary-gulf-arabic',
   },
   {
     id: 'relative-illi',

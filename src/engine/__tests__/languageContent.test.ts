@@ -170,6 +170,23 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [];
  */
 const KNOWN_DIALECT_GAPS: readonly string[] = [];
 
+/**
+ * DIALECT_FEATURES entries whose citation does not actually satisfy
+ * `isValidCitation` — every one here is a `lexeme` claim resting on
+ * `alramsa`, which is honestly dated 2016 (see its SOURCES note) and so
+ * fails the post-2020 contemporaneity rule for anything but `morphosyntax`.
+ *
+ * This is not a loophole around that rule — it is the rule doing its job. The
+ * old version of `alramsa` carried an invented "year: 2023" with no specific
+ * work behind it, which let these four pass silently. Dating it honestly
+ * (2026-09-03) surfaced that they were never really sourced. Removing an
+ * entry here requires an actual post-2020 citation, not a re-guessed year.
+ */
+const KNOWN_UNVERIFIED_CITATIONS: readonly string[] = [
+  'want-abi cites alramsa for lexeme',
+  'what-shu cites alramsa for lexeme',
+];
+
 describe('curriculum spec is internally consistent', () => {
   it('every difficulty level has a spec', () => {
     const levels: DifficultyLevel[] = ['Beginner', 'Intermediate', 'Advanced'];
@@ -205,11 +222,22 @@ describe('curriculum spec is internally consistent', () => {
     }
   });
 
-  it('each dialect feature cites a source valid for its claim', () => {
-    const bad = DIALECT_FEATURES.filter(f => !isValidCitation({
-      ref: f.source, locator: f.label, claim: f.claim,
-    })).map(f => `${f.id} cites ${f.source} for ${f.claim}`);
-    expect(bad).toEqual([]);
+  /** DIALECT_FEATURES entries whose citation currently fails validation. */
+  function invalidCitations(): string[] {
+    return DIALECT_FEATURES
+      .filter(f => !isValidCitation({ ref: f.source, locator: f.label, claim: f.claim }))
+      .map(f => `${f.id} cites ${f.source} for ${f.claim}`)
+      .sort();
+  }
+
+  it('introduces no NEW dialect feature with an invalid citation', () => {
+    const known = new Set(KNOWN_UNVERIFIED_CITATIONS);
+    expect(invalidCitations().filter(k => !known.has(k))).toEqual([]);
+  });
+
+  it('KNOWN_UNVERIFIED_CITATIONS lists nothing already fixed', () => {
+    const current = new Set(invalidCitations());
+    expect(KNOWN_UNVERIFIED_CITATIONS.filter(k => !current.has(k))).toEqual([]);
   });
 
   it('dialect feature ids are unique', () => {
@@ -398,8 +426,11 @@ describe('provenance', () => {
    * (الحمد لله على السلامة, خلني أفكر فيها, أحاول, أساعد). The أبي / خلني
    * patterns could not return without them (spec §2.9), and Ahmed chose that over
    * deferring the patterns. They go to the Emirati reviewer with the scenario.
+   * 106 → 101 on 2026-09-25 by actual sourcing, the first such drop: g3 شلونك and
+   * e6 وايد (Wiktionary Gulf Arabic), e1 زين and w2 ما شاء الله (Ramsa 2026), and
+   * h3 البيت بيتك (Ntelitheos & Idrissi 2017 — base word only, as its locator says).
    */
-  const MAX_UNSOURCED = 106;
+  const MAX_UNSOURCED = 101;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 
