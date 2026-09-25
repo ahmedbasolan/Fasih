@@ -798,7 +798,6 @@ export const STRINGS = {
       verifying: 'Verifying...',
       verifyEmail: 'Verify Email',
       backToSignUp: '← Back to sign up',
-      fullNamePlaceholder: 'Full name',
       emailPlaceholder: 'Email address',
       passwordPlaceholder: 'Create password',
       // Split so Terms / Privacy render as tappable links inside the sentence.

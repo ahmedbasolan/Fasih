@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Pla
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
-import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
+import { Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
@@ -43,11 +43,10 @@ export default function SignUpScreen() {
   const { signUp } = useSignUp();
   const { setActive } = useClerk();
 
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState<'name' | 'email' | 'password' | null>(null);
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,19 +55,19 @@ export default function SignUpScreen() {
 
   const passedRules = PASSWORD_RULES.filter(r => r.test(password));
   const passwordStrong = passedRules.length === PASSWORD_RULES.length;
-  const canSubmit = fullName.trim().length >= 2 && email.trim().includes('@') && passwordStrong && agreed;
+  const canSubmit = email.trim().includes('@') && passwordStrong && agreed;
 
   const handleSignUp = async () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
     try {
-      const nameParts = fullName.trim().split(' ');
+      // Email and password only. The display name is collected on the
+      // onboarding name step, which every new account goes through anyway —
+      // asking twice was the only reason this screen had a name field.
       const { error: createErr } = await signUp.create({
         emailAddress: email.trim(),
         password,
-        firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || undefined,
       });
       if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
@@ -77,12 +76,21 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
   };
+
+  /**
+   * Clerk reports a second attempt on an already-verified email as an error,
+   * but the sign-up itself is still finishable. Treating it as failure is what
+   * strands an account whose email went through: the code is accepted, nothing
+   * moves, and every retry says "already been verified".
+   */
+  const isAlreadyVerified = (err: { code?: string; message?: string; longMessage?: string } | null | undefined) =>
+    err?.code === 'verification_already_verified' ||
+    /already been verified/i.test(err?.longMessage ?? err?.message ?? '');
 
   const handleVerify = async () => {
     if (verificationCode.length < 6) return;
@@ -90,16 +98,25 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
-
-      if (signUp.status === 'complete') {
-        const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
-        await setActive({ session: signUp.createdSessionId! });
-        router.replace('/onboarding');
+      if (verifyErr && !isAlreadyVerified(verifyErr)) {
+        setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed));
+        return;
       }
+
+      // Always try to finish. The previous version only finalized when
+      // signUp.status had already flipped to 'complete' by the time this line
+      // ran, and did nothing at all otherwise — no session, no navigation, no
+      // error on screen. If something really is still missing, finalize() says
+      // so and the message is shown.
+      const { error: finalErr } = await signUp.finalize();
+      if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
+
+      const sessionId = signUp.createdSessionId;
+      if (!sessionId) { setError(STRINGS.auth.signUp.verificationFailed); return; }
+
+      await setActive({ session: sessionId });
+      router.replace('/onboarding');
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
@@ -233,28 +250,6 @@ export default function SignUpScreen() {
                   gap: 12, borderWidth: 1, borderColor: C.BORDER, marginBottom: 16,
                 }}
               >
-                {/* Full Name */}
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
-                  backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
-                }}>
-                  <User size={18} strokeWidth={1.5} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
-                  <TextInput
-                    value={fullName}
-                    onChangeText={setFullName}
-                    placeholder={STRINGS.auth.signUp.fullNamePlaceholder}
-                    placeholderTextColor={C.TEXT3}
-                    accessibilityLabel={STRINGS.auth.signUp.fullNamePlaceholder}
-                    autoCapitalize="words"
-                    autoComplete="name"
-                    onFocus={() => setFocused('name')}
-                    onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
-                  />
-                </View>
-
                 {/* Email */}
                 <View style={{
                   flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -349,7 +344,7 @@ export default function SignUpScreen() {
                     hitSlop={12}
                     style={{
                       width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                      backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                      backgroundColor: agreed ? C.JADE_ACCENT : `${C.JADE_ACCENT}00`,
                       borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                       alignItems: 'center', justifyContent: 'center',
                     }}
@@ -401,6 +396,12 @@ export default function SignUpScreen() {
                   </Text>
                 </Pressable>
               </MotiView>
+
+              {/* Where Clerk mounts its Smart CAPTCHA on web. Without an
+                  element with this id it warns and falls back to the invisible
+                  widget, which stricter bot protection can refuse outright.
+                  Inert on native. */}
+              <View nativeID="clerk-captcha" />
 
               {__DEV__ && (
                 <Pressable
