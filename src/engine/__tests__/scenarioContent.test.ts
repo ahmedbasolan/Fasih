@@ -10,6 +10,7 @@
 import {
   getScenarioScripts,
   getOnboardingScripts,
+  getOnboardingScenarios,
   getAllScenarios,
   isScenarioAvailableFor,
   filterScenariosForLearner,
@@ -203,6 +204,23 @@ describe('scenario data integrity', () => {
       }
     }
     expect(orphans).toEqual([]);
+  });
+
+  // The onboarding entry is rendered nowhere today, which is how its numbers
+  // drifted: 4 decisions, 2 endings and '5+' phrases, against a script with two
+  // decisions, no endings at all and one phrase.
+  it('the onboarding catalog entry matches the script it describes', () => {
+    const meta = getOnboardingScenarios(darkTheme)[0];
+    const mismatches: string[] = [];
+    for (const [id, script] of Object.entries(getOnboardingScripts())) {
+      const decisions = script.scenes.filter(sc => sc.choices.length > 0).length;
+      if (meta.decisions !== decisions) mismatches.push(`${id}: catalog says ${meta.decisions} decisions, script has ${decisions}`);
+      if (meta.endings !== 0) mismatches.push(`${id}: catalog says ${meta.endings} endings, the onboarding script has none`);
+      if (meta.phrases !== String(script.phrases.core.length)) {
+        mismatches.push(`${id}: catalog says "${meta.phrases}" phrases, script grants ${script.phrases.core.length}`);
+      }
+    }
+    expect(mismatches).toEqual([]);
   });
 
   it('catalog metadata matches the real ending count', () => {
