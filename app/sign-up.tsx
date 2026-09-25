@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
-import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
+import { Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
 import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
@@ -42,11 +43,10 @@ export default function SignUpScreen() {
   const { signUp } = useSignUp();
   const { setActive } = useClerk();
 
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState<'name' | 'email' | 'password' | null>(null);
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,19 +55,19 @@ export default function SignUpScreen() {
 
   const passedRules = PASSWORD_RULES.filter(r => r.test(password));
   const passwordStrong = passedRules.length === PASSWORD_RULES.length;
-  const canSubmit = fullName.trim().length >= 2 && email.trim().includes('@') && passwordStrong && agreed;
+  const canSubmit = email.trim().includes('@') && passwordStrong && agreed;
 
   const handleSignUp = async () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
     try {
-      const nameParts = fullName.trim().split(' ');
+      // Email and password only. The display name is collected on the
+      // onboarding name step, which every new account goes through anyway —
+      // asking twice was the only reason this screen had a name field.
       const { error: createErr } = await signUp.create({
         emailAddress: email.trim(),
         password,
-        firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || undefined,
       });
       if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
@@ -76,12 +76,21 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
   };
+
+  /**
+   * Clerk reports a second attempt on an already-verified email as an error,
+   * but the sign-up itself is still finishable. Treating it as failure is what
+   * strands an account whose email went through: the code is accepted, nothing
+   * moves, and every retry says "already been verified".
+   */
+  const isAlreadyVerified = (err: { code?: string; message?: string; longMessage?: string } | null | undefined) =>
+    err?.code === 'verification_already_verified' ||
+    /already been verified/i.test(err?.longMessage ?? err?.message ?? '');
 
   const handleVerify = async () => {
     if (verificationCode.length < 6) return;
@@ -89,16 +98,25 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
-
-      if (signUp.status === 'complete') {
-        const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
-        await setActive({ session: signUp.createdSessionId! });
-        router.replace('/onboarding');
+      if (verifyErr && !isAlreadyVerified(verifyErr)) {
+        setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed));
+        return;
       }
+
+      // Always try to finish. The previous version only finalized when
+      // signUp.status had already flipped to 'complete' by the time this line
+      // ran, and did nothing at all otherwise — no session, no navigation, no
+      // error on screen. If something really is still missing, finalize() says
+      // so and the message is shown.
+      const { error: finalErr } = await signUp.finalize();
+      if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
+
+      const sessionId = signUp.createdSessionId;
+      if (!sessionId) { setError(STRINGS.auth.signUp.verificationFailed); return; }
+
+      await setActive({ session: sessionId });
+      router.replace('/onboarding');
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
@@ -111,17 +129,17 @@ export default function SignUpScreen() {
 
       <Pressable
         onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + 24, left: 20, zIndex: 30 }}
+        style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityRole="button"
         accessibilityLabel="Go back"
       >
-        <ChevronLeft size={28} color={C.TEXT3} />
+        <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
       </Pressable>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: insets.top + 80, paddingBottom: insets.bottom + 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: SCREEN_MARGIN, paddingTop: insets.top + SPACE.huge, paddingBottom: insets.bottom + SPACE.xl }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
@@ -190,7 +208,7 @@ export default function SignUpScreen() {
 
               {error ? (
                 <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                 </View>
               ) : null}
 
@@ -217,7 +235,7 @@ export default function SignUpScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={STRINGS.auth.signUp.backToSignUp}
               >
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
+                <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.backToSignUp}</Text>
               </Pressable>
             </MotiView>
           ) : (
@@ -232,28 +250,6 @@ export default function SignUpScreen() {
                   gap: 12, borderWidth: 1, borderColor: C.BORDER, marginBottom: 16,
                 }}
               >
-                {/* Full Name */}
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
-                  backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
-                }}>
-                  <User size={18} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
-                  <TextInput
-                    value={fullName}
-                    onChangeText={setFullName}
-                    placeholder={STRINGS.auth.signUp.fullNamePlaceholder}
-                    placeholderTextColor={C.TEXT3}
-                    accessibilityLabel={STRINGS.auth.signUp.fullNamePlaceholder}
-                    autoCapitalize="words"
-                    autoComplete="name"
-                    onFocus={() => setFocused('name')}
-                    onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
-                  />
-                </View>
-
                 {/* Email */}
                 <View style={{
                   flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -261,7 +257,7 @@ export default function SignUpScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'email' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Mail size={18} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Mail size={18} strokeWidth={1.5} color={focused === 'email' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -273,7 +269,7 @@ export default function SignUpScreen() {
                     autoComplete="email"
                     onFocus={() => setFocused('email')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                 </View>
 
@@ -284,7 +280,7 @@ export default function SignUpScreen() {
                   backgroundColor: C.BG, borderWidth: 1,
                   borderColor: focused === 'password' ? C.JADE_ACCENT : C.BORDER2,
                 }}>
-                  <Lock size={18} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
+                  <Lock size={18} strokeWidth={1.5} color={focused === 'password' ? C.JADE_ACCENT : C.TEXT3} />
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
@@ -295,7 +291,7 @@ export default function SignUpScreen() {
                     autoCapitalize="none"
                     onFocus={() => setFocused('password')}
                     onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 15, color: C.TEXT, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
@@ -303,7 +299,7 @@ export default function SignUpScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={showPassword ? STRINGS.auth.signIn.hidePassword : STRINGS.auth.signIn.showPassword}
                   >
-                    {showPassword ? <EyeOff size={18} color={C.TEXT3} /> : <Eye size={18} color={C.TEXT3} />}
+                    {showPassword ? <EyeOff size={18} strokeWidth={1.5} color={C.TEXT3} /> : <Eye size={18} strokeWidth={1.5} color={C.TEXT3} />}
                   </Pressable>
                 </View>
 
@@ -320,7 +316,7 @@ export default function SignUpScreen() {
                       return (
                         <View key={rule.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: passed ? C.JADE2 : C.SURFACE2, alignItems: 'center', justifyContent: 'center' }}>
-                            {passed && <Check size={8} color={C.BG} />}
+                            {passed && <Check size={8} strokeWidth={1.5} color={C.BG} />}
                           </View>
                           <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: passed ? C.JADE2 : C.TEXT3 }}>{rule.label}</Text>
                         </View>
@@ -348,14 +344,14 @@ export default function SignUpScreen() {
                     hitSlop={12}
                     style={{
                       width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                      backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                      backgroundColor: agreed ? C.JADE_ACCENT : `${C.JADE_ACCENT}00`,
                       borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                       alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    {agreed && <Check size={12} color={C.BG} />}
+                    {agreed && <Check size={12} strokeWidth={1.5} color={C.BG} />}
                   </Pressable>
-                  <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>
+                  <Text style={{ flex: 1, fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 }}>
                     {STRINGS.auth.signUp.agreeTermsPrefix}{' '}
                     <LegalLink doc="terms" label={STRINGS.legal.termsOfService} />
                     {' '}{STRINGS.auth.signUp.agreeTermsConjunction}{' '}
@@ -372,7 +368,7 @@ export default function SignUpScreen() {
                   style={{ marginBottom: 16 }}
                 >
                   <View style={{ borderRadius: 12, padding: 12, backgroundColor: C.ERROR_SURFACE, borderWidth: 1, borderColor: C.ERROR_BORDER }}>
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.ERROR, textAlign: 'center' }}>{error}</Text>
                   </View>
                 </MotiView>
               ) : null}
@@ -400,6 +396,12 @@ export default function SignUpScreen() {
                   </Text>
                 </Pressable>
               </MotiView>
+
+              {/* Where Clerk mounts its Smart CAPTCHA on web. Without an
+                  element with this id it warns and falls back to the invisible
+                  widget, which stricter bot protection can refuse outright.
+                  Inert on native. */}
+              <View nativeID="clerk-captcha" />
 
               {__DEV__ && (
                 <Pressable

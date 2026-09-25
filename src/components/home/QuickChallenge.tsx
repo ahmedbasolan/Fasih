@@ -61,13 +61,13 @@ export function QuickChallenge({ prompt, answer, roman, onRevealed }: QuickChall
     },
     promptText: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       marginBottom: 10,
     },
     englishPrompt: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 20,
+      fontSize: 22,
       color: C.TEXT,
       marginBottom: 20,
       lineHeight: 28,
@@ -82,7 +82,7 @@ export function QuickChallenge({ prompt, answer, roman, onRevealed }: QuickChall
     },
     revealButtonText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.PRIMARY,
       fontWeight: '600',
     },
@@ -103,7 +103,7 @@ export function QuickChallenge({ prompt, answer, roman, onRevealed }: QuickChall
     },
     responseText: {
       fontFamily: FONT_ARABIC_EXTRA,
-      fontSize: 26,
+      fontSize: 28,
       color: C.PRIMARY,
       textAlign: 'right',
       writingDirection: 'rtl',

@@ -13,6 +13,7 @@ export default function ProfileTab() {
   const milestones = useAppStore((s) => s.milestones);
   const journal = useAppStore((s) => s.journal);
   const storeSignOut = useAppStore((s) => s.signOut);
+  const flushScheduledSync = useAppStore((s) => s.flushScheduledSync);
   const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
   const openCustomerCenter = useAppStore((s) => s.openCustomerCenter);
   const presentPaywall = useAppStore((s) => s.presentPaywall);
@@ -32,6 +33,10 @@ export default function ProfileTab() {
           text: 'Sign out',
           style: 'destructive',
           onPress: async () => {
+            // Send a change still waiting on the sync debounce while the Clerk
+            // token works — after clerkSignOut it can't reach the cloud, and
+            // storeSignOut cancels it.
+            await flushScheduledSync();
             await clerkSignOut();
             await storeSignOut(); // clears RevenueCat + store auth state
             router.replace('/sign-in');

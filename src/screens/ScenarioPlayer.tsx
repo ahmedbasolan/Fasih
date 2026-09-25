@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Share } from 'react-native';
+import { View, Text, ScrollView, Pressable, Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
@@ -13,13 +14,23 @@ import { ThresholdSeam } from '../components/design/ThresholdSeam';
 import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
-import { GhostLetters } from '../components/ui';
+import { GhostLetters, Screen } from '../components/ui';
 import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
-import { PHRASES } from '../constants/phrases';
+import { PHRASE_BY_ID } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
 import { useArabicTTS } from '../hooks/useArabicTTS';
 import { STRINGS } from '../constants/strings';
-import { getTone, resolveNextScene, evaluateEnding, isChoiceVisible, relationshipScore } from '../engine/scenarioEngine';
+import {
+  getTone, resolveNextScene, evaluateEnding, isChoiceVisible, phrasesEarned, allPhraseIds,
+  sceneAfterChoice,
+} from '../engine/scenarioEngine';
+import {
+  choiceFeedback, npcLine, endingsProgress, destinationMoments, hintsToShow,
+  type ChoiceFeedback,
+} from '../engine/scenarioPresentation';
+import { DECISIONS_PER_RUN } from '../constants/curriculum';
+import { railMarks } from '../engine/marginRail';
+import type { RailMark } from '../engine/marginRail';
 import {
   trackScenarioStarted,
   trackScenarioChoiceMade,
@@ -29,7 +40,8 @@ import {
 import { ScenarioIntroPhase } from '../components/scenario/ScenarioIntroPhase';
 import { ScenarioChoiceResultPhase } from '../components/scenario/ScenarioChoiceResultPhase';
 import { ScenarioResultPhase } from '../components/scenario/ScenarioResultPhase';
-import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioScript } from '../types';
+import { MarginRail } from '../components/scenario/MarginRail';
+import type { UserProfile, ScenarioChoice, ScenarioScene, ScenarioEnding, ScenarioState, Phrase, Tone } from '../types';
 
 interface Props {
   scenarioId: string;
@@ -41,39 +53,39 @@ interface Props {
 
 type Phase = 'intro' | 'scene' | 'choice-result' | 'result';
 
-/**
- * Phrase ids a scenario grants on completion.
- *
- * Single source of truth for both the result screen's "phrases unlocked" list
- * and the store writes that actually unlock them — those two used to be derived
- * separately, and only the display half existed.
- */
-function resolveUnlockedPhraseIds(script: ScenarioScript, scenarioId: string): string[] {
-  if (script.phrasesUnlocked?.length) return script.phrasesUnlocked;
-  return PHRASES.filter(p => p.scenarioSource === scenarioId).slice(0, 8).map(p => p.id);
+/** Phrase ids → library entries, dropping any id the library doesn't have. */
+function toPhrases(ids: string[]): Phrase[] {
+  return ids.map(id => PHRASE_BY_ID[id]).filter((p): p is Phrase => p !== undefined);
 }
 
 // ─── Impact bar (trust / respect / culture) shown during play ────────────────
 function ImpactCol({ label, value, color, maxVal }: { label: string; value: number; color: string; maxVal: number }) {
   const { C } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    col: { flex: 1, alignItems: 'center', gap: 2, position: 'relative' },
+    label: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' },
+    value: { fontFamily: FONT_LATIN_BOLD, fontSize: 16 },
+    track: { width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' },
+    fill: { height: 3, borderRadius: 2 },
+  }), [C]);
   const absMax = Math.max(Math.abs(maxVal), 3);
   const pct = Math.min(Math.max(Math.abs(value), 0) / absMax, 1);
   return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 2, position: 'relative' }}>
-      <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: C.TEXT3, letterSpacing: 0.9, textTransform: 'uppercase' }}>{label}</Text>
+    <View style={styles.col}>
+      <Text style={styles.label}>{label}</Text>
       <MotiView
         key={`stat-${label}-${value}`}
         from={{ scale: 1.35, translateY: -4 }}
         animate={{ scale: 1, translateY: 0 }}
         transition={{ type: 'spring', damping: 15, stiffness: 200 }}
       >
-        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 15, color: value !== 0 ? color : C.TEXT3 }}>{value > 0 ? `+${value}` : value}</Text>
+        <Text style={[styles.value, { color: value !== 0 ? color : C.TEXT3 }]}>{value > 0 ? `+${value}` : value}</Text>
       </MotiView>
-      <View style={{ width: '100%', height: 3, backgroundColor: C.BORDER2, borderRadius: 2, overflow: 'hidden' }}>
+      <View style={styles.track}>
         <MotiView
-          animate={{ width: `${pct * 100}%` as any }}
+          animate={{ width: `${pct * 100}%` as const }}
           transition={{ type: 'timing', duration: 400 }}
-          style={{ height: 3, backgroundColor: color, borderRadius: 2 }}
+          style={[styles.fill, { backgroundColor: color }]}
         />
       </View>
     </View>
@@ -82,30 +94,63 @@ function ImpactCol({ label, value, color, maxVal }: { label: string; value: numb
 
 function ImpactBar({ trust, respect, culture, maxValues }: { trust: number; respect: number; culture: number; maxValues?: { trust: number; respect: number; culture: number } }) {
   const { C } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    bar: { flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER },
+    divider: { width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 },
+  }), [C]);
   const max = maxValues ?? { trust: 12, respect: 12, culture: 12 };
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 16, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-      <ImpactCol label="Trust" value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
-      <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <ImpactCol label="Respect" value={respect} color={C.JADE2} maxVal={max.respect} />
-      <View style={{ width: 1, height: 28, backgroundColor: C.BORDER, marginHorizontal: 10 }} />
-      <ImpactCol label="Culture" value={culture} color={C.VIOLET} maxVal={max.culture} />
+    <View style={styles.bar}>
+      <ImpactCol label={STRINGS.scenarios.trust} value={trust} color={C.CULTURAL_GOLD} maxVal={max.trust} />
+      <View style={styles.divider} />
+      <ImpactCol label={STRINGS.scenarios.respect} value={respect} color={C.JADE2} maxVal={max.respect} />
+      <View style={styles.divider} />
+      <ImpactCol label={STRINGS.scenarios.culture} value={culture} color={C.VIOLET} maxVal={max.culture} />
     </View>
   );
 }
 
 // ─── Dialogue bubble ──────────────────────────────────────────────────────────
-function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; tone?: 'warm' | 'neutral' | 'cold' }) {
+function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioScene; tone?: Tone; gender: 'male' | 'female' | undefined }) {
   const { C } = useTheme();
-  const accentText = C.JADE;
   const [arabicRevealed, setArabicRevealed] = useState(false);
   const [translationRevealed, setTranslationRevealed] = useState(false);
 
-  // Resolve the correct dialogue variant — warm/cold only if the scene defines charDialogue
-  const dialogue = (scene.charDialogue && tone !== 'neutral')
-    ? scene.charDialogue[tone]
-    : { arabic: scene.arabic, roman: scene.roman, english: scene.english };
+  const styles = useMemo(() => StyleSheet.create({
+    wrapper: { marginBottom: 20 },
+    pill: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+      borderWidth: 1, alignSelf: 'flex-start',
+    },
+    setting: { backgroundColor: C.SURFACE, borderColor: C.BORDER },
+    settingDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE },
+    settingText: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT2 },
+    toneBadge: { marginBottom: 12 },
+    toneDot: { width: 5, height: 5, borderRadius: 3 },
+    toneText: { fontFamily: FONT_LATIN, fontSize: 11, letterSpacing: 0.5 },
+    row: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+    avatar: {
+      width: 40, height: 40, borderRadius: 14,
+      backgroundColor: C.JADE_ACCENT_DIM,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    avatarInitial: { fontFamily: FONT_LATIN_BOLD, fontSize: 14, color: C.JADE_ACCENT },
+    body: { flex: 1 },
+    name: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 6 },
+    bubble: { borderRadius: 16, borderTopLeftRadius: 0, padding: 14, borderWidth: 1, minHeight: 72 },
+    waiting: { alignItems: 'center', justifyContent: 'center', flex: 1 },
+    arabic: { fontFamily: FONT_ARABIC, fontSize: 22, color: C.JADE, textAlign: 'right', lineHeight: 32, marginBottom: 6 },
+    roman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}80`, fontStyle: 'italic', marginBottom: 4 },
+    english: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 },
+    listen: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+    listenText: { fontFamily: FONT_LATIN, fontSize: 11 },
+  }), [C]);
+
+  // Tone variant (warm/cold only when authored), in the forms this learner is
+  // addressed in — a female learner hears شلونج, not شلونك.
+  const dialogue = npcLine(scene, tone, gender);
 
   const { displayed } = useTypewriter(translationRevealed ? dialogue.english : '', 28, 50);
   const { speakAs, isSpeaking: playingAudio } = useArabicTTS();
@@ -115,9 +160,9 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
   const hasToneShift = !!scene.charDialogue && tone !== 'neutral';
   const toneColor = tone === 'warm' ? C.JADE_ACCENT : C.TEXT3;
 
+  // Runs once per line: the parent keys this component on what picks the line
+  // (scene, tone, gender), so a new line remounts it with the reveal reset.
   useEffect(() => {
-    setArabicRevealed(false);
-    setTranslationRevealed(false);
     speakAs(dialogue.arabic, scene.charGender);
     const t1 = setTimeout(() => setArabicRevealed(true), 900);
     const t2 = setTimeout(() => setTranslationRevealed(true), 2200);
@@ -125,70 +170,54 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
   }, [dialogue.arabic, scene.charGender, speakAs]);
 
   return (
-    <View style={{ marginBottom: 20 }}>
-      <View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-        backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-        alignSelf: 'flex-start', marginBottom: hasToneShift ? 8 : 14,
-      }}>
-        <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.JADE }} />
-        <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{scene.setting}</Text>
+    <View style={styles.wrapper}>
+      <View style={[styles.pill, styles.setting, { marginBottom: hasToneShift ? 8 : 14 }]}>
+        <View style={styles.settingDot} />
+        <Text style={styles.settingText}>{scene.setting}</Text>
       </View>
 
       {/* Butterfly effect badge — only appears when past choices changed this NPC response */}
       {hasToneShift && (
         <View
-          style={{
-            flexDirection: 'row', alignItems: 'center', gap: 6,
-            alignSelf: 'flex-start', marginBottom: 12,
-            paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+          style={[styles.pill, styles.toneBadge, {
             backgroundColor: tone === 'warm' ? C.JADE_ACCENT_DIM : C.SURFACE,
-            borderWidth: 1, borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
-          }}
+            borderColor: tone === 'warm' ? C.JADE_ACCENT_BORDER : C.BORDER,
+          }]}
         >
-          <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: toneColor }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 9, color: toneColor, letterSpacing: 0.5 }}>
-            {tone === 'warm' ? 'Your choices shaped this response' : 'Your choices echo here'}
+          <View style={[styles.toneDot, { backgroundColor: toneColor }]} />
+          <Text style={[styles.toneText, { color: toneColor }]}>
+            {tone === 'warm' ? STRINGS.scenarios.toneShiftWarm : STRINGS.scenarios.toneShiftCold}
           </Text>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-        <View style={{
-          width: 40, height: 40, borderRadius: 14,
-          backgroundColor: C.JADE_ACCENT_DIM,
+      <View style={styles.row}>
+        <View style={[styles.avatar, {
           borderWidth: hasToneShift ? 1.5 : 1,
           borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 13, color: C.JADE_ACCENT }}>{initial}</Text>
+        }]}>
+          <Text style={styles.avatarInitial}>{initial}</Text>
         </View>
 
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, marginBottom: 6 }}>{scene.charName}</Text>
+        <View style={styles.body}>
+          <Text style={styles.name}>{scene.charName}</Text>
           <Pressable onPress={() => { setArabicRevealed(true); setTranslationRevealed(true); }}>
-            <View style={{
-              borderRadius: 16, borderTopLeftRadius: 0, padding: 14,
+            <View style={[styles.bubble, {
               backgroundColor: tone === 'cold' ? C.SURFACE : C.JADE_ACCENT_SURFACE,
-              borderWidth: 1,
               borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
-              minHeight: 72,
-            }}>
+            }]}>
               {!arabicRevealed ? (
-                <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                <View style={styles.waiting}>
                   <WaveBars isPlaying={playingAudio} size="md" color={C.JADE_ACCENT} />
                 </View>
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
-                  <Text style={{ fontFamily: FONT_ARABIC, fontSize: 22, color: accentText, textAlign: 'right', lineHeight: 32, marginBottom: 6 }}>
-                    {dialogue.arabic}
-                  </Text>
+                  <Text style={styles.arabic}>{dialogue.arabic}</Text>
                   <ThresholdSeam height={7} style={{ marginBottom: translationRevealed ? 8 : 0 }} />
                   {translationRevealed && (
                     <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 250 }}>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentText}80`, fontStyle: 'italic', marginBottom: 4 }}>{dialogue.roman}</Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: C.TEXT2, lineHeight: 20 }}>{`"${displayed}"`}</Text>
+                      <Text style={styles.roman}>{dialogue.roman}</Text>
+                      <Text style={styles.english}>{`"${displayed}"`}</Text>
                     </MotiView>
                   )}
                 </MotiView>
@@ -198,10 +227,10 @@ function DialogueBubble({ scene, tone = 'neutral' }: { scene: ScenarioScene; ton
 
           <Pressable
             onPress={() => speakAs(dialogue.arabic, scene.charGender)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}
+            style={styles.listen}
           >
             <WaveBars isPlaying={playingAudio} size="sm" color={playingAudio ? C.JADE2 : C.TEXT3} />
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: playingAudio ? C.JADE2 : C.TEXT3 }}>
+            <Text style={[styles.listenText, { color: playingAudio ? C.JADE2 : C.TEXT3 }]}>
               {playingAudio ? STRINGS.scenarios.playing : STRINGS.scenarios.listenVoice(scene.charGender)}
             </Text>
           </Pressable>
@@ -221,6 +250,31 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     [C]
   );
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => StyleSheet.create({
+    noMargin: { paddingHorizontal: 0 },
+    goBack: { borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER },
+    goBackText: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 },
+    screen: { flex: 1, backgroundColor: C.BG },
+    header: { paddingHorizontal: SCREEN_MARGIN, paddingBottom: 10, zIndex: 10 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+    headerTitle: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 },
+    dots: { flexDirection: 'row', gap: 3 },
+    dot: { height: 3, borderRadius: 2 },
+    exit: { width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' },
+    scrollContent: { paddingHorizontal: SCREEN_MARGIN },
+    sceneRow: { flexDirection: 'row' },
+    sceneBody: { flex: 1, minWidth: 0 },
+    chooseLabel: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' },
+    choices: { gap: 8 },
+    choiceCard: { borderRadius: 16, overflow: 'hidden' },
+    accentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderRadius: 2 },
+    choiceBody: { padding: 14 },
+    choiceArabic: { fontFamily: FONT_ARABIC, fontSize: 18, textAlign: 'right', marginBottom: 3, lineHeight: 26 },
+    choiceRoman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}70`, fontStyle: 'italic', marginBottom: 5 },
+    choiceEnglish: { fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20 },
+    choiceListen: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1 },
+    choiceListenText: { fontFamily: FONT_LATIN, fontSize: 11 },
+  }), [C]);
   // Doherty threshold: keep the player responsive under 400ms.
   // getScenarioScripts() is an arrow function returning a ~1,140-line object
   // literal, and getAllScenarios() spreads three more builders. Called bare in
@@ -233,13 +287,26 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scriptData = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
-
   const { speak, isSpeaking } = useArabicTTS();
-  const getCommunityEndingStat = useAppStore((s) => s.getCommunityEndingStat);
+  // Subscribes to the cache itself: the ending stats are fetched once the result
+  // phase starts, so the screen has to re-render when they land.
+  const communityStatsCache = useAppStore((s) => s.communityStatsCache);
   const fetchCommunityEndingStats = useAppStore((s) => s.fetchCommunityEndingStats);
   const recordChoiceStatAction = useAppStore((s) => s.recordChoiceStat);
   const user = useAppStore((s) => s.user);
   const activeScenarioState = useAppStore((s) => s.activeScenarioState);
+  const foundEndingIds = useAppStore((s) => s.endingsFound[scenarioId]);
+  const runCount = useAppStore((s) => s.scenarioRuns[scenarioId] ?? 0);
+
+  // Track length is the scenario's authored decision count, not one derived from
+  // the script — scripts branch, so the script's choice-scene count is an upper
+  // bound on a run rather than the length of one.
+  const railMarksForRun = useMemo(
+    () => (activeScenarioState && scriptData
+      ? railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0)
+      : []),
+    [activeScenarioState, scriptData, scenario],
+  );
   const startScenario = useAppStore((s) => s.startScenario);
   const applyScenarioChoice = useAppStore((s) => s.applyScenarioChoice);
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
@@ -286,6 +353,13 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // render with a zeroed-out score the instant it appears.
   const [finalizedEnding, setFinalizedEnding] = useState<ScenarioEnding | null>(null);
   const [finalizedImpact, setFinalizedImpact] = useState<{ trust: number; respect: number; culture: number } | null>(null);
+  // Same lock, same reason: the ending screen shows the completed rail, and
+  // finalizeScenario() nulls the state the rail is derived from. Without this
+  // the rail empties itself the instant the result appears.
+  const [finalizedRail, setFinalizedRail] = useState<RailMark[] | null>(null);
+  // Same lock again: "what sent you here" reads choiceHistory, which is gone
+  // the moment finalizeScenario() runs.
+  const [finalizedMoments, setFinalizedMoments] = useState<ScenarioChoice[]>([]);
 
   const playChoice = useCallback((choiceId: string, arabic: string) => {
     if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
@@ -308,21 +382,29 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   }, [speak]);
 
   // ─── Effects must be declared before any early return (Rules of Hooks) ───────
+  // Only schedules the reveal delay — choicesVisible/selectedChoiceId are reset
+  // synchronously in next() (in the same batch as setStep/setPhase) rather than
+  // here. This effect runs one render AFTER the new scene's key change already
+  // remounted the scene subtree, so resetting choicesVisible here let the
+  // previous scene's choices flash fully visible for one frame before this
+  // caught up and hid them again.
   useEffect(() => {
     if (phase === 'scene') {
-      setChoicesVisible(false);
-      setSelectedChoiceId(null);
       const t = setTimeout(() => setChoicesVisible(true), 1100);
       return () => clearTimeout(t);
     }
   }, [phase, step]);
 
   useEffect(() => {
-    if (phase === 'result') void fetchCommunityEndingStats(scenarioId);
-  }, [phase, scenarioId, fetchCommunityEndingStats]);
+    if (phase === 'result' && scriptData) {
+      void fetchCommunityEndingStats(scenarioId, scriptData.endings.map(e => e.id));
+    }
+  }, [phase, scenarioId, scriptData, fetchCommunityEndingStats]);
 
-  useEffect(() => {
-    if (!scriptData || phase !== 'result' || completionFired || !activeScenarioState) return;
+  // Locks the result and records the completion. Called from next() as the
+  // run moves to the result phase — an event, so it is not an effect.
+  const finalizeRun = useCallback(() => {
+    if (!scriptData || completionFired || !activeScenarioState) return;
     const currEnding = evaluateEnding(activeScenarioState, scriptData);
     setFinalizedEnding(currEnding);
     setFinalizedImpact(Object.values(activeScenarioState.impactByNpc).reduce(
@@ -333,6 +415,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       }),
       { trust: 0, respect: 0, culture: 0 }
     ));
+    setFinalizedRail(railMarks(activeScenarioState, scriptData, scenario?.decisions ?? 0));
+    setFinalizedMoments(destinationMoments(activeScenarioState.choiceHistory, scriptData, currEnding));
     setCompletionFired(true);
     finalizeScenario(currEnding);
     // Actually unlock the phrases the result screen is about to present as
@@ -340,7 +424,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     // onboarding, so every phrase earned by finishing a scenario stayed
     // un-unlocked in the library and the two screens disagreed. One bulk write
     // rather than one per phrase — this fires as the result screen animates in.
-    unlockPhrases(resolveUnlockedPhraseIds(scriptData, scenarioId));
+    // Same function as the result screen's list, so the two cannot disagree.
+    unlockPhrases(phrasesEarned(scriptData, currEnding));
     trackScenarioCompleted({
       scenarioId,
       title: scriptData.title,
@@ -355,7 +440,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     void Haptics.notificationAsync(hapticType).catch(() => {});
     onComplete?.(scenarioId, currEnding.type);
     if (currEnding.type !== 'failed') onJournalEntry?.(currEnding.arabic, currEnding.en, currEnding.desc);
-  }, [phase, completionFired, scenarioId, scriptData, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
+  }, [completionFired, scenarioId, scriptData, scenario, activeScenarioState, onComplete, onJournalEntry, finalizeScenario, unlockPhrases]);
 
   // Record scene progress as user advances through scenes
   const recordSceneProgress = useAppStore((s) => s.recordSceneProgress);
@@ -367,25 +452,17 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // ─── Hooks that depend on scriptData must use optional chaining ──────────────
   const scenes = useMemo(() => scriptData?.scenes ?? [], [scriptData?.scenes]);
-  // Progress dots represent the main path only — a bonus scene is a reward for
-  // the secret ending, not a step the learner is expected to reach, so showing
-  // a dot for it makes every normal run look unfinished.
-  const mainScenes = useMemo(() => scenes.filter((sc) => sc.bonus !== true), [scenes]);
   const scene = scenes[step];
   const endings = scriptData?.endings ?? [];
 
-  // Record NPC tone the moment each scene is entered (engine-driven)
-  useEffect(() => {
-    if (phase !== 'scene' || !scene?.charDialogue || !activeScenarioState) return;
-    setToneHistory(prev => {
-      if (prev.some(t => t.sceneId === scene.id)) return prev;
-      const entryTone = getTone(activeScenarioState, scene.charName, scene);
-      return [...prev, { sceneId: scene.id, tone: entryTone }];
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, phase]);
-
-
+  // Record the NPC's tone as a scene is entered, for the end-screen arc. Called
+  // where a scene is entered (onBegin, next), not from an effect.
+  const recordEntryTone = useCallback((entered: ScenarioScene, state: ScenarioState) => {
+    if (!entered.charDialogue) return;
+    setToneHistory(prev => (prev.some(t => t.sceneId === entered.id)
+      ? prev
+      : [...prev, { sceneId: entered.id, tone: getTone(state, entered.charName, entered) }]));
+  }, []);
 
   // Calculate max possible meter values for this scenario (for bar scaling)
   const maxMeterValues = useMemo(() => {
@@ -416,7 +493,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   // Helper to replace [name] placeholder with user's name
   const replaceName = useCallback((text: string): string => {
-    const userName = user?.name || 'friend';
+    const userName = user?.name || STRINGS.scenarios.nameFallback;
     return text.replace(/\[name\]/g, userName);
   }, [user?.name]);
 
@@ -447,60 +524,38 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   const next = useCallback(() => {
     setSelectedChoiceId(null);
+    // Reset synchronously, in the same batch as setStep/setPhase below — the
+    // scene subtree remounts via key={`scene-${step}`}, but choicesVisible
+    // lives in this parent and does not reset on its own, so resetting it a
+    // render late (as the [phase, step] effect used to) let the new scene's
+    // choices flash visible for one frame using the previous scene's value.
+    setChoicesVisible(false);
 
-    // Handle explicit branch from most recent choice
-    if (lastResolvedNextSceneId) {
-      const branchId = lastResolvedNextSceneId;
-      const targetIndex = scenes.findIndex(s => s.id === branchId);
-      setLastResolvedNextSceneId(null); // always clear, whether branch found or not
-      if (targetIndex !== -1) {
-        advanceScenarioScene(branchId);
-        setStep(targetIndex);
-        setPhase('scene');
-        return;
-      }
-      // targetIndex === -1: bad script data, fall through to linear progression
-    }
-    // Bonus scenes live in the same `scenes` array as everything else, so plain
-    // step + 1 walked straight into them — every player saw the bonus scene and
-    // the secret-ending gate below could never fire, because by the time
-    // nextStep passed the end, the bonus scene had already been played. Skip
-    // them here so they are only ever reachable through the gate.
-    let nextStep = step + 1;
-    while (nextStep < scenes.length && scenes[nextStep].bonus === true) nextStep++;
-
-    // Check bonus scene eligibility for secret ending
-    const isOnBonusScene = scenes[step]?.bonus === true;
-    if (!isOnBonusScene && nextStep >= scenes.length && scriptData && activeScenarioState) {
-      const secretEnding = scriptData.endings?.find(e => e.secret);
-      const requiredFlagsMet = !secretEnding?.requiredFlags ||
-        secretEnding.requiredFlags.every(f => activeScenarioState.flags.has(f));
-      if (secretEnding && requiredFlagsMet && relationshipScore(activeScenarioState) >= secretEnding.min) {
-        const bonusScene = scenes.find(s => s.bonus === true);
-        if (bonusScene) {
-          advanceScenarioScene(bonusScene.id);
-          setStep(scenes.indexOf(bonusScene));
-          setPhase('scene');
-          return;
-        }
-      }
-    }
-
-    if (nextStep >= scenes.length) {
+    // Where to go is an engine decision (sceneAfterChoice): next main-path
+    // scene, the bonus scene when the hidden ending was just earned, or the
+    // result. Following lastResolvedNextSceneId directly — as this used to —
+    // walked every player into a bonus scene sitting next in the array.
+    const target = activeScenarioState && scriptData
+      ? sceneAfterChoice(activeScenarioState, lastResolvedNextSceneId, scriptData)
+      : null;
+    setLastResolvedNextSceneId(null);
+    const targetIndex = target ? scenes.findIndex(s => s.id === target) : -1;
+    if (target === null || targetIndex === -1) {
+      finalizeRun();
       setPhase('result');
-    } else {
-      const nextScene = scenes[nextStep];
-      if (nextScene) advanceScenarioScene(nextScene.id);
-      setStep(nextStep);
-      setPhase('scene');
+      return;
     }
-  }, [step, scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene]);
+    if (activeScenarioState) recordEntryTone(scenes[targetIndex], activeScenarioState);
+    advanceScenarioScene(target);
+    setStep(targetIndex);
+    setPhase('scene');
+  }, [scenes, scriptData, activeScenarioState, lastResolvedNextSceneId, advanceScenarioScene, finalizeRun, recordEntryTone]);
 
   const handleShare = useCallback(async (endingTitle: string, endingArabic: string, endingEn: string, isSecret: boolean, finalTotal: number) => {
-    const scenarioTitle = scriptData?.title ?? 'a Fasih scenario';
+    const scenarioTitle = scriptData?.title ?? STRINGS.scenarios.shareFallbackTitle;
     const message = isSecret
-      ? `I just discovered the secret ending in "${scenarioTitle}" on Fasih 🔑\n\n"${endingArabic}" — ${endingEn}\n\nVery few players ever find this.\n\nFasih — Learn Arabic by Living It`
-      : `I scored ${finalTotal} in "${scenarioTitle}" and unlocked "${endingTitle}"\n\n"${endingArabic}" — ${endingEn}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`;
+      ? STRINGS.scenarios.shareHiddenMessage(scenarioTitle, endingArabic, endingEn)
+      : STRINGS.scenarios.shareMessage(finalTotal, scenarioTitle, endingTitle, endingArabic, endingEn);
     try {
       await Share.share({ message });
     } catch { /* user dismissed share sheet — no-op */ }
@@ -517,6 +572,12 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setLastResolvedNextSceneId(null);
     setFinalizedEnding(null);
     setFinalizedImpact(null);
+    // Must be cleared with its two siblings. The result screen reads
+    // `finalizedRail ?? railMarksForRun`, so a stale value never falls back —
+    // a replay's first painted frame showed the PREVIOUS run's rail, on the one
+    // screen whose whole job is "here is what you just did".
+    setFinalizedRail(null);
+    setFinalizedMoments([]);
   }, [scriptData, scenarioId, startScenario]);
 
   // ─── Early return after all hooks ────────────────────────────────────────────
@@ -527,14 +588,23 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // actually know the scenario is restricted and know the learner doesn't match.
   if (!scriptData || !isScenarioAvailableFor(scenario ?? {}, user?.gender)) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
-        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
-        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
-          <Pressable onPress={onExit} style={{ borderRadius: 16, paddingVertical: 14, alignItems: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>{STRINGS.scenarios.goBack}</Text>
+      <Screen
+        scroll={false}
+        // EmptyState brings its own SCREEN_MARGIN — see ScenarioDetailScreen.
+        contentStyle={styles.noMargin}
+        action={
+          <Pressable
+            onPress={onExit}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.scenarios.goBack}
+            style={styles.goBack}
+          >
+            <Text style={styles.goBackText}>{STRINGS.scenarios.goBack}</Text>
           </Pressable>
-        </View>
-      </View>
+        }
+      >
+        <EmptyState arabic="؟" title={STRINGS.scenarios.notFound} subtitle={STRINGS.scenarios.noScript(scenarioId)} />
+      </Screen>
     );
   }
 
@@ -570,28 +640,57 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // total for score display on result screen
   const total = impact.trust + impact.respect + impact.culture;
 
-  const unlockedPhrases = resolveUnlockedPhraseIds(scriptData, scenarioId)
-    .map(id => PHRASES.find(p => p.id === id))
-    .filter(Boolean) as typeof PHRASES;
+  // Intro: everything the scenario can teach. Result: what this run earned.
+  const learnablePhrases = toPhrases(allPhraseIds(scriptData));
+  const earnedPhrases = toPhrases(phrasesEarned(scriptData, ending));
+
+  // Endings collection + hints. The store already includes this run's ending
+  // by the time the result shows, so the count is current.
+  const foundIds = foundEndingIds ?? [];
+  const progress = endingsProgress(scriptData, foundIds);
+  const destinationLabel = scriptData.routes.find(r => r.id === ending.route)?.label;
+
+  // Progress dots count decisions, not scenes: the fork puts two variant scenes
+  // in the array for one decision, and the bonus scene is not a decision.
+  const totalDecisions = DECISIONS_PER_RUN;
+  const decisionsMade = activeScenarioState?.choiceHistory.length ?? totalDecisions;
+
+  // What follows the choice on screen — drives "See final result" and the tone preview.
+  const upcomingSceneId = phase === 'choice-result' && activeScenarioState
+    ? sceneAfterChoice(activeScenarioState, lastResolvedNextSceneId, scriptData)
+    : null;
+  const upcomingScene = upcomingSceneId ? scenes.find(sc => sc.id === upcomingSceneId) ?? null : null;
+
+  const selectedChoice = scene && selectedChoiceId ? scene.choices.find(c => c.id === selectedChoiceId) : undefined;
+  const feedback: ChoiceFeedback | null = scene && selectedChoice ? choiceFeedback(scene, selectedChoice) : null;
+  const feedbackColor = (fb: ChoiceFeedback, choice: ScenarioChoice): string => {
+    switch (fb.kind) {
+      case 'misstep': return C.ERROR;
+      case 'correct': return C.JADE2;
+      case 'not-quite': return C.VIOLET2;
+      case 'reaction': return C.JADE_ACCENT;
+      default: return outcomeColor[choice.outcome];
+    }
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View style={styles.screen}>
       <GhostLetters glyphs={['ك', 'ل', 'م']} />
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 20, paddingTop: insets.top + 14, paddingBottom: 10, zIndex: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACE.lg }]}>
+        <View style={styles.headerRow}>
           <View>
-            <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 }}>{scriptData.title}</Text>
-            <View style={{ flexDirection: 'row', gap: 3 }}>
-              {mainScenes.map((_: ScenarioScene, i: number) => (
+            <Text style={styles.headerTitle}>{scriptData.title}</Text>
+            <View style={styles.dots}>
+              {Array.from({ length: totalDecisions }, (_, i) => (
                 <MotiView
                   key={i}
                   animate={{
-                    width: i <= step && phase !== 'intro' ? 20 : 6,
-                    backgroundColor: i < step ? C.JADE2 : i === step && phase !== 'intro' ? C.JADE_ACCENT : C.TEXT3,
+                    width: i <= decisionsMade && phase !== 'intro' ? 20 : 6,
+                    backgroundColor: i < decisionsMade ? C.JADE2 : i === decisionsMade && phase === 'scene' ? C.JADE_ACCENT : C.TEXT3,
                   }}
                   transition={{ type: 'timing', duration: 260 }}
-                  style={{ height: 3, borderRadius: 2 }}
+                  style={styles.dot}
                 />
               ))}
             </View>
@@ -605,9 +704,9 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
               onExit();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Exit scenario"
+            accessibilityLabel={STRINGS.scenarios.exitScenario}
             hitSlop={8}
-            style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' }}
+            style={styles.exit}
           >
             <X size={14} color={C.TEXT3} />
           </Pressable>
@@ -619,7 +718,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + SPACE.xl }]}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
       >
@@ -629,11 +728,14 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
           <ScenarioIntroPhase
             scriptData={scriptData}
             scenario={scenario}
-            scenes={scenes}
             endings={endings}
-            unlockedPhrases={unlockedPhrases}
+            unlockedPhrases={learnablePhrases}
+            decisions={totalDecisions}
+            progress={progress}
+            hints={runCount > 0 ? hintsToShow(scriptData, foundIds, undefined) : []}
             onBegin={() => {
               trackScenarioStarted({ scenarioId, title: scriptData.title, category: scenario?.mode });
+              if (scene && activeScenarioState) recordEntryTone(scene, activeScenarioState);
               setPhase('scene');
             }}
           />
@@ -647,23 +749,33 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             animate={{ opacity: 1, translateX: 0 }}
             transition={{ type: 'timing', duration: sceneTone === 'warm' ? 380 : sceneTone === 'cold' ? 180 : 260 }}
           >
-            <DialogueBubble scene={scene} tone={sceneTone} />
+            {/* The rail runs down the leading edge and accretes a mark per
+                choice, so the run's shape is visible while it is still being
+                made. The engine has tracked this since it was written and
+                nothing rendered it. */}
+            <View style={styles.sceneRow}>
+              <MarginRail marks={railMarksForRun} />
+              <View style={styles.sceneBody}>
+                <DialogueBubble
+                  key={`${scene.id}-${sceneTone}-${user?.gender ?? ''}`}
+                  scene={scene}
+                  tone={sceneTone}
+                  gender={user?.gender}
+                />
 
             {choicesVisible && (
               <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 220 }}>
                 {!selectedChoiceId && (
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT3, textAlign: 'center', marginBottom: 10, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    {STRINGS.scenarios.chooseResponse}
-                  </Text>
+                  <Text style={styles.chooseLabel}>{STRINGS.scenarios.chooseResponse}</Text>
                 )}
 
-                <View style={{ gap: 8 }}>
+                <View style={styles.choices}>
                   {scene.choices
                     .filter((c: ScenarioChoice) => !activeScenarioState || isChoiceVisible(c, activeScenarioState))
                     .map((choice: ScenarioChoice, i: number) => {
                     const isSelected = selectedChoiceId === choice.id;
                     const isDimmed = !!selectedChoiceId && !isSelected;
-                    const color = outcomeColor[choice.outcome];
+                    const color = feedbackColor(choiceFeedback(scene, choice), choice);
                     const isChoicePlaying = playingChoiceId === choice.id;
                     const choiceArabic = arabicForUser(choice);
 
@@ -674,20 +786,18 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                         animate={{ opacity: isDimmed ? 0.22 : 1, translateY: 0 }}
                         transition={{ type: 'timing', duration: isDimmed ? 220 : 200, delay: isDimmed ? 0 : i * 70 }}
                       >
-                        <View style={{
-                          borderRadius: 16,
+                        <View style={[styles.choiceCard, {
                           backgroundColor: isSelected ? `${color}08` : C.JADE_ACCENT_SURFACE,
                           borderWidth: isSelected ? 1.5 : 1,
                           borderColor: isSelected ? `${color}45` : C.BORDER,
-                          overflow: 'hidden',
-                        }}>
+                        }]}>
                           {/* Left accent bar */}
                           {isSelected && (
                             <MotiView
                               from={{ scaleY: 0 }}
                               animate={{ scaleY: 1 }}
                               transition={{ type: 'spring', damping: 18, stiffness: 200 }}
-                              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, borderRadius: 2 }}
+                              style={[styles.accentBar, { backgroundColor: color }]}
                             />
                           )}
 
@@ -699,14 +809,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                             accessibilityLabel={`${replaceName(choice.text)} — ${replaceName(choice.roman)}`}
                             accessibilityState={{ selected: isSelected }}
                           >
-                            <View style={{ padding: 14, paddingLeft: isSelected ? 18 : 14, paddingBottom: selectedChoiceId ? 14 : 6 }}>
-                              <Text style={{ fontFamily: FONT_ARABIC, fontSize: 17, color: isSelected ? color : accentColor, textAlign: 'right', marginBottom: 3, lineHeight: 26 }}>
+                            <View style={[styles.choiceBody, {
+                              paddingLeft: isSelected ? 18 : 14,
+                              paddingBottom: selectedChoiceId ? 14 : 6,
+                            }]}>
+                              <Text style={[styles.choiceArabic, { color: isSelected ? color : accentColor }]}>
                                 {replaceName(choiceArabic)}
                               </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: `${accentColor}70`, fontStyle: 'italic', marginBottom: 5 }}>
-                                {replaceName(choice.roman)}
-                              </Text>
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 13, color: isSelected ? C.TEXT1_5 : C.TEXT2, lineHeight: 20 }}>
+                              <Text style={styles.choiceRoman}>{replaceName(choice.roman)}</Text>
+                              <Text style={[styles.choiceEnglish, { color: isSelected ? C.TEXT1_5 : C.TEXT2 }]}>
                                 {replaceName(choice.text)}
                               </Text>
                             </View>
@@ -721,12 +832,15 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               onPress={() => playChoice(choice.id, choiceArabic)}
                               hitSlop={8}
                               accessibilityRole="button"
-                              accessibilityLabel={isChoicePlaying ? 'Playing audio' : 'Listen to choice'}
+                              accessibilityLabel={isChoicePlaying ? STRINGS.scenarios.playingAudio : STRINGS.scenarios.listenToChoice}
                               accessibilityState={{ selected: isChoicePlaying }}
-                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER }}
+                              style={[styles.choiceListen, {
+                                backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE,
+                                borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER,
+                              }]}
                             >
                               <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
-                              <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: isChoicePlaying ? C.JADE2 : C.TEXT3 }}>
+                              <Text style={[styles.choiceListenText, { color: isChoicePlaying ? C.JADE2 : C.TEXT3 }]}>
                                 {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
                               </Text>
                             </Pressable>
@@ -738,21 +852,23 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                 </View>
               </MotiView>
             )}
+              </View>
+            </View>
           </MotiView>
         )}
 
         {/* ─── CHOICE RESULT ─── */}
-        {phase === 'choice-result' && selectedChoiceId && scene && (
+        {phase === 'choice-result' && selectedChoiceId && scene && feedback && (
           <ScenarioChoiceResultPhase
             scene={scene}
             selectedChoiceId={selectedChoiceId}
-            step={step}
-            scenes={scenes}
-            scriptData={scriptData}
+            feedback={feedback}
+            color={selectedChoice && feedback ? feedbackColor(feedback, selectedChoice) : C.TEXT3}
+            isLastStep={upcomingSceneId === null}
+            nextScene={upcomingScene}
             activeScenarioState={activeScenarioState}
-            lastResolvedNextSceneId={lastResolvedNextSceneId}
-            outcomeColor={outcomeColor}
             replaceName={replaceName}
+            arabicForUser={arabicForUser}
             onNext={next}
           />
         )}
@@ -761,15 +877,19 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
         {phase === 'result' && (
           <ScenarioResultPhase
             ending={ending}
-            endings={endings}
             impact={impact}
             total={total}
             scenarioId={scenarioId}
-            scriptData={scriptData}
-            unlockedPhrases={unlockedPhrases}
+            railMarks={finalizedRail ?? railMarksForRun}
+            unlockedPhrases={earnedPhrases}
+            progress={progress}
+            destinationLabel={destinationLabel}
+            moments={finalizedMoments}
+            hints={hintsToShow(scriptData, foundIds, ending.id)}
+            arabicForUser={arabicForUser}
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
-            getCommunityEndingStat={getCommunityEndingStat}
+            communityEndingPct={communityStatsCache[`${scenarioId}:${ending.id}`] ?? 0}
             isSpeaking={isSpeaking}
             playingPhraseId={playingPhraseId}
             onPlayEndPhrase={playEndPhrase}

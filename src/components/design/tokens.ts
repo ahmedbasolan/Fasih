@@ -19,8 +19,6 @@ export type ThemeColors = {
   BORDER2: string;
 
   // Warm neutral background surfaces (Gulf sand theme)
-  WARM_BG: string;
-  WARM_SURFACE: string;
 
   // Zafaran gold — brightest shade of the one accent ramp (was neon green)
   JADE_ACCENT: string;
@@ -50,7 +48,6 @@ export type ThemeColors = {
   CULTURAL_GOLD: string;
   CULTURAL_GOLD_DARK: string;
 
-  SAND: string;
   TEXT: string;
   TEXT1_5: string;
   TEXT2: string;
@@ -67,28 +64,9 @@ export type ThemeColors = {
   CARD_SHADOW: string;
   TAB_BG: string;
   PRIMARY: string;
-  PRIMARY_LIGHT: string;
   PRIMARY_DARK: string;
-  SECONDARY: string;
   TERTIARY: string;
   INVERTED: string;
-  INVERTED_TEXT: string;
-  NEUTRAL_50: string;
-  NEUTRAL_100: string;
-  NEUTRAL_200: string;
-  NEUTRAL_300: string;
-  NEUTRAL_400: string;
-  NEUTRAL_500: string;
-  NEUTRAL_600: string;
-  NEUTRAL_700: string;
-  NEUTRAL_800: string;
-  NEUTRAL_900: string;
-  CATEGORY_PINK: string;
-  CATEGORY_MINT: string;
-  CATEGORY_BLUE: string;
-  CATEGORY_PEACH: string;
-  CATEGORY_CREAM: string;
-  CATEGORY_LAVENDER: string;
 };
 
 export const darkTheme: ThemeColors = {
@@ -99,8 +77,6 @@ export const darkTheme: ThemeColors = {
   BORDER: 'rgba(243,233,214,0.14)',
   BORDER2: 'rgba(243,233,214,0.24)',
 
-  WARM_BG: '#1A1510',
-  WARM_SURFACE: '#262018',
 
   // Zafaran gold ramp — light end. Verified: dark ink >=4.5:1 on every
   // member, including every ad-hoc gradient pairing found in the app.
@@ -128,7 +104,6 @@ export const darkTheme: ThemeColors = {
   CULTURAL_GOLD: '#EAC57C',
   CULTURAL_GOLD_DARK: '#B8823A',
 
-  SAND: '#E8D2A6',
   TEXT: 'rgba(243,233,214,0.96)',
   TEXT1_5: 'rgba(243,233,214,0.80)',
   TEXT2: 'rgba(243,233,214,0.72)',
@@ -145,28 +120,9 @@ export const darkTheme: ThemeColors = {
   CARD_SHADOW: 'rgba(0,0,0,0.45)',
   TAB_BG: '#1A140D',
   PRIMARY: '#EAC57C',
-  PRIMARY_LIGHT: '#F6E7C2',
   PRIMARY_DARK: '#D6A24C',
-  SECONDARY: '#D6A24C',
   TERTIARY: '#C4924A',
   INVERTED: '#14100B',
-  INVERTED_TEXT: '#FFFFFF',
-  NEUTRAL_50: '#F8F9FA',
-  NEUTRAL_100: '#F0F2F5',
-  NEUTRAL_200: '#E8EAED',
-  NEUTRAL_300: '#D1D5DB',
-  NEUTRAL_400: '#9CA3AF',
-  NEUTRAL_500: '#6B7280',
-  NEUTRAL_600: '#4B5563',
-  NEUTRAL_700: '#374151',
-  NEUTRAL_800: '#1F2937',
-  NEUTRAL_900: '#14100B',
-  CATEGORY_PINK: '#FFE0EC',
-  CATEGORY_MINT: '#D5F5EC',
-  CATEGORY_BLUE: '#D0F4FF',
-  CATEGORY_PEACH: '#FFE8D0',
-  CATEGORY_CREAM: '#FFF8E0',
-  CATEGORY_LAVENDER: '#E3D9F0',
 };
 
 export const lightTheme: ThemeColors = {
@@ -177,8 +133,6 @@ export const lightTheme: ThemeColors = {
   BORDER: 'rgba(28,21,13,0.16)',
   BORDER2: 'rgba(28,21,13,0.26)',
 
-  WARM_BG: '#FAF5ED',
-  WARM_SURFACE: '#F5EFE0',
 
   // JADE_ACCENT (=PRIMARY) is used as literal text/icon color (ProfileScreen,
   // StatCard) — must be dark enough to read on a light ground, verified.
@@ -214,7 +168,6 @@ export const lightTheme: ThemeColors = {
   CULTURAL_GOLD: '#8A5C1F',
   CULTURAL_GOLD_DARK: '#6E491A',
 
-  SAND: '#D9BE8C',
   TEXT: '#1C150D',
   TEXT1_5: 'rgba(28,21,13,0.82)',
   TEXT2: 'rgba(28,21,13,0.72)',
@@ -230,28 +183,9 @@ export const lightTheme: ThemeColors = {
   CARD_SHADOW: 'rgba(120,90,40,0.14)',
   TAB_BG: '#FFFFFF',
   PRIMARY: '#8A5C1F',
-  PRIMARY_LIGHT: '#B8823A',
   PRIMARY_DARK: '#6E491A',
-  SECONDARY: '#8A5C1F',
   TERTIARY: '#6E491A',
   INVERTED: '#14100B',
-  INVERTED_TEXT: '#FFFFFF',
-  NEUTRAL_50: '#F8F9FA',
-  NEUTRAL_100: '#F0F2F5',
-  NEUTRAL_200: '#E8EAED',
-  NEUTRAL_300: '#D1D5DB',
-  NEUTRAL_400: '#9CA3AF',
-  NEUTRAL_500: '#6B7280',
-  NEUTRAL_600: '#4B5563',
-  NEUTRAL_700: '#374151',
-  NEUTRAL_800: '#1F2937',
-  NEUTRAL_900: '#14100B',
-  CATEGORY_PINK: '#FFE8F0',
-  CATEGORY_MINT: '#E0FFF0',
-  CATEGORY_BLUE: '#E0FAFF',
-  CATEGORY_PEACH: '#FFF0E0',
-  CATEGORY_CREAM: '#FFF8E8',
-  CATEGORY_LAVENDER: '#EDE5F5',
 };
 
 export const ARABIC_LINE_HEIGHT_MULTIPLIER = 1.35;

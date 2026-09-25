@@ -5,6 +5,7 @@ import { WifiOff, RefreshCw } from '../icons';
 import { FONT_LATIN, FONT_LATIN_SEMI } from '../design/tokens';
 import { useTheme } from '../../hooks/useTheme';
 import { useAppStore } from '../../store/useAppStore';
+import { STRINGS } from '../../constants/strings';
 
 /**
  * Non-blocking banner that surfaces cloud sync status.
@@ -49,13 +50,13 @@ export function SyncStatusBanner() {
             marginHorizontal: 16,
             marginBottom: 8,
           }}>
-            <WifiOff size={14} color={C.ERROR} />
+            <WifiOff size={14} strokeWidth={1.5} color={C.ERROR} />
             <Text
               style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, flex: 1, lineHeight: 18 }}
               numberOfLines={2}
             >
-              Progress couldn&apos;t sync.{' '}
-              <Text style={{ color: C.ERROR }}>Your data is safe locally.</Text>
+              {STRINGS.ui.syncBanner.message}{' '}
+              <Text style={{ color: C.ERROR }}>{STRINGS.ui.syncBanner.messageDetail}</Text>
             </Text>
 
             {/* Retry */}
@@ -64,7 +65,7 @@ export function SyncStatusBanner() {
               onPress={() => void syncToCloud()}
               disabled={isSyncing}
               accessibilityRole="button"
-              accessibilityLabel="Retry sync"
+              accessibilityLabel={STRINGS.ui.syncBanner.retryA11y}
               style={{ padding: 6 }}
             >
               <RefreshCw
@@ -79,7 +80,7 @@ export function SyncStatusBanner() {
               hitSlop={8}
               onPress={dismissSyncError}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss sync error"
+              accessibilityLabel={STRINGS.ui.syncBanner.dismissA11y}
               style={{ padding: 6 }}
             >
               <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 12, color: C.TEXT3 }}>✕</Text>

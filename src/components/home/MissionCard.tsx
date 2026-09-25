@@ -4,12 +4,12 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../ui/Companion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from '../icons';
+import { STRINGS } from '../../constants/strings';
 
 interface MissionCardProps {
   scenarioTitle: string;
@@ -61,7 +61,7 @@ export function MissionCard({
       position: 'absolute',
       top: 12,
       right: 16,
-      fontSize: 24,
+      fontSize: 22,
     },
     mosqueSilhouette: {
       position: 'absolute',
@@ -72,7 +72,7 @@ export function MissionCard({
     contentArea: {
       padding: 14,
     },
-    foxImage: {
+    mascotSlot: {
       width: 48,
       height: 48,
       alignSelf: 'center',
@@ -92,7 +92,7 @@ export function MissionCard({
     },
     sceneTagText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 9,
+      fontSize: 11,
       color: C.PRIMARY,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
@@ -112,7 +112,7 @@ export function MissionCard({
     },
     subtitle: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       marginBottom: 14,
     },
@@ -147,7 +147,7 @@ export function MissionCard({
     },
     continueButtonText: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.BG,
       fontWeight: '700',
     },
@@ -161,7 +161,7 @@ export function MissionCard({
         pressed && { transform: [{ scale: 0.96 }] },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${scenarioTitle}. ${scenesCurrent} of ${scenesTotal} scenes complete.`}
+      accessibilityLabel={STRINGS.home.missionCardA11y(scenarioTitle, scenesCurrent, scenesTotal)}
     >
         {/* Hero Area */}
         <View style={styles.heroArea}>
@@ -174,7 +174,7 @@ export function MissionCard({
 
           {/* Ambient Glow Backdrop */}
           <LinearGradient
-            colors={['rgba(234,197,124,0.3)', 'transparent']}
+            colors={[`${C.JADE_ACCENT}4D`, 'transparent']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60 }}
@@ -195,29 +195,27 @@ export function MissionCard({
 
           {/* Mosque Silhouette SVG */}
           <View style={styles.mosqueSilhouette}>
-            <Text style={{ fontSize: 32, opacity: 0.4 }}>🕌</Text>
+            <Text style={{ fontSize: 34, opacity: 0.4 }}>🕌</Text>
           </View>
         </View>
 
         {/* Content Area */}
         <View style={styles.contentArea}>
-          {/* Mascot Image */}
-          <Image
-            source={IMAGES.foxyMale}
-            style={styles.foxImage}
-            resizeMode="contain"
-          />
+          {/* Mascot */}
+          <View style={styles.mascotSlot}>
+            <Companion size={48} />
+          </View>
 
           {/* Tag + Timer Row */}
           <View style={styles.tagRow}>
             <View style={styles.sceneTag}>
               <Text style={styles.sceneTagText}>
                 {scenesCurrent > 0
-                  ? `Scene ${scenesCurrent} of ${scenesTotal}`
-                  : `${scenesTotal} scenes`}
+                  ? STRINGS.home.missionSceneOf(scenesCurrent, scenesTotal)
+                  : STRINGS.home.missionScenesTotal(scenesTotal)}
               </Text>
             </View>
-            <Text style={styles.timerLabel}>⏱ ~5 min scenario</Text>
+            <Text style={styles.timerLabel}>{STRINGS.home.missionDuration}</Text>
           </View>
 
           {/* Title */}
@@ -251,7 +249,7 @@ export function MissionCard({
               end={{ x: 1, y: 1 }}
               style={styles.continueButton}
             >
-              <Text style={styles.continueButtonText}>Continue</Text>
+              <Text style={styles.continueButtonText}>{STRINGS.common.continue}</Text>
               <ChevronRight size={16} color={C.BG} strokeWidth={2.5} />
             </LinearGradient>
           </View>

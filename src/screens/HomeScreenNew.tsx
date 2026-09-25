@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import {
   View,
-  ScrollView,
   Text,
   StyleSheet,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IMAGES } from '../constants/images';
+import { Companion } from '../components/ui/Companion';
 import { useTheme, FONT_LATIN_SEMI, FONT_HEADING_SEMI, FONT_LATIN } from '../theme';
-import { GhostLetters, PrimaryButton } from '../components/ui';
+import { GhostLetters, PrimaryButton, Screen } from '../components/ui';
+import { SCREEN_MARGIN } from '../components/design/spacing';
 import { MotiView } from 'moti';
 import {
   HomeHeader,
@@ -114,20 +113,27 @@ export function HomeScreenNew({
 
   const weekDays = useMemo(() => getWeekDays(streakDays, lastActiveDate), [streakDays, lastActiveDate]);
 
-  // Featured scenario (first unlocked, uncompleted one for user's mode)
+  // Featured scenario (first playable, uncompleted one for user's mode)
   const userMode = useAppStore((s) => s.user?.mode) || 'career';
   const userGender = useAppStore((s) => s.user?.gender);
   const sceneProgress = useAppStore((s) => s.sceneProgress);
+  const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
+  const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
   const featured = useMemo(() => {
-    const all = filterScenariosForLearner(getAllScenarios(C), userGender);
-    const modeMatch = all.filter((s) => s.mode === userMode && !s.locked && !s.comingSoon);
+    // Playable means what ScenariosScreen means: access by position within the
+    // mode. This read an authored `locked` flag instead, which disagreed with the
+    // paywall — and the mission card opens a scenario without going through it.
+    const playable = filterScenariosForLearner(getAllScenarios(C), userGender)
+      .filter((s) => s.mode === userMode)
+      .filter((s, index) => hasScenarioAccess(index) && !s.comingSoon);
     // Pick first one not yet completed
-    const uncompleted = modeMatch.find((s) => !completedScenarios[s.id]);
-    return uncompleted ?? modeMatch[0] ?? getFeaturedScenario(C);
+    const uncompleted = playable.find((s) => !completedScenarios[s.id]);
+    return uncompleted ?? playable[0] ?? getFeaturedScenario(C);
   // isDark is the stable bool that determines C — prevents recomputing on every render
   // since C is a new object reference each render but isDark only changes on theme switch.
+  // subscriptionStatus and completedScenarios are what hasScenarioAccess reads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDark, userMode, userGender, completedScenarios]);
+  }, [isDark, userMode, userGender, completedScenarios, hasScenarioAccess, subscriptionStatus]);
 
   const scenesCompletedForFeatured = sceneProgress[featured.id] ?? 0;
 
@@ -138,26 +144,19 @@ export function HomeScreenNew({
   const challengePhrase = getChallengePhrase();
 
   const styles = useMemo(() => StyleSheet.create({
-    scrollView: {
-      flex: 1,
-      backgroundColor: C.BG,
-    },
-    scrollContent: {
-      paddingBottom: insets.bottom + 100,
-    },
     sectionLabel: {
       fontFamily: FONT_LATIN_SEMI,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT2,
       textTransform: 'uppercase',
       letterSpacing: 1.8,
       fontWeight: '600',
-      paddingHorizontal: 24,
+      paddingHorizontal: SCREEN_MARGIN,
       marginTop: 20,
       marginBottom: 10,
     },
     sectionContent: {
-      paddingHorizontal: 24,
+      paddingHorizontal: SCREEN_MARGIN,
       marginBottom: 14,
     },
     emptyCard: {
@@ -175,13 +174,9 @@ export function HomeScreenNew({
       shadowRadius: 4,
       elevation: 2,
     },
-    emptyMascot: {
-      width: 48,
-      height: 48,
-    },
     emptyTitle: {
       fontFamily: FONT_HEADING_SEMI,
-      fontSize: 15,
+      fontSize: 16,
       color: C.TEXT,
       textAlign: 'center',
     },
@@ -192,16 +187,19 @@ export function HomeScreenNew({
       textAlign: 'center',
       lineHeight: 18,
     },
-  }), [C, insets.bottom]);
+  }), [C]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
-    <GhostLetters glyphs={['م', 'ح', 'ب']} />
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-      removeClippedSubviews
+    <Screen
+      tabBarHandlesBottomInset
+      background={<GhostLetters glyphs={['م', 'ح', 'ب']} />}
+      // The header scrolls with the content and applies the top inset itself,
+      // so Screen must not apply it as well.
+      headerHandlesTopInset
+      // Every band on this screen sets its own horizontal padding, and some
+      // (the streak widget, the confidence strip) are deliberately full-bleed.
+      // Screen's margin would apply on top of both.
+      contentStyle={{ paddingHorizontal: 0 }}
     >
       {/* Header */}
       <View style={{ paddingTop: insets.top }}>
@@ -228,7 +226,7 @@ export function HomeScreenNew({
             transition={{ type: 'timing', duration: 400 }}
           >
             <View style={styles.emptyCard}>
-              <Image source={IMAGES.foxyMale} style={styles.emptyMascot} resizeMode="contain" />
+              <Companion size={48} />
               <Text style={styles.emptyTitle}>{STRINGS.home.noProgressYet}</Text>
               <Text style={styles.emptySubtitle}>{STRINGS.home.newUserTip}</Text>
               <PrimaryButton
@@ -305,7 +303,6 @@ export function HomeScreenNew({
           There is no such API yet, so the card stated something false as fact.
           CommunityBar is still available and now requires real values; render
           it again once a genuine count exists. */}
-    </ScrollView>
-    </View>
+    </Screen>
   );
 }

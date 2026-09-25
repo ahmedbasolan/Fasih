@@ -8,8 +8,8 @@
  */
 import type {
   GrammarPattern,
-  GrammarSlot,
   Phrase,
+  ScenarioCompletion,
   SentenceResult,
   SoftSkill,
 } from '../types';
@@ -32,13 +32,17 @@ import { PHRASE_BY_ID } from '../constants/phrases';
  * library-basic patterns (unlockedByScenario: '') are available from day one —
  * the store seeds unlockedPhraseIds empty, so an example-unlock filter here
  * would wrongly hide those from new learners.
+ *
+ * `patterns` defaults to the shipped set; tests pass their own so the gates stay
+ * covered while no shipped pattern happens to use one (e.g. secretUnlock).
  */
 export function getAvailablePatterns(
   _unlockedPhraseIds: string[],
-  completedScenarios: Record<string, { endingType: string; date: string }>,
+  completedScenarios: Record<string, ScenarioCompletion>,
   secretEndingsEarned: Record<string, string>,
+  patterns: GrammarPattern[] = GRAMMAR_PATTERNS,
 ): GrammarPattern[] {
-  return GRAMMAR_PATTERNS.filter((p) => {
+  return patterns.filter((p) => {
     if (p.secretUnlock) return !!secretEndingsEarned[p.unlockedByScenario];
     return p.unlockedByScenario === '' || !!completedScenarios[p.unlockedByScenario];
   });

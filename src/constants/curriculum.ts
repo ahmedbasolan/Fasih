@@ -47,7 +47,6 @@ export interface LevelSpec {
   readonly cefr: CEFRBand;
   /** CEFR-style descriptor. Safe to show in the UI. */
   readonly canDo: string;
-  readonly turns: Range;
   readonly phrasesUnlocked: Range;
   /**
    * Mean morphemes per learner choice card. NOT whitespace words — Arabic
@@ -82,7 +81,6 @@ export const LEVEL_SPECS: Readonly<Record<DifficultyLevel, LevelSpec>> = {
     tier: 'Beginner',
     cefr: 'A1',
     canDo: 'Reply in set exchanges when spoken to slowly.',
-    turns: { min: 3, max: 4 },
     phrasesUnlocked: { min: 6, max: 8 },
     meanMorphemes: { min: 3.0, max: 5.9 },
     morphemeCeiling: 10,
@@ -94,7 +92,6 @@ export const LEVEL_SPECS: Readonly<Record<DifficultyLevel, LevelSpec>> = {
     tier: 'Intermediate',
     cefr: 'A1+',
     canDo: 'Handle a routine exchange and hold a turn.',
-    turns: { min: 5, max: 6 },
     phrasesUnlocked: { min: 10, max: 12 },
     meanMorphemes: { min: 6.0, max: 7.9 },
     morphemeCeiling: 13,
@@ -106,7 +103,6 @@ export const LEVEL_SPECS: Readonly<Record<DifficultyLevel, LevelSpec>> = {
     tier: 'Advanced',
     cefr: 'A2',
     canDo: 'Sustain a familiar situation and carry register.',
-    turns: { min: 6, max: 7 },
     phrasesUnlocked: { min: 12, max: 16 },
     meanMorphemes: { min: 8.0, max: 12.0 },
     morphemeCeiling: 16,
@@ -155,6 +151,21 @@ export const TIER_BANDS: Readonly<Record<string, Range>> = {
   neutral: { min: -2, max: 2 },
   bad: { min: -9, max: -3 },
 };
+
+// ─── Route scripts (spec 2026-09-14) ─────────────────────────────────────────
+
+/**
+ * Decisions on every main path of a route script, whichever route it takes.
+ * Enough for an early choice to echo later; short enough (~6–8 min) to replay.
+ */
+export const DECISIONS_PER_RUN = 6;
+
+/**
+ * Share of scenes where the top-scoring choice may also be the longest Arabic
+ * line. Measured 2026-09-14: 36 of 40 legacy scenes, so "tap the longest
+ * answer" won almost every scenario. Above half, length is a tell.
+ */
+export const MAX_BEST_IS_LONGEST_SHARE = 0.5;
 
 // ─── Sources ─────────────────────────────────────────────────────────────────
 

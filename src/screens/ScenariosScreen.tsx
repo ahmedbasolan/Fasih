@@ -1,31 +1,27 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View, Text, Pressable, Platform,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import {
   Heart, Search, CheckCircle2, Lock,
-  Coffee, Building2, Users, Briefcase, ShoppingBag, Moon,
-  Sunrise, Dumbbell, Sparkles, Zap, Target, Rocket,
 } from '../components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, useScenariosCompletedCount } from '../store/useAppStore';
-import { getCareerScenarios, getMedicalScenarios, getSocialScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import {
-  FONT_HEADING_EXTRA,
+  getCareerScenarios, getSocialScenarios, filterScenariosForLearner, getScenarioScripts,
+} from '../constants/scenarios';
+import { endingsProgress, type EndingsProgress } from '../engine/scenarioPresentation';
+import {
   FONT_HEADING_SEMI,
   FONT_LATIN,
-  FONT_LATIN_SEMI,
+  FONT_LATIN_MEDIUM,
   SMOOTH,
 } from '../components/design/tokens';
-import type { ThemeColors } from '../components/design/tokens';
-import { GhostLetters, SheetPanel } from '../components/ui';
-import { ANGLE_135 } from '../components/design/gradients';
+import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { TAB_LIST_SCROLL_BOTTOM } from '../components/design/layout';
+import { GhostLetters, ScreenHeader, ScenarioEntry } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { STRINGS } from '../constants/strings';
-import type { UserProfile, Scenario, ImpactMetrics } from '../types';
+import type { UserProfile, Scenario, ScenarioMode } from '../types';
 
 interface Props {
   user: UserProfile | null;
@@ -35,435 +31,164 @@ interface Props {
 // Hick's law / Occam's razor: 'Recommended' was defined as !s.locked — i.e.
 // 'All, minus the locked ones'. It recommended nothing, duplicated a view the
 // user already had, and its empty state claimed 'All scenarios coming soon!',
-// which can never be true while the first three are free. Two tabs that each
+// which can never be true while any scenario is free. Two tabs that each
 // mean something distinct beat three where one is noise.
 type FilterTab = 'all' | 'saved';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+/** The list is grouped by mode, so it mixes section headings with entries. */
+type Row =
+  | { kind: 'header'; mode: ScenarioMode }
+  | {
+      kind: 'scenario';
+      scenario: Scenario;
+      /** Row order within the section, after the filter and the locked-last sort. */
+      index: number;
+      /** Position in the mode's curriculum — the number shown. Stable across sort and filter. */
+      position: number;
+      endings: EndingsProgress | undefined;
+    };
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  Coffee, Building2, Briefcase, Moon, Users, ShoppingBag, Sunrise, Dumbbell, Heart, Zap,
-};
-
-// Card palettes built from theme tokens — avoids hardcoded hex
-function getCardPalettes(C: ThemeColors) {
-  return [
-    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
-    { bg: C.CATEGORY_CREAM, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_MINT,  accent: C.JADE,   iconBg: C.JADE_SURFACE },
-    { bg: C.CATEGORY_BLUE,  accent: C.VIOLET, iconBg: C.VIOLET_SURFACE },
-    { bg: C.CATEGORY_PEACH, accent: C.JADE2,  iconBg: C.JADE_SURFACE },
-  ];
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
 }
-
-// Bento height pattern — alternates for visual interest
-const BENTO_HEIGHTS = [210, 180, 180, 210, 210, 180];
-
-// Locked/coming-soon card scrim — intentionally theme-invariant near-black.
-// It must stay dark to gray out a light pastel card in BOTH light and dark
-// theme, so it can't be built from a themed token the way most colors are.
-const LOCK_SCRIM_STRONG = 'rgba(10,15,12,0.52)';
-const LOCK_SCRIM_SOFT = 'rgba(10,15,12,0.38)';
-// White chrome drawn on top of the scrim above — always safe since the
-// surface underneath is guaranteed dark regardless of app theme.
-const SCRIM_CHIP_BG = 'rgba(255,255,255,0.12)';
-const SCRIM_CHIP_BORDER = 'rgba(255,255,255,0.18)';
-const SCRIM_TEXT = 'rgba(255,255,255,0.75)';
-const SCRIM_BADGE_BG = 'rgba(255,255,255,0.10)';
-const SCRIM_BADGE_BORDER = 'rgba(255,255,255,0.14)';
-const SCRIM_ICON = 'rgba(255,255,255,0.45)';
-
-// ─── Random motivational headings ───────────────────────────────────────────
-
-const MOTIVATIONAL_HEADINGS = [
-  { text: 'Gulf Arabic', sub: 'Choose a real situation.', icon: Sparkles },
-  { text: 'Build Confidence', sub: 'One scenario at a time.', icon: Target },
-  { text: 'Your Next Situation', sub: 'Practice Gulf Arabic.', icon: Rocket },
-  { text: 'Real Conversations', sub: 'Cultural fluency awaits.', icon: Zap },
-  { text: 'Master the Dialect', sub: 'Start where you are.', icon: Sparkles },
-  { text: 'Practice Today', sub: 'A few minutes is enough.', icon: Target },
-];
-
-// Fun facts about Arabic/Gulf culture - all under 15 words
-const FUN_FACTS = [
-  'Gulf Arabic has unique words for camel types.',
-  'Marhaba means welcome in every Arab country.',
-  'Arabic is written right-to-left, unlike English.',
-  'Shukran is thank you - use it often!',
-  'Gulf Arabs love coffee with cardamom spice.',
-  'Ya Hala is the warmest greeting here.',
-  'Inshallah means God willing - very common.',
-  'Mashallah protects from envy when praising.',
-  'Gulf Arabic skips many vowel sounds.',
-  'Habibi means my dear - use freely!',
-  'Arabic has 28 letters, all consonants included.',
-  'Khallas means finished or enough in Gulf.',
-  'Yalla means lets go - very versatile!',
-  'Dates are the traditional Gulf welcome gift.',
-  'Arabic coffee is served in tiny cups.',
-  'Alif is the first letter of Arabic.',
-  'Gulf Arabic borrows words from English often.',
-  'Salam means peace - the perfect greeting.',
-  'Naam means yes, with a head nod.',
-  'La means no, with upward head flick.',
-  'Gulf men wear white thobes in summer.',
-  'Friday is the holy day of rest.',
-  'Arabic has over 12 million unique words.',
-  'One word can have 100 different forms.',
-  'Gulf people say wallahi meaning I swear.',
-];
 
 function useRandomHeading() {
   // Pick a random heading and fun fact once, when the component first mounts.
   // Lazy initializers keep the value stable for the component's lifetime without
   // an effect + setState (which would double-render and flash the default first).
-  const [heading] = useState(
-    () => MOTIVATIONAL_HEADINGS[Math.floor(Math.random() * MOTIVATIONAL_HEADINGS.length)],
-  );
-  const [funFact] = useState(
-    () => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)],
-  );
+  const [heading] = useState(() => pickRandom(STRINGS.scenarios.headings));
+  const [funFact] = useState(() => pickRandom(STRINGS.scenarios.funFacts));
 
   return { heading, funFact };
 }
 
-// ─── Impact preview pill strip ────────────────────────────────────────────────
-function ImpactPreviewStrip({
-  impactPreview,
-  mode,
-}: {
-  impactPreview: ImpactMetrics;
-  mode: 'career' | 'social';
-}) {
-  const { C } = useTheme();
-  const isCareer = mode === 'career';
-
-  const metrics = isCareer
-    ? [
-        { label: 'Trust',   value: impactPreview.trust,   color: C.CULTURAL_GOLD },
-        { label: 'Respect', value: impactPreview.respect, color: C.JADE },
-        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
-      ]
-    : [
-        { label: 'Vibe',    value: impactPreview.trust,   color: C.ERROR },
-        { label: 'Rapport', value: impactPreview.respect, color: C.JADE },
-        { label: 'Culture', value: impactPreview.culture, color: C.VIOLET },
-      ];
-
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 14, paddingBottom: 12 }}>
-      {metrics.map(({ label, value, color }) => (
-        <View
-          key={label}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: 10,
-            backgroundColor: `${color}18`,
-            borderWidth: 1,
-            borderColor: `${color}30`,
-          }}
-        >
-          <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }} />
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 10, color: C.TEXT2 }}>{label}</Text>
-          <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 10, color }}>{value}%</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Card component ───────────────────────────────────────────────────────────
-
-
-function ScenarioCard({
-  scenario,
-  index,
-  isLeft,
-  onPress,
-}: {
-  scenario: Scenario;
-  index: number;
-  isLeft: boolean;
-  onPress: () => void;
-}) {
-  const { C } = useTheme();
-  const { iconName, title, phrases, locked, comingSoon, impactPreview, mode } = scenario;
-  const Icon = ICON_MAP[iconName] || Coffee;
-  const palette = getCardPalettes(C)[index % 6];
-  const cardHeight = BENTO_HEIGHTS[index % BENTO_HEIGHTS.length];
-
-  return (
-    <View
-      style={{
-        flex: 1,
-        paddingRight: isLeft ? 6 : 0,
-        paddingLeft: isLeft ? 0 : 6,
-        paddingBottom: 12,
-      }}
-    >
-      <Pressable
-        onPress={comingSoon ? undefined : onPress}
-        // Only genuinely unwritten scenarios are inert. A subscription-locked
-        // card stays tappable and routes to the paywall — the moment the user
-        // feels the limit is the only moment the upgrade is worth offering.
-        disabled={!!comingSoon}
-        accessibilityRole="button"
-        accessibilityLabel={locked ? `${title}, locked` : title}
-        accessibilityState={{ disabled: !!comingSoon }}
-        style={{
-          width: '100%',
-          borderRadius: 24,
-          backgroundColor: palette.bg,
-          height: cardHeight,
-          overflow: 'hidden',
-          ...Platform.select({
-            ios: {
-              shadowColor: palette.accent,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: locked ? 0.08 : 0.20,
-              shadowRadius: 14,
-            },
-            android: { elevation: locked ? 1 : 4 },
-          }),
-        }}
-      >
-        {/* ── Top: title + phrase count ── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
-          <Text
-            style={{
-              fontFamily: FONT_HEADING_SEMI,
-              fontSize: 15,
-              color: C.TEXT_ON_LIGHT,
-              lineHeight: 21,
-            }}
-            numberOfLines={2}
-          >
-            {title}
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: FONT_LATIN,
-              fontSize: 12,
-              color: C.TEXT_ON_LIGHT,
-              marginTop: 3,
-            }}
-          >
-            {phrases} Phrases
-          </Text>
-        </View>
-
-        {/* ── Bottom: icon + impact strip ── */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: impactPreview && !locked && !comingSoon ? 4 : 14 }}>
-          <Icon
-            size={impactPreview && !locked && !comingSoon ? 40 : 56}
-            color={locked || comingSoon ? C.TEXT3 : palette.accent}
-            strokeWidth={1.5}
-          />
-        </View>
-        {impactPreview && !locked && !comingSoon && (
-          <ImpactPreviewStrip impactPreview={impactPreview} mode={mode} />
-        )}
-
-        {/* ── Coming Soon overlay ── */}
-        {comingSoon && (
-          <View style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: LOCK_SCRIM_STRONG,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <View style={{
-              paddingHorizontal: 12, paddingVertical: 5,
-              borderRadius: 10,
-              backgroundColor: SCRIM_CHIP_BG,
-              borderWidth: 1,
-              borderColor: SCRIM_CHIP_BORDER,
-            }}>
-              <Text style={{
-                fontFamily: FONT_HEADING_SEMI,
-                fontSize: 11,
-                color: SCRIM_TEXT,
-                letterSpacing: 0.8,
-                textTransform: 'uppercase',
-              }}>
-                Coming Soon
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── Locked overlay ── */}
-        {locked && !comingSoon && (
-          <View style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: LOCK_SCRIM_SOFT,
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
-            padding: 12,
-          }}>
-            <View style={{
-              width: 30, height: 30, borderRadius: 10,
-              backgroundColor: SCRIM_BADGE_BG,
-              borderWidth: 1,
-              borderColor: SCRIM_BADGE_BORDER,
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Lock size={14} color={SCRIM_ICON} strokeWidth={2} />
-            </View>
-          </View>
-        )}
-      </Pressable>
-    </View>
-  );
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
-function HeaderContent() {
-  const { C } = useTheme();
-  const { heading, funFact } = useRandomHeading();
-  const HeadingIcon = heading.icon;
-
-  return (
-    <View>
-      {/* Animated heading with icon */}
-      <MotiView
-        from={{ opacity: 0, translateY: 8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ ...SMOOTH }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}
-      >
-        <HeadingIcon size={24} color="rgba(255,255,255,0.9)" />
-        <Text
-          style={{
-            fontFamily: FONT_HEADING_EXTRA,
-            fontSize: 28,
-            color: C.WHITE,
-            lineHeight: 36,
-          }}
-        >
-          {heading.text}
-        </Text>
-      </MotiView>
-
-      {/* Subtitle */}
-      <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ ...SMOOTH, delay: 50 }}
-      >
-        <Text
-          style={{
-            fontFamily: FONT_LATIN,
-            fontSize: 14,
-            color: 'rgba(255,255,255,0.7)',
-            lineHeight: 20,
-            marginBottom: 12,
-          }}
-        >
-          {heading.sub}
-        </Text>
-      </MotiView>
-
-      {/* Fun fact - under 15 words */}
-      <MotiView
-        from={{ opacity: 0, translateX: -8 }}
-        animate={{ opacity: 1, translateX: 0 }}
-        transition={{ ...SMOOTH, delay: 100 }}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          backgroundColor: 'rgba(255,255,255,0.20)',
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 10,
-          alignSelf: 'flex-start',
-        }}
-      >
-        <Sparkles size={12} color="rgba(255,255,255,0.8)" />
-        <Text
-          style={{
-            fontFamily: FONT_LATIN,
-            fontSize: 12,
-            color: 'rgba(255,255,255,0.85)',
-          }}
-        >
-          {funFact}
-        </Text>
-      </MotiView>
-    </View>
-  );
-}
-
 export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
-  const { C, G, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { C, isDark } = useTheme();
+  const { heading, funFact } = useRandomHeading();
 
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const hasScenarioAccess = useAppStore((s) => s.hasScenarioAccess);
   // hasScenarioAccess is a store getter, so selecting it subscribes to the
   // function identity — which never changes. These two subscribe to the state
-  // it actually reads, so the grid re-locks/unlocks when the user subscribes or
+  // it actually reads, so the list re-locks/unlocks when the user subscribes or
   // finishes their third scenario instead of staying stale until remount.
   const subscriptionStatus = useAppStore((s) => s.subscriptionStatus);
   const completedCount = useScenariosCompletedCount();
   const presentPaywall = useAppStore((s) => s.presentPaywall);
   const userMode = useAppStore((s) => s.user?.mode ?? 'career');
   const userGender = useAppStore((s) => s.user?.gender);
+  const endingsFound = useAppStore((s) => s.endingsFound);
 
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
 
+  const styles = useMemo(() => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: C.BG },
+    tabs: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SCREEN_MARGIN,
+      paddingBottom: SPACE.md,
+      gap: SPACE.sm,
+    },
+    tab: {
+      paddingHorizontal: SPACE.md,
+      paddingVertical: SPACE.sm,
+      borderRadius: RADIUS.pill,
+      borderWidth: 1,
+    },
+    tabLabel: { fontSize: 14 },
+    listContent: {
+      paddingHorizontal: SCREEN_MARGIN,
+      paddingBottom: TAB_LIST_SCROLL_BOTTOM,
+    },
+    empty: { alignItems: 'center', paddingTop: SPACE.xxxl, gap: SPACE.md },
+    emptyText: {
+      fontFamily: FONT_HEADING_SEMI,
+      fontSize: 14,
+      color: C.TEXT2,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACE.md,
+      paddingVertical: SPACE.xl,
+    },
+    footerCopy: { flex: 1 },
+    footerTitle: { fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT },
+    footerSub: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: SPACE.xs },
+    unlock: {
+      fontFamily: FONT_LATIN_MEDIUM,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: C.PRIMARY,
+    },
+    modeHeader: {
+      fontFamily: FONT_LATIN_MEDIUM,
+      fontSize: 11,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
+      color: C.TEXT3,
+      paddingTop: SPACE.xl,
+      paddingBottom: SPACE.sm,
+    },
+  }), [C]);
+
+  // Both modes, always (spec 2026-09-14 Q19): with six scenarios, hiding the
+  // other mode's three made a paid app look half-empty — and a career learner
+  // still rides taxis. The learner's own mode is listed first.
   const allScenarios: Scenario[] = useMemo(
-    () => filterScenariosForLearner(
-      [...getCareerScenarios(C), ...getMedicalScenarios(C), ...getSocialScenarios(C)]
-        .filter((s) => s.mode === userMode),
-      userGender,
-    ),
+    () => filterScenariosForLearner([...getCareerScenarios(C), ...getSocialScenarios(C)], userGender),
     // isDark is the stable bool determining C — avoids rebuilding the scenario list
     // on every render since C is a new object reference each time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isDark, userMode, userGender],
+    [isDark, userGender],
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scripts = useMemo(() => getScenarioScripts(C), [isDark]);
 
-  const displayScenarios = useMemo(() => {
-    // Determine actual locked status based on subscription. hasScenarioAccess
-    // expects the scenario's position in the full list — index must be taken
-    // from allScenarios, NOT the filtered subset, or the "first 3 free" gate
-    // rebases and lets paywalled scenarios appear unlocked on filtered tabs.
-    const withAccess = allScenarios.map((s, index) => ({
-      ...s,
-      locked: !hasScenarioAccess(index),
-    }));
-    const filtered = withAccess.filter((s) => {
-      if (filterTab === 'saved') return favoriteScenarios.includes(s.id);
-      return true;
-    });
-    // unlocked first, locked at the bottom
-    return filtered.sort((a, b) => (a.locked === b.locked ? 0 : a.locked ? 1 : -1));
+  const rows: Row[] = useMemo(() => {
+    const modes: ScenarioMode[] = userMode === 'career' ? ['career', 'social'] : ['social', 'career'];
+    const out: Row[] = [];
+    for (const mode of modes) {
+      // hasScenarioAccess takes the position WITHIN the mode — "scenario 1 of
+      // each mode is free" is a per-mode rule — and it must be taken before the
+      // saved filter, or the free slots rebase onto whatever is left.
+      const list = allScenarios
+        .filter((s) => s.mode === mode)
+        .map((s, position) => ({ scenario: { ...s, locked: !hasScenarioAccess(position) }, position }))
+        .filter(({ scenario }) => filterTab !== 'saved' || favoriteScenarios.includes(scenario.id))
+        // unlocked first, locked at the bottom
+        .sort((a, b) => (a.scenario.locked === b.scenario.locked ? 0 : a.scenario.locked ? 1 : -1));
+      if (list.length === 0) continue;
+      out.push({ kind: 'header', mode });
+      list.forEach(({ scenario, position }, index) => {
+        const script = scripts[scenario.id];
+        out.push({
+          kind: 'scenario',
+          scenario,
+          index,
+          position,
+          endings: script ? endingsProgress(script, endingsFound[scenario.id] ?? []) : undefined,
+        });
+      });
+    }
+    return out;
     // subscriptionStatus and completedCount are what hasScenarioAccess reads —
     // they are the real dependencies. hasScenarioAccess itself is a stable ref.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allScenarios, filterTab, favoriteScenarios, hasScenarioAccess, subscriptionStatus, completedCount]);
+  }, [allScenarios, scripts, userMode, filterTab, favoriteScenarios, endingsFound, hasScenarioAccess, subscriptionStatus, completedCount]);
+
+  const displayScenarios = rows.flatMap((r) => (r.kind === 'scenario' ? [r.scenario] : []));
 
   // Paywalled and unwritten are different states and get different copy.
   // `locked` is assigned above from hasScenarioAccess (subscription); `comingSoon`
   // is authored content metadata.
   const paywalledCount = displayScenarios.filter((s) => s.locked && !s.comingSoon).length;
-  const comingSoonCount = displayScenarios.filter((s) => s.comingSoon).length;
-
-  // FlashList's 2-column grid leaves a dangling half-empty row when the count is
-  // odd — pad with an invisible filler so the trailing card doesn't look orphaned.
-  type GridItem = Scenario | { id: '__filler__'; filler: true };
-  const gridData: GridItem[] = displayScenarios.length % 2 === 0
-    ? displayScenarios
-    : [...displayScenarios, { id: '__filler__', filler: true }];
+  const comingSoonScenarios = displayScenarios.filter((s) => s.comingSoon);
+  const comingSoonCount = comingSoonScenarios.length;
 
   const TABS: { id: FilterTab; label: string }[] = [
     { id: 'all', label: STRINGS.scenarios.tabAll },
@@ -471,217 +196,132 @@ export function ScenariosScreen({ user: _user, onScenarioSelect }: Props) {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
+    <View style={styles.screen}>
       <GhostLetters glyphs={['ع', 'ل', 'م']} />
 
-      {/* ── Deep warm header ── */}
-      <LinearGradient
-        colors={['#241C13', '#14100B', C.JADE] as [string, string, string]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          paddingTop: insets.top + 20,
-          paddingHorizontal: 24,
-          paddingBottom: 40,
-          overflow: 'hidden',
-        }}
-      >
-        {/* Decorative circles */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute', right: -50, top: -30,
-            width: 200, height: 200, borderRadius: 100,
-            backgroundColor: 'rgba(255,255,255,0.08)',
-          }}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute', left: -40, bottom: -40,
-            width: 140, height: 140, borderRadius: 70,
-            backgroundColor: 'rgba(255,255,255,0.05)',
-          }}
-        />
+      {/* The eyebrow is the running head: it says which mode you are in on
+          every screen, rather than mode being a colour swap nobody reads. */}
+      <ScreenHeader
+        eyebrow={userMode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
+        title={heading}
+        subtitle={funFact}
+      />
 
-        <HeaderContent />
-      </LinearGradient>
-
-      {/* ── Content panel ── */}
-      <SheetPanel radius={32} overlap={28} style={{ flex: 1, backgroundColor: C.SURFACE, overflow: 'hidden' }}>
-        {/* ── Tabs row ── */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 12,
-            paddingTop: 24,
-            paddingBottom: 8,
-            gap: 8,
-          }}
-        >
-          {TABS.map(({ id, label }) => {
-            const active = filterTab === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setFilterTab(id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                accessibilityLabel={label}
-                hitSlop={8}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderRadius: 99,
-                  backgroundColor: active ? C.JADE_DIM : 'transparent',
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
-                    fontSize: 15,
-                    color: active ? C.PRIMARY : C.TEXT3,
-                  }}
-                >
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* ── Scenario grid ── */}
-        <FlashList
-          data={gridData}
-          numColumns={2}
-          keyExtractor={(item: GridItem) => item.id}
-          renderItem={({ item, index }: { item: GridItem; index: number }) =>
-            'filler' in item ? (
-              <View style={{ flex: 1 }} />
-            ) : (
-              <ScenarioCard
-                scenario={item}
-                index={index}
-                isLeft={index % 2 === 0}
-                onPress={() =>
-                  item.locked ? void presentPaywall() : onScenarioSelect(item.id)
-                }
-              />
-            )
-          }
-          {...({ estimatedItemSize: 222 } as any)}
-          contentContainerStyle={{
-            paddingHorizontal: 18,
-            paddingTop: 8,
-            paddingBottom: insets.bottom + 90,
-          }}
-          showsVerticalScrollIndicator={false}
-          // Fix black square flash on Android
-          removeClippedSubviews={false}
-          // Disable virtualization animations
-          disableAutoLayout={false}
-          ListEmptyComponent={() => (
-            <MotiView
-              from={{ opacity: 0, translateY: 12, scale: 0.95 }}
-              animate={{ opacity: 1, translateY: 0, scale: 1 }}
-              transition={{ ...SMOOTH }}
-              style={{ alignItems: 'center', paddingTop: 56, gap: 10 }}
+      {/* ── Tabs row ── */}
+      <View style={styles.tabs}>
+        {TABS.map(({ id, label }) => {
+          const active = filterTab === id;
+          return (
+            <Pressable
+              key={id}
+              onPress={() => setFilterTab(id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={label}
+              hitSlop={8}
+              // Same border width either way, so the label doesn't shift; PRIMARY at zero alpha.
+              style={[styles.tab, { borderColor: active ? C.PRIMARY : `${C.PRIMARY}00` }]}
             >
-              <View
-                style={{
-                  width: 54, height: 54, borderRadius: 16,
-                  backgroundColor: `${C.PRIMARY}12`,
-                  alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {filterTab === 'saved'
-                  ? <Heart size={24} color={C.PRIMARY} fill="transparent" />
-                  : <Search size={24} color={C.PRIMARY} />}
-              </View>
               <Text
-                style={{
-                  fontFamily: FONT_HEADING_SEMI,
-                  fontSize: 14,
-                  color: C.TEXT2,
-                  textAlign: 'center',
-                  lineHeight: 20,
-                }}
+                style={[styles.tabLabel, {
+                  fontFamily: active ? FONT_HEADING_SEMI : FONT_LATIN,
+                  color: active ? C.PRIMARY : C.TEXT3,
+                }]}
               >
-                {filterTab === 'saved'
-                  ? STRINGS.scenarios.noFavourites
-                  : STRINGS.scenarios.noResults}
+                {label}
               </Text>
-            </MotiView>
-          )}
-          ListFooterComponent={
-            filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
-              ? () => (
-                  <MotiView
-                    from={{ opacity: 0, translateY: 16, scale: 0.95 }}
-                    animate={{ opacity: 1, translateY: 0, scale: 1 }}
-                    transition={{ ...SMOOTH, delay: 200 }}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* ── Scenario list ──
+          Single column. Entries are separated by their own hairline, so the
+          list has no gap and no card fills. */}
+      <FlashList
+        data={rows}
+        keyExtractor={(row: Row) => (row.kind === 'header' ? `header-${row.mode}` : row.scenario.id)}
+        getItemType={(row: Row) => row.kind}
+        renderItem={({ item: row }: { item: Row }) =>
+          row.kind === 'header' ? (
+            <Text accessibilityRole="header" style={styles.modeHeader}>
+              {row.mode === 'career' ? STRINGS.scenarios.career : STRINGS.scenarios.social}
+            </Text>
+          ) : (
+            <ScenarioEntry
+              scenario={row.scenario}
+              index={String(row.position + 1).padStart(2, '0')}
+              first={row.index === 0}
+              endings={row.endings}
+              onPress={() =>
+                row.scenario.locked ? void presentPaywall() : onScenarioSelect(row.scenario.id)
+              }
+            />
+          )
+        }
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        // Fix black square flash on Android
+        removeClippedSubviews={false}
+        ListEmptyComponent={() => (
+          <View style={styles.empty}>
+            {filterTab === 'saved'
+              ? <Heart size={24} strokeWidth={1.5} color={C.TEXT3} fill="transparent" />
+              : <Search size={24} strokeWidth={1.5} color={C.TEXT3} />}
+            <Text style={styles.emptyText}>
+              {filterTab === 'saved'
+                ? STRINGS.scenarios.noFavourites
+                : STRINGS.scenarios.noResults}
+            </Text>
+          </View>
+        )}
+        ListFooterComponent={
+          filterTab === 'all' && (paywalledCount > 0 || comingSoonCount > 0)
+            ? () => (
+                <MotiView
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ ...SMOOTH, delay: 120 }}
+                >
+                  {/* Paywalled scenarios are written and shipping — the row
+                      offers the upgrade. Unwritten ones say so and stay inert. */}
+                  <Pressable
+                    onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
+                    disabled={paywalledCount === 0}
+                    accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
+                    accessibilityLabel={
+                      paywalledCount > 0
+                        ? STRINGS.scenarios.lockedCount(paywalledCount)
+                        : undefined
+                    }
+                    style={styles.footer}
                   >
-                    {/* Paywalled scenarios are written and shipping — the card
-                        offers the upgrade. Unwritten ones say so and stay inert. */}
-                    <Pressable
-                      onPress={paywalledCount > 0 ? () => void presentPaywall() : undefined}
-                      disabled={paywalledCount === 0}
-                      accessibilityRole={paywalledCount > 0 ? 'button' : undefined}
-                      accessibilityLabel={
-                        paywalledCount > 0
-                          ? STRINGS.scenarios.lockedCount(paywalledCount)
-                          : undefined
-                      }
-                      style={{
-                        borderRadius: 20, padding: 18,
-                        flexDirection: 'row', alignItems: 'center', gap: 14,
-                        backgroundColor: C.JADE_SURFACE,
-                        borderWidth: 1, borderColor: C.JADE_BORDER,
-                      }}
-                    >
-                      <LinearGradient
-                        colors={G.AVATAR_STOPS}
-                        start={ANGLE_135.start}
-                        end={ANGLE_135.end}
-                        style={{
-                          width: 44, height: 44, borderRadius: 14,
-                          alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
+                    {paywalledCount > 0
+                      ? <Lock size={20} strokeWidth={1.5} color={C.PRIMARY} />
+                      : <CheckCircle2 size={20} strokeWidth={1.5} color={C.TEXT3} />}
+                    <View style={styles.footerCopy}>
+                      <Text style={styles.footerTitle}>
                         {paywalledCount > 0
-                          ? <Lock size={20} color={C.BG} />
-                          : <CheckCircle2 size={20} color={C.BG} />}
-                      </LinearGradient>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.TEXT }}>
-                          {paywalledCount > 0
-                            ? STRINGS.scenarios.lockedCount(paywalledCount)
-                            : STRINGS.scenarios.comingSoon(comingSoonCount, userMode)}
-                        </Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginTop: 2 }}>
-                          {paywalledCount > 0
-                            ? STRINGS.scenarios.lockedSub
-                            : STRINGS.scenarios.writingNext}
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          paddingHorizontal: 14, paddingVertical: 9,
-                          borderRadius: 14, backgroundColor: C.JADE,
-                        }}
-                      >
-                        <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 12, color: C.BG }}>
-                          {paywalledCount > 0 ? STRINGS.scenarios.unlock : STRINGS.common.soon}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  </MotiView>
-                )
-              : null
-          }
-        />
-      </SheetPanel>
+                          ? STRINGS.scenarios.lockedCount(paywalledCount)
+                          : STRINGS.scenarios.comingSoon(comingSoonCount, comingSoonScenarios[0]?.mode ?? userMode)}
+                      </Text>
+                      <Text style={styles.footerSub}>
+                        {paywalledCount > 0
+                          ? STRINGS.scenarios.lockedSub
+                          : STRINGS.scenarios.writingNext}
+                      </Text>
+                    </View>
+                    {paywalledCount > 0 ? (
+                      <Text style={styles.unlock}>
+                        {STRINGS.scenarios.unlock}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                </MotiView>
+              )
+            : null
+        }
+      />
     </View>
   );
 }

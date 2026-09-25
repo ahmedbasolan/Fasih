@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Home, Layers, BookOpen, User } from '../../src/components/icons';
@@ -9,7 +9,6 @@ import { useTheme } from '../../src/hooks/useTheme';
 export default function TabsLayout() {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const tabBg = C.TAB_BG;
 
   // Adapt to the user's phone nav setting.
   // iOS: insets.bottom is ~34 on home-indicator devices, 0 on older iPhones.
@@ -24,24 +23,18 @@ export default function TabsLayout() {
         headerShown: false,
         animation: 'fade',
         tabBarStyle: {
-          backgroundColor: tabBg,
-          borderTopWidth: 0,
+          // The bar is the page, not a tray on top of it: same ground, and a
+          // hairline instead of the platform shadow block that used to sit here.
+          backgroundColor: C.BG,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: C.BORDER,
           elevation: 0,
           height: BAR_CONTENT_HEIGHT + BOTTOM_INSET_PAD,
           paddingTop: 8,
           paddingBottom: BOTTOM_INSET_PAD,
-          ...Platform.select({
-            ios: {
-              shadowColor: C.PRIMARY,
-              shadowOffset: { width: 0, height: -4 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-            },
-            android: { elevation: 8 },
-          }),
         },
-        tabBarActiveTintColor: C.JADE_ACCENT,
-        tabBarInactiveTintColor: C.NEUTRAL_500,
+        tabBarActiveTintColor: C.PRIMARY,
+        tabBarInactiveTintColor: C.TEXT3,
         tabBarLabelStyle: {
           fontFamily: FONT_HEADING_SEMI,
           fontSize: 11,
@@ -57,9 +50,9 @@ export default function TabsLayout() {
             <MotiView
               animate={{ scale: focused ? 1.1 : 1 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              style={{ padding: 6 }}
             >
-              <Home size={20} color={color} />
+              <Home size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -72,9 +65,9 @@ export default function TabsLayout() {
             <MotiView
               animate={{ scale: focused ? 1.1 : 1 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              style={{ padding: 6 }}
             >
-              <Layers size={20} color={color} />
+              <Layers size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -87,9 +80,9 @@ export default function TabsLayout() {
             <MotiView
               animate={{ scale: focused ? 1.1 : 1 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              style={{ padding: 6 }}
             >
-              <BookOpen size={20} color={color} />
+              <BookOpen size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}
@@ -102,9 +95,9 @@ export default function TabsLayout() {
             <MotiView
               animate={{ scale: focused ? 1.1 : 1 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              style={focused ? { backgroundColor: C.JADE_ACCENT_DIM, borderRadius: 12, padding: 6 } : { padding: 6 }}
+              style={{ padding: 6 }}
             >
-              <User size={20} color={color} />
+              <User size={22} strokeWidth={1.5} color={color} />
             </MotiView>
           ),
         }}

@@ -15,7 +15,7 @@ The app teaches Khaleeji Arabic through:
 - Phrase library (categorized, filterable, with Arabic TTS playback)
 - Cultural journal (save moments, review insights)
 - Onboarding flow (role, mode, goals → quick-win scenario → paywall)
-- Situational confidence tracking across 7 real UAE situations
+- Situational confidence tracking across 3 real UAE situations (one per group of MVP scenarios)
 
 This is a production app, not a teaching project. Build for real users.
 
@@ -121,7 +121,7 @@ src/
     scenarios.ts        ← all scenario scripts and metadata
     strings.ts          ← all UI copy (no hardcoded strings in components)
   engine/               ← pure business logic, no React
-    scenarioEngine.ts   ← applyChoice, getTone, resolveNextScene, evaluateEnding
+    scenarioEngine.ts   ← applyChoice, getTone, leadingRoute, resolveNextScene, evaluateEnding
     __tests__/
   hooks/                ← custom React hooks
     useTheme.ts         ← primary styling hook (returns C, G, isDark)
@@ -385,11 +385,15 @@ Language types: `CEFRBand`, `SourceRef`, `SourceClaim`, `SourceId`, `PhraseCurre
 
 The scenario engine (`src/engine/scenarioEngine.ts`) consists of **pure functions only**:
 
-- `applyChoice(state, choice)` → new `ScenarioState`
-- `getTone(state, scene)` → `'warm' | 'neutral' | 'cold'`
-- `resolveNextScene(state, scene, choice)` → `string | undefined`
+- `applyChoice(state, choice, npcId)` → new `ScenarioState`
+- `getTone(state, npcId, scene)` → `'warm' | 'neutral' | 'cold'`
+- `leadingRoute(state, script)` → the route id the run leans toward
+- `resolveNextScene(state, choice, script)` → `string | null` (state from before the choice)
+- `sceneAfterChoice(state, resolved, script)` → next main-path scene, the bonus scene, or `null` for the result
 - `evaluateEnding(state, script)` → `ScenarioEnding`
-- `isChoiceVisible(state, choice)` → `boolean` (flag-based gating)
+- `isChoiceVisible(choice, state)` → `boolean` (flag-based gating)
+
+Scenario presentation rules (feedback by scene kind, endings collection, hints) live in `src/engine/scenarioPresentation.ts`; content rules in `src/engine/scenarioRules.ts`.
 
 Never add React imports, side effects, or Zustand calls to the engine. Test it with unit tests in `src/engine/__tests__/`.
 
@@ -488,3 +492,17 @@ Before every feature:
 - Use `STRINGS` for all copy.
 - Match existing patterns in the codebase.
 - Run TypeScript check before finishing.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Label vocabulary for the five canonical triage roles. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout. See `docs/agents/domain.md`.

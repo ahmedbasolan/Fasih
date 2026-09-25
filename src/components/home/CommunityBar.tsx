@@ -70,7 +70,7 @@ export function CommunityBar({ count, location }: CommunityBarProps) {
     },
     text: {
       fontFamily: FONT_LATIN,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT2,
       lineHeight: 20,
     },
