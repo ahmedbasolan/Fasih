@@ -3,11 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useTheme, FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
-import { IMAGES } from '../../constants/images';
+import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -71,7 +70,7 @@ export function StreakWidget({
     return () => clearTimeout(t);
   }, [mood, screenW]);
 
-  const mascotSource = IMAGES.foxyMale;
+
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -82,7 +81,7 @@ export function StreakWidget({
       borderRadius: 20,
       backgroundColor: C.CARD_BG,
       borderWidth: 1,
-      borderColor: mood === 'celebrating' ? 'rgba(234,197,124,0.3)' : C.BORDER,
+      borderColor: mood === 'celebrating' ? C.JADE_ACCENT_BORDER : C.BORDER,
       overflow: 'hidden',
       // Add shadow in light mode for depth
       shadowColor: C.CARD_SHADOW,
@@ -101,10 +100,6 @@ export function StreakWidget({
       borderRightColor: C.BORDER,
       paddingVertical: 8,
     },
-    mascotImage: {
-      width: 42,
-      height: 42,
-    },
     streakNumber: {
       fontFamily: FONT_HEADING_EXTRA,
       fontSize: 18,
@@ -113,7 +108,7 @@ export function StreakWidget({
     },
     daysLabel: {
       fontFamily: FONT_LATIN,
-      fontSize: 10,
+      fontSize: 11,
       color: C.TEXT2,
     },
     rightBlock: {
@@ -197,11 +192,7 @@ export function StreakWidget({
       >
         {/* LEFT BLOCK - Mascot + Streak */}
         <View style={styles.leftBlock}>
-          <Image
-            source={mascotSource}
-            style={styles.mascotImage}
-            resizeMode="contain"
-          />
+          <Companion size={42} />
           <Text style={styles.streakNumber}>{streakDays}</Text>
           <Text style={styles.daysLabel}>days</Text>
         </View>
@@ -216,7 +207,7 @@ export function StreakWidget({
             {isChecklistMode ? (
               <Text style={styles.emptyHint}>{STRINGS.home.checklistProgress(checklistCompleted!, checklistTotal!)}</Text>
             ) : (
-              <Text style={styles.bestDays}>Best: {Math.max(streakDays, 1)}</Text>
+              <Text style={styles.bestDays}>{STRINGS.home.streakWidgetBest(Math.max(streakDays, 1))}</Text>
             )}
           </View>
 

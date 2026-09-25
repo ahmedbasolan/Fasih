@@ -7,19 +7,24 @@
  * Fasih uses Clerk for authentication. Supabase is the database only — no
  * Supabase Auth. user_id is a Clerk user ID (TEXT), not a UUID.
  *
- * RLS is currently DISABLED (Option A). All data access is filtered client-side
- * by user_id. Upgrade path: enable Option B in 003_rls.sql once a Clerk → JWT
- * integration is configured (see that file for instructions).
+ * RLS is enabled (Option B, supabase/migrations/007_enable_rls.sql): the Clerk
+ * session JWT is forwarded as the Supabase access token (src/lib/supabase.ts),
+ * and Postgres policies read the caller's identity via auth.jwt()->>'sub'. See
+ * supabase/migrations/README.md for the full posture and how to verify it.
  *
  * ─── Security posture ───────────────────────────────────────────────────────
- * The Supabase anon key is public by design. Without RLS, a malicious client
- * could read or write any row using a crafted user_id. Acceptable for launch;
- * schedule Option B before significant user growth.
+ * The Supabase anon key is public by design, but a request carrying it alone —
+ * no valid Clerk token — runs as `anon`, which the RLS policies on user_data
+ * deny outright. Do not reintroduce client-side user_id filtering as a
+ * substitute for this: 003_rls.sql documents why the disabled-RLS posture
+ * (Option A) it describes is not shippable.
  */
 
 import { supabase } from './supabase';
-import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress } from '../types';
+import type { UserProfile, UserStats, PhraseReviewData, LearningMilestone, JournalEntry, SubscriptionStatus, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../types';
 import { DEFAULT_USER_STATS } from '../types';
+import { reportServiceError } from './analytics';
+import { endingPercentages } from '../engine/scenarioPresentation';
 
 /**
  * Coerce whatever the `stats` column holds into a complete UserStats.
@@ -61,23 +66,32 @@ function asArray<T>(raw: unknown): T[] {
  * Increment this when CloudUserData shape changes in a breaking way.
  * pullProgress uses it to detect stale cloud rows.
  * History: 1 = initial; 2 = added schema_version + gender + unlocked_phrase_ids;
- *          3 = added pattern_progress + secret_endings_earned (Sentence Builder)
+ *          3 = added pattern_progress + secret_endings_earned (Sentence Builder);
+ *          4 = added endings_found + scenario_runs (replay loop, migration 011)
+ *          5 = added scenario_history (dated runs for replay metrics, migration 012)
  */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 // ─── Community stats ─────────────────────────────────────────────────────────
 // Schema lives in supabase/migrations/001_initial_schema.sql.
 // These tables use RPC functions for atomic increments (SECURITY DEFINER).
-// RLS is disabled — reads are open, writes go through the RPCs only.
+// RLS is enabled on both tables (007_enable_rls.sql): public SELECT, but
+// INSERT/UPDATE require `authenticated`. The RPCs themselves are additionally
+// restricted to `authenticated` callers (010_secure_stat_rpcs.sql) — being
+// SECURITY DEFINER, they bypass RLS entirely, so that restriction is the
+// actual gate, not the table policies.
 
 export interface CloudUserData {
   schema_version: number;
   user_profile: UserProfile | null;
   stats: UserStats;
   phrase_reviews: Record<string, PhraseReviewData>;
-  completed_scenarios: Record<string, { endingType: string; date: string }>;
+  completed_scenarios: Record<string, ScenarioCompletion>;
   pattern_progress: Record<string, PatternProgress>;  // Sentence Builder progress — must sync so reinstalls restore it
   secret_endings_earned: Record<string, string>;      // scenarioId → ending title; never lost on replay or reinstall
+  endings_found: Record<string, string[]>;            // scenarioId → ending ids ever reached ("3 of 5 found")
+  scenario_runs: Record<string, number>;              // scenarioId → completed runs (replays = runs > 1)
+  scenario_history: Record<string, ScenarioRunRecord[]>; // scenarioId → each run's ending + day, in order
   saved_phrases: string[];
   unlocked_phrase_ids: string[];  // phrases unlocked through scenarios — must sync so reinstalls restore them
   milestones: LearningMilestone[];
@@ -107,6 +121,9 @@ export async function pushProgress(
         completed_scenarios: data.completed_scenarios,
         pattern_progress: data.pattern_progress,
         secret_endings_earned: data.secret_endings_earned,
+        endings_found: data.endings_found,
+        scenario_runs: data.scenario_runs,
+        scenario_history: data.scenario_history,
         saved_phrases: data.saved_phrases,
         unlocked_phrase_ids: data.unlocked_phrase_ids,
         milestones: data.milestones,
@@ -152,12 +169,15 @@ export async function pullProgress(
       user_profile: data.user_profile ?? null,
       stats: normalizeStats(data.stats),
       phrase_reviews: asRecord<PhraseReviewData>(data.phrase_reviews),
-      completed_scenarios: asRecord<{ endingType: string; date: string }>(data.completed_scenarios),
+      completed_scenarios: asRecord<ScenarioCompletion>(data.completed_scenarios),
       // Grammar-engine columns get the same treatment as everything else here:
       // `?? {}` only guards null, and these arrive from the same untyped
       // supabase-js payload that made a bare `data.stats` crash the app.
       pattern_progress: asRecord<PatternProgress>(data.pattern_progress),
       secret_endings_earned: asRecord<string>(data.secret_endings_earned),
+      endings_found: asRecord<string[]>(data.endings_found),
+      scenario_runs: asRecord<number>(data.scenario_runs),
+      scenario_history: asRecord<ScenarioRunRecord[]>(data.scenario_history),
       saved_phrases: asArray<string>(data.saved_phrases),
       unlocked_phrase_ids: asArray<string>(data.unlocked_phrase_ids),
       milestones: asArray<LearningMilestone>(data.milestones),
@@ -172,25 +192,6 @@ export async function pullProgress(
 }
 
 // ─── Community stat helpers ───────────────────────────────────────────────────
-
-// Seed percentages used when Supabase has no real data yet (pre-launch / empty DB).
-// Values represent realistic completion distributions. Replaced automatically once
-// real users accumulate — Supabase data always takes precedence.
-const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
-  'first-morning':      { exceptional: 34, success: 41, mixed: 17, failed: 8 },
-  'coffee-invitation':  { exceptional: 28, success: 38, mixed: 24, failed: 10 },
-  'hotel-guest':        { exceptional: 31, success: 39, mixed: 21, failed: 9 },
-  'office-meeting':     { exceptional: 27, success: 37, mixed: 26, failed: 10 },
-  'ramadan-shift':      { exceptional: 24, success: 36, mixed: 28, failed: 12 },
-  'gym-consultation':   { exceptional: 30, success: 40, mixed: 21, failed: 9 },
-  'the-checkup':        { exceptional: 29, success: 40, mixed: 22, failed: 9 },
-  'social_taxi_ride':   { exceptional: 38, success: 35, mixed: 19, failed: 8 },
-  'social_elevator':    { exceptional: 32, success: 37, mixed: 22, failed: 9 },
-  'cafe-friends':       { exceptional: 26, success: 40, mixed: 23, failed: 11 },
-  'eid-greeting':       { exceptional: 33, success: 38, mixed: 20, failed: 9 },
-  'weekend-invite':     { exceptional: 25, success: 38, mixed: 25, failed: 12 },
-  'neighborhood':       { exceptional: 29, success: 39, mixed: 22, failed: 10 },
-};
 
 /**
  * Permanently delete the signed-in user's cloud row.
@@ -211,8 +212,14 @@ const ENDING_STAT_SEEDS: Record<string, Record<string, number>> = {
 export async function deleteAccountData(): Promise<{ error: string | null }> {
   try {
     const { error } = await supabase.rpc('delete_my_account');
+    // A Postgres-level refusal is not an exception, so it never reaches the
+    // catch below. Reported here because a deletion that fails for everyone —
+    // a dropped RPC, a permissions change — is a compliance problem that
+    // otherwise surfaces only as one confused support email at a time.
+    if (error) reportServiceError(error, 'syncService.deleteAccount');
     return { error: error?.message ?? null };
   } catch (e) {
+    reportServiceError(e, 'syncService.deleteAccount');
     return { error: e instanceof Error ? e.message : 'Could not reach the server' };
   }
 }
@@ -266,7 +273,12 @@ export async function recordChoiceStat(
       p_scene_id: sceneId,
       p_choice_id: choiceId,
     });
-  } catch { /* non-fatal */ }
+  } catch {
+    // Deliberately silent, and deliberately NOT reported to Sentry. Community
+    // stats are a nice-to-have aggregate; a dropped write costs one row out of
+    // many and the learner is unaffected. Wiring reportServiceError in here
+    // would report once per choice made, offline or not.
+  }
 }
 
 /**
@@ -296,43 +308,48 @@ export async function getChoiceStats(
   );
 }
 
-/** Atomically increment the reach count for a scenario ending (fire-and-forget). */
+/**
+ * Atomically increment the reach count for a scenario ending (fire-and-forget).
+ * Pass the ending id — the column is named ending_type for history, see getEndingStats.
+ */
 export async function recordEndingStat(
   scenarioId: string,
-  endingType: string,
+  endingId: string,
 ): Promise<void> {
   try {
     await supabase.rpc('increment_ending_stat', {
       p_scenario_id: scenarioId,
-      p_ending_type: endingType,
+      p_ending_type: endingId,
     });
-  } catch { /* non-fatal */ }
+  } catch {
+    // Deliberately silent, and deliberately NOT reported to Sentry. Community
+    // stats are a nice-to-have aggregate; a dropped write costs one row out of
+    // many and the learner is unaffected. Wiring reportServiceError in here
+    // would report once per choice made, offline or not.
+  }
 }
 
 /**
- * Fetch reach counts for every ending of a scenario and return them as percentages.
- * Returns a map of endingType → percentage (0–100).
+ * Reach percentages for a scenario's endings, keyed by ending id (0–100).
+ *
+ * The `ending_type` column holds the ending id since the route scripts (spec
+ * 2026-09-14): two destinations can share a type, so a type-keyed percentage
+ * would describe neither. Older type-keyed rows are ignored rather than mixed
+ * in. Empty until the scenario clears MIN_COMPLETIONS_FOR_STATS — see
+ * endingPercentages for why.
  */
 export async function getEndingStats(
   scenarioId: string,
+  endingIds: string[],
 ): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from('scenario_ending_stats')
     .select('ending_type, reach_count')
     .eq('scenario_id', scenarioId);
 
-  if (!error && data?.length) {
-    const total = data.reduce((sum, row) => sum + (row.reach_count as number), 0);
-    if (total > 0) {
-      return Object.fromEntries(
-        data.map(row => [
-          row.ending_type as string,
-          Math.round(((row.reach_count as number) / total) * 100),
-        ]),
-      );
-    }
-  }
-
-  // No real data yet — return seed stats so the result screen is never empty
-  return ENDING_STAT_SEEDS[scenarioId] ?? {};
+  if (error || !data?.length) return {};
+  return endingPercentages(
+    data.map(row => ({ ending: row.ending_type as string, count: row.reach_count as number })),
+    endingIds,
+  );
 }

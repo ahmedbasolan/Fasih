@@ -7,72 +7,73 @@ interface Props {
   glyphs: [string, string, string];
 }
 
+/**
+ * The Sadaf watermark.
+ *
+ * Each screen carries a triliteral root naming what it is for — ع ل م learn,
+ * ق و ل say, ف ك ر think, ك ل م speak. This is the app's identity device, and
+ * it previously rendered at 2–6% opacity, rotated, where nobody could see it.
+ *
+ * Set upright and aligned to the margin, like a folio mark in a printed
+ * reference. Ink, not accent: the watermark is part of the page, not a
+ * decoration laid on top of it.
+ */
 export function GhostLetters({ glyphs }: Props) {
-  const { isDark, C } = useTheme();
+  const { C, isDark } = useTheme();
 
-  // Dark mode: gold + violet at ~3 % — crisp against deep bg
-  // Light mode: jade + gold at 6 % — enough contrast on pale bg
-  const p1 = isDark ? `rgba(234,197,124,0.03)` : `${C.JADE}0F`;   // ~6 %
-  const p2 = isDark ? `rgba(166,136,214,0.023)` : `${C.CULTURAL_GOLD}0C`; // ~5 %
-  const p3 = isDark ? `rgba(234,197,124,0.021)` : `${C.JADE}0A`;  // ~4 %
+  // Ink at low alpha rather than a tinted accent. Dark needs less, because a
+  // light glyph on a dark ground reads stronger at equal alpha.
+  //
+  // Halved from 0.05/0.08. At the previous alpha the glyphs read as dark
+  // blotches rather than a watermark — on the name step one sat directly behind
+  // the avatar and title, and because each is bled off an edge they registered
+  // as smudges rather than as letters. A folio mark should be findable, not
+  // noticeable.
+  const opacity = isDark ? 0.025 : 0.04;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-
-      <Text
-        style={[styles.g1, { color: p1 }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      >
-        {glyphs[0]}
-      </Text>
-      <Text
-        style={[styles.g2, { color: p2 }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      >
-        {glyphs[1]}
-      </Text>
-      <Text
-        style={[styles.g3, { color: p3 }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      >
-        {glyphs[2]}
-      </Text>
+      {glyphs.map((glyph, i) => (
+        <Text
+          key={`${glyph}-${i}`}
+          style={[styles[`g${i}` as 'g0' | 'g1' | 'g2'], { color: C.TEXT, opacity }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          {glyph}
+        </Text>
+      ))}
     </View>
   );
 }
 
+// Upright, no rotation. Aligned to the page margin.
 const styles = StyleSheet.create({
+  g0: {
+    position: 'absolute',
+    fontFamily: FONT_ARABIC_BLACK,
+    fontSize: 260,
+    lineHeight: 260,
+    right: -40,
+    top: -30,
+    includeFontPadding: false,
+  },
   g1: {
     position: 'absolute',
     fontFamily: FONT_ARABIC_BLACK,
-    fontSize: 300,
-    lineHeight: 300,
-    right: -50,
-    top: -50,
-    transform: [{ rotate: '-6deg' }],
+    fontSize: 170,
+    lineHeight: 170,
+    left: -20,
+    top: 320,
     includeFontPadding: false,
   },
   g2: {
     position: 'absolute',
     fontFamily: FONT_ARABIC_BLACK,
-    fontSize: 190,
-    lineHeight: 190,
-    left: -35,
-    top: 310,
-    transform: [{ rotate: '5deg' }],
-    includeFontPadding: false,
-  },
-  g3: {
-    position: 'absolute',
-    fontFamily: FONT_ARABIC_BLACK,
-    fontSize: 150,
-    lineHeight: 150,
-    right: -15,
-    bottom: 120,
-    transform: [{ rotate: '-10deg' }],
+    fontSize: 140,
+    lineHeight: 140,
+    right: -10,
+    bottom: 140,
     includeFontPadding: false,
   },
 });

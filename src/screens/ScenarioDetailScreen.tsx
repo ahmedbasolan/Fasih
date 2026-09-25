@@ -1,16 +1,16 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Bookmark, Play, Lock, CheckCircle2 } from '../components/icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FONT_HEADING_EXTRA, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Bookmark } from '../components/icons';
+import { FONT_HEADING_EXTRA, FONT_LATIN, FONT_LATIN_SEMI } from '../components/design/tokens';
+import { RADIUS, SCREEN_MARGIN, SPACE } from '../components/design/spacing';
 import { useTheme } from '../hooks/useTheme';
-import { GhostLetters, SheetPanel, PrimaryButton } from '../components/ui';
-import { HeroSceneBg } from '../components/features/SceneIllustrations';
+import { GhostLetters, SheetPanel, PrimaryButton, ScreenHeader, Screen } from '../components/ui';
 import { getScenarioById, getScenarioScript, isScenarioAvailableFor } from '../constants/scenarios';
 import { useAppStore } from '../store/useAppStore';
 import { EmptyState } from '../components/ui/EmptyState';
 import { STRINGS } from '../constants/strings';
+import { DECISIONS_PER_RUN } from '../constants/curriculum';
+import { endingsProgress } from '../engine/scenarioPresentation';
 
 interface Props {
   scenarioId: string;
@@ -20,9 +20,24 @@ interface Props {
 
 export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Props) {
   const { C } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { width: screenW } = useWindowDimensions();
-  
+  const styles = useMemo(() => StyleSheet.create({
+    noMargin: { paddingHorizontal: 0 },
+    goBack: {
+      borderRadius: RADIUS.pill, paddingVertical: SPACE.lg, alignItems: 'center',
+      backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
+    },
+    goBackText: { fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 },
+    sheet: { backgroundColor: C.BG, paddingHorizontal: SCREEN_MARGIN, paddingTop: SPACE.xxl },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    decisions: { fontFamily: FONT_HEADING_EXTRA, fontSize: 22, color: C.TEXT },
+    saveButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    meta: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 },
+    duration: { marginBottom: SPACE.sm },
+    endings: { marginBottom: 24 },
+    description: { fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 },
+    primary: { marginBottom: 28 },
+  }), [C]);
+
   // Memoised for the same reason as ScenarioPlayer: these builders reconstruct
   // the whole scenario corpus on every call, and calling them in the render
   // body meant doing that on every re-render. See the note there.
@@ -32,6 +47,7 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
+  const foundEndingIds = useAppStore((s) => s.endingsFound[scenarioId]);
   const toggleFavoriteScenario = useAppStore((s) => s.toggleFavoriteScenario);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
   const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
@@ -43,95 +59,89 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   // already handles the identical case with an empty state and a way out.
   if (!scenario || !script || !isScenarioAvailableFor(scenario, userGender)) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.BG, paddingTop: insets.top + 40 }}>
+      <Screen
+        scroll={false}
+        // EmptyState is flex: 1, centres itself, and applies SCREEN_MARGIN of
+        // its own. Screen's margin on top of that indents it to 40.
+        contentStyle={styles.noMargin}
+        action={
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel={STRINGS.scenarios.goBack}
+            style={styles.goBack}
+          >
+            <Text style={styles.goBackText}>
+              {STRINGS.scenarios.goBack}
+            </Text>
+          </Pressable>
+        }
+      >
         <EmptyState
           arabic="؟"
           title={STRINGS.scenarios.notFound}
           subtitle={STRINGS.scenarios.noScript(scenarioId)}
         />
-        <View style={{ paddingHorizontal: 40, marginTop: 8 }}>
-          <Pressable
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel={STRINGS.scenarios.goBack}
-            style={{
-              borderRadius: 16, paddingVertical: 14, alignItems: 'center',
-              backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER,
-            }}
-          >
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.TEXT2 }}>
-              {STRINGS.scenarios.goBack}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+      </Screen>
     );
   }
 
+  // Decisions, not scenes: the fork puts two variant scenes in the array for
+  // one decision. No scene list either — the scene settings would give the
+  // branches away, and a bonus scene would announce the hidden ending's reward.
+  const decisions = DECISIONS_PER_RUN;
+  const progress = endingsProgress(script, foundEndingIds ?? []);
+
   return (
-    <View style={{ flex: 1, backgroundColor: C.BG }}>
-      <GhostLetters glyphs={['ح', 'و', 'ا']} />
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Header Image Section ── */}
-        <View style={{ height: 450, width: '100%', backgroundColor: C.PRIMARY }}>
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-             <HeroSceneBg width={screenW} height={450} />
-             <LinearGradient
-                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)']}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-             />
-          </View>
-
-          {/* Navigation Controls */}
-          <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Pressable 
-              onPress={onBack}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <ChevronLeft size={24} color={C.WHITE} />
-            </Pressable>
-            <Pressable
-              onPress={() => toggleFavoriteScenario(scenarioId)}
-              accessibilityRole="button"
-              accessibilityLabel={isSaved ? 'Remove from saved scenarios' : 'Save scenario'}
-              accessibilityState={{ selected: isSaved }}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Bookmark size={20} color={isSaved ? C.PRIMARY : C.WHITE} fill={isSaved ? C.PRIMARY : 'none'} />
-            </Pressable>
-          </View>
-
-          {/* Title Overlay */}
-          <View style={{ position: 'absolute', bottom: 40, left: 24, right: 24 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 36, color: C.WHITE, marginBottom: 8 }}>
-              {scenario.title}
-            </Text>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 18, color: 'rgba(255,255,255,0.9)' }}>
-              {STRINGS.home.featuredAuthor}
-            </Text>
-          </View>
-        </View>
+    <Screen
+      background={<GhostLetters glyphs={['ح', 'و', 'ا']} />}
+      // ScreenHeader applies the top inset itself, and both it and the sheet
+      // below run edge to edge and set their own horizontal padding.
+      headerHandlesTopInset
+      contentStyle={styles.noMargin}
+    >
+        {/* ── Header ──
+            Was a 450pt illustrated hero with white text over a black scrim.
+            Sadaf has no photographic ground to write on, and the illustration
+            was the last consumer of SceneIllustrations. Type on paper instead:
+            the title carries the screen. */}
+        <ScreenHeader
+          eyebrow={scenario.level}
+          title={scenario.title}
+          subtitle={scenario.subtitle}
+          onBack={onBack}
+        />
 
         {/* ── Content Section ── */}
-        <SheetPanel radius={40} overlap={30} style={{ backgroundColor: C.BG, paddingHorizontal: 24, paddingTop: 32 }}>
-          {/* Metadata Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Text style={{ fontFamily: FONT_HEADING_EXTRA, fontSize: 24, color: C.TEXT }}>
-              {script.scenes.length} Scenes
+        <SheetPanel radius={RADIUS.sheet} overlap={0} style={styles.sheet}>
+          {/* Metadata Row.
+              The save toggle used to live as a translucent circle on the hero.
+              With the hero gone it sits here, beside the scene count, where it
+              is on the paper rather than floating over an image. */}
+          <View style={styles.metaRow}>
+            <Text style={styles.decisions}>
+              {STRINGS.scenarios.decisions(decisions)}
             </Text>
-            <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.PRIMARY }}>
-              {scenario.level}
-            </Text>
+            <Pressable
+              onPress={() => toggleFavoriteScenario(scenarioId)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? STRINGS.scenarios.unsaveScenario : STRINGS.scenarios.saveScenario}
+              accessibilityState={{ selected: isSaved }}
+              style={styles.saveButton}
+            >
+              <Bookmark size={22} strokeWidth={1.5} color={isSaved ? C.CULTURAL_GOLD_DARK : C.TEXT3} fill={isSaved ? C.CULTURAL_GOLD_DARK : 'none'} />
+            </Pressable>
           </View>
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, marginBottom: 24 }}>
-            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, script.scenes.length * 2))}
+          <Text style={[styles.meta, styles.duration]}>
+            {STRINGS.home.durationMinutes(script.estimatedMinutes ?? Math.max(3, decisions * 2))}
+          </Text>
+          <Text style={[styles.meta, styles.endings]}>
+            {STRINGS.scenarios.endingsSummary(progress)}
           </Text>
 
           {/* Description */}
-          <Text style={{ fontFamily: FONT_LATIN, fontSize: 16, color: C.TEXT2, lineHeight: 24, marginBottom: 32 }}>
+          <Text style={styles.description}>
             {scenario.kafIntro || scenario.subtitle}
           </Text>
 
@@ -142,85 +152,19 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               started from the beginning. Rows that look tappable and don't do
               what they promise are worse than rows that don't look tappable
               (Jakob's law), and offering N identical-looking entry points to
-              one destination is a choice that isn't one (Hick's law).
-              The list is now a progress display; this is the way in. */}
+              one destination is a choice that isn't one (Hick's law). */}
           <PrimaryButton
             onPress={() => onSceneSelect(0)}
             accessibilityLabel={isCompleted
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
-            style={{ marginBottom: 28 }}
+            style={styles.primary}
           >
             {isCompleted
               ? STRINGS.scenarios.playAgain
               : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
           </PrimaryButton>
-
-          {/* Scenes list — progress, not navigation. */}
-          <View style={{ gap: 16 }}>
-            {script.scenes.length === 0 ? (
-              <EmptyState
-                title={STRINGS.scenarios.noScenesTitle}
-                subtitle={STRINGS.scenarios.noScenesSub}
-              />
-            ) : (
-              script.scenes.map((scene, index) => {
-                const isLocked = index > scenesUnlocked && !isCompleted;
-                const isDone = !isLocked && (index < scenesUnlocked || isCompleted);
-                return (
-                  <View
-                    key={scene.id}
-                    accessible
-                    accessibilityLabel={`${STRINGS.scenarios.sceneNumber(index + 1)}, ${scene.setting}, ${
-                      isDone ? STRINGS.scenarios.sceneDone
-                      : isLocked ? STRINGS.scenarios.sceneLocked
-                      : STRINGS.scenarios.sceneNext
-                    }`}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: C.SURFACE,
-                      borderRadius: 24,
-                      padding: 16,
-                      borderWidth: 1,
-                      borderColor: C.BORDER,
-                      opacity: isLocked ? 0.55 : 1,
-                    }}
-                  >
-                    <View style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 16,
-                      backgroundColor: isLocked ? C.SURFACE2 : isDone ? C.JADE_DIM : C.JADE_ACCENT_DIM,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 16
-                    }}>
-                      {isLocked ? (
-                        <Lock size={20} color={C.TEXT3} />
-                      ) : isDone ? (
-                        <CheckCircle2 size={20} color={C.JADE} />
-                      ) : (
-                        <Play size={20} color={C.PRIMARY} fill={C.PRIMARY} />
-                      )}
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 18, color: C.TEXT, marginBottom: 4 }}>
-                        {STRINGS.scenarios.sceneNumber(index + 1)}
-                      </Text>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3 }}>
-                        {scene.setting}
-                      </Text>
-                    </View>
-
-                  </View>
-                );
-              })
-            )}
-          </View>
         </SheetPanel>
-      </ScrollView>
-    </View>
+    </Screen>
   );
 }

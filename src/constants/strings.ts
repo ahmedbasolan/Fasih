@@ -30,7 +30,18 @@ export const STRINGS = {
   onboarding: {
     welcomeTitle: 'Gulf Arabic, for Real Dubai Life',
     welcomeSubtitle: 'Learn through real stories, not textbooks',
-    helloKaf: 'Salam! I am Kaf.',
+    // Step 0. These three were hardcoded in the JSX -- "Let's Begin Growing Our
+    // Skills." and the paragraph beneath it -- and are lifted here unchanged in
+    // meaning. `welcomeLead` splits so the second half can take the accent.
+    welcomeLead: 'Let’s begin',
+    welcomeLeadAccent: 'growing our skills.',
+    welcomeBody: 'Master Gulf Arabic through interactive scenarios. Learn real phrases for work, social life, and daily conversations in the UAE.',
+    getStarted: 'Get Started',
+    themeToggle: 'Switch between light and dark',
+    // The Kaf character was retired with the Sadaf art direction. These three
+    // strings named it out loud, so the app still introduced and quoted a
+    // mascot the learner never sees. Renamed to describe the thing itself.
+    helloKaf: 'Salam! Welcome to Fasih.',
     keepGoingMascot: 'Keep tapping!',
     letsBegin: 'Let\'s begin!',
     liveScenarios: (count: number) => `${count} Live Scenarios`,
@@ -39,6 +50,20 @@ export const STRINGS = {
     freeToStart: 'Free to start • No credit card',
     stepXofY: (x: number, y: number) => `STEP ${x} OF ${y}`,
     choosePath: 'Choose your path',
+    // Was hardcoded as "Select your primary focus" in the JSX.
+    choosePathSub: 'Select your primary focus',
+    // Step 6. All of these were hardcoded in the JSX.
+    notifTitle: 'Never miss a day',
+    // Was "builds fluency 3× faster" — a number nobody measured.
+    notifSub: 'A short daily reminder to practise',
+    notifStreak: 'Daily streak reminders',
+    notifStreakSub: 'Keep your learning momentum going',
+    notifScenarios: 'New scenario alerts',
+    notifScenariosSub: 'Discover fresh cultural scenarios',
+    notifMilestones: 'Progress milestones',
+    notifMilestonesSub: 'Celebrate every achievement',
+    notifAllow: 'Allow Notifications',
+    notifLater: 'Maybe later',
     careerMode: 'Career Mode',
     careerSub: 'Hospitality · Retail · Office',
     careerDesc: 'Focus on business etiquette, formal greetings, and workplace culture.',
@@ -46,7 +71,7 @@ export const STRINGS = {
     socialSub: 'Friends & Family',
     socialDesc: 'Master casual conversation, dining etiquette, and everyday interactions.',
     whatsYourName: 'What\'s your name?',
-    kafGreetingSub: 'Kaf will greet you every morning',
+    kafGreetingSub: 'We\'ll greet you in Arabic every morning',
     placeholderName: 'Enter your name',
     genderQuestion: 'How should Arabic address you?',
     genderWhy: 'Arabic changes ending depending on who is speaking — we\'ll teach you the forms you\'ll actually use',
@@ -56,12 +81,36 @@ export const STRINGS = {
     genderFemaleExample: 'أنا يديدة · مشغولة',
     welcomeName: (name: string) => `"Welcome, ${name}"`,
     keepTyping: 'Keep typing...',
+    /**
+     * The Arabic greeting that types itself out as the learner enters a name.
+     *
+     * These three were inline literals in OnboardingFlow.tsx — the only Arabic
+     * in the app that lived in a component rather than here, which put it
+     * outside both the strings rule and docs/language/pipeline.md.
+     *
+     * Bare script apart from conventional tanwīn (`أهلاً`), which the language
+     * authority permits. Unchanged in content: this is a relocation, not an
+     * edit, and any change to the Arabic itself goes through the pipeline.
+     */
+    greetingStub: 'أهـ',
+    greetingShort: 'أهلاً',
+    greetingFull: (name: string) => `أهلاً وسهلاً ${name}`,
     mascotTitle: 'Meet your companion',
     mascotSubtitle: 'They\'ll guide you through every Arabic lesson',
     mascotMayaTagline: 'Your warm & friendly guide',
     mascotMaxTagline: 'Your sharp & clever companion',
     whatsYourRole: 'What\'s your role?',
     roleTailored: 'We\'ll tailor your experience',
+    /**
+     * The payoff under the profession chips.
+     *
+     * `shiftCount` deliberately says "in your shift" rather than "for your
+     * job" — the phrases are grouped by category, not authored per
+     * profession, and the copy must not imply otherwise.
+     */
+    shiftHeading: 'What you\'ll practise',
+    shiftCount: (n: number) => `${n} phrases in your shift`,
+    shiftCategorySeparator: ' · ',
     whatsDrivesYou: 'What drives you?',
     selectEverything: 'Select everything that applies',
     goalCount: (count: number) => `${count} goals selected`,
@@ -72,6 +121,85 @@ export const STRINGS = {
     makeCommitment: 'Make a commitment',
     committed: 'Committed!',
     commitmentSub: 'Hold to commit to your daily habit',
+    // Replaced a live "42%" readout. Rendering the percentage meant reading hold
+    // progress on the JS thread, which is what made the ring stutter — and a
+    // number racing 0 to 100 in 2.2 seconds was never readable. The ring shows
+    // the progress; this says what to do.
+    // Kept short on purpose. The label sits inside a 96pt circle with no
+    // padding, and the Text scales with the system font setting: measured at
+    // 11pt, "KEEP GOING" is 80pt wide and wraps above 1.2x, which is an
+    // ordinary accessibility setting. "HOLDING" is 60 and survives to 1.6x.
+    // Both labels also carry numberOfLines={1}, so neither can wrap regardless.
+    holdKeepHolding: 'HOLDING',
+    /**
+     * The untouched ring.
+     *
+     * It read `common.done` — "Done" — on a control nobody had touched yet,
+     * under copy saying "Hold to commit to your daily habit". A button that
+     * claims the outcome before the action is the one thing this screen must
+     * not say, since the whole point is that the commitment is made by holding.
+     */
+    holdToCommit: 'HOLD',
+    /**
+     * Step 7, the first-phrase moment.
+     *
+     * Was مرحبا / mar-haba / "Your first Gulf Arabic phrase". مرحبا is pan-Arab
+     * textbook Arabic — you hear it from Casablanca to Baghdad — so it taught
+     * nothing Gulf and nothing the learner could not have guessed. A first
+     * phrase should prove the premise: this app teaches what people actually
+     * say, not what a textbook says they say.
+     *
+     * شلونك is that proof, and the contrast IS the lesson. Phrase, romanisation
+     * and both notes are taken from `g3` in constants/phrases.ts rather than
+     * written here — it is `UNSOURCED` like the rest of the corpus, and no new
+     * linguistic claim is being made on top of it.
+     */
+    firstPhraseEyebrow: 'Not the Arabic in the textbook',
+    firstPhraseArabic: 'شلونك؟',
+    firstPhraseRoman: 'shloo-nak',
+    firstPhraseEnglish: 'How are you?',
+    firstPhraseHear: 'Tap to hear it',
+    firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
+    firstPhraseDone: 'You just said it the way Dubai says it.',
+
+    // The taster scenario's own controls. `common.continue` covers the mid-
+    // scenario step; these two are the beats that need their own words.
+    /**
+     * The progress reveal, immediately before the paywall.
+     *
+     * The paywall's title, subtitle and CTA all say "don't lose your
+     * progress" — to a learner who had never been shown any. This screen is
+     * what makes those three strings true. Every line below reports something
+     * the learner actually did; nothing here is aspirational.
+     */
+    progressTitle: 'Look what you just did',
+    progressSub: 'Twenty minutes ago you had none of this',
+    progressPhraseHeard: 'Heard your first Gulf phrase',
+    progressScenarioDone: 'Held a conversation in Arabic',
+    progressPhrasesUnlocked: (n: number) => `${n} phrase${n === 1 ? '' : 's'} unlocked`,
+    progressCommitted: 'Committed to a daily habit',
+    progressDayOne: 'Day 1',
+    progressDayOneSub: 'Your streak starts here',
+    progressContinue: 'Continue',
+
+    scenarioSeeUnlocked: 'See what you unlocked',
+    scenarioContinueToApp: 'Continue to App',
+    scenarioCulturalNote: 'Cultural Note',
+    scenarioYouSaid: 'You said',
+    scenarioYourResponse: 'Your response',
+    scenarioUnlockTitle: 'Phrase Unlocked!',
+    scenarioUnlockSubtitle: 'You learned this in your first Gulf Arabic exchange',
+    scenarioComplete: 'Scenario complete',
+    scenarioUnlockedTag: 'Unlocked',
+    /**
+     * Watermark roots behind the two mode plates on step 1. Decorative, hidden
+     * from screen readers, rendered at 3-8% opacity.
+     *
+     * Here rather than in the component so the language lint sees them —
+     * everything in STRINGS is now walked by languageContent.test.ts.
+     */
+    modeRootCareer: 'ع م ل',
+    modeRootSocial: 'ص ح ب',
     dailyHabit: 'Commit to learning for 5 minutes a day',
     skipForNow: 'Skip for now',
     freeTrialBadge: '4-day free trial',
@@ -94,7 +222,11 @@ export const STRINGS = {
     monthlyFlex: 'Maximum flexibility',
     billingYearly: (yearPrice: string, savings: string) => `Billed ${yearPrice}/year • Saves ${savings}`,
     perMonth: '/month',
-    skipUnlock: 'Skip — unlock by completing 3 scenarios',
+    // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
+    thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
+    // Was "unlock by completing 3 scenarios". Only scenario 1 of each mode is
+    // free, so a free learner can complete two — the promise could not be kept.
+    skipUnlock: 'Skip — first scenario of each mode is free',
     skipWarningTitle: 'Are you sure you want to leave?',
     skipWarningMessage: "You've already set up your custom learning path and unlocked Gulf Arabic phrases. Skipping now means you won't save this progress.",
     skipWarningConfirm: 'Continue Without Saving',
@@ -125,13 +257,16 @@ export const STRINGS = {
       { day: 'Day 3', title: 'Habit Formation', desc: 'Receive personalized motivation to keep you going.' },
       { day: 'Day 4', title: 'Trial Ends', desc: 'Continue your journey with full premium benefits.' },
     ],
+    // No counts. '500+ expressions', '40+ situations' and '5 industries' were
+    // never true — the MVP ships six scenarios — and a count typed here goes
+    // stale the moment content changes.
     features: [
       { label: 'Voice Practice', sub: 'Unlimited sessions' },
-      { label: 'Phrase Library', sub: '500+ expressions' },
-      { label: 'All Scenarios', sub: '40+ situations' },
+      { label: 'Phrase Library', sub: 'The full library' },
+      { label: 'All Scenarios', sub: 'Career and social' },
       { label: 'Cultural Notes', sub: 'Deep context' },
       { label: 'Achievements', sub: 'Badges & levels' },
-      { label: 'Career Paths', sub: '5 industries' },
+      { label: 'Career Paths', sub: 'Workplace scenarios' },
     ],
   },
   home: {
@@ -139,9 +274,24 @@ export const STRINGS = {
     quickChallengePrompt: 'How would you say this in Arabic?',
     quickChallengeReveal: 'Tap to reveal →',
     quickChallengeAnswer: 'Answer',
-    goodMorning: 'Good morning',
-    goodAfternoon: 'Good afternoon',
-    goodEvening: 'Good evening',
+    greeting: {
+      morning: { arabic: 'صباح الخير', english: 'Good morning' },
+      afternoon: { arabic: 'مرحبا', english: 'Hello' },
+      evening: { arabic: 'مساء الخير', english: 'Good evening' },
+      night: { arabic: 'تصبح على خير', english: 'Good night' },
+    },
+    settingsA11y: 'Settings',
+    missionSceneOf: (current: number, total: number) => `Scene ${current} of ${total}`,
+    missionScenesTotal: (total: number) => `${total} scenes`,
+    missionDuration: '⏱ ~5 min scenario',
+    missionCardA11y: (title: string, current: number, total: number) => `${title}. ${current} of ${total} scenes complete.`,
+    dailyPhrasePlay: 'Play',
+    dailyPhrasePlayA11y: 'Play pronunciation',
+    dailyPhraseUseToday: 'Use today',
+    dailyPhraseUsed: '✓ Used',
+    dailyPhraseUseTodayA11y: 'Mark as used today',
+    dailyPhraseSaveA11y: 'Save phrase',
+    streakWidgetBest: (n: number) => `Best: ${n}`,
     welcomeFasih: 'Welcome to Fasih',
     newUserTip: 'Start your first scenario to begin tracking your mastery across categories.',
     checklistProgress: (done: number, total: number) => `${done}/${total} steps done — keep going!`,
@@ -190,6 +340,8 @@ export const STRINGS = {
     browseAllTitle: 'Browse All Phrases',
     browseAllSub: (phraseCount: number, categoryCount: number) => `${phraseCount} expressions across ${categoryCount} categories`,
     fromFirstScenario: 'From your first scenario',
+    play: 'Play pronunciation',
+    save: 'Save phrase',
   },
   sentenceBuilder: {
     title: 'Sentence Builder',
@@ -273,6 +425,10 @@ export const STRINGS = {
     seeResults: 'See Results',
     noCardsTitle: 'No phrases to practice',
     noCardsSub: 'Add phrases to your library first',
+    phraseBuilderInstruction: 'Support Drag & Drop or Tap',
+    check: 'Check',
+    phraseBuilderCorrect: 'Excellent!',
+    phraseBuilderIncorrect: 'Correct solution:',
   },
   homeSections: {
     todaysMission: "Today's Mission",
@@ -280,10 +436,74 @@ export const STRINGS = {
     dailyPhrase: 'Daily Phrase',
     yourConfidence: 'Your Confidence',
     beginFirstScenario: 'Begin your first scenario',
+    // The situations on the Your Confidence card, keyed by situation id.
+    situations: {
+      workplace: 'Workplace',
+      gettingAround: 'Getting Around',
+      neighboursCelebrations: 'Neighbours & Celebrations',
+    },
+    situationsCard: {
+      title: 'UAE Situations',
+      emptyTitle: 'No situations tracked yet',
+      emptySub: 'Complete a scenario to start building your UAE confidence map',
+      startPrompt: 'Start a scenario to build your confidence',
+      inProgress: (active: number, total: number) => `${active} of ${total} situations in progress`,
+      seeAll: 'See all situations',
+      seeAllShort: 'All',
+      mostImproved: 'Most improved:',
+      activeSuffix: 'active',
+      levels: { confident: 'Confident', familiar: 'Familiar', learning: 'Learning', 'not-started': 'Not started' },
+    },
   },
   scenarios: {
     title: 'Scenarios',
+    // Distinct from comingSoon() above, which is a sentence about how much
+    // content is pending. This is the badge on a single entry.
+    comingSoonBadge: 'Coming soon',
+    // Distinct from comingSoonBadge: this content exists and is one tap from
+    // the paywall, so the row stays pressable and says so.
+    lockedBadge: 'Locked',
     subtitle: 'Choose a situation to practice',
+    // The Scenarios header title — one picked at random per visit.
+    headings: [
+      'Gulf Arabic',
+      'Build Confidence',
+      'Your Next Situation',
+      'Real Conversations',
+      'Master the Dialect',
+      'Practice Today',
+    ],
+    // One is shown at random under the Scenarios header. Keep each under 15 words.
+    //
+    // Every fact here must be checkable against a named source (docs/language/
+    // authority.md). The earlier list taught MSA as speech (na'am, shukran),
+    // overclaimed (marhaba "in every Arab country") and stated unverifiable
+    // numbers ("12 million words"). It also glossed dialect words — yalla,
+    // khalas, inshallah — that are UNSOURCED in phrases.ts, and a fun fact cannot
+    // say what it is sourced to, so those stay out until the phrases are sourced.
+    //
+    // No native speaker has reviewed these. None claims how Emiratis speak except
+    // the last, and that one generalises from a 100-student university sample.
+    funFacts: [
+      // Unicode Standard 16.0, ch. 9 (Arabic): "written from right to left".
+      'Arabic is written right to left, unlike English.',
+      // Letter count: Wikipedia, "Arabic alphabet" (tertiary; uncited there).
+      // Vowels: Unicode 16.0 ch. 9 — vowel marks "in normal writing ... are omitted".
+      'Arabic has 28 letters, and short vowels usually go unwritten.',
+      // Wikipedia, "Arabic alphabet": alif opens the hijā'ī order.
+      'Alif is the first letter of the Arabic alphabet.',
+      // Abu Dhabi Dept. of Culture & Tourism, "Gahwa-Arabic Coffee" (UNESCO ICH page):
+      // "a large pot for boiling coffee and cardamom". Heritage practice — current
+      // urban habit not checked.
+      'Emirati Arabic coffee is brewed with cardamom.',
+      // Same page: "The most important or oldest guest is served first". UNESCO,
+      // "Arabic coffee, a symbol of generosity" (UAE co-submitter): "older people
+      // and guests are served first". Heritage practice, as above.
+      'The oldest or most important guest is served coffee first.',
+      // Hopkyns, Zoghbor & Hassall (2021), World Englishes 40(2), doi:10.1111/weng.12506.
+      // 100 Emirati university students; "creative translanguaging practices".
+      'Many young Emiratis mix English into their Arabic.',
+    ],
     career: 'Career',
     social: 'Social',
     decisions: (count: number) => `${count} decisions`,
@@ -302,10 +522,6 @@ export const STRINGS = {
     startScenario: 'Start scenario',
     continueScenario: 'Continue',
     playAgain: 'Play again',
-    sceneNumber: (n: number) => `Scene ${String(n).padStart(2, '0')}`,
-    sceneDone: 'completed',
-    sceneLocked: 'locked',
-    sceneNext: 'up next',
     tabAll: 'All',
     tabFavourite: 'Favourite',
     noFavourites: 'No favourites yet\nTap the heart on any card',
@@ -319,8 +535,6 @@ export const STRINGS = {
     noScript: (id: string) => `No script available for "${id}". This scenario may be coming soon.`,
     scenarioNotFound: 'Scenario not found',
     notFound: 'Scenario not found',
-    noScenesTitle: 'No scenes available',
-    noScenesSub: "This scenario doesn't have any content yet",
     goBack: 'Go Back',
     playing: 'Playing...',
     listen: 'Listen',
@@ -332,10 +546,9 @@ export const STRINGS = {
     trust: 'Trust',
     respect: 'Respect',
     culture: 'Culture',
-    kafSays: 'Kaf says',
-    introDesc: 'Ahmed, your Emirati colleague, invites you for coffee. Every choice shapes your relationship.',
+    kafSays: 'Cultural note',
+    introDesc: 'Every choice shapes where this conversation goes.',
     kafIntro: 'Coffee is never just coffee in Emirati culture — it is an invitation to build trust.',
-    outcomesSummary: 'Family Partnership · Job Referral · Transactional · Missed',
     charSaid: (name: string) => `${name}:`,
     culturalIntelligence: 'Cultural Intelligence',
     chooseYourResponse: 'Choose your response',
@@ -358,13 +571,93 @@ export const STRINGS = {
     primerSub: 'Tap to listen — you\'ll hear them in the conversation.',
     primerListen: 'Tap to hear',
     culturalJourneyTitle: 'Your Cultural Journey',
-    endingDiscovery: (total: number) => `1 of ${total} possible endings`,
+    // The margin rail's caption on the ending screen. The rail is the shape of
+    // the run; the three impact numbers beneath it are the totals. Two readings,
+    // so two labels.
+    railTitle: 'The path you took',
+    railSub: 'One mark per decision, in the order you made them.',
+    // The rail is a picture, so it is hidden from screen readers and its
+    // wrapper carries this instead — the same information as prose.
+    railWord: {
+      excellent: 'strong',
+      good: 'warm',
+      neutral: 'neutral',
+      bad: 'misstep',
+      chosen: 'your call',
+    } as const,
+    railSummary: (words: string[]) =>
+      `The path you took, decision by decision: ${words.join(', ')}.`,
+    // Endings collection (spec 2026-09-14 §2.6) — card, intro and end screen.
+    /** "3 of 5 endings found · 1 hidden" — the one line card, intro and end screen share. */
+    endingsSummary: (p: { found: number; total: number; hidden: number; hiddenFound: boolean }) =>
+      p.hidden > 0
+        ? `${p.found} of ${p.total} endings found · ${p.hiddenFound ? 'hidden ending found' : `${p.hidden} hidden`}`
+        : `${p.found} of ${p.total} endings found`,
     tryDifferentChoices: 'Play again with different choices to find another path',
-    communityEnding: (pct: number) => pct > 0 ? `${pct}% of players reach this ending` : 'One of the first players to reach this ending',
-    communityEndingSecret: (pct: number) => pct > 0 ? `Only ${pct}% of players ever find this — you just did` : 'Almost no one finds this ending. You did.',
+    // Result screen, route scripts.
+    destinationEyebrow: (label: string, tier: 'strong' | 'weak' | undefined) =>
+      tier === 'weak' ? `${label} · halfway there` : label,
+    hiddenEndingEyebrow: 'Hidden ending',
+    failedEndingEyebrow: 'The connection didn\'t land',
+    momentsTitle: 'What sent you here',
+    momentsSub: 'The choices in this run that leaned this way.',
+    hintsTitle: 'Other endings to look for',
+    hintHidden: 'Hidden',
+    // Choice feedback by scene kind (§2.4).
+    feedbackCorrect: 'Correct',
+    feedbackNotQuite: 'Not quite',
+    feedbackMisstep: 'Cultural misstep',
+    feedbackReaction: (npc: string) => `${npc}'s reaction`,
+    feedbackRightForm: 'The form to use',
+    // The bonus scene has no kind, so its choice keeps a plain outcome label.
+    choiceOutcome: { excellent: 'Excellent', good: 'Good choice', neutral: 'Neutral', bad: 'Cultural misstep' },
+    youSaid: 'You Said',
+    culturalInsight: 'Cultural Insight',
+    noteFallback: 'A solid choice in this context. Keep it up!',
+    impactLabel: 'Impact',
+    impactShort: {
+      trust: (n: number) => `T: ${n}`,
+      respect: (n: number) => `R: ${n}`,
+      culture: (n: number) => `C: ${n}`,
+    },
+    tonePreviewWarm: (npc: string) => `${npc} will be more open with you in the next scene`,
+    tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
+    seeFinalResult: 'See Final Result',
+    exitScenario: 'Exit scenario',
+    playingAudio: 'Playing audio',
+    listenToChoice: 'Listen to choice',
+    stopAudio: 'Stop audio',
+    listenToPhrase: 'Listen to phrase',
+    // A tone shift on an NPC's line: the learner's past choices changed it.
+    toneShiftWarm: 'Your choices shaped this response',
+    toneShiftCold: 'Your choices echo here',
+    // What [name] in a line becomes when the learner has no name yet.
+    nameFallback: 'friend',
+    relationshipArcTitle: 'How the relationship evolved',
+    toneLabel: { warm: 'Warm', neutral: 'Neutral', cold: 'Cold' },
+    arcSummary: {
+      warmTurned: 'You turned the relationship around. That takes awareness.',
+      warmSteady: 'Consistent respect kept the connection warm throughout.',
+      coldTurned: 'The relationship cooled as it went on. One early choice can change everything.',
+      coldSteady: 'Distance grew from the first scene. Try again — warmth is learnable.',
+    },
+    finalScore: 'Final Score',
+    finalScoreA11y: (total: number) => `Final score ${total}`,
+    saveScenario: 'Save scenario',
+    unsaveScenario: 'Remove from saved scenarios',
+    shareFallbackTitle: 'a Fasih scenario',
+    shareHiddenMessage: (scenario: string, arabic: string, en: string) =>
+      `I just discovered the secret ending in "${scenario}" on Fasih 🔑\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It`,
+    shareMessage: (score: number, scenario: string, ending: string, arabic: string, en: string) =>
+      `I scored ${score} in "${scenario}" and unlocked "${ending}"\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`,
+    // `pct` is unrounded (see endingPercentages); only called when it is above 0.
+    communityEnding: (pct: number) =>
+      pct < 1 ? 'Fewer than 1% of players reach this ending' : `${Math.round(pct)}% of players reach this ending`,
+    communityEndingSecret: (pct: number) =>
+      pct < 1 ? 'Fewer than 1% of players find this ending — you just did' : `${Math.round(pct)}% of players find this ending — you just did`,
+    shareResult: 'Share your result',
+    shareHiddenEnding: 'Share your hidden ending',
     communityChoice: (pct: number) => `${pct}% of learners made this choice`,
-    secretEndingExists: 'This scenario has a hidden ending. Most players miss it.',
-    secretEndingTeaser: 'There\'s an ending you haven\'t found yet. It unlocks when you make the right choices at every step — play again to find it.',
     practiceThesePhrases: 'Practice These Phrases',
     tryAgain: 'Try Again',
   },
@@ -438,6 +731,17 @@ export const STRINGS = {
     notifications: 'Notifications',
     enabled: 'Enabled',
     disabled: 'Disabled',
+    // The anonymous onboarding aggregate. This copy says what is actually
+    // collected rather than "help us improve your experience", and it says
+    // "from now on" because the toggle CANNOT be retroactive — an anonymous
+    // row cannot be found again to delete. Do not soften either of those.
+    analytics: {
+      title: 'Share anonymous setup answers',
+      body: 'Your mode, role and goals are counted with no name, email or account attached, so we can write scenarios for the people actually using Fasih.',
+      note: 'Turning this off stops future counts. Answers already counted carry no identifier, so they cannot be found or removed.',
+      on: 'Sharing',
+      off: 'Not sharing',
+    },
     displayLanguage: 'Display Language',
     aboutFasih: 'About Fasih',
     version: (v: string) => `v${v}`,
@@ -494,7 +798,6 @@ export const STRINGS = {
       verifying: 'Verifying...',
       verifyEmail: 'Verify Email',
       backToSignUp: '← Back to sign up',
-      fullNamePlaceholder: 'Full name',
       emailPlaceholder: 'Email address',
       passwordPlaceholder: 'Create password',
       // Split so Terms / Privacy render as tappable links inside the sentence.
@@ -529,6 +832,7 @@ export const STRINGS = {
     },
   },
   ui: {
+    back: 'Go back',
     emptyState: {
       title: 'Nothing here yet',
       subtitle: 'Try starting a new activity to see progress',
@@ -542,6 +846,12 @@ export const STRINGS = {
       locked: (name: string) => `Locked: ${name}`,
       completeMore: (count: number, name: string) => `Complete ${count} more scenario${count > 1 ? 's' : ''} to unlock ${name}.`,
       goToScenarios: 'Go to Scenarios',
+    },
+    syncBanner: {
+      message: "Progress couldn't sync.",
+      messageDetail: 'Your data is safe locally.',
+      retryA11y: 'Retry sync',
+      dismissA11y: 'Dismiss sync error',
     },
   },
 };

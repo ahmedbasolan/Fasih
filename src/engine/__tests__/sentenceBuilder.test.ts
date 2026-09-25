@@ -43,28 +43,26 @@ describe('getAvailablePatterns', () => {
     expect(ids).toContain('ana-adj');
   });
 
-  it('completing gym-consultation unlocks abi-verb and b-future but NOT the secret pattern', () => {
-    const ids = getAvailablePatterns([], { 'gym-consultation': scenario('gym-consultation') }, {}).map((p) => p.id);
-    expect(ids).toContain('abi-verb');
-    expect(ids).toContain('b-future');
-    expect(ids).not.toContain('imperative-polite');
+  // No shipped pattern is secret-gated right now, so the gate runs on fixtures.
+  const fixtures = [
+    { ...patternById('ma-verb'), id: 'fx-scenario', unlockedByScenario: 'fx' },
+    { ...patternById('mub-adj'), id: 'fx-secret', unlockedByScenario: 'fx', secretUnlock: true },
+  ];
+
+  it('completing a scenario unlocks its pattern but NOT its secret pattern', () => {
+    const ids = getAvailablePatterns([], { fx: scenario('fx') }, {}, fixtures).map((p) => p.id);
+    expect(ids).toContain('fx-scenario');
+    expect(ids).not.toContain('fx-secret');
   });
 
   it('the secret-unlock pattern appears only after the secret ending is earned', () => {
-    const gated = getAvailablePatterns([], { 'gym-consultation': scenario('gym-consultation') }, {});
-    expect(gated.some((p) => p.id === 'imperative-polite')).toBe(false);
-
-    const unlocked = getAvailablePatterns(
-      [],
-      { 'gym-consultation': scenario('gym-consultation') },
-      { 'gym-consultation': 'secret title' },
-    );
-    expect(unlocked.some((p) => p.id === 'imperative-polite')).toBe(true);
+    const unlocked = getAvailablePatterns([], { fx: scenario('fx') }, { fx: 'secret title' }, fixtures);
+    expect(unlocked.some((p) => p.id === 'fx-secret')).toBe(true);
   });
 
   it('a secret ending without a completed scenario still unlocks the pattern (replay edge)', () => {
-    const ids = getAvailablePatterns([], {}, { 'gym-consultation': 'secret title' }).map((p) => p.id);
-    expect(ids).toContain('imperative-polite');
+    const ids = getAvailablePatterns([], {}, { fx: 'secret title' }, fixtures).map((p) => p.id);
+    expect(ids).toContain('fx-secret');
   });
 });
 
@@ -90,12 +88,6 @@ describe('buildSentence', () => {
     const result = buildSentence(patternById('ma-verb'), { clause: 'a5' }, 'male');
     expect(result.arabic).toBe('ما أدري');
     expect(result.english).toBe("I don't know");
-    expect(result.valid).toBe(true);
-  });
-
-  it('abi-verb with the gym verb assembles أبي أنحف', () => {
-    const result = buildSentence(patternById('abi-verb'), { verb: 'gym-2' }, 'male');
-    expect(result.arabic).toBe('أبي أنحف');
     expect(result.valid).toBe(true);
   });
 
@@ -168,7 +160,7 @@ describe('getWordPool', () => {
 describe('classifySoftSkill & pools', () => {
   it('returns the pattern soft skill', () => {
     expect(classifySoftSkill(patternById('ana-adj'))).toBe('identity');
-    expect(classifySoftSkill(patternById('abi-verb'))).toBe('request');
+    expect(classifySoftSkill(patternById('question-words'))).toBe('question');
     expect(classifySoftSkill(patternById('yalla-verb'))).toBe('action');
   });
 

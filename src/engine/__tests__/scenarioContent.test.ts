@@ -9,23 +9,18 @@
  */
 import {
   getScenarioScripts,
+  getOnboardingScripts,
+  getOnboardingScenarios,
   getAllScenarios,
   isScenarioAvailableFor,
   filterScenariosForLearner,
 } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { darkTheme } from '../../components/design/tokens';
-import type { ScenarioScript, ScenarioScene, ScenarioChoice } from '../../types';
-
-const scripts = getScenarioScripts(darkTheme);
-const scriptEntries = Object.entries(scripts);
-const phraseIds = new Set(PHRASES.map(p => p.id));
-
-const impactOf = (c: ScenarioChoice) =>
-  (c.impact?.trust ?? 0) + (c.impact?.respect ?? 0) + (c.impact?.culture ?? 0);
-
+import { allPhraseIds, relationshipScore } from '../scenarioEngine';
+import { enumerateRuns, routeScriptProblems } from '../scenarioRules';
 /**
- * Impact bands now live in `src/constants/curriculum.ts`, imported here.
+ * Impact bands live in `src/constants/curriculum.ts`.
  *
  * They used to be declared locally, which let this file and the
  * `fasih-scenario-review` checklist disagree about what a "bad" choice costs —
@@ -33,25 +28,31 @@ const impactOf = (c: ScenarioChoice) =>
  * three "bad" choices costing only −2. One home per rule.
  */
 import { TIER_BANDS } from '../../constants/curriculum';
+import type { ScenarioScene, ScenarioChoice } from '../../types';
+
+const scripts = getScenarioScripts(darkTheme);
+const scriptEntries = Object.entries(scripts);
+/** Every script with scenes to check — the scenarios plus the onboarding café, which has no endings. */
+const sceneEntries: [string, { scenes: ScenarioScene[] }][] = [
+  ...scriptEntries,
+  ...Object.entries(getOnboardingScripts()),
+];
+const phraseIds = new Set(PHRASES.map(p => p.id));
+
+const impactOf = (c: ScenarioChoice) =>
+  (c.impact?.trust ?? 0) + (c.impact?.respect ?? 0) + (c.impact?.culture ?? 0);
 
 /**
  * Choices whose impact sits outside its tier band, recorded rather than fixed.
- *
- * Tightening `bad` to −3 (a mistake the learner barely pays for teaches nothing)
- * surfaced three pre-existing choices at −2. Re-scoring them changes how those
- * scenarios play, which is a content decision and not this commit's business.
- * New offenders still fail; this list may only shrink.
+ * New offenders fail; this list may only shrink. Emptied when gym-consultation
+ * and the-checkup — the only offenders — were cut for the MVP.
  */
-const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [
-  'gym-consultation/scene1/d',
-  'gym-consultation/scene4/d',
-  'the-checkup/scene1/d',
-];
+const KNOWN_TIER_BAND_VIOLATIONS: readonly string[] = [];
 
-const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, script: ScenarioScript, id: string) => void) => {
-  for (const [id, script] of scriptEntries) {
+const eachChoice = (fn: (c: ScenarioChoice, s: ScenarioScene, id: string) => void) => {
+  for (const [id, script] of sceneEntries) {
     for (const scene of script.scenes) {
-      for (const choice of scene.choices) fn(choice, scene, script, id);
+      for (const choice of scene.choices) fn(choice, scene, id);
     }
   }
 };
@@ -124,30 +125,32 @@ describe('ending types', () => {
 // ─── Data integrity ──────────────────────────────────────────────────────────
 
 describe('scenario data integrity', () => {
-  it('every phrase in phrasesUnlocked exists in the phrase library', () => {
+  it('every phrase a scenario can grant exists in the phrase library', () => {
     const missing: string[] = [];
     for (const [id, script] of scriptEntries) {
-      for (const pid of script.phrasesUnlocked ?? []) {
+      for (const pid of allPhraseIds(script)) {
         if (!phraseIds.has(pid)) missing.push(`${id} → ${pid}`);
       }
     }
     expect(missing).toEqual([]);
   });
 
-  it('every scenario unlocks at least one phrase', () => {
+  it('every scenario grants at least one core phrase — failure included', () => {
     const empty = scriptEntries
-      .filter(([, s]) => (s.phrasesUnlocked ?? []).length === 0)
+      .filter(([, s]) => s.phrases.core.length === 0)
       .map(([id]) => id);
     expect(empty).toEqual([]);
   });
 
-  it('every primerPhrase resolves and is a subset of phrasesUnlocked (2-3 chips)', () => {
+  it('every primerPhrase resolves and is a core phrase (2-3 chips)', () => {
     const broken: string[] = [];
     for (const [id, script] of scriptEntries) {
-      const unlocked = script.phrasesUnlocked ?? [];
+      // Core only: a primer promises a phrase the learner will earn this run,
+      // whichever ending they reach.
+      const core = script.phrases.core;
       for (const pid of script.primerPhrases ?? []) {
         if (!phraseIds.has(pid)) broken.push(`${id} primer → ${pid} not in library`);
-        if (!unlocked.includes(pid)) broken.push(`${id} primer → ${pid} not in phrasesUnlocked`);
+        if (!core.includes(pid)) broken.push(`${id} primer → ${pid} not in phrases.core`);
       }
       const n = (script.primerPhrases ?? []).length;
       if (n > 0 && (n < 2 || n > 3)) broken.push(`${id} has ${n} primer phrases (want 2-3)`);
@@ -157,14 +160,14 @@ describe('scenario data integrity', () => {
 
   it('every playable scenario has a primer (hear now → earn later)', () => {
     const missing = scriptEntries
-      .filter(([, s]) => !s.id.startsWith('onboarding') && (s.primerPhrases ?? []).length === 0)
+      .filter(([, s]) => (s.primerPhrases ?? []).length === 0)
       .map(([id]) => id);
     expect(missing).toEqual([]);
   });
 
   it('every choice.next points at a real scene in the same script', () => {
     const broken: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const ids = new Set(script.scenes.map(s => s.id));
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -177,7 +180,7 @@ describe('scenario data integrity', () => {
 
   it('every requiredFlag is actually set by some earlier choice in the same script', () => {
     const orphans: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const settable = new Set(script.scenes.flatMap(s => s.choices.map(c => c.flag).filter(Boolean)));
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -201,6 +204,23 @@ describe('scenario data integrity', () => {
       }
     }
     expect(orphans).toEqual([]);
+  });
+
+  // The onboarding entry is rendered nowhere today, which is how its numbers
+  // drifted: 4 decisions, 2 endings and '5+' phrases, against a script with two
+  // decisions, no endings at all and one phrase.
+  it('the onboarding catalog entry matches the script it describes', () => {
+    const meta = getOnboardingScenarios(darkTheme)[0];
+    const mismatches: string[] = [];
+    for (const [id, script] of Object.entries(getOnboardingScripts())) {
+      const decisions = script.scenes.filter(sc => sc.choices.length > 0).length;
+      if (meta.decisions !== decisions) mismatches.push(`${id}: catalog says ${meta.decisions} decisions, script has ${decisions}`);
+      if (meta.endings !== 0) mismatches.push(`${id}: catalog says ${meta.endings} endings, the onboarding script has none`);
+      if (meta.phrases !== String(script.phrases.core.length)) {
+        mismatches.push(`${id}: catalog says "${meta.phrases}" phrases, script grants ${script.phrases.core.length}`);
+      }
+    }
+    expect(mismatches).toEqual([]);
   });
 
   it('catalog metadata matches the real ending count', () => {
@@ -237,27 +257,31 @@ describe('gender-restricted scenarios', () => {
   });
 
   it('filterScenariosForLearner drops exactly the restricted entries', () => {
-    const restricted = catalog.filter(s => s.requiresGender);
-    expect(restricted.length).toBeGreaterThan(0); // guards the rule from silently lapsing
-    expect(filterScenariosForLearner(catalog, undefined)).toHaveLength(catalog.length - restricted.length);
-    expect(filterScenariosForLearner(catalog, 'female').map(s => s.id)).toEqual(
-      expect.arrayContaining(restricted.filter(s => s.requiresGender === 'female').map(s => s.id)),
-    );
+    // Fixture list: no MVP scenario is gender-restricted, but the gate must keep working.
+    const list = [
+      { id: 'open' },
+      { id: 'women-only', requiresGender: 'female' as const },
+      { id: 'men-only', requiresGender: 'male' as const },
+    ];
+    expect(filterScenariosForLearner(list, undefined).map(s => s.id)).toEqual(['open']);
+    expect(filterScenariosForLearner(list, 'female').map(s => s.id)).toEqual(['open', 'women-only']);
+    expect(filterScenariosForLearner(list, 'male').map(s => s.id)).toEqual(['open', 'men-only']);
   });
 
-  // Café Connection stages a one-on-one encounter with an unrelated Emirati woman
-  // ending in a personal number exchange. It is written for a female learner and
-  // must not be served to a male one.
-  it('cafe-friends is restricted to female learners', () => {
-    expect(catalog.find(s => s.id === 'cafe-friends')?.requiresGender).toBe('female');
+  // MVP rule (spec 2026-09-14 §2.8): the same six scenarios for every learner.
+  it('no MVP scenario is gender-restricted', () => {
+    expect(catalog.filter(s => s.requiresGender).map(s => s.id)).toEqual([]);
   });
 
-  it('a gender-restricted script does not also carry arabicFeminine variants', () => {
-    // Both mechanisms solving the same problem in one script means one of them
-    // is dead code and the two will drift apart.
+  // Both mechanisms solving the same problem in one script means one of them is
+  // dead code and the two will drift apart.
+  const genderContradictions = (
+    list: { id: string; requiresGender?: 'male' | 'female' }[],
+    byId: Record<string, { scenes: { id: string; choices: { id: string; arabicFeminine?: string }[] }[] }>,
+  ): string[] => {
     const contradictions: string[] = [];
-    for (const meta of catalog.filter(s => s.requiresGender)) {
-      const script = scripts[meta.id];
+    for (const meta of list.filter(s => s.requiresGender)) {
+      const script = byId[meta.id];
       if (!script) continue;
       for (const scene of script.scenes) {
         for (const choice of scene.choices) {
@@ -265,7 +289,18 @@ describe('gender-restricted scenarios', () => {
         }
       }
     }
-    expect(contradictions).toEqual([]);
+    return contradictions;
+  };
+
+  it('a gender-restricted script does not also carry arabicFeminine variants', () => {
+    expect(genderContradictions(catalog, scripts)).toEqual([]);
+  });
+
+  // With nothing in the MVP catalog restricted, the check above runs an empty
+  // loop and would pass even if broken. This keeps it proving something.
+  it('the contradiction check catches a restricted script that has feminine variants', () => {
+    const fixture = { scenes: [{ id: 's1', choices: [{ id: 'a' }, { id: 'b', arabicFeminine: 'x' }] }] };
+    expect(genderContradictions([{ id: 'fx', requiresGender: 'female' }], { fx: fixture })).toEqual(['fx/s1/b']);
   });
 });
 
@@ -281,7 +316,7 @@ describe('language hygiene', () => {
       const stripped = value.replace(/\[name\]/g, '').replace(/HIIT/g, '');
       if (/[A-Za-z]/.test(stripped)) offenders.push(`${label}: ${value}`);
     };
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       for (const scene of script.scenes) {
         check(`${id}/${scene.id} scene`, scene.arabic);
         for (const tone of ['warm', 'neutral', 'cold'] as const) {
@@ -292,6 +327,8 @@ describe('language hygiene', () => {
           check(`${id}/${scene.id}/${choice.id} fem`, choice.arabicFeminine);
         }
       }
+    }
+    for (const [id, script] of scriptEntries) {
       for (const ending of script.endings) check(`${id} ending "${ending.title}"`, ending.arabic);
     }
     expect(offenders).toEqual([]);
@@ -299,7 +336,7 @@ describe('language hygiene', () => {
 
   it('no stray double-quote artefacts in romanisation', () => {
     const offenders: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if (c.roman.includes('"')) offenders.push(`${id}/${s.id}/${c.id}: ${c.roman}`);
     });
     expect(offenders).toEqual([]);
@@ -307,7 +344,7 @@ describe('language hygiene', () => {
 
   it('every choice carries an explicit impact', () => {
     const missing: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if (!c.impact) missing.push(`${id}/${s.id}/${c.id}`);
     });
     expect(missing).toEqual([]);
@@ -320,7 +357,7 @@ describe('scoring discipline', () => {
   /** Choice keys currently outside their tier band. */
   const bandOffenders = (): string[] => {
     const out: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       const band = TIER_BANDS[c.outcome];
       const total = impactOf(c);
       if (total < band.min || total > band.max) out.push(`${id}/${s.id}/${c.id}`);
@@ -341,7 +378,7 @@ describe('scoring discipline', () => {
 
   it('no "good" or "excellent" choice has a negative total', () => {
     const offenders: string[] = [];
-    eachChoice((c, s, _script, id) => {
+    eachChoice((c, s, id) => {
       if ((c.outcome === 'good' || c.outcome === 'excellent') && impactOf(c) < 0) {
         offenders.push(`${id}/${s.id}/${c.id}`);
       }
@@ -351,7 +388,7 @@ describe('scoring discipline', () => {
 
   it('every scenario has at least one divergent choice (meters move opposite ways)', () => {
     const flat: string[] = [];
-    for (const [id, script] of scriptEntries) {
+    for (const [id, script] of sceneEntries) {
       const hasDivergence = script.scenes.some(s =>
         s.choices.some(c => {
           const v = [c.impact?.trust ?? 0, c.impact?.respect ?? 0, c.impact?.culture ?? 0];
@@ -364,112 +401,61 @@ describe('scoring discipline', () => {
   });
 });
 
-// ─── Score-path table (every ending must be reachable) ───────────────────────
-
-type Path = { total: number; flags: Set<string>; excellents: number; goods: number; bads: number; steps: number };
-
-/** Walk every route through a script, honouring branches and flag-gated choices. */
-function enumeratePaths(script: ScenarioScript): Path[] {
-  const byId = new Map(script.scenes.map(s => [s.id, s]));
-  const order = script.scenes.map(s => s.id);
-  const out: Path[] = [];
-
-  const walk = (sceneId: string | null, path: Path, depth: number) => {
-    if (!sceneId || depth > 24 || out.length > 60000) {
-      out.push(path);
-      return;
-    }
-    const scene = byId.get(sceneId);
-    if (!scene) {
-      out.push(path);
-      return;
-    }
-    const visible = scene.choices.filter(c => !c.requiredFlag || path.flags.has(c.requiredFlag));
-    if (visible.length === 0) {
-      out.push(path);
-      return;
-    }
-    for (const choice of visible) {
-      const flags = new Set(path.flags);
-      if (choice.flag) flags.add(choice.flag);
-      const next: Path = {
-        total: path.total + impactOf(choice),
-        flags,
-        excellents: path.excellents + (choice.outcome === 'excellent' ? 1 : 0),
-        goods: path.goods + (choice.outcome === 'good' ? 1 : 0),
-        bads: path.bads + (choice.outcome === 'bad' ? 1 : 0),
-        steps: path.steps + 1,
-      };
-      const idx = order.indexOf(sceneId);
-      const linear: string | null = order[idx + 1] ?? null;
-      let target: string | null = choice.next ?? linear;
-      // Bonus scenes are gated by the secret ending in ScenarioPlayer, not by
-      // linear progression — only continue into one when the secret is earned.
-      if (target && byId.get(target)?.bonus) {
-        const secret = script.endings.find(e => e.secret);
-        const earned =
-          !!secret &&
-          (secret.requiredFlags ?? []).every(f => next.flags.has(f)) &&
-          next.total >= secret.min;
-        if (!earned) target = null;
-      }
-      walk(target, next, depth + 1);
-    }
-  };
-
-  const first = script.scenes.find(s => !s.bonus);
-  walk(first?.id ?? null, { total: 0, flags: new Set(), excellents: 0, goods: 0, bads: 0, steps: 0 }, 0);
-  return out;
-}
-
-/** Mirrors evaluateEnding, resolving a path to the ending title it earns. */
-function endingFor(script: ScenarioScript, path: Path): string {
-  for (const e of script.endings.filter(x => x.secret)) {
-    if ((e.requiredFlags ?? []).every(f => path.flags.has(f)) && path.total >= e.min) return e.title;
-  }
-  const standard = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min);
-  return (standard.find(e => path.total >= e.min) ?? standard[standard.length - 1]).title;
-}
+// ─── Score paths ─────────────────────────────────────────────────────────────
+// Runs come from the real engine (scenarioRules.enumerateRuns), so fork routing,
+// route endings and bonus-scene skipping match the shipped player exactly.
 
 describe('score paths', () => {
   const table = scriptEntries.map(([id, script]) => {
-    const paths = enumeratePaths(script);
-    return { id, script, paths, reached: new Set(paths.map(p => endingFor(script, p))) };
+    const runs = enumerateRuns(script);
+    return { id, script, runs, reached: new Set(runs.map(r => r.ending.id)) };
   });
-
-  it.each(table)('$id — every ending is reachable by some play-through', ({ script, reached }) => {
-    const unreachable = script.endings.map(e => e.title).filter(t => !reached.has(t));
-    expect(unreachable).toEqual([]);
-  });
-
-  it.each(table)('$id — the top ending does not require a flawless run', ({ script, paths }) => {
-    const top = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min)[0];
-    const imperfect = paths.filter(p => p.excellents < p.steps && endingFor(script, p) === top.title);
-    expect(imperfect.length).toBeGreaterThan(0);
-  });
-
-  // One bad moment in an otherwise strong run must not tank the learner. Runs
-  // that were bad AND passive (bad + coasting on neutrals) legitimately can.
-  it.each(table)('$id — one mistake in an otherwise good run does not reach the worst ending', ({ script, paths }) => {
-    const standard = [...script.endings].filter(e => !e.secret).sort((a, b) => b.min - a.min);
-    const worst = standard[standard.length - 1];
-    const oneMistakeOtherwiseStrong = paths.filter(
-      p => p.bads === 1 && p.goods + p.excellents === p.steps - 1 && endingFor(script, p) === worst.title,
-    );
-    expect(oneMistakeOtherwiseStrong).toHaveLength(0);
-  });
-
+  // Reachability and one-misstep rules live in routeScriptProblems (below).
   it.each(table.filter(t => t.script.endings.some(e => e.secret)))(
     '$id — the secret ending is strictly harder than the best standard ending',
-    ({ script, paths }) => {
+    ({ script, runs }) => {
       const secret = script.endings.find(e => e.secret)!;
-      const secretPaths = paths.filter(p => endingFor(script, p) === secret.title);
-      expect(secretPaths.length).toBeGreaterThan(0);
+      expect(runs.some(r => r.ending.id === secret.id)).toBe(true);
       // Holding the flags alone must not be enough.
-      const flaggedButPoor = paths.filter(
-        p => (secret.requiredFlags ?? []).every(f => p.flags.has(f)) && p.total < secret.min,
+      const flaggedButPoor = runs.filter(
+        r => (secret.requiredFlags ?? []).every(f => r.state.flags.has(f)) && relationshipScore(r.state) < secret.min,
       );
       expect(flaggedButPoor.length).toBeGreaterThan(0);
     },
   );
+});
+
+// ─── Route scripts (spec 2026-09-14 §4) ──────────────────────────────────────
+
+describe('route scripts', () => {
+  it('every scenario follows every route-script rule', () => {
+    const problems = scriptEntries
+      .flatMap(([id, script]) => routeScriptProblems(script, phraseIds).map(p => `${id} — ${p}`));
+    expect(problems).toEqual([]);
+  });
+
+  it('every script has unique, non-empty ending ids', () => {
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      const ids = script.endings.map(e => e.id);
+      if (ids.some(x => !x.trim())) offenders.push(`${id}: empty ending id`);
+      if (new Set(ids).size !== ids.length) offenders.push(`${id}: duplicate ending ids`);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  // Rule 11. "Only 8% of users discover this" was invented. Rarity claims need
+  // real data, and real data lives in community stats, never in authored copy.
+  it('no ending text makes a percentage or rarity claim', () => {
+    const claim = /%|\brare\b|\bfew (players|people|learners)\b|\bmost (players|people|learners)\b/i;
+    const offenders: string[] = [];
+    for (const [id, script] of scriptEntries) {
+      for (const e of script.endings) {
+        for (const text of [e.title, e.en, e.desc, e.hint ?? '', ...(e.culturalJourney ?? [])]) {
+          if (claim.test(text)) offenders.push(`${id}/${e.id}: ${text.slice(0, 60)}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });

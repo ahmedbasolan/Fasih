@@ -4,9 +4,14 @@ import {
   mergeJournal,
   mergeMilestones,
   mergeIds,
-  type ScenarioRun,
+  mergePatternProgress,
+  mergeSecretEndings,
+  mergeEndingsFound,
+  mergeRunCounts,
+  mergeScenarioHistory,
 } from '../syncMerge';
-import type { PhraseReviewData, JournalEntry, LearningMilestone } from '../../types';
+import { MAX_RUNS_RECORDED } from '../scenarioHistory';
+import type { PhraseReviewData, JournalEntry, LearningMilestone, PatternProgress, ScenarioCompletion, ScenarioRunRecord } from '../../types';
 
 const card = (phraseId: string, lastReviewed: string, extra: Partial<PhraseReviewData> = {}): PhraseReviewData => ({
   phraseId,
@@ -54,7 +59,7 @@ describe('mergeReviews', () => {
 });
 
 describe('mergeCompletions', () => {
-  const run = (date: string, endingType = 'success'): ScenarioRun => ({ endingType, date });
+  const run = (date: string, endingType = 'success'): ScenarioCompletion => ({ endingType, date });
 
   it('keeps the earlier completion date as the true first completion', () => {
     const local = { s1: run('2026-09-05T10:00:00.000Z') };
@@ -117,5 +122,107 @@ describe('mergeMilestones', () => {
 describe('mergeIds', () => {
   it('unions without duplicates and keeps local order first', () => {
     expect(mergeIds(['a', 'b'], ['b', 'c'])).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('mergePatternProgress', () => {
+  const progress = (correctBuilds: number, lastBuilt?: string): PatternProgress => ({
+    correctBuilds,
+    ...(lastBuilt ? { lastBuilt } : {}),
+  });
+
+  it('keeps patterns practised only locally', () => {
+    const merged = mergePatternProgress({ p1: progress(2) }, {});
+    expect(merged.p1).toEqual(progress(2));
+  });
+
+  it('keeps patterns practised only in the cloud — the reinstall case', () => {
+    const merged = mergePatternProgress({}, { p1: progress(3) });
+    expect(merged.p1).toEqual(progress(3));
+  });
+
+  it('keeps the higher correctBuilds when both sides have progress — never regresses', () => {
+    expect(mergePatternProgress({ p1: progress(1) }, { p1: progress(3) }).p1.correctBuilds).toBe(3);
+    expect(mergePatternProgress({ p1: progress(3) }, { p1: progress(1) }).p1.correctBuilds).toBe(3);
+  });
+
+  it('does not mutate its inputs', () => {
+    const local = { p1: progress(1) };
+    mergePatternProgress(local, { p1: progress(5) });
+    expect(local.p1.correctBuilds).toBe(1);
+  });
+});
+
+describe('mergeSecretEndings', () => {
+  it('is a union — a secret earned on either device is kept', () => {
+    const merged = mergeSecretEndings({ a: 'The Diplomat' }, { b: 'The Local' });
+    expect(merged).toEqual({ a: 'The Diplomat', b: 'The Local' });
+  });
+
+  it('a secret earned locally is never lost to an empty cloud', () => {
+    expect(mergeSecretEndings({ a: 'The Diplomat' }, {})).toEqual({ a: 'The Diplomat' });
+  });
+
+  it('local wins on a same-scenario conflict', () => {
+    const merged = mergeSecretEndings({ a: 'Local Title' }, { a: 'Cloud Title' });
+    expect(merged.a).toBe('Local Title');
+  });
+});
+
+describe('mergeEndingsFound', () => {
+  it('unions ending ids per scenario — an ending found on either device stays found', () => {
+    const merged = mergeEndingsFound({ a: ['x', 'y'], b: ['z'] }, { a: ['y', 'w'], c: ['v'] });
+    expect(merged).toEqual({ a: ['x', 'y', 'w'], b: ['z'], c: ['v'] });
+  });
+
+  it('an empty cloud never erases local finds', () => {
+    expect(mergeEndingsFound({ a: ['x'] }, {})).toEqual({ a: ['x'] });
+  });
+});
+
+describe('mergeRunCounts', () => {
+  // Counts can't be summed safely — both sides may already include the same
+  // runs from before they diverged. The larger count never under-reports.
+  it('keeps the higher run count per scenario', () => {
+    expect(mergeRunCounts({ a: 3, b: 1 }, { a: 2, b: 4, c: 1 })).toEqual({ a: 3, b: 4, c: 1 });
+  });
+});
+
+describe('mergeScenarioHistory', () => {
+  const run = (endingId: string, on: string, endingType: ScenarioRunRecord['endingType'] = 'success'): ScenarioRunRecord =>
+    ({ endingId, endingType, on });
+
+  it('keeps the shared runs once and adds each device\'s own runs, in date order', () => {
+    const shared = [run('x', '2026-09-01'), run('y', '2026-09-02')];
+    const local = { a: [...shared, run('z', '2026-09-04')] };
+    const cloud = { a: [...shared, run('w', '2026-09-03')] };
+    expect(mergeScenarioHistory(local, cloud).a).toEqual([
+      run('x', '2026-09-01'), run('y', '2026-09-02'), run('w', '2026-09-03'), run('z', '2026-09-04'),
+    ]);
+  });
+
+  it('keeps a genuinely repeated run: the same ending twice on one day on one device', () => {
+    const twice = [run('x', '2026-09-01'), run('x', '2026-09-01')];
+    expect(mergeScenarioHistory({ a: twice }, { a: [run('x', '2026-09-01')] }).a).toEqual(twice);
+  });
+
+  it('an empty cloud never erases local history, and a cloud-only scenario comes through', () => {
+    const merged = mergeScenarioHistory({ a: [run('x', '2026-09-01')] }, { b: [run('y', '2026-09-02')] });
+    expect(merged).toEqual({ a: [run('x', '2026-09-01')], b: [run('y', '2026-09-02')] });
+  });
+
+  it('keeps the earliest runs when the union passes the cap — run 1 and run 2 are what replay is measured on', () => {
+    const local = { a: Array.from({ length: MAX_RUNS_RECORDED }, (_, i) => run(`l${i}`, '2026-09-10')) };
+    const cloud = { a: [run('early', '2026-09-01')] };
+    const merged = mergeScenarioHistory(local, cloud).a;
+    expect(merged).toHaveLength(MAX_RUNS_RECORDED);
+    expect(merged[0]).toEqual(run('early', '2026-09-01'));
+  });
+
+  it('drops a malformed cloud record instead of throwing — the column is untyped JSONB', () => {
+    const cloud = { a: [null, { endingId: 'x' }, 'junk', run('y', '2026-09-02')] } as unknown as Record<string, ScenarioRunRecord[]>;
+    expect(mergeScenarioHistory({ a: [run('x', '2026-09-01')] }, cloud).a).toEqual([
+      run('x', '2026-09-01'), run('y', '2026-09-02'),
+    ]);
   });
 });

@@ -8,6 +8,7 @@
  */
 
 import * as Sentry from '@sentry/react-native';
+import { isNetworkError } from '../engine/errorReporting';
 
 // ─── Client ──────────────────────────────────────────────────────────────────
 
@@ -183,4 +184,36 @@ export function captureError(message: string, context?: Record<string, unknown>)
   } catch {
     // Swallow — same reasoning as captureException
   }
+}
+
+/**
+ * Report a failure from a service call in `lib/`, unless it is just the device
+ * being offline.
+ *
+ * Before this, `captureException` had exactly ONE caller — `ErrorBoundary` —
+ * so Sentry saw React render errors and nothing else. A failed purchase, a
+ * failed restore or a failed account deletion returned its message to the UI
+ * and vanished. A purchase flow broken for every user looked identical to
+ * nobody wanting to buy.
+ *
+ * Connectivity is filtered out rather than reported. This app's users are
+ * commuting workers in the UAE, so "could not reach the server" is an ordinary
+ * event, not a defect; reporting it would bury real faults under normal mobile
+ * connectivity on a free Sentry tier. `isNetworkError` fails open, so anything
+ * it cannot classify still reaches Sentry.
+ *
+ * Only for genuinely unexpected failures. Deliberate fallbacks — "RevenueCat
+ * not configured", a cancelled purchase, cancelling a notification that was
+ * never scheduled — must NOT come through here. Each of those sites carries a
+ * comment saying so, because the tempting mistake is to wire every catch block
+ * up and call it coverage.
+ */
+export function reportServiceError(
+  error: unknown,
+  operation: string,
+  context?: Record<string, unknown>,
+): void {
+  if (isNetworkError(error)) return;
+  const err = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+  captureException(err, { operation, ...context });
 }

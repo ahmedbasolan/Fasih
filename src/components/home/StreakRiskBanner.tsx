@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
-import { Flame } from 'lucide-react-native';
+import { Flame } from '../icons';
 import { useTheme, FONT_HEADING_SEMI, FONT_LATIN, FONT_LATIN_SEMI } from '../../theme';
 import { STRINGS } from '../../constants/strings';
 
@@ -44,7 +44,7 @@ export function StreakRiskBanner({ streakDays, freezesLeft, onPracticeNow, onUse
     },
     title: {
       fontFamily: FONT_HEADING_SEMI,
-      fontSize: 13,
+      fontSize: 14,
       color: C.TEXT,
     },
     sub: {

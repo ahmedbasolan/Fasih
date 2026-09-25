@@ -76,8 +76,10 @@ So every length gate uses `countMorphemes` from
 
 ## What the gates measure, and why each one exists
 
-- **turns** — computed as the actual playthrough length, not `scenes.length`.
-  `social_taxi_ride` declares seven scenes but branches, so a learner plays five.
+- **Run length is not a level gate.** Every scenario makes `DECISIONS_PER_RUN`
+  decisions at every level (spec 2026-09-14 Q10), checked by `routeScriptProblems`.
+  Levels differ on the gates below. The old per-level `turns` range went when the
+  last pre-route script was rewritten.
 - **phrasesUnlocked** — vocabulary load per scenario.
 - **meanMorphemes** — typical utterance complexity.
 - **morphemeCeiling** — the outlier guard. A scenario can have a gentle average and
@@ -129,3 +131,16 @@ feature at all. `cafe-friends` is the only scenario that passes every gate.
 second axis the single level scale cannot express, and it explains why the scenario
 reads as harder than its measurements suggest. Worth solving properly rather than by
 padding it with dialect words.
+
+### Update 2026-09-14
+
+MVP cut `the-checkup`, `gym-consultation`, `hotel-guest` and `cafe-friends`
+(spec `docs/superpowers/specs/2026-09-14-butterfly-engine-mvp-design.md`). What
+remains is `KNOWN_LEVEL_VIOLATIONS` in `languageContent.test.ts` — counted there, not
+here — and every scenario on it is being rewritten under that spec. The register-vs-dialect axis above still matters: The Meeting will hit it.
+
+### Update 2026-09-15
+
+`coffee-invitation` is rewritten as a route script and now sits inside Beginner, so its
+entries have left `KNOWN_LEVEL_VIOLATIONS`. By the end of the day the other four had
+followed (Taxi, Elevator, Eid; The Meeting is new), and the list is empty.

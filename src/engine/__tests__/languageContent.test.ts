@@ -16,8 +16,9 @@
  * also asserted to be exactly right — fixing a violation without removing it
  * from its list fails too, so the lists cannot rot into permanent excuses.
  */
-import { getScenarioScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
+import { getScenarioScripts, getOnboardingScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
+import { STRINGS } from '../../constants/strings';
 import { darkTheme } from '../../components/design/tokens';
 import {
   LEVEL_SPECS,
@@ -38,9 +39,11 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
+import { phrasesEarned } from '../scenarioEngine';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
+const onboardingScripts = getOnboardingScripts();
 const catalog = [...getAllScenarios(darkTheme), ...getOnboardingScenarios(darkTheme)];
 
 // ─── Collecting learner-facing Arabic ────────────────────────────────────────
@@ -67,7 +70,7 @@ function learnerFacingLines(): Line[] {
 
   for (const p of PHRASES) add(`phrase:${p.id}`, p.arabic);
 
-  for (const [id, script] of Object.entries(scripts)) {
+  for (const [id, script] of [...Object.entries(scripts), ...Object.entries(onboardingScripts)]) {
     for (const scene of script.scenes) {
       add(`${id}/${scene.id}/npc`, scene.arabic);
       if (scene.charDialogue) {
@@ -75,13 +78,49 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/npc-neutral`, scene.charDialogue.neutral.arabic);
         add(`${id}/${scene.id}/npc-cold`, scene.charDialogue.cold.arabic);
       }
+      // What a female learner hears instead — same rules, or they are a back door.
+      if (scene.femaleLearner) {
+        add(`${id}/${scene.id}/npc-f`, scene.femaleLearner.arabic);
+        const toned = scene.femaleLearner.charDialogue;
+        if (toned) {
+          add(`${id}/${scene.id}/npc-f-warm`, toned.warm.arabic);
+          add(`${id}/${scene.id}/npc-f-neutral`, toned.neutral.arabic);
+          add(`${id}/${scene.id}/npc-f-cold`, toned.cold.arabic);
+        }
+      }
       for (const c of scene.choices) {
         add(`${id}/${scene.id}/${c.id}`, c.arabic);
         add(`${id}/${scene.id}/${c.id}-fem`, c.arabicFeminine);
       }
     }
+  }
+  for (const [id, script] of Object.entries(scripts)) {
     for (const e of script.endings) add(`${id}/ending:${e.type}`, e.arabic);
   }
+
+  // UI Arabic from STRINGS.
+  //
+  // This was a hole. The collector covered phrases.ts and scenarios.ts, so
+  // Arabic written into strings.ts — the onboarding greeting, the gender
+  // examples, the first-phrase screen — was subject to no MSA check and no
+  // tashkeel check at all. Moving Arabic out of a component and into STRINGS
+  // satisfied the strings rule while quietly leaving the language rules behind.
+  //
+  // Walked generically rather than by naming keys, so a new Arabic string
+  // cannot be added anywhere in STRINGS without being checked. Functions are
+  // called with a placeholder to reach the Arabic in template literals.
+  const walkStrings = (node: unknown, path: string) => {
+    if (typeof node === 'string') { add(`strings:${path}`, node); return; }
+    if (typeof node === 'function') {
+      try { walkStrings((node as (...a: unknown[]) => unknown)('X'), path); } catch { /* not a 1-arg formatter */ }
+      return;
+    }
+    if (Array.isArray(node)) { node.forEach((v, i) => walkStrings(v, `${path}[${i}]`)); return; }
+    if (node && typeof node === 'object') {
+      for (const [k, v] of Object.entries(node)) walkStrings(v, `${path}.${k}`);
+    }
+  };
+  walkStrings(STRINGS, '');
 
   return out;
 }
@@ -98,46 +137,13 @@ function choiceCards(scriptId: string): string[] {
     .filter(a => countArabicWords(a) > 0);
 }
 
-/**
- * Turns a learner actually plays, as a [shortest, longest] pair.
- *
- * Not `scenes.length`. `social_taxi_ride` declares seven scenes but branches, so
- * any single playthrough visits five — counting scenes would have marked it two
- * turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending.
- */
-function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const script = scripts[scriptId];
-  const scenes = script.scenes;
-  const byId = new Map(scenes.map(s => [s.id, s]));
-  const lengths: number[] = [];
-
-  const walk = (sceneId: string | null, n: number, flags: Set<string>, depth: number) => {
-    const scene = sceneId ? byId.get(sceneId) : undefined;
-    if (!scene || depth > 25) { lengths.push(n); return; }
-    const visible = scene.choices.filter(c => !c.requiredFlag || flags.has(c.requiredFlag));
-    if (!visible.length) { lengths.push(n); return; }
-    const idx = scenes.findIndex(s => s.id === sceneId);
-    const counted = scene.bonus ? n : n + 1;
-    for (const c of visible) {
-      const next = new Set(flags);
-      if (c.flag) next.add(c.flag);
-      walk(c.next !== undefined ? c.next : (scenes[idx + 1]?.id ?? null), counted, next, depth + 1);
-    }
-  };
-
-  walk(scenes[0]?.id ?? null, 0, new Set(), 0);
-  return { min: Math.min(...lengths), max: Math.max(...lengths) };
-}
-
 /** Catalog entries that have a script and are not exempt from level gates. */
-function gatedScenarios(): Array<{ id: string; scriptId: string; level: DifficultyLevel }> {
-  const out: Array<{ id: string; scriptId: string; level: DifficultyLevel }> = [];
+function gatedScenarios(): { id: string; scriptId: string; level: DifficultyLevel }[] {
+  const out: { id: string; scriptId: string; level: DifficultyLevel }[] = [];
   for (const meta of catalog) {
     if (LEVEL_EXEMPT_SCENARIOS.includes(meta.id)) continue;
-    const scriptId = scripts[meta.id] ? meta.id : `${meta.id}-career`;
-    if (!scripts[scriptId]) continue; // comingSoon scenarios have no script yet
-    out.push({ id: meta.id, scriptId, level: meta.level });
+    if (!scripts[meta.id]) continue; // comingSoon scenarios have no script yet
+    out.push({ id: meta.id, scriptId: meta.id, level: meta.level });
   }
   return out;
 }
@@ -147,47 +153,22 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
 /**
  * Scenarios currently outside the band their declared level claims.
  *
- * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `the-checkup` and
- * `gym-consultation` are carrying content well above their labels, and
- * `coffee-invitation` / `eid-greeting` sit just over the A1 mean once clitics
- * are counted.
+ * Each entry is `scenarioId:gate`. Empty since 2026-09-15: the 2026-09-03 audit's
+ * worst offenders (the-checkup, gym-consultation) were cut for the MVP, and the
+ * six MVP scenarios were rewritten as route scripts inside their bands.
  *
- * Fixing one means either re-levelling the scenario or editing its content —
- * both content decisions, deliberately not made by this commit.
+ * Any new entry is a content decision — re-level the scenario or edit its cards —
+ * and should be rare enough to explain in the commit that adds it.
  */
-const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'coffee-invitation:meanMorphemes',
-  'coffee-invitation:morphemeCeiling',
-  'eid-greeting:meanMorphemes',
-  'eid-greeting:morphemeCeiling',
-  'first-morning:maxClauses',
-  'gym-consultation:maxClauses',
-  'gym-consultation:meanMorphemes',
-  'gym-consultation:morphemeCeiling',
-  'gym-consultation:phrasesUnlocked',
-  'hotel-guest:phrasesUnlocked',
-  'hotel-guest:turns',
-  'social_elevator:phrasesUnlocked',
-  'social_elevator:turns',
-  'social_taxi_ride:phrasesUnlocked',
-  'social_taxi_ride:turns',
-  'the-checkup:maxClauses',
-  'the-checkup:meanMorphemes',
-  'the-checkup:morphemeCeiling',
-];
+const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [];
 
 /**
  * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
  *
- * `hotel-guest` is the one case, and it is informative rather than sloppy: its
- * difficulty is formal REGISTER (طال عمرك, honorifics, dignitary protocol), not
- * dialect grammar. That is a real second axis the single level scale cannot
- * express, and it is why the scenario reads as harder than its measurements
- * suggest. Closing this means adding Gulf grammar to its cards — a content
- * decision, deliberately not made by this commit.
+ * Empty since hotel-guest — the one case, whose difficulty was formal register
+ * rather than dialect grammar — was cut for the MVP.
  */
-const KNOWN_DIALECT_GAPS: readonly string[] = ['hotel-guest'];
+const KNOWN_DIALECT_GAPS: readonly string[] = [];
 
 /**
  * DIALECT_FEATURES entries whose citation does not actually satisfy
@@ -225,7 +206,6 @@ describe('curriculum spec is internally consistent', () => {
     const inverted: string[] = [];
     for (const spec of Object.values(LEVEL_SPECS)) {
       const ranges = {
-        turns: spec.turns,
         phrasesUnlocked: spec.phrasesUnlocked,
         meanMorphemes: spec.meanMorphemes,
       };
@@ -291,6 +271,23 @@ describe('curriculum spec is internally consistent', () => {
   });
 });
 
+describe('the collector reaches every Arabic source', () => {
+  // A collector that silently returns nothing passes every check below it. This
+  // is the same guard the blocklist has, applied to coverage instead of regex.
+  it('collects Arabic from phrases, scenarios AND strings', () => {
+    const where = LINES.map(l => l.where);
+    expect(where.some(w => w.startsWith('phrase:'))).toBe(true);
+    expect(where.some(w => w.includes('/ending:'))).toBe(true);
+    expect(where.some(w => w.startsWith('strings:'))).toBe(true);
+  });
+
+  it('reaches Arabic returned by a STRINGS formatter, not just literals', () => {
+    // `greetingFull` builds its Arabic in a template literal, so it is only
+    // visible if the walker calls the function.
+    expect(LINES.some(l => l.where === 'strings:.onboarding.greetingFull')).toBe(true);
+  });
+});
+
 describe('no MSA in learner-facing Arabic', () => {
   it('contains no blocklisted MSA form', () => {
     const found = LINES.flatMap(l =>
@@ -339,14 +336,14 @@ describe('level gates', () => {
       const cards = choiceCards(scriptId);
       if (!cards.length) continue;
 
-      const turns = turnsPerPlaythrough(scriptId);
-      const phrases = (script.phrasesUnlocked ?? []).length;
+      // What one run can grant: core plus the largest single ending's set.
+      const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));
 
-      // Both the shortest and longest playthrough must sit inside the band.
-      if (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns)) out.push(`${id}:turns`);
+      // Run length is not a level gate: every scenario makes DECISIONS_PER_RUN
+      // decisions at every level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
       if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
       if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
       if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
@@ -369,7 +366,7 @@ describe('level gates', () => {
   });
 
   it('exempt scenarios are genuinely exempt and genuinely exist', () => {
-    const allIds = new Set([...Object.keys(scripts), ...catalog.map(c => c.id)]);
+    const allIds = new Set([...Object.keys(scripts), ...Object.keys(onboardingScripts), ...catalog.map(c => c.id)]);
     const missing = LEVEL_EXEMPT_SCENARIOS.filter(id => !allIds.has(id));
     expect(missing).toEqual([]);
   });
@@ -420,8 +417,20 @@ describe('provenance', () => {
    *
    * The assertion is one-directional on purpose: it may fall, never rise. Lower
    * it when you source a batch.
+   *
+   * 136 → 103 on 2026-09-14 by DELETION, not sourcing: the 33 phrases of the four
+   * scenarios cut for the MVP were all unsourced. Nothing got more verified.
+   * 103 → 102, also by deletion: fm-s1-7 duplicated core-4 (الله يعافيك) with a
+   * wrong gloss, and the First Morning rewrite no longer granted it.
+   * 102 → 106 on 2026-09-15, the one deliberate RISE: The Meeting's mt-1..mt-4
+   * (الحمد لله على السلامة, خلني أفكر فيها, أحاول, أساعد). The أبي / خلني
+   * patterns could not return without them (spec §2.9), and Ahmed chose that over
+   * deferring the patterns. They go to the Emirati reviewer with the scenario.
+   * 106 → 101 on 2026-09-25 by actual sourcing, the first such drop: g3 شلونك and
+   * e6 وايد (Wiktionary Gulf Arabic), e1 زين and w2 ما شاء الله (Ramsa 2026), and
+   * h3 البيت بيتك (Ntelitheos & Idrissi 2017 — base word only, as its locator says).
    */
-  const MAX_UNSOURCED = 131;
+  const MAX_UNSOURCED = 101;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 
