@@ -25,6 +25,7 @@ whole directory — starting with `001_initial_schema.sql`.
 | `010_secure_stat_rpcs.sql` | Restricts `increment_choice_stat`/`increment_ending_stat` to `authenticated` | Yes — before `007` the RPCs are open to anon |
 | `011_schema_v4.sql` | Adds `endings_found` + `scenario_runs` columns (replay loop) | Yes — **before** shipping app code at schema v4, or every sync upsert fails |
 | `012_schema_v5.sql` | Adds `scenario_history` column (dated runs for replay metrics) | Yes — **before** shipping app code at schema v5, or every sync upsert fails |
+| `013_align_live_schema.sql` | Closes the drift between this folder and a database built from older copies of it | Yes — last, after everything above |
 
 ## Two files are numbered 006
 
@@ -33,7 +34,7 @@ independently. They do not conflict — one adds columns, the other adds a
 function — and either order works. The collision is recorded here rather than
 renumbered, because renaming a file that has already been applied to production
 makes the history harder to reconcile, not easier. **The next migration is
-`013`.**
+`014`.**
 
 ## The file headers used to be misnumbered
 
@@ -62,7 +63,8 @@ Run whichever of `004_schema_v2.sql`, `005_account_deletion.sql` and
 `006_schema_v3.sql` you have not already applied — each adds columns or
 functions and takes defaults for existing rows. Then `006_auth_check.sql`,
 then `007_enable_rls.sql`, then `010_secure_stat_rpcs.sql`, then
-`009_onboarding_selections.sql`, then `011_schema_v4.sql`, then `012_schema_v5.sql`.
+`009_onboarding_selections.sql`, then `011_schema_v4.sql`, then `012_schema_v5.sql`,
+then `013_align_live_schema.sql`.
 
 ## RLS posture
 
@@ -152,6 +154,30 @@ version listed here. This tracks the shape of the synced `user_data` row only �
 | 3 | Added `pattern_progress` + `secret_endings_earned` columns |
 | 4 | Added `endings_found` + `scenario_runs` columns (`011_schema_v4.sql`) |
 | 5 | Added `scenario_history` column (`012_schema_v5.sql`) |
+
+`013_align_live_schema.sql` does not bump the version: it changes no synced
+field, only functions, policies, grants and constraints.
+
+## Applied state, audited 2026-09-25
+
+The live project had been built across several sessions from older copies of
+these files, and had drifted far from them: it was still at **schema v1**, with
+`004`, `006_schema_v3`, `006_auth_check`, `009`, `011` and `012` unapplied and
+no performance indexes. Every sync from app code at v5 would have failed on a
+missing column.
+
+All of those were applied, then `013` for the differences that re-running the
+old files could not fix — functions created before `001` declared them
+`SECURITY DEFINER`, read policies living under an older name, `TRUNCATE` never
+revoked from the client roles, and `user_data` missing `created_at` and both
+CHECK constraints.
+
+Verified after: all 20 synced columns present; RLS proven with a real row (anon
+read empty, anon insert rejected `42501`, anon update changed nothing); the
+stat RPCs closed to `anon`; `onboarding_selections` unreadable; every function
+carrying `search_path`; no `DELETE`/`TRUNCATE` left with `anon` or
+`authenticated`; all four metric queries running. Re-verify with the checks in
+`supabase/queries/` rather than trusting this paragraph — it ages.
 
 ## Metrics queries
 
