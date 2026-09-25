@@ -56,12 +56,14 @@ export function MarginRail({ marks, orientation = 'vertical' }: Props) {
             ? { top: 0, bottom: 0, width: StyleSheet.hairlineWidth }
             : { left: 0, right: 0, height: StyleSheet.hairlineWidth }),
         },
+        // Hollow: the border draws the mark, the fill is the page showing
+        // through — BORDER2 at zero alpha rather than a bare 'transparent'.
         empty: {
           width: UNIT,
           height: UNIT,
           borderWidth: 1,
           borderColor: C.BORDER2,
-          backgroundColor: 'transparent',
+          backgroundColor: `${C.BORDER2}00`,
         },
         // A strong choice is larger and solid; a weak one is hollow. Shape
         // carries the reading, colour reinforces it.
@@ -76,7 +78,7 @@ export function MarginRail({ marks, orientation = 'vertical' }: Props) {
           height: UNIT * 1.75,
           borderWidth: 1.5,
           borderColor: C.ERROR,
-          backgroundColor: 'transparent',
+          backgroundColor: `${C.ERROR}00`,
         },
       }),
     [C, vertical],
