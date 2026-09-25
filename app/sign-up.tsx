@@ -77,12 +77,21 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
   };
+
+  /**
+   * Clerk reports a second attempt on an already-verified email as an error,
+   * but the sign-up itself is still finishable. Treating it as failure is what
+   * strands an account whose email went through: the code is accepted, nothing
+   * moves, and every retry says "already been verified".
+   */
+  const isAlreadyVerified = (err: { code?: string; message?: string; longMessage?: string } | null | undefined) =>
+    err?.code === 'verification_already_verified' ||
+    /already been verified/i.test(err?.longMessage ?? err?.message ?? '');
 
   const handleVerify = async () => {
     if (verificationCode.length < 6) return;
@@ -90,16 +99,25 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
-
-      if (signUp.status === 'complete') {
-        const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
-        await setActive({ session: signUp.createdSessionId! });
-        router.replace('/onboarding');
+      if (verifyErr && !isAlreadyVerified(verifyErr)) {
+        setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed));
+        return;
       }
+
+      // Always try to finish. The previous version only finalized when
+      // signUp.status had already flipped to 'complete' by the time this line
+      // ran, and did nothing at all otherwise — no session, no navigation, no
+      // error on screen. If something really is still missing, finalize() says
+      // so and the message is shown.
+      const { error: finalErr } = await signUp.finalize();
+      if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
+
+      const sessionId = signUp.createdSessionId;
+      if (!sessionId) { setError(STRINGS.auth.signUp.verificationFailed); return; }
+
+      await setActive({ session: sessionId });
+      router.replace('/onboarding');
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
@@ -349,7 +367,7 @@ export default function SignUpScreen() {
                     hitSlop={12}
                     style={{
                       width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                      backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                      backgroundColor: agreed ? C.JADE_ACCENT : `${C.JADE_ACCENT}00`,
                       borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                       alignItems: 'center', justifyContent: 'center',
                     }}
@@ -401,6 +419,12 @@ export default function SignUpScreen() {
                   </Text>
                 </Pressable>
               </MotiView>
+
+              {/* Where Clerk mounts its Smart CAPTCHA on web. Without an
+                  element with this id it warns and falls back to the invisible
+                  widget, which stricter bot protection can refuse outright.
+                  Inert on native. */}
+              <View nativeID="clerk-captcha" />
 
               {__DEV__ && (
                 <Pressable
