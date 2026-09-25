@@ -566,7 +566,6 @@ export function PhraseLibrary() {
           data={filtered}
           keyExtractor={(p: Phrase) => p.id}
           renderItem={renderItem}
-          {...({ estimatedItemSize: 80 } as any)}
           extraData={[expanded, playingId, savedPhrases]}
           ListHeaderComponent={() => (
             <View style={{ marginBottom: 4 }}>
