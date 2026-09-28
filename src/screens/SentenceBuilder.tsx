@@ -6,7 +6,7 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft, Blocks, Check, ChevronRight, Lock, RotateCcw,
-  Sparkles, Trophy, X,
+  Sparkles, Trophy, Volume2, X,
 } from '../components/icons';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -18,6 +18,7 @@ import {
   FONT_LATIN, FONT_LATIN_SEMI,
 } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { haptic } from '../lib/haptics';
 import { STRINGS } from '../constants/strings';
 import { GRAMMAR_PATTERNS, resolveReferencedPhrase } from '../constants/grammar';
@@ -75,6 +76,7 @@ function pickDistractors(pattern: GrammarPattern, targetTokens: string[]): strin
 export function SentenceBuilder({ initialPatternId, onExit }: Props) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
+  const { play, playingId, hasClip } = usePhraseAudio();
 
   const user = useAppStore((s) => s.user);
   const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
@@ -370,6 +372,21 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     },
     exampleRoman: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, fontStyle: 'italic' as const, textAlign: 'right' as const, marginBottom: 2 },
     exampleEnglish: { fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT2, marginBottom: 8 },
+    playRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+    },
+    playChip: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    playChipText: { fontFamily: FONT_HEADING_SEMI, fontSize: 11 },
     // Swap
     frameCard: {
       borderRadius: 20,
@@ -711,6 +728,30 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
               const phrase = resolveReferencedPhrase(ex.phraseId);
               if (!phrase) return null;
               const tokens = phrase.arabic.split(' ').filter((w) => w.trim().length > 0);
+              const canPlay = hasClip(ex.phraseId);
+              const isPlayingExample = playingId === ex.phraseId;
+              // Real library phrase (unlocked, per spec §2.10) — unlike the swap/build
+              // steps' assembled sentences, this one has a real id and can have a
+              // recorded clip. The card is only tappable when hasClip says a clip
+              // exists; with today's empty manifest it renders as a plain, non-
+              // interactive card and returns to a "tap to hear" card on its own once
+              // a clip lands, with no further code change.
+              const cardContent = (
+                <>
+                  <View style={styles.exampleRow}>
+                    {tokens.map((t, i) => (
+                      <Text
+                        key={`${t}-${i}`}
+                        style={sharedTokens.includes(t) ? styles.exampleTokenShared : styles.exampleToken}
+                      >
+                        {t}
+                      </Text>
+                    ))}
+                  </View>
+                  <Text style={styles.exampleRoman}>{phrase.roman}</Text>
+                  <Text style={styles.exampleEnglish}>{phrase.english}</Text>
+                </>
+              );
               return (
                 <MotiView
                   key={ex.phraseId}
@@ -718,25 +759,36 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                   animate={{ opacity: 1, translateY: 0 }}
                   transition={{ type: 'timing', duration: 320, delay: 120 + idx * 80 }}
                 >
-                  <View
-                    style={[styles.exampleCard, {
-                      backgroundColor: C.SURFACE,
-                      borderColor: C.BORDER,
-                    }]}
-                  >
-                    <View style={styles.exampleRow}>
-                      {tokens.map((t, i) => (
-                        <Text
-                          key={`${t}-${i}`}
-                          style={sharedTokens.includes(t) ? styles.exampleTokenShared : styles.exampleToken}
-                        >
-                          {t}
-                        </Text>
-                      ))}
+                  {canPlay ? (
+                    <Pressable
+                      onPress={() => play(ex.phraseId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${phrase.english} — ${STRINGS.sentenceBuilder.tapToHear}`}
+                      style={[styles.exampleCard, {
+                        backgroundColor: C.SURFACE,
+                        borderColor: isPlayingExample ? C.JADE_ACCENT : C.BORDER,
+                      }]}
+                    >
+                      {cardContent}
+                      <View style={styles.playRow}>
+                        <View style={[styles.playChip, { backgroundColor: isPlayingExample ? C.JADE_DIM : C.CARD_BG, borderColor: isPlayingExample ? C.JADE_ACCENT_BORDER : C.BORDER }]}>
+                          <Volume2 size={13} strokeWidth={1.5} color={isPlayingExample ? C.JADE : C.PRIMARY} />
+                          <Text style={[styles.playChipText, { color: isPlayingExample ? C.JADE : C.PRIMARY }]}>
+                            {isPlayingExample ? STRINGS.scenarios.playing : STRINGS.sentenceBuilder.tapToHear}
+                          </Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ) : (
+                    <View
+                      style={[styles.exampleCard, {
+                        backgroundColor: C.SURFACE,
+                        borderColor: C.BORDER,
+                      }]}
+                    >
+                      {cardContent}
                     </View>
-                    <Text style={styles.exampleRoman}>{phrase.roman}</Text>
-                    <Text style={styles.exampleEnglish}>{phrase.english}</Text>
-                  </View>
+                  )}
                 </MotiView>
               );
             })}
