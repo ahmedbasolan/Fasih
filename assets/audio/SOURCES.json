@@ -1,0 +1,3 @@
+{
+  "_comment": "One entry per .m4a in this directory. The generator refuses to run without one, for the same reason Phrase.source is required: a clip presented as Emirati speech when it is a synthesiser reading MSA is the audio equivalent of an invented citation, and nobody downstream can hear the difference. kind is 'human' or 'synthetic'. voice is a speaker name, or vendor:voice-id for synthetic."
+}

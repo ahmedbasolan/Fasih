@@ -66,6 +66,18 @@ card teaches *gahwa*. See the comment in
 [`useArabicTTS.ts`](../../src/hooks/useArabicTTS.ts). This is recorded as a
 violation, not a feature.
 
+### Audio provenance
+
+Every clip states its origin in `assets/audio/SOURCES.json`; the manifest
+generator refuses to run without it. `kind: "synthetic"` is a permitted and
+honest value — presenting a synthesised clip as a human Emirati recording is
+not, and is the same failure as an invented page number (§0).
+
+Before buying any batch of generated audio, run
+[`audio-diagnostic.md`](audio-diagnostic.md). Arabic TTS is MSA-trained
+regardless of locale tag, and a generator that says *qahwa* reintroduces the
+exact violation the audio work exists to remove.
+
 ---
 
 ## 2. What variety we teach
