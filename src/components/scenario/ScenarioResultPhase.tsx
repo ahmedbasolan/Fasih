@@ -20,12 +20,14 @@ import type { Phrase, ScenarioChoice, ScenarioEnding } from '../../types';
 // ─── PhraseCard ───────────────────────────────────────────────────────────────
 // Only used on the result screen, so it lives here alongside its only consumer.
 
-function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
+function PhraseCard({ arabic, roman, english, onSpeak, isPlaying, canPlay }: {
   arabic: string;
   roman: string;
   english: string;
   onSpeak: () => void;
   isPlaying: boolean;
+  /** False when no recording exists for this phrase — the speak button is not rendered. */
+  canPlay: boolean;
 }) {
   const { C } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
@@ -41,18 +43,20 @@ function PhraseCard({ arabic, roman, english, onSpeak, isPlaying }: {
     <View style={styles.card}>
       <View style={styles.top}>
         <Text style={styles.arabic}>{arabic}</Text>
-        <Pressable
-          hitSlop={8}
-          onPress={onSpeak}
-          accessibilityRole="button"
-          accessibilityLabel={isPlaying ? STRINGS.scenarios.stopAudio : STRINGS.scenarios.listenToPhrase}
-          style={[styles.speak, {
-            backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE,
-            borderColor: isPlaying ? C.JADE_BORDER : C.BORDER,
-          }]}
-        >
-          <Volume2 size={13} color={isPlaying ? C.JADE : C.TEXT3} />
-        </Pressable>
+        {canPlay && (
+          <Pressable
+            hitSlop={8}
+            onPress={onSpeak}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? STRINGS.scenarios.stopAudio : STRINGS.scenarios.listenToPhrase}
+            style={[styles.speak, {
+              backgroundColor: isPlaying ? C.JADE_DIM : C.SURFACE,
+              borderColor: isPlaying ? C.JADE_BORDER : C.BORDER,
+            }]}
+          >
+            <Volume2 size={13} color={isPlaying ? C.JADE : C.TEXT3} />
+          </Pressable>
+        )}
       </View>
       <Text style={styles.roman}>{roman}</Text>
       <Text style={styles.english}>{english}</Text>
@@ -92,9 +96,10 @@ interface Props {
    * once at render never saw them.
    */
   communityEndingPct: number;
-  isSpeaking: boolean;
   playingPhraseId: string | null;
-  onPlayEndPhrase: (phraseId: string, arabic: string) => void;
+  /** False when no recording exists for a phrase — its speak button is not rendered. */
+  hasClip: (phraseId: string) => boolean;
+  onPlayEndPhrase: (phraseId: string) => void;
   onRestart: () => void;
   onExit: () => void;
   onShare: (title: string, arabic: string, en: string, isSecret: boolean, total: number) => void;
@@ -106,7 +111,7 @@ export function ScenarioResultPhase({
   ending, impact, total, scenarioId,
   railMarks, unlockedPhrases, progress, destinationLabel, moments, hints, arabicForUser,
   toneHistory, culturalJourneyNotes,
-  communityEndingPct: communityPct, isSpeaking, playingPhraseId,
+  communityEndingPct: communityPct, playingPhraseId, hasClip,
   onPlayEndPhrase, onRestart, onExit, onShare,
 }: Props) {
   const { C, G } = useTheme();
@@ -415,8 +420,9 @@ export function ScenarioResultPhase({
                     arabic={p.arabic}
                     roman={p.roman}
                     english={p.english}
-                    onSpeak={() => onPlayEndPhrase(p.id, p.arabic)}
-                    isPlaying={playingPhraseId === p.id && isSpeaking}
+                    onSpeak={() => onPlayEndPhrase(p.id)}
+                    isPlaying={playingPhraseId === p.id}
+                    canPlay={hasClip(p.id)}
                   />
                 ))}
               </View>

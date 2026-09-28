@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
@@ -11,14 +11,13 @@ import {
 import { useTheme } from '../hooks/useTheme';
 import { useTypewriter } from '../components/design/hooks';
 import { ThresholdSeam } from '../components/design/ThresholdSeam';
-import { WaveBars } from '../components/features/WaveBars';
 import { RippleEffect } from '../components/ui/RippleEffect';
 import { EmptyState } from '../components/ui/EmptyState';
 import { GhostLetters, Screen } from '../components/ui';
 import { getScenarioScript, getScenarioById, isScenarioAvailableFor } from '../constants/scenarios';
 import { PHRASE_BY_ID } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
-import { useArabicTTS } from '../hooks/useArabicTTS';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { STRINGS } from '../constants/strings';
 import {
   getTone, resolveNextScene, evaluateEnding, isChoiceVisible, phrasesEarned, allPhraseIds,
@@ -144,8 +143,6 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
     arabic: { fontFamily: FONT_ARABIC, fontSize: 22, color: C.JADE, textAlign: 'right', lineHeight: 32, marginBottom: 6 },
     roman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}80`, fontStyle: 'italic', marginBottom: 4 },
     english: { fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2, lineHeight: 20 },
-    listen: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
-    listenText: { fontFamily: FONT_LATIN, fontSize: 11 },
   }), [C]);
 
   // Tone variant (warm/cold only when authored), in the forms this learner is
@@ -153,7 +150,6 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
   const dialogue = npcLine(scene, tone, gender);
 
   const { displayed } = useTypewriter(translationRevealed ? dialogue.english : '', 28, 50);
-  const { speakAs, isSpeaking: playingAudio } = useArabicTTS();
   const initial = scene.charName.charAt(0).toUpperCase();
 
   // Butterfly effect indicators
@@ -163,11 +159,10 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
   // Runs once per line: the parent keys this component on what picks the line
   // (scene, tone, gender), so a new line remounts it with the reveal reset.
   useEffect(() => {
-    speakAs(dialogue.arabic, scene.charGender);
     const t1 = setTimeout(() => setArabicRevealed(true), 900);
     const t2 = setTimeout(() => setTranslationRevealed(true), 2200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [dialogue.arabic, scene.charGender, speakAs]);
+  }, [dialogue.arabic, scene.charGender]);
 
   return (
     <View style={styles.wrapper}>
@@ -207,9 +202,7 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
               borderColor: tone === 'cold' ? C.BORDER : C.JADE_ACCENT_BORDER,
             }]}>
               {!arabicRevealed ? (
-                <View style={styles.waiting}>
-                  <WaveBars isPlaying={playingAudio} size="md" color={C.JADE_ACCENT} />
-                </View>
+                <View style={styles.waiting} />
               ) : (
                 <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ type: 'timing', duration: 280 }}>
                   <Text style={styles.arabic}>{dialogue.arabic}</Text>
@@ -223,16 +216,6 @@ function DialogueBubble({ scene, tone = 'neutral', gender }: { scene: ScenarioSc
                 </MotiView>
               )}
             </View>
-          </Pressable>
-
-          <Pressable
-            onPress={() => speakAs(dialogue.arabic, scene.charGender)}
-            style={styles.listen}
-          >
-            <WaveBars isPlaying={playingAudio} size="sm" color={playingAudio ? C.JADE2 : C.TEXT3} />
-            <Text style={[styles.listenText, { color: playingAudio ? C.JADE2 : C.TEXT3 }]}>
-              {playingAudio ? STRINGS.scenarios.playing : STRINGS.scenarios.listenVoice(scene.charGender)}
-            </Text>
           </Pressable>
         </View>
       </View>
@@ -272,8 +255,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     choiceArabic: { fontFamily: FONT_ARABIC, fontSize: 18, textAlign: 'right', marginBottom: 3, lineHeight: 26 },
     choiceRoman: { fontFamily: FONT_LATIN, fontSize: 11, color: `${C.JADE}70`, fontStyle: 'italic', marginBottom: 5 },
     choiceEnglish: { fontFamily: FONT_LATIN, fontSize: 14, lineHeight: 20 },
-    choiceListen: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginLeft: 14, marginTop: 2, marginBottom: 14, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1 },
-    choiceListenText: { fontFamily: FONT_LATIN, fontSize: 11 },
   }), [C]);
   // Doherty threshold: keep the player responsive under 400ms.
   // getScenarioScripts() is an arrow function returning a ~1,140-line object
@@ -287,7 +268,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const scriptData = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
 
-  const { speak, isSpeaking } = useArabicTTS();
+  const { play, playingId, hasClip } = usePhraseAudio();
   // Subscribes to the cache itself: the ending stats are fetched once the result
   // phase starts, so the screen has to re-render when they land.
   const communityStatsCache = useAppStore((s) => s.communityStatsCache);
@@ -312,22 +293,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   const advanceScenarioScene = useAppStore((s) => s.advanceScenarioScene);
   const finalizeScenario = useAppStore((s) => s.finalizeScenario);
   const unlockPhrases = useAppStore((s) => s.unlockPhrases);
-  const [playingPhraseId, setPlayingPhraseId] = useState<string | null>(null);
-  const [playingChoiceId, setPlayingChoiceId] = useState<string | null>(null);
-
-  // TTS timer refs for cleanup
-  const choiceTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const phraseTtsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Cleanup timers on unmount (abandonScenario is NOT called here — the OS can
-  // unmount/remount this component during background/foreground cycles, which
-  // would silently destroy mid-game progress. Call it explicitly in onExit instead.)
-  useEffect(() => {
-    return () => {
-      if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
-      if (phraseTtsTimerRef.current) clearTimeout(phraseTtsTimerRef.current);
-    };
-  }, []);
 
   // Bootstrap: initialise the run when the component mounts.
   // A gender-restricted scenario must not start a run even though the render
@@ -361,25 +326,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
   // the moment finalizeScenario() runs.
   const [finalizedMoments, setFinalizedMoments] = useState<ScenarioChoice[]>([]);
 
-  const playChoice = useCallback((choiceId: string, arabic: string) => {
-    if (choiceTtsTimerRef.current) clearTimeout(choiceTtsTimerRef.current);
-    setPlayingChoiceId(choiceId);
-    speak(arabic);
-    choiceTtsTimerRef.current = setTimeout(() => {
-      setPlayingChoiceId(null);
-      choiceTtsTimerRef.current = null;
-    }, 4000);
-  }, [speak]);
-
-  const playEndPhrase = useCallback((phraseId: string, arabic: string) => {
-    if (phraseTtsTimerRef.current) clearTimeout(phraseTtsTimerRef.current);
-    setPlayingPhraseId(phraseId);
-    speak(arabic);
-    phraseTtsTimerRef.current = setTimeout(() => {
-      setPlayingPhraseId(null);
-      phraseTtsTimerRef.current = null;
-    }, 4000);
-  }, [speak]);
+  const playEndPhrase = useCallback((phraseId: string) => play(phraseId), [play]);
 
   // ─── Effects must be declared before any early return (Rules of Hooks) ───────
   // Only schedules the reveal delay — choicesVisible/selectedChoiceId are reset
@@ -776,7 +723,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                     const isSelected = selectedChoiceId === choice.id;
                     const isDimmed = !!selectedChoiceId && !isSelected;
                     const color = feedbackColor(choiceFeedback(scene, choice), choice);
-                    const isChoicePlaying = playingChoiceId === choice.id;
                     const choiceArabic = arabicForUser(choice);
 
                     return (
@@ -822,29 +768,6 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
                               </Text>
                             </View>
                           </RippleEffect>
-
-                          {/* Listen button — only when not yet chosen. Kept as a sibling of
-                              RippleEffect (not nested inside it): both render as a button on
-                              web, and a button inside another button is invalid HTML that
-                              also confuses nested-touchable accessibility on native. */}
-                          {!selectedChoiceId && (
-                            <Pressable
-                              onPress={() => playChoice(choice.id, choiceArabic)}
-                              hitSlop={8}
-                              accessibilityRole="button"
-                              accessibilityLabel={isChoicePlaying ? STRINGS.scenarios.playingAudio : STRINGS.scenarios.listenToChoice}
-                              accessibilityState={{ selected: isChoicePlaying }}
-                              style={[styles.choiceListen, {
-                                backgroundColor: isChoicePlaying ? C.JADE_SURFACE : C.SURFACE,
-                                borderColor: isChoicePlaying ? C.JADE_BORDER : C.BORDER,
-                              }]}
-                            >
-                              <WaveBars isPlaying={isChoicePlaying} size="sm" color={isChoicePlaying ? C.JADE2 : C.TEXT3} />
-                              <Text style={[styles.choiceListenText, { color: isChoicePlaying ? C.JADE2 : C.TEXT3 }]}>
-                                {isChoicePlaying ? STRINGS.scenarios.playing : STRINGS.scenarios.listen}
-                              </Text>
-                            </Pressable>
-                          )}
                         </View>
                       </MotiView>
                     );
@@ -890,8 +813,8 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             toneHistory={toneHistory}
             culturalJourneyNotes={culturalJourneyNotes}
             communityEndingPct={communityStatsCache[`${scenarioId}:${ending.id}`] ?? 0}
-            isSpeaking={isSpeaking}
-            playingPhraseId={playingPhraseId}
+            playingPhraseId={playingId}
+            hasClip={hasClip}
             onPlayEndPhrase={playEndPhrase}
             onRestart={restart}
             onExit={onExit}
