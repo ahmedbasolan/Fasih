@@ -556,7 +556,6 @@ export const STRINGS = {
     retry: 'Retry',
     home: 'Home',
     totalScore: (score: number) => `Total Score: ${score}`,
-    listenVoice: (gender: string) => `Listen to ${gender === 'female' ? 'her' : 'him'}`,
     listenAndRepeat: 'Say the phrase you just chose out loud.',
     outcomeLabelMap: {
       excellent: 'Excellent Connection',
@@ -624,8 +623,6 @@ export const STRINGS = {
     tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
     seeFinalResult: 'See Final Result',
     exitScenario: 'Exit scenario',
-    playingAudio: 'Playing audio',
-    listenToChoice: 'Listen to choice',
     stopAudio: 'Stop audio',
     listenToPhrase: 'Listen to phrase',
     // A tone shift on an NPC's line: the learner's past choices changed it.
