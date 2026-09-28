@@ -58,13 +58,19 @@ English teaching notes, which legitimately quote MSA forms in order to contrast
 them ("أبي is the everyday Khaleeji 'I want', not أريد"). That distinction is
 enforced by the lint's collector, not by judgement.
 
-### Known standing violation: audio
+### Resolved: the audio violation
 
-The TTS layer speaks MSA. `ar-AE` is a locale tag, not a dialect model, and device
-Arabic voices are MSA-trained regardless of region. The app says *qahwa* while the
-card teaches *gahwa*. See the comment in
-[`useArabicTTS.ts`](../../src/hooks/useArabicTTS.ts). This is recorded as a
-violation, not a feature.
+**Closed 2026-09-28.** Device TTS spoke MSA. `ar-AE` is a locale tag, not a dialect
+model, and device Arabic voices are MSA-trained regardless of region — the app said
+*qahwa* while the card taught *gahwa*, and could not produce چ at all.
+
+`expo-speech` and `useArabicTTS.ts` are gone. Audio is now bundled recordings keyed
+by phrase id, and a speaker button renders only where a clip exists. Until clips are
+recorded the app is silent, and **romanisation is the sole pronunciation channel** —
+which is what rule 4 already says it is.
+
+The clips still have to be produced. See [`audio-diagnostic.md`](audio-diagnostic.md)
+before commissioning any, and record what made each one below.
 
 ### Audio provenance
 
