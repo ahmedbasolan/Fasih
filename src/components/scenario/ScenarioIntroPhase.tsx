@@ -81,6 +81,17 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
     .filter((p): p is Phrase => !!p)
     .slice(0, 3);
 
+  // The primer's copy ("Hear these first", "Tap to listen — you'll hear them
+  // in the conversation") is an audio promise, not a text preview — there is
+  // no separate framing for "phrases you'll unlock" without sound. Gating
+  // only the per-chip Volume2 icon left the section visible and every chip
+  // fully interactive (accessibilityRole="button", onPress) while doing
+  // nothing when the manifest has no clip for it — the same "renders but
+  // plays nothing" failure this task exists to avoid, just one level up. Gate
+  // the whole block on whether ANY primer phrase has a clip; it returns in
+  // full the moment real clips land, no further change needed.
+  const primerHasAudio = primerPhrases.some((p) => hasClip(p.id));
+
   // usePhraseAudio owns playingId and clears it itself on finish/error, so no
   // timer ref is needed here — unlike expo-speech, expo-audio has a completion
   // callback.
@@ -114,7 +125,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
         </View>
 
         {/* Primer — listen-only phrase chips */}
-        {primerPhrases.length > 0 && (
+        {primerHasAudio && (
           <View style={styles.primer}>
             <Text style={styles.blockTitle}>{STRINGS.scenarios.primerTitle}</Text>
             <Text style={styles.primerSub}>{STRINGS.scenarios.primerSub}</Text>
