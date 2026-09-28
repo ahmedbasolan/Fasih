@@ -7,7 +7,7 @@ import { FONT_ARABIC, FONT_LATIN, FONT_LATIN_SEMI, FONT_LATIN_MEDIUM, FONT_HEADI
 import { SPACE, RADIUS } from '../../components/design/spacing';
 import { TYPE, ONBOARDING_CHROME_HEIGHT } from '../../components/design/layout';
 import { useTheme } from '../../hooks/useTheme';
-import { useArabicTTS } from '../../hooks/useArabicTTS';
+import { usePhraseAudio } from '../../hooks/usePhraseAudio';
 import { STRINGS } from '../../constants/strings';
 import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
@@ -25,7 +25,7 @@ import type { OnboardingStepProps } from './types';
 export function QuickWinSteps({ screen, next, draft, quickWin, hold }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const { speak } = useArabicTTS();
+  const { play } = usePhraseAudio();
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
   const { mode, name } = draft;
@@ -192,7 +192,9 @@ export function QuickWinSteps({ screen, next, draft, quickWin, hold }: Onboardin
                 onPress={() => {
                   setPhraseRevealed(true);
                   setPhraseEverRevealed(true);
-                  speak(STRINGS.onboarding.firstPhraseArabic);
+                  // STRINGS.onboarding.firstPhraseArabic duplicates phrase g3's
+                  // Arabic. The clip is keyed by id, so the id is what plays.
+                  play('g3');
                 }}
                 style={{
                   marginTop: 20,

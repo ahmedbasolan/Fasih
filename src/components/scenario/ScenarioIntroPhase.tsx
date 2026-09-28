@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MotiView } from 'moti';
 import { ArrowRight, Volume2 } from '../icons';
@@ -8,7 +8,7 @@ import {
 } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
 import { useTheme } from '../../hooks/useTheme';
-import { useArabicTTS } from '../../hooks/useArabicTTS';
+import { usePhraseAudio } from '../../hooks/usePhraseAudio';
 import { Companion } from '../ui/Companion';
 import { STRINGS } from '../../constants/strings';
 import { PHRASE_BY_ID } from '../../constants/phrases';
@@ -30,8 +30,7 @@ interface Props {
 
 export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhrases, decisions, progress, hints, onBegin }: Props) {
   const { C, G } = useTheme();
-  const { speak } = useArabicTTS();
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const { play, playingId, hasClip } = usePhraseAudio();
 
   const styles = useMemo(() => StyleSheet.create({
     column: { alignItems: 'center', gap: 18, paddingTop: 12 },
@@ -82,25 +81,10 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
     .filter((p): p is Phrase => !!p)
     .slice(0, 3);
 
-  // The playing indicator has to clear itself. Setting it without a reset left
-  // the chip lit permanently after the first tap, since expo-speech gives this
-  // component no completion callback. Same timer-ref pattern as PhraseLibrary
-  // and ScenarioPlayer, including the unmount cleanup those learned to need.
-  const primerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => {
-    if (primerTimerRef.current) clearTimeout(primerTimerRef.current);
-  }, []);
-
-  const playPrimer = (phraseId: string, arabic: string) => {
-    if (primerTimerRef.current) clearTimeout(primerTimerRef.current);
-    setPlayingId(phraseId);
-    speak(arabic);
-    primerTimerRef.current = setTimeout(() => {
-      setPlayingId(null);
-      primerTimerRef.current = null;
-    }, 4000);
-  };
+  // usePhraseAudio owns playingId and clears it itself on finish/error, so no
+  // timer ref is needed here — unlike expo-speech, expo-audio has a completion
+  // callback.
+  const playPrimer = (phraseId: string) => play(phraseId);
 
   return (
     <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', duration: 360 }}>
@@ -139,7 +123,7 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
               return (
                 <Pressable
                   key={p.id}
-                  onPress={() => playPrimer(p.id, p.arabic)}
+                  onPress={() => playPrimer(p.id)}
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel={`${p.arabic} — ${p.english}. ${STRINGS.scenarios.primerListen}`}
@@ -148,9 +132,11 @@ export function ScenarioIntroPhase({ scriptData, scenario, endings, unlockedPhra
                     borderColor: isPlaying ? C.JADE_ACCENT_BORDER : C.BORDER,
                   }]}
                 >
-                  <View style={[styles.chipIcon, { backgroundColor: isPlaying ? C.JADE_DIM : C.JADE_ACCENT_DIM }]}>
-                    <Volume2 size={14} color={isPlaying ? C.JADE : C.PRIMARY} />
-                  </View>
+                  {hasClip(p.id) && (
+                    <View style={[styles.chipIcon, { backgroundColor: isPlaying ? C.JADE_DIM : C.JADE_ACCENT_DIM }]}>
+                      <Volume2 size={14} color={isPlaying ? C.JADE : C.PRIMARY} />
+                    </View>
+                  )}
                   <View style={styles.flex}>
                     <Text style={styles.chipArabic}>{p.arabic}</Text>
                     <Text style={styles.chipRoman}>{p.roman}</Text>
