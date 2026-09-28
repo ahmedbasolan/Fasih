@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
+    "audio:manifest": "node scripts/generate-audio-manifest.mjs",
     "test": "jest"
   },
   "dependencies": {
