@@ -43,8 +43,13 @@ export function usePhraseAudio() {
     playerRef.current = player;
     setPlayingId(phraseId);
 
+    // No explicit unsubscribe: `playerRef.current?.remove()` above (on the next
+    // call or on unmount) tears the whole player down, listeners included.
     player.addListener('playbackStatusUpdate', (status) => {
-      if (status.didJustFinish) setPlayingId(null);
+      // A failed load/decode (bad file, unsupported format, corrupt bundle)
+      // never sets didJustFinish, so it needs its own check here — otherwise
+      // the speaker button that lit up for this phraseId never turns off.
+      if (status.didJustFinish || status.error) setPlayingId(null);
     });
 
     if (rate !== 1) player.setPlaybackRate(rate);
