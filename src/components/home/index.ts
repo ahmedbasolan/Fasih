@@ -6,3 +6,4 @@ export { MissionCard } from './MissionCard';
 export { DailyPhrase } from './DailyPhrase';
 export { CommunityBar } from './CommunityBar';
 export { SituationalConfidence } from './SituationalConfidence';
+export { PracticeCard } from './PracticeCard';

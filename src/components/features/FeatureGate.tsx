@@ -23,7 +23,10 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
 
-  if (hasAccess) {
+  // scenariosRequired is the unlock rule, not just the progress display. It
+  // used to be display-only: the gate opened on full access alone, so the
+  // "complete N more" promise was never what actually unlocked it.
+  if (hasAccess || scenariosCompleted >= scenariosRequired) {
     return <>{children}</>;
   }
 

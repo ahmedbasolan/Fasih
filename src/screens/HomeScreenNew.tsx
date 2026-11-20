@@ -18,6 +18,7 @@ import {
   MissionCard,
   DailyPhrase,
   SituationalConfidence,
+  PracticeCard,
 } from '../components/home';
 import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
@@ -31,6 +32,7 @@ interface HomeScreenNewProps {
   userName: string;
   onSettingsPress?: () => void;
   onMissionPress?: (missionId: string) => void;
+  onPracticePress?: () => void;
 }
 
 // Derive week-day status from streak + lastActiveDate
@@ -80,6 +82,7 @@ export function HomeScreenNew({
   userName = 'there',
   onSettingsPress,
   onMissionPress,
+  onPracticePress,
 }: HomeScreenNewProps) {
   const { C, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -93,6 +96,12 @@ export function HomeScreenNew({
   const streakFreezes = useAppStore((s) => s.streakFreezes);
   const dailyXP = useAppStore((s) => s.dailyXP);
   const spendStreakFreeze = useAppStore((s) => s.spendStreakFreeze);
+  const phraseReviews = useAppStore((s) => s.phraseReviews);
+  const getDueReviews = useAppStore((s) => s.getDueReviews);
+  // phraseReviews is the dependency that makes this recount; the getter's
+  // identity never changes (same pattern as PracticeScreen).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
 
   const { speak } = useArabicTTS();
 
@@ -265,6 +274,17 @@ export function HomeScreenNew({
           }}
         />
       </View>
+
+      {/* Practice — the only way into /practice. Shown once there is
+          something learned to practise; the route's own gate handles access. */}
+      {stats.scenariosCompleted.length > 0 && onPracticePress && (
+        <>
+          <Text style={styles.sectionLabel}>{STRINGS.homeSections.review}</Text>
+          <View style={styles.sectionContent}>
+            <PracticeCard dueCount={dueCount} onPress={onPracticePress} />
+          </View>
+        </>
+      )}
 
       {/* Quick Challenge Section */}
       <Text style={styles.sectionLabel}>{STRINGS.homeSections.quickChallenge}</Text>
