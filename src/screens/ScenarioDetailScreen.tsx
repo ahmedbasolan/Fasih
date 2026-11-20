@@ -44,13 +44,11 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
   const scenario = useMemo(() => getScenarioById(scenarioId, C), [scenarioId, C]);
   const script = useMemo(() => getScenarioScript(scenarioId, C), [scenarioId, C]);
   const completedScenarios = useAppStore((s) => s.completedScenarios);
-  const sceneProgress = useAppStore((s) => s.sceneProgress);
   const userGender = useAppStore((s) => s.user?.gender);
   const favoriteScenarios = useAppStore((s) => s.favoriteScenarios);
   const foundEndingIds = useAppStore((s) => s.endingsFound[scenarioId]);
   const toggleFavoriteScenario = useAppStore((s) => s.toggleFavoriteScenario);
   const isCompleted = completedScenarios[scenarioId] !== undefined;
-  const scenesUnlocked = sceneProgress[scenarioId] ?? 0;
   const isSaved = favoriteScenarios.includes(scenarioId);
 
   // Also guards deep links and stale favourites, not just the browse list.
@@ -155,14 +153,12 @@ export function ScenarioDetailScreen({ scenarioId, onBack, onSceneSelect }: Prop
               one destination is a choice that isn't one (Hick's law). */}
           <PrimaryButton
             onPress={() => onSceneSelect(0)}
-            accessibilityLabel={isCompleted
-              ? STRINGS.scenarios.playAgain
-              : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
+            // No "Continue": a run is not saved when the learner leaves it, so
+            // a label promising to resume restarted them at scene 1.
+            accessibilityLabel={isCompleted ? STRINGS.scenarios.playAgain : STRINGS.scenarios.startScenario}
             style={styles.primary}
           >
-            {isCompleted
-              ? STRINGS.scenarios.playAgain
-              : scenesUnlocked > 0 ? STRINGS.scenarios.continueScenario : STRINGS.scenarios.startScenario}
+            {isCompleted ? STRINGS.scenarios.playAgain : STRINGS.scenarios.startScenario}
           </PrimaryButton>
         </SheetPanel>
     </Screen>

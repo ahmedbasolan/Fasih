@@ -20,7 +20,7 @@ import {
   SituationalConfidence,
   PracticeCard,
 } from '../components/home';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, useHasFullAccess, useScenariosCompletedCount, FEATURE_UNLOCK_SCENARIO_COUNT } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
 import { useArabicTTS } from '../hooks/useArabicTTS';
@@ -102,6 +102,13 @@ export function HomeScreenNew({
   // identity never changes (same pattern as PracticeScreen).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
+  const hasFullAccess = useHasFullAccess();
+  const scenariosCompletedCount = useScenariosCompletedCount();
+  // Mirrors the gate in app/practice.tsx, so the card says "locked" before the
+  // tap instead of the tap landing on a lock screen.
+  const practiceLockedRemaining = hasFullAccess
+    ? 0
+    : Math.max(0, FEATURE_UNLOCK_SCENARIO_COUNT - scenariosCompletedCount);
 
   const { speak } = useArabicTTS();
 
@@ -281,7 +288,7 @@ export function HomeScreenNew({
         <>
           <Text style={styles.sectionLabel}>{STRINGS.homeSections.review}</Text>
           <View style={styles.sectionContent}>
-            <PracticeCard dueCount={dueCount} onPress={onPracticePress} />
+            <PracticeCard dueCount={dueCount} lockedRemaining={practiceLockedRemaining} onPress={onPracticePress} />
           </View>
         </>
       )}

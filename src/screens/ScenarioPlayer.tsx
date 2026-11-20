@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { confirmDestructive } from '../lib/confirm';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
+import { TOUCH_MIN } from '../components/design/layout';
 import { MotiView } from 'moti';
 import { X } from '../components/icons';
 import * as Haptics from 'expo-haptics';
@@ -260,7 +264,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     headerTitle: { fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 5 },
     dots: { flexDirection: 'row', gap: 3 },
     dot: { height: 3, borderRadius: 2 },
-    exit: { width: 32, height: 32, borderRadius: 12, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' },
+    exit: { width: TOUCH_MIN, height: TOUCH_MIN, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER, alignItems: 'center', justifyContent: 'center' },
     scrollContent: { paddingHorizontal: SCREEN_MARGIN },
     sceneRow: { flexDirection: 'row' },
     sceneBody: { flex: 1, minWidth: 0 },
@@ -580,6 +584,40 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
     setFinalizedMoments([]);
   }, [scriptData, scenarioId, startScenario]);
 
+  // ─── Leaving ─────────────────────────────────────────────────────────────────
+  // A run in progress is not persisted, so leaving it loses it. Every way out —
+  // the X, Android back, the iOS swipe — goes through usePreventRemove and asks
+  // first. The intro and result phases have nothing to lose and leave directly.
+  const navigation = useNavigation();
+  const midRun = phase === 'scene' || phase === 'choice-result';
+
+  const abandonRun = useCallback(() => {
+    const sceneId = scriptData?.scenes[step]?.id;
+    if (phase !== 'result' && sceneId) trackScenarioAbandoned({ scenarioId, sceneId });
+    useAppStore.getState().abandonScenario();
+  }, [phase, scriptData, step, scenarioId]);
+
+  usePreventRemove(midRun, ({ data }) => {
+    const L = STRINGS.scenarios.leave;
+    confirmDestructive({
+      title: L.title,
+      message: L.message,
+      confirmText: L.confirm,
+      cancelText: L.stay,
+      onConfirm: () => {
+        abandonRun();
+        navigation.dispatch(data.action);
+      },
+    });
+  });
+
+  const handleExitPress = useCallback(() => {
+    // Mid-run, onExit's navigation is intercepted above, which confirms and
+    // abandons. Otherwise there is nothing to confirm.
+    if (!midRun) abandonRun();
+    onExit();
+  }, [midRun, abandonRun, onExit]);
+
   // ─── Early return after all hooks ────────────────────────────────────────────
   // A gender-restricted scenario reached by deep link or a stale favourite is
   // treated as absent rather than played to the wrong learner. `scenario ?? {}`
@@ -696,13 +734,7 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
             </View>
           </View>
           <Pressable
-            onPress={() => {
-              if (phase !== 'result' && scene) {
-                trackScenarioAbandoned({ scenarioId, sceneId: scene.id });
-              }
-              useAppStore.getState().abandonScenario();
-              onExit();
-            }}
+            onPress={handleExitPress}
             accessibilityRole="button"
             accessibilityLabel={STRINGS.scenarios.exitScenario}
             hitSlop={8}
