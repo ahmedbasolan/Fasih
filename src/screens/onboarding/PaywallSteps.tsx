@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import Svg, { Path } from 'react-native-svg';
-import { Shield, TrendingUp, Globe, ArrowRight, Check, Star, Lock, Mic, BookOpen, Layers, Trophy, Zap, Flame, Sparkles } from '../../components/icons';
+import { TrendingUp, Globe, ArrowRight, Check, Star, Lock, Layers, Trophy, Zap, Flame, Sparkles } from '../../components/icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../components/design/tokens';
 import { ANGLE_135 } from '../../components/design/gradients';
 import { SPACE } from '../../components/design/spacing';
@@ -12,6 +12,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { STRINGS } from '../../constants/strings';
 import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import type { OnboardingStepProps } from './types';
+import { getPlanPrices, type PlanPrices } from '../../lib/purchases';
 
 /**
  * Steps 9-11: the trial timeline, the feature grid, and plan selection.
@@ -23,6 +24,18 @@ import type { OnboardingStepProps } from './types';
 export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: OnboardingStepProps) {
   const { C, G } = useTheme();
   const { plan, setPlan } = draft;
+  const [prices, setPrices] = useState<PlanPrices | null>(null);
+  useEffect(() => {
+    let live = true;
+    void getPlanPrices().then((p) => { if (live) setPrices(p); });
+    return () => { live = false; };
+  }, []);
+  const monthlyPrice = prices?.monthly?.priceString ?? null;
+  const yearlyPrice = prices?.yearly?.priceString ?? null;
+  const yearlyPerMonth = prices?.yearly?.perMonthString ?? null;
+  const selectedThenPrice = plan === 'yearly'
+    ? (yearlyPrice ? STRINGS.onboarding.billingYearly(yearlyPrice) : null)
+    : (monthlyPrice ? `${monthlyPrice}${STRINGS.onboarding.perMonth}` : null);
 
   // The three action zones repeat the same fine print and skip link, so they
   // are defined once rather than inline three times with drifting values.
@@ -30,7 +43,6 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
     () =>
       StyleSheet.create({
         fineprint: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.TEXT3, textAlign: 'center' },
-        fineprintAccent: { ...TYPE.micro, fontFamily: FONT_LATIN, color: C.JADE2, textAlign: 'center' },
         skipRow: { paddingVertical: SPACE.md, alignItems: 'center' },
         skipText: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT2, textDecorationLine: 'underline' },
         skipTextQuiet: { ...TYPE.body, fontFamily: FONT_LATIN, color: C.TEXT3, textDecorationLine: 'underline' },
@@ -128,8 +140,6 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
               {STRINGS.onboarding.features.map(({ label, sub }, i) => {
                 const featureData = [
-                  { Icon: Mic,        gradientColors: [C.JADE,          C.PRIMARY_DARK]       as [string, string] },
-                  { Icon: BookOpen,   gradientColors: [C.CULTURAL_GOLD, C.CULTURAL_GOLD_DARK] as [string, string] },
                   { Icon: Layers,     gradientColors: [C.JADE2,         C.JADE]               as [string, string] },
                   { Icon: Globe,      gradientColors: [C.ERROR,         C.ERROR]              as [string, string] },
                   { Icon: Trophy,     gradientColors: [C.VIOLET,        C.TERTIARY]           as [string, string] },
@@ -156,16 +166,6 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
               })}
             </View>
 
-            <FadeIn delay={800}>
-              <View style={{ borderRadius: 16, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.JADE_DIM, borderWidth: 1, borderColor: C.JADE_BORDER, marginBottom: 16 }}>
-                <Shield size={17} color={C.JADE2} />
-                <View>
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: C.JADE2 }}>{STRINGS.onboarding.satisfactionGuarantee}</Text>
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>{STRINGS.onboarding.refundPolicy}</Text>
-                </View>
-              </View>
-            </FadeIn>
-
           </Screen>
         );
 
@@ -181,9 +181,8 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
                     {STRINGS.onboarding.startFreeTrial}
                   </ShimmerButton>
                   <Text style={styles.fineprint}>
-                    {STRINGS.onboarding.thenPrice(plan === 'yearly' ? 'AED 199/year' : 'AED 39/month')}
+                    {selectedThenPrice ? STRINGS.onboarding.thenPrice(selectedThenPrice) : STRINGS.onboarding.cancelAnytime}
                   </Text>
-                  <Text style={styles.fineprintAccent}>{STRINGS.onboarding.refundGuarantee}</Text>
                   <Pressable onPress={skip} accessibilityRole="button" style={styles.skipRow}>
                     <Text style={styles.skipText}>{STRINGS.onboarding.skipUnlock}</Text>
                   </Pressable>
@@ -205,14 +204,16 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
                   onPress={() => setPlan('yearly')}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: plan === 'yearly' }}
-                  accessibilityLabel="Yearly plan, AED 16.6 per month"
+                  accessibilityLabel={STRINGS.onboarding.planA11y(STRINGS.onboarding.yearlyPlan, yearlyPrice)}
                   style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'yearly' ? C.JADE_ACCENT_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'yearly' ? `${C.JADE_ACCENT}70` : C.BORDER }}
                 >
-                  <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
-                    <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG }}>{STRINGS.onboarding.savePct(57)}</Text>
-                    </LinearGradient>
-                  </View>
+                  {prices?.yearlySavePct != null && (
+                    <View style={{ position: 'absolute', top: 16, right: 16, borderRadius: 8, overflow: 'hidden' }}>
+                      <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
+                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 11, color: C.BG }}>{STRINGS.onboarding.savePct(prices.yearlySavePct)}</Text>
+                      </LinearGradient>
+                    </View>
+                  )}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 80 }}>
                     <MotiView
                       animate={{ scale: plan === 'yearly' ? [0.8, 1.2, 1] : 1 }}
@@ -230,11 +231,15 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
                         <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.TEXT }}>{STRINGS.onboarding.yearlyPlan}</Text>
                       </View>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.yearlyBest}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.JADE_ACCENT }}>AED 16.6</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
-                      </View>
-                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{STRINGS.onboarding.billingYearly('AED 199', 'AED 269')}</Text>
+                      {yearlyPerMonth && (
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
+                          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.JADE_ACCENT }}>{yearlyPerMonth}</Text>
+                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        </View>
+                      )}
+                      {yearlyPrice && (
+                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginTop: 2 }}>{STRINGS.onboarding.billingYearly(yearlyPrice)}</Text>
+                      )}
                     </View>
                   </View>
                 </Pressable>
@@ -246,7 +251,7 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
                   onPress={() => setPlan('monthly')}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: plan === 'monthly' }}
-                  accessibilityLabel="Monthly plan, AED 39 per month"
+                  accessibilityLabel={STRINGS.onboarding.planA11y(STRINGS.onboarding.monthlyPlan, monthlyPrice)}
                   style={{ borderRadius: 24, padding: 20, backgroundColor: plan === 'monthly' ? C.VIOLET_DIM : C.SURFACE, borderWidth: 2, borderColor: plan === 'monthly' ? `${C.VIOLET}60` : C.BORDER }}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -260,10 +265,12 @@ export function PaywallSteps({ screen, next, skip, finishWithTrial, draft }: Onb
                     <View>
                       <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 16, color: C.TEXT, marginBottom: 2 }}>{STRINGS.onboarding.monthlyPlan}</Text>
                       <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3, marginBottom: 8 }}>{STRINGS.onboarding.monthlyFlex}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
-                        <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT }}>AED 39</Text>
-                        <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
-                      </View>
+                      {monthlyPrice && (
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
+                          <Text style={{ fontFamily: FONT_LATIN_BOLD, fontSize: 28, color: C.TEXT }}>{monthlyPrice}</Text>
+                          <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT3, paddingBottom: 4 }}>{STRINGS.onboarding.perMonth}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </Pressable>

@@ -209,9 +209,8 @@ export const STRINGS = {
     cancelAnytime: 'Cancel anytime',
     everythingIncluded: 'Everything included',
     oneSubscription: 'One subscription, the full Fasih experience',
-    satisfactionGuarantee: 'Satisfaction Guarantee',
-    refundGuarantee: 'Full refund if you\'re not satisfied',
-    refundPolicy: '7-day money back guarantee',
+    // No refund promise: App Store and Play refunds are decided by Apple and
+    // Google, so 'full refund if you are not satisfied' was not ours to offer.
     seePlans: 'Lock In My Path to Fluency',
     choosePlan: 'Secure your premium access',
     trialCancel: "Don't miss out on premium access · Cancel anytime",
@@ -220,7 +219,8 @@ export const STRINGS = {
     yearlyBest: 'Best for committed learners',
     monthlyPlan: 'Monthly Plan',
     monthlyFlex: 'Maximum flexibility',
-    billingYearly: (yearPrice: string, savings: string) => `Billed ${yearPrice}/year • Saves ${savings}`,
+    billingYearly: (yearPrice: string) => `Billed ${yearPrice}/year`,
+    planA11y: (plan: string, price: string | null) => (price ? `${plan}, ${price}` : plan),
     perMonth: '/month',
     // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
     thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
@@ -253,16 +253,16 @@ export const STRINGS = {
     },
     timeline: [
       { day: 'Day 1', title: 'Unlock Scenarios', desc: 'Get access to all interactive real-world simulations.' },
-      { day: 'Day 2', title: 'Smart Review', desc: 'AI-powered retention to master phrases forever.' },
+      { day: 'Day 2', title: 'Smart Review', desc: 'Spaced review brings phrases back just before you forget them.' },
       { day: 'Day 3', title: 'Habit Formation', desc: 'Receive personalized motivation to keep you going.' },
       { day: 'Day 4', title: 'Trial Ends', desc: 'Continue your journey with full premium benefits.' },
     ],
     // No counts. '500+ expressions', '40+ situations' and '5 industries' were
     // never true — the MVP ships six scenarios — and a count typed here goes
     // stale the moment content changes.
+    // Only what Pro actually adds. 'Voice Practice' was listed and does not
+    // exist; Phrase Library opens for free learners after their two scenarios.
     features: [
-      { label: 'Voice Practice', sub: 'Unlimited sessions' },
-      { label: 'Phrase Library', sub: 'The full library' },
       { label: 'All Scenarios', sub: 'Career and social' },
       { label: 'Cultural Notes', sub: 'Deep context' },
       { label: 'Achievements', sub: 'Badges & levels' },
