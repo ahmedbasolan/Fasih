@@ -163,6 +163,35 @@ export async function getOfferings(): Promise<FasihOfferings> {
   }
 }
 
+/** Store-localised prices for the onboarding plan cards. */
+export interface PlanPrices {
+  monthly: { priceString: string } | null;
+  yearly: { priceString: string; perMonthString: string | null } | null;
+  /** Whole-percent saving of yearly over twelve months, or null if unknown. */
+  yearlySavePct: number | null;
+}
+
+/**
+ * Prices come from the store via RevenueCat, never from code: a hardcoded
+ * 'AED 39' is wrong in every other storefront and stale after any price
+ * change. Returns null when offerings are unavailable (offline, web, no key)
+ * so the caller shows no price rather than an invented one.
+ */
+export async function getPlanPrices(): Promise<PlanPrices | null> {
+  const { monthly, yearly } = await getOfferings();
+  if (!monthly && !yearly) return null;
+  const m = monthly?.product;
+  const y = yearly?.product;
+  const savePct = m && y && m.price > 0
+    ? Math.round((1 - y.price / (m.price * 12)) * 100)
+    : null;
+  return {
+    monthly: m ? { priceString: m.priceString } : null,
+    yearly: y ? { priceString: y.priceString, perMonthString: y.pricePerMonthString ?? null } : null,
+    yearlySavePct: savePct !== null && savePct > 0 ? savePct : null,
+  };
+}
+
 // ─── Purchasing ───────────────────────────────────────────────────────────────
 
 export type Plan = 'monthly' | 'yearly' | 'lifetime';
