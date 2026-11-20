@@ -627,8 +627,6 @@ export const STRINGS = {
     },
     tonePreviewWarm: (npc: string) => `${npc} will be more open with you in the next scene`,
     tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
-    seeFinalResult: 'See Final Result',
-    exitScenario: 'Exit scenario',
     // Leaving mid-run throws the run away: activeScenarioState is not persisted.
     leave: {
       title: 'Leave this scenario?',
@@ -636,6 +634,8 @@ export const STRINGS = {
       confirm: 'Leave',
       stay: 'Keep playing',
     },
+    seeFinalResult: 'See Final Result',
+    exitScenario: 'Exit scenario',
     playingAudio: 'Playing audio',
     listenToChoice: 'Listen to choice',
     stopAudio: 'Stop audio',

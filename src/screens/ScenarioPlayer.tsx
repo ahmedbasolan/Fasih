@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Share, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, Share, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { confirmDestructive } from '../lib/confirm';
 import { SPACE, SCREEN_MARGIN, RADIUS } from '../components/design/spacing';
 import { TOUCH_MIN } from '../components/design/layout';
 import { MotiView } from 'moti';
@@ -598,19 +599,16 @@ export function ScenarioPlayer({ scenarioId, onExit, onComplete, onJournalEntry 
 
   usePreventRemove(midRun, ({ data }) => {
     const L = STRINGS.scenarios.leave;
-    const leave = () => {
-      abandonRun();
-      navigation.dispatch(data.action);
-    };
-    // Alert with buttons is a no-op on react-native-web.
-    if (Platform.OS === 'web') {
-      if (window.confirm(`${L.title}\n\n${L.message}`)) leave();
-      return;
-    }
-    Alert.alert(L.title, L.message, [
-      { text: L.stay, style: 'cancel' },
-      { text: L.confirm, style: 'destructive', onPress: leave },
-    ]);
+    confirmDestructive({
+      title: L.title,
+      message: L.message,
+      confirmText: L.confirm,
+      cancelText: L.stay,
+      onConfirm: () => {
+        abandonRun();
+        navigation.dispatch(data.action);
+      },
+    });
   });
 
   const handleExitPress = useCallback(() => {
