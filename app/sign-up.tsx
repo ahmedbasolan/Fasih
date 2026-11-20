@@ -5,6 +5,7 @@ import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
 import { Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
+import { useAppStore } from '../src/store/useAppStore';
 import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
@@ -42,6 +43,10 @@ export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const { signUp } = useSignUp();
   const { setActive } = useClerk();
+  const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  // Onboarding replaces itself with this screen, so there may be nothing to
+  // go back to. Without the check, the back chevron is a dead button.
+  const canGoBack = router.canGoBack();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -115,7 +120,9 @@ export default function SignUpScreen() {
       if (!sessionId) { setError(STRINGS.auth.signUp.verificationFailed); return; }
 
       await setActive({ session: sessionId });
-      router.replace('/onboarding');
+      // The root gate decides: onboarded learners (who reach sign-up from the
+      // end of onboarding) go to the tabs and sync; new accounts onboard first.
+      router.replace('/');
     } catch (err: any) {
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
@@ -127,15 +134,17 @@ export default function SignUpScreen() {
     <View className="flex-1" style={{ backgroundColor: C.BG }}>
       <GhostLetters glyphs={['م', 'ر', 'ح']} />
 
-      <Pressable
-        onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
-      </Pressable>
+      {canGoBack && (
+        <Pressable
+          onPress={() => router.back()}
+          style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
+        </Pressable>
+      )}
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
@@ -163,7 +172,7 @@ export default function SignUpScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.alreadyHaveAccount}</Text>
                 <Pressable
-                  onPress={() => router.back()}
+                  onPress={() => router.replace('/sign-in')}
                   hitSlop={8}
                   accessibilityRole="link"
                   accessibilityLabel={STRINGS.auth.signUp.signInLink}
@@ -405,7 +414,7 @@ export default function SignUpScreen() {
 
               {__DEV__ && (
                 <Pressable
-                  onPress={() => router.replace('/onboarding')}
+                  onPress={() => router.replace(hasOnboarded ? '/(tabs)' : '/onboarding')}
                   style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
                 >
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.auth.signUp.skipDevOnly}</Text>
