@@ -11,7 +11,7 @@ import { ANGLE_135 } from '../components/design/gradients';
 import { useTheme } from '../hooks/useTheme';
 import { PHRASES } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
-import { useArabicTTS } from '../hooks/useArabicTTS';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { STRINGS } from '../constants/strings';
 import { ltrParagraph } from '../engine/text';
 import { PhraseBuilder } from '../components/features/PhraseBuilder';
@@ -52,8 +52,13 @@ function FlashCard({
   phrase: Phrase;
   flipped: boolean;
   onFlip: () => void;
-  onSpeak: () => void;
-  onSpeakSlow: () => void;
+  // Optional: absent when the phrase has no recorded clip. usePhraseAudio's
+  // play/playSlow are only wired up here when hasClip(phrase.id) is true (see
+  // the call site below) — undefined, not a no-op function, keeps that
+  // "no clip" state visible in the type instead of hiding it behind a call
+  // that silently does nothing.
+  onSpeak?: () => void;
+  onSpeakSlow?: () => void;
   isPlaying: boolean;
   index: number;
 }) {
@@ -96,14 +101,16 @@ function FlashCard({
               >
                 {phrase.arabic}
               </Text>
-              <Pressable
-                hitSlop={8}
-                onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
-              >
-                <Volume2 size={14} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
-                <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
-              </Pressable>
+              {onSpeak && (
+                <Pressable
+                  hitSlop={8}
+                  onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
+                >
+                  <Volume2 size={14} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
+                </Pressable>
+              )}
               <Text
                 style={{
                   fontFamily: FONT_LATIN,
@@ -159,21 +166,25 @@ function FlashCard({
                 {phrase.english}
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-                <Pressable
-                  hitSlop={8}
-                  onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
-                >
-                  <Volume2 size={12} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
-                </Pressable>
-                <Pressable
-                  hitSlop={8}
-                  onPress={(e) => { e.stopPropagation?.(); onSpeakSlow(); }}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
-                >
-                  <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>{STRINGS.common.slow}</Text>
-                </Pressable>
+                {onSpeak && (
+                  <Pressable
+                    hitSlop={8}
+                    onPress={(e) => { e.stopPropagation?.(); onSpeak(); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
+                  >
+                    <Volume2 size={12} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
+                  </Pressable>
+                )}
+                {onSpeakSlow && (
+                  <Pressable
+                    hitSlop={8}
+                    onPress={(e) => { e.stopPropagation?.(); onSpeakSlow(); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+                  >
+                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: C.TEXT3 }}>{STRINGS.common.slow}</Text>
+                  </Pressable>
+                )}
               </View>
               {phrase.culturalNote && (
                 <View
@@ -285,7 +296,7 @@ function QuizOption({
 export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessionComplete }: Props) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
-  const { speak, speakSlow, isSpeaking } = useArabicTTS();
+  const { play, playSlow, isPlaying, hasClip } = usePhraseAudio();
   const getDueReviews = useAppStore((s) => s.getDueReviews);
   const phraseReviews = useAppStore((s) => s.phraseReviews);
   const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
@@ -650,9 +661,9 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
               phrase={phrase}
               flipped={flipped}
               onFlip={() => setFlipped(true)}
-              onSpeak={() => speak(phrase.arabic)}
-              onSpeakSlow={() => speakSlow(phrase.arabic)}
-              isPlaying={isSpeaking}
+              onSpeak={hasClip(phrase.id) ? () => play(phrase.id) : undefined}
+              onSpeakSlow={hasClip(phrase.id) ? () => playSlow(phrase.id) : undefined}
+              isPlaying={isPlaying}
               index={current}
             />
 
@@ -729,14 +740,16 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                 <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 34, color: C.JADE_ACCENT, textAlign: 'center', lineHeight: 48, marginVertical: 8 }}>
                   {phrase.arabic}
                 </Text>
-                <Pressable
-                  hitSlop={8}
-                  onPress={() => speak(phrase.arabic)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
-                >
-                  <Volume2 size={16} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
-                  <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
-                </Pressable>
+                {hasClip(phrase.id) && (
+                  <Pressable
+                    hitSlop={8}
+                    onPress={() => play(phrase.id)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
+                  >
+                    <Volume2 size={16} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                    <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 14, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
+                  </Pressable>
+                )}
               </View>
             </MotiView>
 
@@ -856,14 +869,16 @@ export function PracticeScreen({ onExit, onPhraseReview, onPhraseRating, onSessi
                 <View style={{ borderRadius: 16, padding: 14, backgroundColor: C.JADE_ACCENT_SURFACE, borderWidth: 1, borderColor: C.JADE_ACCENT_BORDER, alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontFamily: FONT_ARABIC_BLACK, fontSize: 22, color: C.JADE_ACCENT }}>{phrase.arabic}</Text>
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: `${C.JADE_ACCENT}80`, fontStyle: 'italic' }}>{phrase.roman}</Text>
-                  <Pressable
-                    hitSlop={8}
-                    onPress={() => speak(phrase.arabic)}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isSpeaking ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isSpeaking ? C.JADE_BORDER : C.BORDER }}
-                  >
-                    <Volume2 size={13} strokeWidth={1.5} color={isSpeaking ? C.JADE2 : C.TEXT3} />
-                    <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isSpeaking ? C.JADE2 : C.TEXT3 }}>{isSpeaking ? STRINGS.common.playing : STRINGS.common.listen}</Text>
-                  </Pressable>
+                  {hasClip(phrase.id) && (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => play(phrase.id)}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12, backgroundColor: isPlaying ? C.JADE_SURFACE : C.SURFACE, borderWidth: 1, borderColor: isPlaying ? C.JADE_BORDER : C.BORDER }}
+                    >
+                      <Volume2 size={13} strokeWidth={1.5} color={isPlaying ? C.JADE2 : C.TEXT3} />
+                      <Text style={{ fontFamily: FONT_LATIN, fontSize: 11, color: isPlaying ? C.JADE2 : C.TEXT3 }}>{isPlaying ? STRINGS.common.playing : STRINGS.common.listen}</Text>
+                    </Pressable>
+                  )}
                 </View>
               </MotiView>
             )}

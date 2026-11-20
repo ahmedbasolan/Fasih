@@ -18,7 +18,7 @@ import {
   FONT_LATIN, FONT_LATIN_SEMI,
 } from '../components/design/tokens';
 import { useTheme } from '../hooks/useTheme';
-import { useArabicTTS } from '../hooks/useArabicTTS';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { haptic } from '../lib/haptics';
 import { STRINGS } from '../constants/strings';
 import { GRAMMAR_PATTERNS, resolveReferencedPhrase } from '../constants/grammar';
@@ -76,7 +76,7 @@ function pickDistractors(pattern: GrammarPattern, targetTokens: string[]): strin
 export function SentenceBuilder({ initialPatternId, onExit }: Props) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
-  const { speak } = useArabicTTS();
+  const { play, playingId, hasClip } = usePhraseAudio();
 
   const user = useAppStore((s) => s.user);
   const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
@@ -93,7 +93,6 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
   const [placedTiles, setPlacedTiles] = useState<{ id: string; word: string }[]>([]);
   const [bank, setBank] = useState<{ id: string; word: string }[]>([]);
   const [buildStatus, setBuildStatus] = useState<BuildStatus>('idle');
-  const [playingId, setPlayingId] = useState<string | null>(null);
   const [showMastery, setShowMastery] = useState(false);
 
   const available = useMemo(
@@ -123,11 +122,6 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     [pattern, gender],
   );
   const builds = pattern ? patternProgress[pattern.id]?.correctBuilds ?? 0 : 0;
-
-  const play = useCallback((arabic: string, id?: string) => {
-    setPlayingId(id ?? null);
-    speak(arabic);
-  }, [speak]);
 
   const handlePick = useCallback((p: GrammarPattern) => {
     haptic.light();
@@ -209,7 +203,6 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
     if (result.valid) {
       haptic.success();
       setBuildStatus('correct');
-      if (targetSentence?.valid) play(targetSentence.arabic);
       const newBuilds = builds + 1;
       recordPatternBuild(pattern.id, true);
       // Feed SRS for every component phrase: the chosen slot phrases + examples.
@@ -226,7 +219,7 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       haptic.error();
       setBuildStatus('wrong');
     }
-  }, [pattern, placedTiles, targetSentence, builds, slotChoices, play, recordPatternBuild, recordPhraseReview, recordPhraseRating]);
+  }, [pattern, placedTiles, builds, slotChoices, recordPatternBuild, recordPhraseReview, recordPhraseRating]);
 
   const handleRetry = useCallback(() => {
     if (!pattern || targetTokens.length === 0) return;
@@ -464,16 +457,6 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
       fontSize: 14,
       color: C.TEXT2,
       textAlign: 'center' as const,
-    },
-    previewPlay: {
-      position: 'absolute' as const,
-      right: 12,
-      top: 12,
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
     },
     // Build
     goalCard: {
@@ -745,6 +728,30 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
               const phrase = resolveReferencedPhrase(ex.phraseId);
               if (!phrase) return null;
               const tokens = phrase.arabic.split(' ').filter((w) => w.trim().length > 0);
+              const canPlay = hasClip(ex.phraseId);
+              const isPlayingExample = playingId === ex.phraseId;
+              // Real library phrase (unlocked, per spec §2.10) — unlike the swap/build
+              // steps' assembled sentences, this one has a real id and can have a
+              // recorded clip. The card is only tappable when hasClip says a clip
+              // exists; with today's empty manifest it renders as a plain, non-
+              // interactive card and returns to a "tap to hear" card on its own once
+              // a clip lands, with no further code change.
+              const cardContent = (
+                <>
+                  <View style={styles.exampleRow}>
+                    {tokens.map((t, i) => (
+                      <Text
+                        key={`${t}-${i}`}
+                        style={sharedTokens.includes(t) ? styles.exampleTokenShared : styles.exampleToken}
+                      >
+                        {t}
+                      </Text>
+                    ))}
+                  </View>
+                  <Text style={styles.exampleRoman}>{phrase.roman}</Text>
+                  <Text style={styles.exampleEnglish}>{phrase.english}</Text>
+                </>
+              );
               return (
                 <MotiView
                   key={ex.phraseId}
@@ -752,36 +759,36 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
                   animate={{ opacity: 1, translateY: 0 }}
                   transition={{ type: 'timing', duration: 320, delay: 120 + idx * 80 }}
                 >
-                  <Pressable
-                    onPress={() => play(phrase.arabic, ex.phraseId)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${phrase.english} — ${STRINGS.sentenceBuilder.tapToHear}`}
-                    style={[styles.exampleCard, {
-                      backgroundColor: C.SURFACE,
-                      borderColor: playingId === ex.phraseId ? C.JADE_ACCENT : C.BORDER,
-                    }]}
-                  >
-                    <View style={styles.exampleRow}>
-                      {tokens.map((t, i) => (
-                        <Text
-                          key={`${t}-${i}`}
-                          style={sharedTokens.includes(t) ? styles.exampleTokenShared : styles.exampleToken}
-                        >
-                          {t}
-                        </Text>
-                      ))}
-                    </View>
-                    <Text style={styles.exampleRoman}>{phrase.roman}</Text>
-                    <Text style={styles.exampleEnglish}>{phrase.english}</Text>
-                    <View style={styles.playRow}>
-                      <View style={[styles.playChip, { backgroundColor: playingId === ex.phraseId ? C.JADE_DIM : C.CARD_BG, borderColor: playingId === ex.phraseId ? C.JADE_ACCENT_BORDER : C.BORDER }]}>
-                        <Volume2 size={13} strokeWidth={1.5} color={playingId === ex.phraseId ? C.JADE : C.PRIMARY} />
-                        <Text style={[styles.playChipText, { color: playingId === ex.phraseId ? C.JADE : C.PRIMARY }]}>
-                          {playingId === ex.phraseId ? STRINGS.scenarios.playing : STRINGS.sentenceBuilder.tapToHear}
-                        </Text>
+                  {canPlay ? (
+                    <Pressable
+                      onPress={() => play(ex.phraseId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${phrase.english} — ${STRINGS.sentenceBuilder.tapToHear}`}
+                      style={[styles.exampleCard, {
+                        backgroundColor: C.SURFACE,
+                        borderColor: isPlayingExample ? C.JADE_ACCENT : C.BORDER,
+                      }]}
+                    >
+                      {cardContent}
+                      <View style={styles.playRow}>
+                        <View style={[styles.playChip, { backgroundColor: isPlayingExample ? C.JADE_DIM : C.CARD_BG, borderColor: isPlayingExample ? C.JADE_ACCENT_BORDER : C.BORDER }]}>
+                          <Volume2 size={13} strokeWidth={1.5} color={isPlayingExample ? C.JADE : C.PRIMARY} />
+                          <Text style={[styles.playChipText, { color: isPlayingExample ? C.JADE : C.PRIMARY }]}>
+                            {isPlayingExample ? STRINGS.scenarios.playing : STRINGS.sentenceBuilder.tapToHear}
+                          </Text>
+                        </View>
                       </View>
+                    </Pressable>
+                  ) : (
+                    <View
+                      style={[styles.exampleCard, {
+                        backgroundColor: C.SURFACE,
+                        borderColor: C.BORDER,
+                      }]}
+                    >
+                      {cardContent}
                     </View>
-                  </Pressable>
+                  )}
                 </MotiView>
               );
             })}
@@ -918,14 +925,6 @@ export function SentenceBuilder({ initialPatternId, onExit }: Props) {
           {allFilled && assembled.valid && (
             <MotiView from={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: 'spring', damping: 16, stiffness: 200 }}>
               <View style={[styles.previewCard, { backgroundColor: C.JADE_SURFACE, borderColor: C.JADE_BORDER }]}>
-                <Pressable
-                  onPress={() => play(assembled.arabic)}
-                  accessibilityRole="button"
-                  accessibilityLabel={STRINGS.sentenceBuilder.tapToHear}
-                  style={[styles.previewPlay, { backgroundColor: C.JADE_DIM }]}
-                >
-                  <Volume2 size={14} strokeWidth={1.5} color={C.JADE} />
-                </Pressable>
                 <Text style={styles.previewArabic}>{assembled.arabic}</Text>
                 <Text style={styles.previewRoman}>{assembled.roman}</Text>
                 <Text style={styles.previewEnglish}>{assembled.english}</Text>
