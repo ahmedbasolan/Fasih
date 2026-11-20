@@ -67,6 +67,15 @@ const FREE_ACCESS_SCENARIO_COUNT = 3;
 const FREE_SCENARIOS_PER_MODE = 1;
 
 /**
+ * Completions that unlock Phrase Library and Practice. It must not exceed the
+ * scenarios a free learner can actually play (FREE_SCENARIOS_PER_MODE in each
+ * of the two modes). At 3 it did, so the gate told free learners to "complete
+ * 2 more" after both free scenarios were done, and nothing they could play
+ * would ever open it.
+ */
+export const FEATURE_UNLOCK_SCENARIO_COUNT = FREE_SCENARIOS_PER_MODE * 2;
+
+/**
  * XP awarded per action, toward the learner's daily goal.
  *
  * The home screen used to show `scenariosCompleted.length * 50` against

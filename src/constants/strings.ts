@@ -435,6 +435,10 @@ export const STRINGS = {
     quickChallenge: 'Quick Challenge',
     dailyPhrase: 'Daily Phrase',
     yourConfidence: 'Your Confidence',
+    review: 'Review',
+    reviewTitle: 'Practise your phrases',
+    reviewDue: (count: number) => `${count} phrase${count === 1 ? '' : 's'} due for review`,
+    reviewNoneDue: 'Flashcards and quizzes on what you have learned',
     beginFirstScenario: 'Begin your first scenario',
     // The situations on the Your Confidence card, keyed by situation id.
     situations: {

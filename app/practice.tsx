@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import {
+  FEATURE_UNLOCK_SCENARIO_COUNT,
   useAppStore,
   useHasFullAccess,
   useScenariosCompletedCount,
@@ -20,7 +21,7 @@ export default function PracticeRoute() {
     <FeatureGate
       hasAccess={hasAccess}
       scenariosCompleted={scenariosCompleted}
-      scenariosRequired={3}
+      scenariosRequired={FEATURE_UNLOCK_SCENARIO_COUNT}
       featureName={STRINGS.practice.title}
       onGoToScenarios={() => router.replace('/(tabs)/scenarios')}
     >
