@@ -412,7 +412,9 @@ export function ScenarioResultPhase({
                 <BookOpen size={14} color={C.JADE2} />
                 <Text style={styles.phrasesTitle}>{STRINGS.scenarios.phrasesUnlocked(unlockedPhrases.length)}</Text>
               </View>
-              <Text style={styles.blockSub}>{STRINGS.scenarios.phrasesUnlockedSub}</Text>
+              {unlockedPhrases.some((p) => hasClip(p.id)) && (
+                <Text style={styles.blockSub}>{STRINGS.scenarios.phrasesUnlockedSub}</Text>
+              )}
               <View style={styles.list}>
                 {unlockedPhrases.map((p) => (
                   <PhraseCard

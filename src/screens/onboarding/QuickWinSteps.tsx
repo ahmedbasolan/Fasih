@@ -25,7 +25,11 @@ import type { OnboardingStepProps } from './types';
 export function QuickWinSteps({ screen, next, draft, quickWin, hold }: OnboardingStepProps) {
   const { C } = useTheme();
   const insets = useSafeAreaInsets();
-  const { play } = usePhraseAudio();
+  const { play, hasClip } = usePhraseAudio();
+  // No recording for g3 yet means the button cannot promise sound. The
+  // learner says it from the romanisation instead, so the payoff copy stays true.
+  const firstPhraseHasClip = hasClip('g3');
+  const firstPhraseCta = firstPhraseHasClip ? STRINGS.onboarding.firstPhraseHear : STRINGS.onboarding.firstPhraseSay;
   const unlockPhrase = useAppStore((s) => s.unlockPhrase);
   const unlockedPhraseIds = useAppStore((s) => s.unlockedPhraseIds);
   const { mode, name } = draft;
@@ -188,13 +192,13 @@ export function QuickWinSteps({ screen, next, draft, quickWin, hold }: Onboardin
             {!phraseRevealed ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={STRINGS.onboarding.firstPhraseHear}
+                accessibilityLabel={firstPhraseCta}
                 onPress={() => {
                   setPhraseRevealed(true);
                   setPhraseEverRevealed(true);
                   // STRINGS.onboarding.firstPhraseArabic duplicates phrase g3's
                   // Arabic. The clip is keyed by id, so the id is what plays.
-                  play('g3');
+                  if (firstPhraseHasClip) play('g3');
                 }}
                 style={{
                   marginTop: 20,
@@ -205,7 +209,7 @@ export function QuickWinSteps({ screen, next, draft, quickWin, hold }: Onboardin
                 }}
               >
                 <Text style={{ fontFamily: FONT_LATIN_SEMI, fontSize: 16, color: C.BG, fontWeight: '700' }}>
-                  {STRINGS.onboarding.firstPhraseHear}
+                  {firstPhraseCta}
                 </Text>
               </Pressable>
             ) : (

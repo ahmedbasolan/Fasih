@@ -159,6 +159,7 @@ export const STRINGS = {
     firstPhraseRoman: 'shloo-nak',
     firstPhraseEnglish: 'How are you?',
     firstPhraseHear: 'Tap to hear it',
+    firstPhraseSay: 'I said it out loud',
     firstPhraseWhy: 'Textbooks teach kayf haalak. In the Gulf, shloonak is the natural one — shloonich to a woman.',
     firstPhraseDone: 'You just said it the way Dubai says it.',
 
@@ -174,7 +175,7 @@ export const STRINGS = {
      */
     progressTitle: 'Look what you just did',
     progressSub: 'Twenty minutes ago you had none of this',
-    progressPhraseHeard: 'Heard your first Gulf phrase',
+    progressPhraseHeard: 'Said your first Gulf phrase',
     progressScenarioDone: 'Held a conversation in Arabic',
     progressPhrasesUnlocked: (n: number) => `${n} phrase${n === 1 ? '' : 's'} unlocked`,
     progressCommitted: 'Committed to a daily habit',
@@ -374,7 +375,7 @@ export const STRINGS = {
     buildNext: 'Next pattern',
     buildDone: 'Finish',
     correct: 'Correct!',
-    incorrect: 'Not quite — listen again',
+    incorrect: 'Not quite — check the word order',
     mastered: 'Mastered',
     masteryToast: (builds: number) => `Pattern mastered — ${builds} sentences built`,
     progress: (builds: number) => `${builds} of 3 builds`,
