@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE } from '../design/spacing';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lock, Layers, ChevronRight } from '../icons';
+import { Lock, Layers, ChevronRight, X } from '../icons';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI } from '../design/tokens';
 import { ANGLE_135 } from '../design/gradients';
 import { Companion } from '../ui/Companion';
@@ -16,10 +16,17 @@ interface FeatureGateProps {
   scenariosRequired: number;
   featureName: string;
   onGoToScenarios: () => void;
+  /**
+   * Shown as a close button when set. Pass it wherever the gate renders inside a
+   * full-screen modal (Practice): there is no tab bar there, and iOS
+   * full-screen modals cannot be swiped away, so without it the only exit was
+   * "Go to Scenarios".
+   */
+  onClose?: () => void;
   children: React.ReactNode;
 }
 
-export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, featureName, onGoToScenarios, children }: FeatureGateProps) {
+export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, featureName, onGoToScenarios, onClose, children }: FeatureGateProps) {
   const { C, G } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -34,6 +41,16 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
 
   return (
     <View style={{ flex: 1, backgroundColor: C.BG }}>
+      {onClose && (
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={STRINGS.common.close}
+          style={{ position: 'absolute', top: insets.top + SPACE.md, left: SPACE.lg, zIndex: 10, width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: C.SURFACE, borderWidth: 1, borderColor: C.BORDER }}
+        >
+          <X size={18} strokeWidth={1.5} color={C.TEXT2} />
+        </Pressable>
+      )}
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, paddingBottom: insets.bottom + SPACE.xl }}>
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Companion size={80} />
@@ -75,7 +92,7 @@ export function FeatureGate({ hasAccess, scenariosCompleted, scenariosRequired, 
         </View>
 
         <View style={{ width: '100%' }}>
-          <Pressable onPress={onGoToScenarios} style={{ borderRadius: 16, overflow: 'hidden' }}>
+          <Pressable onPress={onGoToScenarios} accessibilityRole="button" accessibilityLabel={STRINGS.ui.featureGate.goToScenarios} style={{ borderRadius: 16, overflow: 'hidden' }}>
             <LinearGradient
               colors={[...G.GOLD_STOPS]}
               start={ANGLE_135.start}

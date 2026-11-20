@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { MotiView } from 'moti';
-import { Compass, Users, BookOpen, RotateCcw, Home, ArrowRight, Volume2, Blocks, Sparkles } from '../icons';
+import { Compass, Users, BookOpen, RotateCcw, Check, ArrowRight, Volume2, Blocks, Sparkles } from '../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   FONT_ARABIC, FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_SEMI, FONT_HEADING_SEMI,
@@ -474,13 +474,13 @@ export function ScenarioResultPhase({
 
         {/* Action buttons */}
         <View style={styles.actions}>
-          <Pressable onPress={onRestart} accessibilityRole="button" style={styles.retry}>
+          <Pressable onPress={onRestart} accessibilityRole="button" accessibilityLabel={STRINGS.scenarios.retry} style={styles.retry}>
             <RotateCcw size={14} color={C.TEXT2} />
             <Text style={styles.retryText}>{STRINGS.scenarios.retry}</Text>
           </Pressable>
-          <Pressable onPress={onExit} accessibilityRole="button" style={styles.homeButton}>
+          <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel={STRINGS.scenarios.home} style={styles.homeButton}>
             <LinearGradient colors={[...G.GOLD_STOPS]} start={ANGLE_135.start} end={ANGLE_135.end} style={styles.homeFill}>
-              <Home size={14} color={C.BG} />
+              <Check size={14} color={C.BG} />
               <Text style={styles.homeText}>{STRINGS.scenarios.home}</Text>
             </LinearGradient>
           </Pressable>

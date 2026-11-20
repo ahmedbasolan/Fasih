@@ -1,17 +1,19 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Layers, ChevronRight } from '../icons';
+import { RotateCcw, Lock, ChevronRight } from '../icons';
 import { useTheme, FONT_HEADING_SEMI, FONT_LATIN } from '../../theme';
 import { STRINGS } from '../../constants/strings';
 import { TYPE } from '../design/layout';
 
 interface PracticeCardProps {
   dueCount: number;
+  /** Scenarios still needed to unlock Practice; 0 or undefined when unlocked. */
+  lockedRemaining?: number;
   onPress: () => void;
 }
 
 /** Home's entry point to /practice — flashcards and quizzes. */
-export function PracticeCard({ dueCount, onPress }: PracticeCardProps) {
+export function PracticeCard({ dueCount, lockedRemaining = 0, onPress }: PracticeCardProps) {
   const { C } = useTheme();
 
   const styles = useMemo(() => StyleSheet.create({
@@ -50,7 +52,11 @@ export function PracticeCard({ dueCount, onPress }: PracticeCardProps) {
     },
   }), [C]);
 
-  const sub = dueCount > 0 ? STRINGS.homeSections.reviewDue(dueCount) : STRINGS.homeSections.reviewNoneDue;
+  const locked = lockedRemaining > 0;
+  const sub = locked
+    ? STRINGS.homeSections.reviewLocked(lockedRemaining)
+    : dueCount > 0 ? STRINGS.homeSections.reviewDue(dueCount) : STRINGS.homeSections.reviewNoneDue;
+  const Icon = locked ? Lock : RotateCcw;
 
   return (
     <Pressable
@@ -60,7 +66,7 @@ export function PracticeCard({ dueCount, onPress }: PracticeCardProps) {
       style={({ pressed }) => [styles.container, { opacity: pressed ? 0.85 : 1 }]}
     >
       <View style={styles.iconWrap}>
-        <Layers size={18} color={C.JADE_ACCENT} />
+        <Icon size={18} color={C.JADE_ACCENT} />
       </View>
       <View style={styles.textBlock}>
         <Text style={styles.title}>{STRINGS.homeSections.reviewTitle}</Text>
