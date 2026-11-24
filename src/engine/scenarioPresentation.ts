@@ -27,7 +27,7 @@ export type ChoiceFeedback =
   | { kind: 'not-quite'; correct: ScenarioChoice | undefined }
   /** Judgement scene, a valid choice: the NPC reacts, nothing is graded. */
   | { kind: 'reaction' }
-  /** Legacy scene with no kind: the old outcome label. */
+  /** The bonus scene, which is not one of the run's decisions: a plain outcome label. */
   | { kind: 'graded'; outcome: ChoiceOutcome };
 
 export function choiceFeedback(scene: ScenarioScene, choice: ScenarioChoice): ChoiceFeedback {
@@ -94,7 +94,7 @@ export interface EndingHint {
 
 /**
  * Hints toward endings the learner hasn't found: never the ending just reached,
- * never one without a hint (the failure ending, legacy scripts). Hidden last —
+ * never one without a hint (the failure ending). Hidden last —
  * it is the one worth saving for.
  */
 export function hintsToShow(

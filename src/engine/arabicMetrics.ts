@@ -48,7 +48,7 @@ const PAUSE_DASH = /[—–-]/g;
  * minimum stem length that must REMAIN after stripping — without it, `لا` (no)
  * would be read as ل + ا, and `بس` (just) as ب + س.
  */
-const PROCLITICS: ReadonlyArray<{ form: string; minStem: number }> = [
+const PROCLITICS: readonly { form: string; minStem: number }[] = [
   { form: 'وال', minStem: 3 },   // wa-al-
   { form: 'بال', minStem: 3 },   // bi-al-
   { form: 'كال', minStem: 3 },   // ka-al-
@@ -61,7 +61,7 @@ const PROCLITICS: ReadonlyArray<{ form: string; minStem: number }> = [
  * of ordinary words (وين، وايد، ولد) — so these require a longer surviving stem
  * and are only counted when the remainder is itself plausible.
  */
-const SINGLE_PROCLITICS: ReadonlyArray<{ form: string; minStem: number }> = [
+const SINGLE_PROCLITICS: readonly { form: string; minStem: number }[] = [
   { form: 'ب', minStem: 4 },
   { form: 'ل', minStem: 4 },
 ];
@@ -72,7 +72,7 @@ const SINGLE_PROCLITICS: ReadonlyArray<{ form: string; minStem: number }> = [
  * `ـج` is the Emirati 2nd-person feminine (عندج, لج) — the feature that makes
  * this dialect audibly itself. Longest-first again so `هم` beats `ه`.
  */
-const ENCLITICS: ReadonlyArray<{ form: string; minStem: number }> = [
+const ENCLITICS: readonly { form: string; minStem: number }[] = [
   { form: 'كم', minStem: 3 },
   { form: 'هم', minStem: 3 },
   { form: 'ها', minStem: 3 },

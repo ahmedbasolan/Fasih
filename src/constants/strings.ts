@@ -209,9 +209,8 @@ export const STRINGS = {
     cancelAnytime: 'Cancel anytime',
     everythingIncluded: 'Everything included',
     oneSubscription: 'One subscription, the full Fasih experience',
-    satisfactionGuarantee: 'Satisfaction Guarantee',
-    refundGuarantee: 'Full refund if you\'re not satisfied',
-    refundPolicy: '7-day money back guarantee',
+    // No refund promise: App Store and Play refunds are decided by Apple and
+    // Google, so 'full refund if you are not satisfied' was not ours to offer.
     seePlans: 'Lock In My Path to Fluency',
     choosePlan: 'Secure your premium access',
     trialCancel: "Don't miss out on premium access · Cancel anytime",
@@ -220,7 +219,8 @@ export const STRINGS = {
     yearlyBest: 'Best for committed learners',
     monthlyPlan: 'Monthly Plan',
     monthlyFlex: 'Maximum flexibility',
-    billingYearly: (yearPrice: string, savings: string) => `Billed ${yearPrice}/year • Saves ${savings}`,
+    billingYearly: (yearPrice: string) => `Billed ${yearPrice}/year`,
+    planA11y: (plan: string, price: string | null) => (price ? `${plan}, ${price}` : plan),
     perMonth: '/month',
     // Was assembled inline in PaywallSteps as `Then {price} · {cancelAnytime}`.
     thenPrice: (price: string) => `Then ${price} · Cancel anytime`,
@@ -253,16 +253,16 @@ export const STRINGS = {
     },
     timeline: [
       { day: 'Day 1', title: 'Unlock Scenarios', desc: 'Get access to all interactive real-world simulations.' },
-      { day: 'Day 2', title: 'Smart Review', desc: 'AI-powered retention to master phrases forever.' },
+      { day: 'Day 2', title: 'Smart Review', desc: 'Spaced review brings phrases back just before you forget them.' },
       { day: 'Day 3', title: 'Habit Formation', desc: 'Receive personalized motivation to keep you going.' },
       { day: 'Day 4', title: 'Trial Ends', desc: 'Continue your journey with full premium benefits.' },
     ],
     // No counts. '500+ expressions', '40+ situations' and '5 industries' were
     // never true — the MVP ships six scenarios — and a count typed here goes
     // stale the moment content changes.
+    // Only what Pro actually adds. 'Voice Practice' was listed and does not
+    // exist; Phrase Library opens for free learners after their two scenarios.
     features: [
-      { label: 'Voice Practice', sub: 'Unlimited sessions' },
-      { label: 'Phrase Library', sub: 'The full library' },
       { label: 'All Scenarios', sub: 'Career and social' },
       { label: 'Cultural Notes', sub: 'Deep context' },
       { label: 'Achievements', sub: 'Badges & levels' },
@@ -435,12 +435,28 @@ export const STRINGS = {
     quickChallenge: 'Quick Challenge',
     dailyPhrase: 'Daily Phrase',
     yourConfidence: 'Your Confidence',
+    review: 'Review',
+    reviewTitle: 'Practise your phrases',
+    reviewDue: (count: number) => `${count} phrase${count === 1 ? '' : 's'} due for review`,
+    reviewNoneDue: 'Flashcards and quizzes on what you have learned',
     beginFirstScenario: 'Begin your first scenario',
     // The situations on the Your Confidence card, keyed by situation id.
     situations: {
       workplace: 'Workplace',
       gettingAround: 'Getting Around',
       neighboursCelebrations: 'Neighbours & Celebrations',
+    },
+    situationsCard: {
+      title: 'UAE Situations',
+      emptyTitle: 'No situations tracked yet',
+      emptySub: 'Complete a scenario to start building your UAE confidence map',
+      startPrompt: 'Start a scenario to build your confidence',
+      inProgress: (active: number, total: number) => `${active} of ${total} situations in progress`,
+      seeAll: 'See all situations',
+      seeAllShort: 'All',
+      mostImproved: 'Most improved:',
+      activeSuffix: 'active',
+      levels: { confident: 'Confident', familiar: 'Familiar', learning: 'Learning', 'not-started': 'Not started' },
     },
   },
   scenarios: {
@@ -510,10 +526,6 @@ export const STRINGS = {
     startScenario: 'Start scenario',
     continueScenario: 'Continue',
     playAgain: 'Play again',
-    sceneNumber: (n: number) => `Scene ${String(n).padStart(2, '0')}`,
-    sceneDone: 'completed',
-    sceneLocked: 'locked',
-    sceneNext: 'up next',
     tabAll: 'All',
     tabFavourite: 'Favourite',
     noFavourites: 'No favourites yet\nTap the heart on any card',
@@ -527,8 +539,6 @@ export const STRINGS = {
     noScript: (id: string) => `No script available for "${id}". This scenario may be coming soon.`,
     scenarioNotFound: 'Scenario not found',
     notFound: 'Scenario not found',
-    noScenesTitle: 'No scenes available',
-    noScenesSub: "This scenario doesn't have any content yet",
     goBack: 'Go Back',
     playing: 'Playing...',
     listen: 'Listen',
@@ -603,6 +613,47 @@ export const STRINGS = {
     feedbackMisstep: 'Cultural misstep',
     feedbackReaction: (npc: string) => `${npc}'s reaction`,
     feedbackRightForm: 'The form to use',
+    // The bonus scene has no kind, so its choice keeps a plain outcome label.
+    choiceOutcome: { excellent: 'Excellent', good: 'Good choice', neutral: 'Neutral', bad: 'Cultural misstep' },
+    youSaid: 'You Said',
+    culturalInsight: 'Cultural Insight',
+    noteFallback: 'A solid choice in this context. Keep it up!',
+    impactLabel: 'Impact',
+    impactShort: {
+      trust: (n: number) => `T: ${n}`,
+      respect: (n: number) => `R: ${n}`,
+      culture: (n: number) => `C: ${n}`,
+    },
+    tonePreviewWarm: (npc: string) => `${npc} will be more open with you in the next scene`,
+    tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
+    seeFinalResult: 'See Final Result',
+    exitScenario: 'Exit scenario',
+    playingAudio: 'Playing audio',
+    listenToChoice: 'Listen to choice',
+    stopAudio: 'Stop audio',
+    listenToPhrase: 'Listen to phrase',
+    // A tone shift on an NPC's line: the learner's past choices changed it.
+    toneShiftWarm: 'Your choices shaped this response',
+    toneShiftCold: 'Your choices echo here',
+    // What [name] in a line becomes when the learner has no name yet.
+    nameFallback: 'friend',
+    relationshipArcTitle: 'How the relationship evolved',
+    toneLabel: { warm: 'Warm', neutral: 'Neutral', cold: 'Cold' },
+    arcSummary: {
+      warmTurned: 'You turned the relationship around. That takes awareness.',
+      warmSteady: 'Consistent respect kept the connection warm throughout.',
+      coldTurned: 'The relationship cooled as it went on. One early choice can change everything.',
+      coldSteady: 'Distance grew from the first scene. Try again — warmth is learnable.',
+    },
+    finalScore: 'Final Score',
+    finalScoreA11y: (total: number) => `Final score ${total}`,
+    saveScenario: 'Save scenario',
+    unsaveScenario: 'Remove from saved scenarios',
+    shareFallbackTitle: 'a Fasih scenario',
+    shareHiddenMessage: (scenario: string, arabic: string, en: string) =>
+      `I just discovered the secret ending in "${scenario}" on Fasih 🔑\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It`,
+    shareMessage: (score: number, scenario: string, ending: string, arabic: string, en: string) =>
+      `I scored ${score} in "${scenario}" and unlocked "${ending}"\n\n"${arabic}" — ${en}\n\nFasih — Learn Arabic by Living It\n#Fasih #ArabicLearning`,
     // `pct` is unrounded (see endingPercentages); only called when it is above 0.
     communityEnding: (pct: number) =>
       pct < 1 ? 'Fewer than 1% of players reach this ending' : `${Math.round(pct)}% of players reach this ending`,
@@ -611,8 +662,6 @@ export const STRINGS = {
     shareResult: 'Share your result',
     shareHiddenEnding: 'Share your hidden ending',
     communityChoice: (pct: number) => `${pct}% of learners made this choice`,
-    secretEndingExists: 'This scenario has a hidden ending.',
-    secretEndingTeaser: 'There\'s a hidden ending you haven\'t found yet. Play again to look for it.',
     practiceThesePhrases: 'Practice These Phrases',
     tryAgain: 'Try Again',
   },
@@ -753,7 +802,6 @@ export const STRINGS = {
       verifying: 'Verifying...',
       verifyEmail: 'Verify Email',
       backToSignUp: '← Back to sign up',
-      fullNamePlaceholder: 'Full name',
       emailPlaceholder: 'Email address',
       passwordPlaceholder: 'Create password',
       // Split so Terms / Privacy render as tappable links inside the sentence.

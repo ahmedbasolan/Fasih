@@ -3,10 +3,9 @@
  *
  * Replaces WeeklyXP on the home screen.
  * Shows readiness across real UAE situations, calculated from:
- *   - completedScenarios (50% weight per completed scenario mapped to situation)
- *   - categoryMastery accuracy (50% weight from phrase practice)
- *
- * Data comes entirely from existing useAppStore — no new store fields needed.
+ *   - the situation's scenarios: best ending reached + endings found
+ *     (engine/situationalConfidence.ts)
+ *   - categoryMastery accuracy from phrase practice
  */
 
 import React, { useMemo, useState } from 'react';
@@ -16,6 +15,8 @@ import { ChevronRight, Briefcase, Compass, Users } from '../icons';
 import { useTheme, FONT_LATIN, FONT_LATIN_SEMI, FONT_HEADING_SEMI } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import { STRINGS } from '../../constants/strings';
+import { getScenarioScripts } from '../../constants/scenarios';
+import { scenarioConfidenceWeight } from '../../engine/situationalConfidence';
 
 type ConfidenceLevel = 'confident' | 'familiar' | 'learning' | 'not-started';
 
@@ -60,35 +61,12 @@ const SITUATIONS: SituationConfig[] = [
   },
 ];
 
-/**
- * How much a completed scenario counts toward confidence, by its ending.
- *
- * Keyed by ScenarioEnding['type']. The old inline ladder tested for
- * 'success_strong', which is not a member of that union — the branch was dead
- * and plain 'success', the most common good outcome, silently fell through to
- * the neutral 1.0. `src/engine/__tests__/scenarioContent.test.ts` now asserts
- * every authored ending uses a known type.
- */
-const ENDING_WEIGHTS: Record<string, number> = {
-  exceptional: 1.2,
-  success: 1.1,
-  mixed: 1.0,
-  failed: 0.6,
-};
-
 function getConfidenceLevel(score: number): ConfidenceLevel {
   if (score >= 70) return 'confident';
   if (score >= 40) return 'familiar';
   if (score > 0)  return 'learning';
   return 'not-started';
 }
-
-const LEVEL_LABELS: Record<ConfidenceLevel, string> = {
-  'confident':   'Confident',
-  'familiar':    'Familiar',
-  'learning':    'Learning',
-  'not-started': 'Not started',
-};
 
 interface SituationalConfidenceProps {
   limit?: number;
@@ -97,9 +75,13 @@ interface SituationalConfidenceProps {
 export function SituationalConfidence({
   limit = 5,
 }: SituationalConfidenceProps) {
-  const { C } = useTheme();
+  const { C, isDark } = useTheme();
   const completedScenarios = useAppStore((s) => s.completedScenarios);
+  const endingsFound       = useAppStore((s) => s.endingsFound);
   const stats              = useAppStore((s) => s.stats);
+  // Only the endings are read. isDark is the stable bool that determines C.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scripts = useMemo(() => getScenarioScripts(C), [isDark]);
   const [expanded, setExpanded] = useState(false);
 
   const situations = useMemo<SituationResult[]>(() => {
@@ -116,10 +98,14 @@ export function SituationalConfidence({
       if (totalScenarios > 0) {
         let weighted = 0;
         for (const id of sit.scenarioIds) {
-          const run = completedScenarios[id];
-          if (!run) continue;
+          const weight = scenarioConfidenceWeight(
+            scripts[id]?.endings ?? [],
+            endingsFound[id] ?? [],
+            completedScenarios[id]?.endingType,
+          );
+          if (weight === null) continue;
           scenariosCompleted++;
-          weighted += (100 / totalScenarios) * (ENDING_WEIGHTS[run.endingType] ?? 1);
+          weighted += (100 / totalScenarios) * weight;
         }
         scenarioPart = Math.min(weighted, 100);
       }
@@ -151,7 +137,7 @@ export function SituationalConfidence({
         scenariosCompleted,
       };
     });
-  }, [completedScenarios, stats.categoryMastery]);
+  }, [scripts, completedScenarios, endingsFound, stats.categoryMastery]);
 
   const sorted = useMemo(() => {
     return [...situations].sort((a, b) => {
@@ -281,7 +267,43 @@ export function SituationalConfidence({
       fontFamily: FONT_LATIN_SEMI,
       fontWeight: '600',
     },
+    empty: {
+      paddingHorizontal: 20,
+      paddingBottom: 24,
+      alignItems: 'center',
+      gap: 14,
+    },
+    previewIcons: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
+    previewIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: C.SURFACE,
+      borderWidth: 1,
+      borderColor: C.BORDER,
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.55,
+    },
+    emptyCopy: { alignItems: 'center', gap: 4 },
+    emptyTitle: {
+      fontFamily: FONT_HEADING_SEMI,
+      fontSize: 14,
+      color: C.TEXT2,
+      textAlign: 'center',
+    },
+    emptySub: {
+      fontFamily: FONT_LATIN,
+      fontSize: 12,
+      color: C.TEXT3,
+      textAlign: 'center',
+      maxWidth: 220,
+      lineHeight: 18,
+    },
+    barFill: { height: '100%' },
+    barGradient: { flex: 1, borderRadius: 99 },
   }), [C]);
+  const copy = STRINGS.homeSections.situationsCard;
 
   function getLevelColors(level: ConfidenceLevel) {
     switch (level) {
@@ -296,11 +318,11 @@ export function SituationalConfidence({
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>UAE Situations</Text>
+          <Text style={styles.title}>{copy.title}</Text>
           <Text style={styles.subtitle}>
             {activeSituations === 0
-              ? 'Start a scenario to build your confidence'
-              : `${activeSituations} of ${SITUATIONS.length} situations in progress`}
+              ? copy.startPrompt
+              : copy.inProgress(activeSituations, SITUATIONS.length)}
           </Text>
         </View>
         {canExpand && (
@@ -308,9 +330,9 @@ export function SituationalConfidence({
             onPress={() => setExpanded(true)}
             style={({ pressed }) => [styles.seeAllBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
-            accessibilityLabel="See all situations"
+            accessibilityLabel={copy.seeAll}
           >
-            <Text style={styles.seeAllText}>All</Text>
+            <Text style={styles.seeAllText}>{copy.seeAllShort}</Text>
             <ChevronRight size={12} color={C.PRIMARY} strokeWidth={2.5} />
           </Pressable>
         )}
@@ -320,56 +342,22 @@ export function SituationalConfidence({
 
       {activeSituations === 0 ? (
         // ── Empty state ──────────────────────────────────────────────────────────
-        <View style={{
-          paddingHorizontal: 20,
-          paddingBottom: 24,
-          alignItems: 'center',
-          gap: 14,
-        }}>
+        <View style={styles.empty}>
           {/* Row of situation icons — gives user a preview of what they'll unlock */}
-          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
+          <View style={styles.previewIcons}>
             {SITUATIONS.slice(0, 5).map((sit) => {
               const PreviewIcon = sit.icon;
               return (
-                <View
-                  key={sit.id}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    backgroundColor: C.SURFACE,
-                    borderWidth: 1,
-                    borderColor: C.BORDER,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: 0.55,
-                  }}
-                >
+                <View key={sit.id} style={styles.previewIcon}>
                   <PreviewIcon size={18} color={C.TEXT2} strokeWidth={1.75} />
                 </View>
               );
             })}
           </View>
 
-          <View style={{ alignItems: 'center', gap: 4 }}>
-            <Text style={{
-              fontFamily: FONT_HEADING_SEMI,
-              fontSize: 14,
-              color: C.TEXT2,
-              textAlign: 'center',
-            }}>
-              No situations tracked yet
-            </Text>
-            <Text style={{
-              fontFamily: FONT_LATIN,
-              fontSize: 12,
-              color: C.TEXT3,
-              textAlign: 'center',
-              maxWidth: 220,
-              lineHeight: 18,
-            }}>
-              Complete a scenario to start building your UAE confidence map
-            </Text>
+          <View style={styles.emptyCopy}>
+            <Text style={styles.emptyTitle}>{copy.emptyTitle}</Text>
+            <Text style={styles.emptySub}>{copy.emptySub}</Text>
           </View>
         </View>
       ) : (
@@ -390,17 +378,17 @@ export function SituationalConfidence({
                   </View>
                   <View style={[styles.levelBadge, { backgroundColor: colors.badge }]}>
                     <Text style={[styles.levelText, { color: colors.text }]}>
-                      {LEVEL_LABELS[sit.level]}
+                      {copy.levels[sit.level]}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.barTrack}>
-                  <View style={{ width: `${sit.score}%` as any, height: '100%' }}>
+                  <View style={[styles.barFill, { width: `${sit.score}%` as const }]}>
                     <LinearGradient
                       colors={sit.level === 'not-started' ? [C.SURFACE, C.SURFACE] : colors.bar}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      style={{ flex: 1, borderRadius: 99 }}
+                      style={styles.barGradient}
                     />
                   </View>
                 </View>
@@ -413,13 +401,13 @@ export function SituationalConfidence({
       {activeSituations > 0 && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Most improved:{' '}
+            {copy.mostImproved}{' '}
             <Text style={styles.footerHighlight}>
               {sorted.find((s) => s.score > 0)?.label ?? '–'}
             </Text>
           </Text>
           <Text style={styles.footerText}>
-            <Text style={styles.footerHighlight}>{activeSituations}</Text>{' '}active
+            <Text style={styles.footerHighlight}>{activeSituations}</Text>{' '}{copy.activeSuffix}
           </Text>
         </View>
       )}

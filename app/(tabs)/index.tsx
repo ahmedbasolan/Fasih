@@ -10,6 +10,7 @@ export default function HomeTab() {
       userName={user?.name || 'there'}
       onSettingsPress={() => router.push('/profile')}
       onMissionPress={(id) => router.push(`/scenario/${id}`)}
+      onPracticePress={() => router.push('/practice')}
     />
   );
 }

@@ -223,9 +223,10 @@ export const GRAMMAR_PATTERNS: GrammarPattern[] = [
     id: 'imperative-polite',
     title: 'عطني / تفضل — give me / please',
     titleFeminine: 'عطني / تفضلي — give me / please',
-    // Library basic until a rewritten MVP scenario claims it (spec §2.9: تفضل → Eid).
-    // Was a gym-consultation secret unlock; the خلني quote phrase went with that script.
-    unlockedByScenario: '',
+    // Re-homed to Eid (spec §2.9), where Uncle Salem's تفضل runs through every
+    // scene. Was a gym-consultation secret unlock, then a library basic.
+    unlockedByScenario: 'eid-greeting',
+    source: 'eid-greeting:scene2 تفضل، اقعد هني / scene4-honoured تفضل مكاني يا عمي',
     softSkill: 'offer',
     // Glosses only, from a6 and h1 in phrases.ts (UNSOURCED). The earlier note made
     // a claim about how an offer reads as hospitality, with nothing behind it.

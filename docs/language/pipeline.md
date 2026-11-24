@@ -43,15 +43,45 @@ Everything above, plus:
 
 ## The `unsourced` backfill
 
-136 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
-highest-value piece of language work available.
+131 of 136 phrases carry `UNSOURCED` today. Driving that to zero is the single
+highest-value piece of language work available. **Buying a reference book is not
+the plan** — that was floated in an earlier pass and is money Ahmed does not have.
+Sourcing here runs entirely on what's genuinely free.
+
+**Sourced so far, from things actually read (2026-09-03, two research passes):**
+
+- `e1` زين, `w2` ما شاء الله, `h3` البيت بيتك — from the Ramsa paper's printed
+  examples (CC BY 4.0, unlike its restricted data) and an open-access UAEU paper
+  on child Emirati Arabic.
+- `e6` وايد, `g3` شلونك؟ — from English Wiktionary's Gulf Arabic entries, checked
+  individually (see the tier explanation in [`authority.md`](./authority.md); it is
+  a lower-confidence tier than the academic sources above, but genuinely checked).
+- Five `DIALECT_FEATURES` entries upgraded from an unverified placeholder to a real
+  citation: `good-zain`, `intensifier-waayid`, `how-shloon`, `here-hini`, and the
+  affrication note on `fem-2sg-ch` — the last of which turned up a real, unresolved
+  finding worth reading in full: Fasih may be writing the wrong Arabic *letter*
+  (ج instead of چ) for a sound its own romanisation already gets right.
+- Two entries (`want-abi`, `what-shu`) were checked against Wiktionary and **not
+  found** — recorded honestly as still-unverified rather than either silently
+  cleared or wrongly marked disproven. Coverage gaps aren't refutations.
+
+**What free sourcing cannot do:** reach volume. Every research corpus in this space
+(Ramsa, Mixat, Casablanca) turned out to be commercially restricted on inspection —
+checked directly each time, not assumed — and open-access academic papers are
+studies of narrow phenomena, not phrasebooks; each yields a handful of words, not a
+category. Wiktionary is real but patchy: for every hit (وايد، شلون، هني) there was a
+miss (أبي، أبغى، مشكور، شو) on words no less basic. **There is currently no free path
+to sourcing this library at volume.** The honest options from here: keep harvesting
+one paper and one dictionary entry at a time (slow, free, what this pipeline
+describes below), or wait for a native speaker who can confirm forms directly
+without needing a citation trail at all.
 
 **Procedure for a batch:**
 
 1. Pick a category (`Greetings`, `Gratitude`, …) so you are looking things up in one
    coherent sweep rather than at random.
 2. For each phrase, find it in a source from `SOURCES` that is valid for the claim
-   you are making. The Ramsa corpus is free and contemporary — start there.
+   you are making.
 3. Record the locator precisely enough that someone else can find it again: a page,
    a unit, a corpus utterance id. `'p.42'` is fine; `''` is not, and the lint
    rejects it.

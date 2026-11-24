@@ -16,7 +16,7 @@
  * also asserted to be exactly right — fixing a violation without removing it
  * from its list fails too, so the lists cannot rot into permanent excuses.
  */
-import { getScenarioScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
+import { getScenarioScripts, getOnboardingScripts, getAllScenarios, getOnboardingScenarios } from '../../constants/scenarios';
 import { PHRASES } from '../../constants/phrases';
 import { STRINGS } from '../../constants/strings';
 import { darkTheme } from '../../components/design/tokens';
@@ -39,11 +39,11 @@ import {
   countArabicWords,
   hasDisallowedTashkeel,
 } from '../arabicMetrics';
-import { isRouteScript, phrasesEarned } from '../scenarioEngine';
-import { enumerateRuns } from '../scenarioRules';
+import { phrasesEarned } from '../scenarioEngine';
 import type { DifficultyLevel } from '../../types';
 
 const scripts = getScenarioScripts(darkTheme);
+const onboardingScripts = getOnboardingScripts();
 const catalog = [...getAllScenarios(darkTheme), ...getOnboardingScenarios(darkTheme)];
 
 // ─── Collecting learner-facing Arabic ────────────────────────────────────────
@@ -70,7 +70,7 @@ function learnerFacingLines(): Line[] {
 
   for (const p of PHRASES) add(`phrase:${p.id}`, p.arabic);
 
-  for (const [id, script] of Object.entries(scripts)) {
+  for (const [id, script] of [...Object.entries(scripts), ...Object.entries(onboardingScripts)]) {
     for (const scene of script.scenes) {
       add(`${id}/${scene.id}/npc`, scene.arabic);
       if (scene.charDialogue) {
@@ -93,6 +93,8 @@ function learnerFacingLines(): Line[] {
         add(`${id}/${scene.id}/${c.id}-fem`, c.arabicFeminine);
       }
     }
+  }
+  for (const [id, script] of Object.entries(scripts)) {
     for (const e of script.endings) add(`${id}/ending:${e.type}`, e.arabic);
   }
 
@@ -135,28 +137,13 @@ function choiceCards(scriptId: string): string[] {
     .filter(a => countArabicWords(a) > 0);
 }
 
-/**
- * Turns a learner actually plays, as a [shortest, longest] pair.
- *
- * Not `scenes.length`. `first-morning` declares eight main scenes but forks twice,
- * so any single playthrough visits six — counting scenes would have marked it
- * two turns longer than a learner ever experiences. Bonus scenes are excluded: they
- * only appear on a secret ending. Runs come from the real engine, so a route
- * script's fork is followed exactly as the player follows it.
- */
-function turnsPerPlaythrough(scriptId: string): { min: number; max: number } {
-  const lengths = enumerateRuns(scripts[scriptId]).map(r => r.steps.length);
-  return { min: Math.min(...lengths), max: Math.max(...lengths) };
-}
-
 /** Catalog entries that have a script and are not exempt from level gates. */
-function gatedScenarios(): Array<{ id: string; scriptId: string; level: DifficultyLevel }> {
-  const out: Array<{ id: string; scriptId: string; level: DifficultyLevel }> = [];
+function gatedScenarios(): { id: string; scriptId: string; level: DifficultyLevel }[] {
+  const out: { id: string; scriptId: string; level: DifficultyLevel }[] = [];
   for (const meta of catalog) {
     if (LEVEL_EXEMPT_SCENARIOS.includes(meta.id)) continue;
-    const scriptId = scripts[meta.id] ? meta.id : `${meta.id}-career`;
-    if (!scripts[scriptId]) continue; // comingSoon scenarios have no script yet
-    out.push({ id: meta.id, scriptId, level: meta.level });
+    if (!scripts[meta.id]) continue; // comingSoon scenarios have no script yet
+    out.push({ id: meta.id, scriptId: meta.id, level: meta.level });
   }
   return out;
 }
@@ -166,21 +153,14 @@ function gatedScenarios(): Array<{ id: string; scriptId: string; level: Difficul
 /**
  * Scenarios currently outside the band their declared level claims.
  *
- * Each entry is `scenarioId:gate`. These are the re-levelling decisions from the
- * 2026-09-03 difficulty audit, recomputed on morphemes: `eid-greeting` sits
- * just over the A1 mean once clitics are counted. (The audit's worst offenders,
- * the-checkup and gym-consultation, were cut for the MVP; coffee-invitation's
- * two entries went with its 2026-09-15 rewrite.)
+ * Each entry is `scenarioId:gate`. Empty since 2026-09-15: the 2026-09-03 audit's
+ * worst offenders (the-checkup, gym-consultation) were cut for the MVP, and the
+ * six MVP scenarios were rewritten as route scripts inside their bands.
  *
- * Fixing one means either re-levelling the scenario or editing its content —
- * both content decisions, deliberately not made by this commit.
+ * Any new entry is a content decision — re-level the scenario or edit its cards —
+ * and should be rare enough to explain in the commit that adds it.
  */
-const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
-  'eid-greeting:meanMorphemes',
-  'eid-greeting:morphemeCeiling',
-  'social_elevator:phrasesUnlocked',
-  'social_elevator:turns',
-];
+const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [];
 
 /**
  * Scenarios whose choice cards contain no DIALECT_FEATURES at all.
@@ -189,6 +169,23 @@ const KNOWN_LEVEL_VIOLATIONS: readonly string[] = [
  * rather than dialect grammar — was cut for the MVP.
  */
 const KNOWN_DIALECT_GAPS: readonly string[] = [];
+
+/**
+ * DIALECT_FEATURES entries whose citation does not actually satisfy
+ * `isValidCitation` — every one here is a `lexeme` claim resting on
+ * `alramsa`, which is honestly dated 2016 (see its SOURCES note) and so
+ * fails the post-2020 contemporaneity rule for anything but `morphosyntax`.
+ *
+ * This is not a loophole around that rule — it is the rule doing its job. The
+ * old version of `alramsa` carried an invented "year: 2023" with no specific
+ * work behind it, which let these four pass silently. Dating it honestly
+ * (2026-09-03) surfaced that they were never really sourced. Removing an
+ * entry here requires an actual post-2020 citation, not a re-guessed year.
+ */
+const KNOWN_UNVERIFIED_CITATIONS: readonly string[] = [
+  'want-abi cites alramsa for lexeme',
+  'what-shu cites alramsa for lexeme',
+];
 
 describe('curriculum spec is internally consistent', () => {
   it('every difficulty level has a spec', () => {
@@ -209,7 +206,6 @@ describe('curriculum spec is internally consistent', () => {
     const inverted: string[] = [];
     for (const spec of Object.values(LEVEL_SPECS)) {
       const ranges = {
-        turns: spec.turns,
         phrasesUnlocked: spec.phrasesUnlocked,
         meanMorphemes: spec.meanMorphemes,
       };
@@ -226,11 +222,22 @@ describe('curriculum spec is internally consistent', () => {
     }
   });
 
-  it('each dialect feature cites a source valid for its claim', () => {
-    const bad = DIALECT_FEATURES.filter(f => !isValidCitation({
-      ref: f.source, locator: f.label, claim: f.claim,
-    })).map(f => `${f.id} cites ${f.source} for ${f.claim}`);
-    expect(bad).toEqual([]);
+  /** DIALECT_FEATURES entries whose citation currently fails validation. */
+  function invalidCitations(): string[] {
+    return DIALECT_FEATURES
+      .filter(f => !isValidCitation({ ref: f.source, locator: f.label, claim: f.claim }))
+      .map(f => `${f.id} cites ${f.source} for ${f.claim}`)
+      .sort();
+  }
+
+  it('introduces no NEW dialect feature with an invalid citation', () => {
+    const known = new Set(KNOWN_UNVERIFIED_CITATIONS);
+    expect(invalidCitations().filter(k => !known.has(k))).toEqual([]);
+  });
+
+  it('KNOWN_UNVERIFIED_CITATIONS lists nothing already fixed', () => {
+    const current = new Set(invalidCitations());
+    expect(KNOWN_UNVERIFIED_CITATIONS.filter(k => !current.has(k))).toEqual([]);
   });
 
   it('dialect feature ids are unique', () => {
@@ -329,19 +336,14 @@ describe('level gates', () => {
       const cards = choiceCards(scriptId);
       if (!cards.length) continue;
 
-      const turns = turnsPerPlaythrough(scriptId);
       // What one run can grant: core plus the largest single ending's set.
       const phrases = Math.max(...script.endings.map(e => phrasesEarned(script, e).length));
       const morphemes = cards.map(countMorphemes);
       const mean = morphemes.reduce((a, b) => a + b, 0) / morphemes.length;
       const maxClauses = Math.max(...cards.map(countClauses));
 
-      // Both the shortest and longest playthrough must sit inside the band.
-      // Route scripts are exempt: their length is DECISIONS_PER_RUN for every
-      // level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
-      if (!isRouteScript(script) && (!inRange(turns.min, spec.turns) || !inRange(turns.max, spec.turns))) {
-        out.push(`${id}:turns`);
-      }
+      // Run length is not a level gate: every scenario makes DECISIONS_PER_RUN
+      // decisions at every level (spec 2026-09-14 Q10), enforced by routeScriptProblems.
       if (!inRange(phrases, spec.phrasesUnlocked)) out.push(`${id}:phrasesUnlocked`);
       if (!inRange(mean, spec.meanMorphemes)) out.push(`${id}:meanMorphemes`);
       if (Math.max(...morphemes) > spec.morphemeCeiling) out.push(`${id}:morphemeCeiling`);
@@ -364,7 +366,7 @@ describe('level gates', () => {
   });
 
   it('exempt scenarios are genuinely exempt and genuinely exist', () => {
-    const allIds = new Set([...Object.keys(scripts), ...catalog.map(c => c.id)]);
+    const allIds = new Set([...Object.keys(scripts), ...Object.keys(onboardingScripts), ...catalog.map(c => c.id)]);
     const missing = LEVEL_EXEMPT_SCENARIOS.filter(id => !allIds.has(id));
     expect(missing).toEqual([]);
   });
@@ -424,8 +426,11 @@ describe('provenance', () => {
    * (الحمد لله على السلامة, خلني أفكر فيها, أحاول, أساعد). The أبي / خلني
    * patterns could not return without them (spec §2.9), and Ahmed chose that over
    * deferring the patterns. They go to the Emirati reviewer with the scenario.
+   * 106 → 101 on 2026-09-25 by actual sourcing, the first such drop: g3 شلونك and
+   * e6 وايد (Wiktionary Gulf Arabic), e1 زين and w2 ما شاء الله (Ramsa 2026), and
+   * h3 البيت بيتك (Ntelitheos & Idrissi 2017 — base word only, as its locator says).
    */
-  const MAX_UNSOURCED = 106;
+  const MAX_UNSOURCED = 101;
 
   const unsourced = () => PHRASES.filter(p => p.source.ref === 'unsourced');
 

@@ -12,7 +12,7 @@ import { STRINGS } from '../../constants/strings';
 import { FadeIn, ShimmerButton, Screen, Stack } from '../../components/ui';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingScenarioPlayer } from '../../components/onboarding/OnboardingScenarioPlayer';
-import { getOnboardingScenario, getScenarioScript } from '../../constants/scenarios';
+import { getOnboardingScenario, getOnboardingScript } from '../../constants/scenarios';
 import { Companion } from '../../components/ui/Companion';
 import { haptic } from '../../lib/haptics';
 import type { OnboardingStepProps } from './types';
@@ -327,7 +327,7 @@ export function QuickWinSteps({ screen, next, draft, quickWin, hold }: Onboardin
       case 'scenario': {
         const onboardingScenario = getOnboardingScenario(C);
         // Use the local mode state — user hasn't been saved to the store yet at this step
-        const script = onboardingScenario ? getScenarioScript('onboarding-cafe', C, mode) : undefined;
+        const script = onboardingScenario ? getOnboardingScript(mode) : undefined;
 
         if (!script) {
           return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: C.TEXT2 }}>{STRINGS.common.loading}</Text></View>;

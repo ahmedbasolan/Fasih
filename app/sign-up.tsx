@@ -3,8 +3,9 @@ import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Pla
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACE, SCREEN_MARGIN } from '../src/components/design/spacing';
 import { MotiView } from 'moti';
-import { User, Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
+import { Mail, Lock, Eye, EyeOff, Check, ChevronLeft, Shield } from '../src/components/icons';
 import { router } from 'expo-router';
+import { useAppStore } from '../src/store/useAppStore';
 import { useSignUp, useClerk } from '@clerk/expo';
 import { FONT_LATIN, FONT_LATIN_BOLD, FONT_LATIN_MEDIUM, FONT_HEADING_SEMI } from '../src/components/design/tokens';
 import { useTheme } from '../src/hooks/useTheme';
@@ -42,12 +43,15 @@ export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const { signUp } = useSignUp();
   const { setActive } = useClerk();
+  const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  // Onboarding replaces itself with this screen, so there may be nothing to
+  // go back to. Without the check, the back chevron is a dead button.
+  const canGoBack = router.canGoBack();
 
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState<'name' | 'email' | 'password' | null>(null);
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,19 +60,19 @@ export default function SignUpScreen() {
 
   const passedRules = PASSWORD_RULES.filter(r => r.test(password));
   const passwordStrong = passedRules.length === PASSWORD_RULES.length;
-  const canSubmit = fullName.trim().length >= 2 && email.trim().includes('@') && passwordStrong && agreed;
+  const canSubmit = email.trim().includes('@') && passwordStrong && agreed;
 
   const handleSignUp = async () => {
     if (!canSubmit) return;
     setError('');
     setLoading(true);
     try {
-      const nameParts = fullName.trim().split(' ');
+      // Email and password only. The display name is collected on the
+      // onboarding name step, which every new account goes through anyway —
+      // asking twice was the only reason this screen had a name field.
       const { error: createErr } = await signUp.create({
         emailAddress: email.trim(),
         password,
-        firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || undefined,
       });
       if (createErr) { setError(getClerkErrorMessage(createErr, STRINGS.auth.signUp.signUpFailed)); return; }
 
@@ -77,12 +81,21 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.signUpFailed));
     } finally {
       setLoading(false);
     }
   };
+
+  /**
+   * Clerk reports a second attempt on an already-verified email as an error,
+   * but the sign-up itself is still finishable. Treating it as failure is what
+   * strands an account whose email went through: the code is accepted, nothing
+   * moves, and every retry says "already been verified".
+   */
+  const isAlreadyVerified = (err: { code?: string; message?: string; longMessage?: string } | null | undefined) =>
+    err?.code === 'verification_already_verified' ||
+    /already been verified/i.test(err?.longMessage ?? err?.message ?? '');
 
   const handleVerify = async () => {
     if (verificationCode.length < 6) return;
@@ -90,16 +103,27 @@ export default function SignUpScreen() {
     setError('');
     try {
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: verificationCode.trim() });
-      if (verifyErr) { setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed)); return; }
-
-      if (signUp.status === 'complete') {
-        const { error: finalErr } = await signUp.finalize();
-        if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
-        await setActive({ session: signUp.createdSessionId! });
-        router.replace('/onboarding');
+      if (verifyErr && !isAlreadyVerified(verifyErr)) {
+        setError(getClerkErrorMessage(verifyErr, STRINGS.auth.signUp.verificationFailed));
+        return;
       }
+
+      // Always try to finish. The previous version only finalized when
+      // signUp.status had already flipped to 'complete' by the time this line
+      // ran, and did nothing at all otherwise — no session, no navigation, no
+      // error on screen. If something really is still missing, finalize() says
+      // so and the message is shown.
+      const { error: finalErr } = await signUp.finalize();
+      if (finalErr) { setError(getClerkErrorMessage(finalErr, STRINGS.auth.signUp.verificationFailed)); return; }
+
+      const sessionId = signUp.createdSessionId;
+      if (!sessionId) { setError(STRINGS.auth.signUp.verificationFailed); return; }
+
+      await setActive({ session: sessionId });
+      // The root gate decides: onboarded learners (who reach sign-up from the
+      // end of onboarding) go to the tabs and sync; new accounts onboard first.
+      router.replace('/');
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       setError(getClerkErrorMessage(err.errors?.[0], err.message ?? STRINGS.auth.signUp.verificationFailed));
     } finally {
       setLoading(false);
@@ -110,15 +134,17 @@ export default function SignUpScreen() {
     <View className="flex-1" style={{ backgroundColor: C.BG }}>
       <GhostLetters glyphs={['م', 'ر', 'ح']} />
 
-      <Pressable
-        onPress={() => router.back()}
-        style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
-      </Pressable>
+      {canGoBack && (
+        <Pressable
+          onPress={() => router.back()}
+          style={{ position: 'absolute', top: insets.top + SPACE.xl, left: SCREEN_MARGIN, zIndex: 30 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={28} strokeWidth={1.5} color={C.TEXT3} />
+        </Pressable>
+      )}
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
@@ -146,7 +172,7 @@ export default function SignUpScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text style={{ fontFamily: FONT_LATIN, fontSize: 14, color: C.TEXT2 }}>{STRINGS.auth.signUp.alreadyHaveAccount}</Text>
                 <Pressable
-                  onPress={() => router.back()}
+                  onPress={() => router.replace('/sign-in')}
                   hitSlop={8}
                   accessibilityRole="link"
                   accessibilityLabel={STRINGS.auth.signUp.signInLink}
@@ -233,28 +259,6 @@ export default function SignUpScreen() {
                   gap: 12, borderWidth: 1, borderColor: C.BORDER, marginBottom: 16,
                 }}
               >
-                {/* Full Name */}
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 4,
-                  backgroundColor: C.BG, borderWidth: 1,
-                  borderColor: focused === 'name' ? C.JADE_ACCENT : C.BORDER2,
-                }}>
-                  <User size={18} strokeWidth={1.5} color={focused === 'name' ? C.JADE_ACCENT : C.TEXT3} />
-                  <TextInput
-                    value={fullName}
-                    onChangeText={setFullName}
-                    placeholder={STRINGS.auth.signUp.fullNamePlaceholder}
-                    placeholderTextColor={C.TEXT3}
-                    accessibilityLabel={STRINGS.auth.signUp.fullNamePlaceholder}
-                    autoCapitalize="words"
-                    autoComplete="name"
-                    onFocus={() => setFocused('name')}
-                    onBlur={() => setFocused(null)}
-                    style={{ flex: 1, fontFamily: FONT_LATIN_MEDIUM, fontSize: 16, color: C.TEXT, paddingVertical: 12 }}
-                  />
-                </View>
-
                 {/* Email */}
                 <View style={{
                   flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -349,7 +353,7 @@ export default function SignUpScreen() {
                     hitSlop={12}
                     style={{
                       width: 22, height: 22, borderRadius: 6, marginTop: 1,
-                      backgroundColor: agreed ? C.JADE_ACCENT : 'transparent',
+                      backgroundColor: agreed ? C.JADE_ACCENT : `${C.JADE_ACCENT}00`,
                       borderWidth: 2, borderColor: agreed ? C.JADE_ACCENT : C.BORDER2,
                       alignItems: 'center', justifyContent: 'center',
                     }}
@@ -402,9 +406,15 @@ export default function SignUpScreen() {
                 </Pressable>
               </MotiView>
 
+              {/* Where Clerk mounts its Smart CAPTCHA on web. Without an
+                  element with this id it warns and falls back to the invisible
+                  widget, which stricter bot protection can refuse outright.
+                  Inert on native. */}
+              <View nativeID="clerk-captcha" />
+
               {__DEV__ && (
                 <Pressable
-                  onPress={() => router.replace('/onboarding')}
+                  onPress={() => router.replace(hasOnboarded ? '/(tabs)' : '/onboarding')}
                   style={{ marginTop: 24, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.BORDER, borderStyle: 'dashed' }}
                 >
                   <Text style={{ fontFamily: FONT_LATIN, fontSize: 12, color: C.TEXT3 }}>{STRINGS.auth.signUp.skipDevOnly}</Text>

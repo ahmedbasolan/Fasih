@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useHasFullAccess, useScenariosCompletedCount } from '../../src/store/useAppStore';
+import { FEATURE_UNLOCK_SCENARIO_COUNT, useHasFullAccess, useScenariosCompletedCount } from '../../src/store/useAppStore';
 import { PhraseLibrary } from '../../src/screens/PhraseLibrary';
 import { FeatureGate } from '../../src/components/features/FeatureGate';
 import { STRINGS } from '../../src/constants/strings';
@@ -17,7 +17,7 @@ export default function LibraryTab() {
     <FeatureGate
       hasAccess={hasAccess}
       scenariosCompleted={scenariosCompleted}
-      scenariosRequired={3}
+      scenariosRequired={FEATURE_UNLOCK_SCENARIO_COUNT}
       featureName={STRINGS.phrases.title}
       onGoToScenarios={() => router.push('/(tabs)/scenarios')}
     >

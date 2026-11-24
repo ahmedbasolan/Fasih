@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '@clerk/expo';
 import { useAppStore } from '../src/store/useAppStore';
 import { OnboardingFlow } from '../src/screens/OnboardingFlow';
 import { STRINGS } from '../src/constants/strings';
@@ -10,6 +11,7 @@ import {
 } from '../src/lib/analytics';
 
 export default function OnboardingRoute() {
+  const { isSignedIn } = useAuth();
   const setUser = useAppStore((s) => s.setUser);
   const setHasOnboarded = useAppStore((s) => s.setHasOnboarded);
   const grantStreakFreeze = useAppStore((s) => s.grantStreakFreeze);
@@ -35,7 +37,13 @@ export default function OnboardingRoute() {
       plan: profile.plan ?? 'none',
       goals: profile.goals,
     });
-    router.replace('/(tabs)');
+    // A guest who finishes onboarding must create an account now. Sending
+    // them to the tabs left them signed out, and the root gate sends a
+    // signed-out, onboarded learner to /sign-in on the next launch — locked
+    // out of an account they never made. Local progress survives sign-up:
+    // setting the user id keeps local state, a new account has no cloud row
+    // to merge over it, and the next store write pushes it up.
+    router.replace(isSignedIn ? '/(tabs)' : '/sign-up');
   };
 
   // Called when user taps "Start Free Trial" on the paywall step.

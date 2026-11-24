@@ -121,7 +121,7 @@ src/
     scenarios.ts        ← all scenario scripts and metadata
     strings.ts          ← all UI copy (no hardcoded strings in components)
   engine/               ← pure business logic, no React
-    scenarioEngine.ts   ← applyChoice, getTone, resolveNextScene, evaluateEnding
+    scenarioEngine.ts   ← applyChoice, getTone, leadingRoute, resolveNextScene, evaluateEnding
     __tests__/
   hooks/                ← custom React hooks
     useTheme.ts         ← primary styling hook (returns C, G, isDark)
@@ -183,10 +183,14 @@ conventional tanwīn (`شكراً`) are allowed. Harakat encode MSA's vowel syst
 write Emirati mid-vowels (`shloon`, `zain`) — vocalising dialect means inventing conventions
 *and* importing MSA machinery. **Romanisation is the authoritative pronunciation channel.**
 
-**5. Ahmed's approval is a product decision, never a linguistic one.** He does not speak
-Gulf Arabic. Never record content as verified because he approved it, and never present a
-phrase as correct without saying what it is sourced to. No native speaker has reviewed this
-content; the lint catches wrong *forms*, not unnatural ones.
+**5. Ahmed's approval is a product decision, never a linguistic one.** He does not read
+or speak Arabic **at all** — not just unfamiliar with the dialect. There is no human
+anywhere in this loop who can catch a wrong Arabic string by looking at it. Never record
+content as verified because he approved it, and never invent a citation — a plausible-
+sounding page number that wasn't checked is worse than `UNSOURCED`, because nobody
+downstream can catch the fabrication either (see `docs/language/authority.md` §0). No
+native speaker has reviewed this content; the lint catches wrong *forms*, not unnatural
+ones.
 
 **Audio is a standing violation of rule 1.** `ar-AE` is a locale tag, not a dialect model —
 device Arabic voices are MSA-trained, so the app says *qahwa* while the card teaches *gahwa*.
@@ -381,11 +385,15 @@ Language types: `CEFRBand`, `SourceRef`, `SourceClaim`, `SourceId`, `PhraseCurre
 
 The scenario engine (`src/engine/scenarioEngine.ts`) consists of **pure functions only**:
 
-- `applyChoice(state, choice)` → new `ScenarioState`
-- `getTone(state, scene)` → `'warm' | 'neutral' | 'cold'`
-- `resolveNextScene(state, scene, choice)` → `string | undefined`
+- `applyChoice(state, choice, npcId)` → new `ScenarioState`
+- `getTone(state, npcId, scene)` → `'warm' | 'neutral' | 'cold'`
+- `leadingRoute(state, script)` → the route id the run leans toward
+- `resolveNextScene(state, choice, script)` → `string | null` (state from before the choice)
+- `sceneAfterChoice(state, resolved, script)` → next main-path scene, the bonus scene, or `null` for the result
 - `evaluateEnding(state, script)` → `ScenarioEnding`
-- `isChoiceVisible(state, choice)` → `boolean` (flag-based gating)
+- `isChoiceVisible(choice, state)` → `boolean` (flag-based gating)
+
+Scenario presentation rules (feedback by scene kind, endings collection, hints) live in `src/engine/scenarioPresentation.ts`; content rules in `src/engine/scenarioRules.ts`.
 
 Never add React imports, side effects, or Zustand calls to the engine. Test it with unit tests in `src/engine/__tests__/`.
 

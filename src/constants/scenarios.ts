@@ -1,5 +1,5 @@
 import type { ThemeColors } from '../components/design/tokens';
-import type { Scenario, ScenarioScript } from '../types';
+import type { OnboardingScript, Scenario, ScenarioScript } from '../types';
 
 // ─── Scenario catalog ────────────────────────────────────────────────────────
 // Romanisation: ' = ع  kh = خ  gh = غ  g = ق  h = ح  sh = ش
@@ -52,18 +52,18 @@ export const getSocialScenarios = (C: ThemeColors): Scenario[] => [
   },
   {
     id: 'social_elevator', iconName: 'Users',
-    title: 'The Elevator', subtitle: 'A brief encounter in your building',
-    decisions: 6, endings: 4, phrases: '5', level: 'Beginner',
+    title: 'The Elevator', subtitle: 'New neighbours, moving in across the hall.',
+    decisions: 6, endings: 6, phrases: '9', level: 'Beginner',
     color: C.VIOLET2, gradientColors: ['#0A0A1A', '#050510'],
     arabicScene: 'مصعد',
-    kafIntro: 'You meet someone in your building elevator. Short phrases, simple choices.',
+    kafIntro: 'Your new neighbours are Jordanian. Understand their Levantine, answer in Gulf Arabic.',
     mode: 'social',
     dialect: 'Jordanian',
   },
   {
     id: 'eid-greeting', iconName: 'Users',
-    title: 'Eid Greetings', subtitle: 'Celebrate the holy day with neighbours',
-    decisions: 3, endings: 4, phrases: '7', level: 'Beginner',
+    title: 'Eid Greetings', subtitle: 'Eid morning at your Emirati neighbour\'s majlis.',
+    decisions: 6, endings: 6, phrases: '11', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A140A', '#0D0A05'],
     arabicScene: 'عيد',
     kafIntro: 'Eid greetings carry centuries of tradition — each phrase is a gift of connection.',
@@ -76,7 +76,8 @@ export const getOnboardingScenarios = (C: ThemeColors): Scenario[] => [
   {
     id: 'onboarding-cafe', iconName: 'Coffee',
     title: 'Welcome to the Café', subtitle: 'Your first interaction in Gulf Arabic',
-    decisions: 4, endings: 2, phrases: '5+', level: 'Beginner',
+    // The café is two decisions, no endings and one phrase — see the test in scenarioContent.
+    decisions: 2, endings: 0, phrases: '1', level: 'Beginner',
     color: C.JADE_ACCENT, gradientColors: ['#1A1408', '#0D0A05'],
     arabicScene: 'مقهى',
     kafIntro: 'Your first Arabic moment. Simple, welcoming, and full of cultural warmth.',
@@ -870,96 +871,239 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
   },
 
-  // ── SOCIAL 3: EID GREETINGS ─────────────────────────────────────────────────
+  // ── SOCIAL 3: EID GREETINGS ────────────────────────────────────────────────
+  // Route script (spec 2026-09-14). Eid morning at Uncle Salem's majlis, your
+  // Emirati neighbour, with his whole family around.
+  //
+  // Destinations: `belonging` (part of the family's Eid) and `honoured` (the
+  // guest the street talks about). Forks at scene3 (the sweets) and scene5 (the
+  // end of the meal). Hidden: bring Eid money for the children (scene2 c — not
+  // the top choice) AND decline more food with الله يديمها نعمة (scene5).
+  //
+  // NOT NATIVE-REVIEWED. eid-7 is new and replaces eid-3 (يسلموا إيديك, a
+  // Levantine form this scenario no longer uses), so the unsourced count holds.
   'eid-greeting': {
     id: 'eid-greeting',
     title: 'Eid Greetings',
-    phrases: { core: ['eid-1', 'eid-2', 'eid-3', 'eid-4', 'eid-5', 'eid-6', 'core-3'], byEnding: {} },
-    primerPhrases: ['eid-1', 'eid-3', 'eid-6'], // عيدكم مبارك / يسلموا إيديك / بيتنا بيتك
+    estimatedMinutes: 7,
+    routes: [
+      { id: 'belonging', label: 'Part of the family\'s Eid' },
+      { id: 'honoured', label: 'An honoured guest' },
+    ],
+    defaultRoute: 'belonging',
+    phrases: {
+      // عيدكم مبارك / وعساكم من عواده / بسم الله / الله يديمها نعمة / تفضل
+      core: ['eid-1', 'eid-2', 'eid-5', 'eid-7', 'h1'],
+      byEnding: {
+        // بيتنا بيتك / أهل / وايد
+        'eid-with-the-family': ['eid-6', 'fm1', 'e6'],
+        'a-warm-visit': ['eid-6', 'fm1', 'e6'],
+        // جزاكم الله خير / تسلم
+        'the-honoured-guest': ['eid-4', 'gr3'],
+        'a-polite-guest': ['eid-4', 'gr3'],
+        // يدي — what the grandchildren call him, and now you do too
+        'your-own-eidiyya': ['fm2'],
+      },
+    },
+    primerPhrases: ['eid-1', 'eid-2', 'eid-5'], // عيدكم مبارك / وعساكم من عواده / بسم الله
     scenes: [
       {
-        id: 'scene1', charName: 'Uncle Rashid', charGender: 'male', setting: 'Neighbourhood — Eid morning',
-        arabic: 'عيدكم مبارك! تعالوا عندنا',
-        roman: "eidkum mubaarak! ta'aalaw 'indna",
-        english: 'Blessed Eid to you! Come visit us.',
+        id: 'scene1', kind: 'language', charName: 'Uncle Salem', charGender: 'male', setting: 'Uncle Salem\'s door — Eid morning',
+        arabic: 'عيدك مبارك! حياك الله، تفضل',
+        roman: "'iidak mubaarak! hayyaak allaah, tfaddal",
+        english: 'Eid Mubarak! Welcome — come in.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'عيدج مبارك! حياج الله، تفضلي', roman: "'iidich mubaarak! hayyaach allaah, tfaddali", english: 'Eid Mubarak! Welcome — come in.' },
+        teachingNote: 'عيدك مبارك to a man, عيدج to a woman. The Gulf answer returns the wish and adds one: that he lives to see the next Eid — وعساكم من عواده.',
         choices: [
-          { id: 'a', text: 'Thanks! Maybe later — I have plans', arabic: 'مشكور! يمكن بعدين — عندي خطة', roman: "mashkuur! yimkin ba'dayn — 'indi khatta", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, note: 'Declining an Eid invitation is like refusing a family embrace. This day is about togetherness.', outcome: 'bad' },
-          { id: 'b', text: 'Blessed Eid! I\'ll definitely come by', arabic: 'عيدكم مبارك! أكيد بمر عليكم', roman: "'eidkum mubaarak! akiid bamurr 'alaykum", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, note: 'You returned the Eid greeting and actually committed. أكيد بمر عليكم is a yes — a bare إن شاء الله here would have been heard as a polite no, and on Eid morning that stings.', outcome: 'good' },
-          { id: 'c', text: 'May every year find you well!', arabic: 'كل عام وأنتم بخير!', roman: "kul 'aam wa antum b-khayr!", score: 4, impact: { trust: 1, respect: 2, culture: 1 }, note: 'Correct and heard everywhere on Eid — nobody will blink. It is simply the all-purpose greeting that also covers Ramadan and the new year, where عيدكم مبارك marks this specific day. Rashid notices the difference, but only as a shade.', outcome: 'good' },
-          { id: 'd', text: 'Blessed Eid, and may you live to see it again! Honoured, truly', arabic: 'عيدكم مبارك وعساكم من عواده! تشرفنا والله', roman: "'eidkum mubaarak wa 'asaakum min 'uwwaadah! tsharrafna wallah", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, flag: 'EID_GREETING_MASTERED', note: 'وعساكم من عواده — "may you be among those who see it again" — is the traditional Gulf follow-up almost no non-native learns. Saying it marks you as someone who has been listening for years.', outcome: 'excellent' },
+          { id: 'a', text: 'Upon us and you — and may you see many more', arabic: 'علينا وعليكم، وعساكم من عواده', roman: "'alaina w-'alaikum, w-'asaakum min 'uwwaada", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'excellent', note: 'علينا وعليكم returns the blessing, and وعساكم من عواده wishes him many more Eids. It is the answer his own family gives — and the one learners almost never know.' },
+          { id: 'b', text: 'May every year find you well — thanks for inviting me', arabic: 'كل عام وانتو بخير، مشكور على العزيمة', roman: "kill 'aam w-intu b-khair, mashkuur 'ala il-'aziima", score: 3, impact: { trust: 2, respect: 2, culture: -1 }, outcome: 'good', note: 'Kind, and heard everywhere. But كل عام وانتو بخير covers every occasion; on Eid morning, عيدك مبارك has its own answer — وعساكم من عواده.' },
+          { id: 'c', text: '(Say "Happy Eid!" in English and walk in)', arabic: '—', roman: '(Happy Eid! — in English)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'He greeted you in Arabic on the biggest day of his year. Even the short عيدك مبارك back would have told him you came ready.' },
         ],
       },
       {
-        id: 'scene2', charName: 'Uncle Rashid', charGender: 'male', setting: 'Rashid\'s home — living room',
-        arabic: 'تفضل — هذي حلويات العيد. ذوق',
-        roman: "tfaddal — hadhi halawiyyaat al-'eid. dhoog",
-        english: 'Please — these are Eid sweets. Try some.',
-        charDialogue: {
-          warm: { arabic: 'يا هلا هلا! تفضل — هذي حلويات العيد. زوجتي سوّتها من أمس. ذوق وقولي رأيك', roman: "ya hala hala! tfaddal — hadhi halawiyyaat al-'eid. zawjati sawwatha min ams. dhoog w-gulli ra'yak", english: "Welcome, welcome! Please — these are Eid sweets. My wife made them yesterday. Try some and tell me what you think." },
-          neutral: { arabic: 'تفضل — هذي حلويات العيد. ذوق', roman: "tfaddal — hadhi halawiyyaat al-'eid. dhoog", english: "Please — these are Eid sweets. Try some." },
-          cold: { arabic: 'تفضل. فيه حلويات.', roman: "tfaddal. fii halawiyyaat.", english: "Please. There are sweets." },
-        },
-        warmThreshold: 6, coldThreshold: 1,
+        id: 'scene2', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — the whole family, and a line of shoes at the door',
+        arabic: 'تفضل، اقعد هني. هذولا عيالي وعيال عيالي',
+        roman: "tfaddal, ig'id hini. haadhola 'iyaali w-'iyaal 'iyaali",
+        english: 'Please, sit here. These are my children and my grandchildren.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'تفضلي، اقعدي هني. هذولا عيالي وعيال عيالي', roman: "tfaddali, ig'idi hini. haadhola 'iyaali w-'iyaal 'iyaali", english: 'Please, sit here. These are my children and my grandchildren.' },
+        teachingNote: 'تفضل is the Gulf offer — "please, come, sit, take it". هذولا is the Emirati "these". Shoes stay at the door of a majlis.',
         choices: [
-          { id: 'a', text: 'No thanks, I\'m watching my sugar intake', arabic: 'لا شكراً، أنا محافظ على السكر', roman: "la shukran, ana muhaafit 'ala as-sukkar", score: -5, impact: { trust: -1, respect: -2, culture: -2 }, note: 'Refusing Eid sweets is like refusing the celebration itself. Always accept hospitality.', outcome: 'bad' },
-          { id: 'b', text: 'Thank you! They look delicious', arabic: 'مشكور! شكلها لذيذة', roman: "mashkuur! shakilha ladhiidha", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, note: 'You accepted and complimented — the right instincts. But شكلها لذيذة praises the plate, not the person. On Eid these were made by hand days in advance; the phrases that honour that are بسم الله before the first bite and يسلموا إيديك for whoever made them.', outcome: 'good' },
-          { id: 'c', text: 'In God\'s name — bless your hands, uncle', arabic: 'بسم الله — يسلموا إيديك يا عمي', roman: "bismillah — yislamu ideik ya 'ammi", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'بسم الله before eating, then يسلموا إيديك — blessing the hands that did the work. يا عمي is the warm, correct way to address an older man who is not a relative.', outcome: 'good' },
-          { id: 'd', text: 'In God\'s name — mashaAllah! God give you all strength', arabic: 'بسم الله — ما شاء الله! الله يعطيكم العافية', roman: "bismillah — maa shaa' allah! allah ya'tiikum al-'aafya", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, flag: 'HONOURED_THE_HOSPITALITY', note: 'بسم الله, then ما شاء الله on the spread, then a blessing on the whole household with the plural يعطيكم — which credits whoever did the baking without you having to ask about his wife directly.', outcome: 'excellent' },
+          { id: 'a', text: '(Greet the eldest first, then the room) Peace be upon you', arabic: 'السلام عليكم', roman: "is-salaamu 'alaikum", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', note: 'Greeting the eldest first, then the room, is exactly how an Emirati guest enters a majlis. Salem\'s father nods — someone taught you well.' },
+          { id: 'b', text: 'MashaAllah — the house is full!', arabic: 'ما شاء الله، البيت مليان!', roman: "maa shaa' allaah, il-bait malyaan!", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', note: 'A house full of family is the whole point of Eid, and ما شاء الله admires it without inviting envy. Salem beams.' },
+          { id: 'c', text: '(Hand each child a little Eid money) Eid Mubarak, kids!', arabic: 'عيدكم مبارك يا عيال!', roman: "'iidkum mubaarak ya 'iyaal!", score: 5, impact: { trust: 3, respect: 0, culture: 2 }, outcome: 'good', route: 'belonging', flag: 'GAVE_EIDIYYA', note: 'عيدية — a little money for the children — is how adults mark Eid in the Gulf. You came ready for the kids, which says you know whose day it really is.' },
+          { id: 'd', text: '(Sit down with your shoes on)', arabic: '—', roman: '(you sit down, shoes still on)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'The line of shoes at the door was the clue. Wearing yours into a majlis brings the street onto the carpet the family sits and prays on.' },
         ],
       },
       {
-        id: 'scene3', charName: 'Uncle Rashid', charGender: 'male', setting: 'Rashid\'s doorstep — farewell',
-        arabic: 'الله يبارك فيك. بيتنا بيتك دايماً',
-        roman: "allah ybaarak fiik. baitna baitak daayiman",
-        english: 'God bless you. Our home is always your home.',
+        id: 'scene3', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — a tray of Eid sweets comes round',
+        arabic: 'ذوق، هذي حلويات العيد',
+        roman: "dhuug, haadhi halawiyyaat il-'iid",
+        english: 'Taste — these are the Eid sweets.',
         charDialogue: {
-          warm: { arabic: 'الله يبارك فيك يا ولدي. والله انبسطنا بيك اليوم. بيتنا بيتك دايماً — ما هو كلام', roman: "allah ybaarak fiik ya waladi. wallah inbasatna biik al-yoom. baitna baitak daayiman — maa huu kalaam", english: "God bless you, my son. By God, we were so happy to have you today. Our home is always your home — and I mean it." },
-          neutral: { arabic: 'الله يبارك فيك. بيتنا بيتك دايماً', roman: "allah ybaarak fiik. baitna baitak daayiman", english: "God bless you. Our home is always your home." },
-          cold: { arabic: 'الله يسلمك. مع السلامة.', roman: "allah yisallmak. ma'a as-salaama.", english: "God keep you safe. Goodbye." },
+          warm: { arabic: 'ذوق ذوق! هذي حلويات العيد، أم سعيد سوتها', roman: "dhuug dhuug! haadhi halawiyyaat il-'iid, umm sa'iid sawwatha", english: 'Taste, taste! These are the Eid sweets — Umm Saeed made them.' },
+          neutral: { arabic: 'ذوق، هذي حلويات العيد', roman: "dhuug, haadhi halawiyyaat il-'iid", english: 'Taste — these are the Eid sweets.' },
+          cold: { arabic: 'حلويات العيد', roman: "halawiyyaat il-'iid", english: 'Eid sweets.' },
         },
-        warmThreshold: 11, coldThreshold: 2,
+        warmThreshold: 9, coldThreshold: 3,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'ذوقي، هذي حلويات العيد',
+          roman: "dhuugi, haadhi halawiyyaat il-'iid",
+          english: 'Taste — these are the Eid sweets.',
+          charDialogue: {
+            warm: { arabic: 'ذوقي ذوقي! هذي حلويات العيد، أم سعيد سوتها', roman: "dhuugi dhuugi! haadhi halawiyyaat il-'iid, umm sa'iid sawwatha", english: 'Taste, taste! These are the Eid sweets — Umm Saeed made them.' },
+            neutral: { arabic: 'ذوقي، هذي حلويات العيد', roman: "dhuugi, haadhi halawiyyaat il-'iid", english: 'Taste — these are the Eid sweets.' },
+            cold: { arabic: 'حلويات العيد', roman: "halawiyyaat il-'iid", english: 'Eid sweets.' },
+          },
+        },
+        teachingNote: 'ذوق to a man, ذوقي to a woman. بسم الله comes before the first bite; the thanks go to the household that made them.',
+        nextByRoute: { belonging: 'scene4-belonging', honoured: 'scene4-honoured' },
         choices: [
-          { id: 'a', text: 'Thanks! See you around', arabic: 'مشكور! نشوفك', roman: "mashkuur! nishuufak", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, note: 'Uncle Rashid just said "بيتنا بيتك دايماً" — your house is always our house. This is one of the warmest things a Gulf Arab can say to someone outside the family. It means: you belong here. Responding with "مشكور! نشوفك" (thanks, see you) is the social equivalent of someone handing you a gift and you pocketing it without looking at it. The farewell needed to honour the size of what he offered.', outcome: 'bad' },
-          { id: 'b', text: 'الله يبارك فيك — شكراً على كرمكم', arabic: 'الله يبارك فيك — شكراً على كرمكم', roman: "allah ybaarak fiik — shukran 'ala karamkum", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, note: 'Thanking their generosity while returning the blessing is respectful.', outcome: 'good' },
-          { id: 'c', text: 'That was really nice, thank you so much', arabic: 'كان حلو وايد، مشكور', roman: "kaan hilw waayid, mashkuur", score: 3, impact: { trust: 2, respect: 0, culture: -1 }, note: '⚖️ Plainly sincere, and Rashid hears that — trust rises. But he offered you belonging and you answered with a compliment. In Gulf farewells, a blessing returned for a blessing given is what closes the circle.', outcome: 'neutral' },
-          { id: 'd', text: 'جزاكم الله خير — أنتم أهلي هنا والله. كل عام وأنتم بخير', arabic: 'جزاكم الله خير — أنتم أهلي هنا. كل عام وأنتم بخير', roman: "jazaakum allah khair — antum ahli hini wallah. kul 'aam wa antum b-khayr", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, note: '"May God reward you — you are my family here. May every year find you well." You\'ve become part of the neighbourhood.', outcome: 'excellent' },
+          { id: 'a', text: 'In God\'s name… God give you all strength', arabic: 'بسم الله… الله يعطيكم العافية', roman: "bismillaah… allaah ya'tiikum il-'aafya", score: 7, impact: { trust: 2, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', note: 'بسم الله before eating, then a blessing on the whole household — the plural يعطيكم thanks whoever baked without you asking about his wife.' },
+          { id: 'b', text: 'In God\'s name. They\'re so good!', arabic: 'بسم الله. حلوة وايد!', roman: 'bismillaah. hilwa waayid!', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', note: 'Enjoying the sweets out loud is the compliment a host wants most. Salem pushes the tray closer.' },
+          { id: 'c', text: 'No thanks — I don\'t eat sugar', arabic: 'لا مشكور، أنا ما آكل سكر', roman: 'laa mashkuur, ana maa aakil sukkar', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', note: 'On Eid the sweets are the welcome itself. Take one piece — refusing the tray refuses the house.' },
+        ],
+      },
+      {
+        id: 'scene4-belonging', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — the children run in and out',
+        arabic: 'وين أهلك في العيد؟',
+        roman: "wain ahlak fil-'iid?",
+        english: 'Where is your family for Eid?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'وين أهلج في العيد؟', roman: "wain ahlich fil-'iid?", english: 'Where is your family for Eid?' },
+        teachingNote: 'أهلك to a man, أهلج to a woman. On Eid, a Gulf host worries about anyone spending it away from family.',
+        choices: [
+          { id: 'a', text: 'Far away — but today, you are my family', arabic: 'بعيد، بس اليوم انتو أهلي', roman: "b'iid, bass il-yoom intu ahli", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', next: 'scene5', note: 'You told him what his invitation meant to someone far from home. On Eid, that is the thing a host most hopes to hear.' },
+          { id: 'b', text: 'Back home. I called them this morning', arabic: 'في بلدي. كلمتهم الصبح', roman: 'fi baladi. kallamthum is-subh', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', next: 'scene5', note: 'Calling your family first thing on Eid is what a good son or daughter does. Salem nods with approval.' },
+          { id: 'c', text: 'Eid doesn\'t matter much to me', arabic: 'ما يهمني العيد وايد', roman: "maa yhimmni il-'iid waayid", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'You are sitting in his majlis on the day that matters most to him. Whatever Eid is to you, today it is his.' },
+        ],
+      },
+      {
+        id: 'scene4-honoured', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — an old man comes in on a stick',
+        arabic: 'هذا الوالد',
+        roman: 'haadha il-waalid',
+        english: 'This is my father.',
+        teachingNote: 'الوالد is "the father" — respectful, and also how you address any old man. Everyone in the room stands when an elder comes in.',
+        choices: [
+          { id: 'a', text: '(Stand up) May God lengthen your life, father', arabic: 'الله يطول عمرك يا الوالد', roman: "allaah ytawwil 'umrak ya il-waalid", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', next: 'scene5', note: 'Standing, then a blessing of long life — the two things an Emirati elder expects from a guest who was raised well.' },
+          { id: 'b', text: '(Stand up) Please, take my seat, uncle', arabic: 'تفضل مكاني يا عمي', roman: "tfaddal makaani ya 'ammi", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', next: 'scene5', note: 'Giving up your seat is how a family member behaves, not a visitor. يا عمي — "uncle" — is the warm address for an older man.' },
+          { id: 'c', text: '(Stay seated and wave)', arabic: '—', roman: '(a wave from your seat)', score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Everyone else stood. Staying seated for an elder is one of the few things an Emirati family will not quite forgive a guest.' },
+        ],
+      },
+      {
+        id: 'scene5', kind: 'language', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — after the Eid lunch',
+        arabic: 'كل بعد! ما كليت شي',
+        roman: "kil ba'd! maa kilait shay",
+        english: "Eat more! You've hardly eaten a thing.",
+        charDialogue: {
+          warm: { arabic: 'كل بعد يا ولدي! ما كليت شي', roman: "kil ba'd ya wildi! maa kilait shay", english: "Eat more, my son! You've hardly eaten a thing." },
+          neutral: { arabic: 'كل بعد! ما كليت شي', roman: "kil ba'd! maa kilait shay", english: "Eat more! You've hardly eaten a thing." },
+          cold: { arabic: 'كل بعد', roman: "kil ba'd", english: 'Eat more.' },
+        },
+        warmThreshold: 18, coldThreshold: 6,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'كلي بعد! ما كليتي شي',
+          roman: "kili ba'd! maa kilaiti shay",
+          english: "Eat more! You've hardly eaten a thing.",
+          charDialogue: {
+            warm: { arabic: 'كلي بعد يا بنتي! ما كليتي شي', roman: "kili ba'd ya binti! maa kilaiti shay", english: "Eat more, my daughter! You've hardly eaten a thing." },
+            neutral: { arabic: 'كلي بعد! ما كليتي شي', roman: "kili ba'd! maa kilaiti shay", english: "Eat more! You've hardly eaten a thing." },
+            cold: { arabic: 'كلي بعد', roman: "kili ba'd", english: 'Eat more.' },
+          },
+        },
+        teachingNote: 'A Gulf host will keep urging food. The way to stop, with thanks, is الله يديمها نعمة — "may God keep this blessing". كل to a man, كلي to a woman.',
+        nextByRoute: { belonging: 'scene6-belonging', honoured: 'scene6-honoured' },
+        choices: [
+          { id: 'a', text: 'May God keep this blessing for you', arabic: 'الله يديمها نعمة', roman: "allaah ydiimha ni'ma", score: 7, impact: { trust: 2, respect: 2, culture: 3 }, outcome: 'excellent', flag: 'BLESSED_THE_TABLE', note: 'الله يديمها نعمة thanks God for the table and the host for filling it — and it is the one answer that lets him stop insisting without either of you losing face.' },
+          { id: 'b', text: 'I\'m full, thank you so much, uncle', arabic: 'شبعت، مشكور وايد يا عمي', roman: "shiba't, mashkuur waayid ya 'ammi", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'True and polite — but "I\'m full" invites one more round of insisting. الله يديمها نعمة is the phrase that ends it with a blessing.' },
+          { id: 'c', text: '(Push the plate away)', arabic: '—', roman: '(you push the plate away)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'Pushing food away at a host\'s table reads as rejecting it. A word of thanks stops the offers far more kindly.' },
+        ],
+      },
+      {
+        id: 'scene6-belonging', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis door — you get ready to leave',
+        arabic: 'بيتنا بيتك. والعيد الياي، عيدك عندنا',
+        roman: "baitna baitak. w-il-'iid il-yaay, 'iidak 'indana",
+        english: 'Our home is your home. And next Eid, you spend it with us.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'بيتنا بيتج. والعيد الياي، عيدج عندنا', roman: "baitna baitich. w-il-'iid il-yaay, 'iidich 'indana", english: 'Our home is your home. And next Eid, you spend it with us.' },
+        teachingNote: 'الياي is the Emirati "next" (from الجاي, with ج→ي). بيتنا بيتك from an elder is a real invitation, not a figure of speech.',
+        choices: [
+          { id: 'a', text: 'God willing — I won\'t miss it', arabic: 'إن شاء الله، ما أفوته', roman: "in shaa' allaah, maa afawwta", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', next: null, note: 'إن شاء الله with a promise attached is a real yes. Salem will hold you to it — happily.' },
+          { id: 'b', text: 'May God reward you — an honour for me', arabic: 'جزاكم الله خير، شرف لي', roman: 'jazaakum allaah khair, sharaf li', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', next: null, note: 'جزاكم الله خير is the heaviest thanks there is, and شرف لي — "an honour for me" — gives his invitation the weight it carries.' },
+          { id: 'c', text: 'I don\'t know — I might be travelling', arabic: 'ما أدري، يمكن أسافر', roman: "maa adri, yimkin asaafir", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'An elder just offered you a place in his family\'s Eid. Hedging answers the size of the offer with a shrug.' },
+        ],
+      },
+      {
+        id: 'scene6-honoured', kind: 'judgement', charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis — the incense burner comes round',
+        arabic: 'تفضل، بخور',
+        roman: 'tfaddal, bukhuur',
+        english: 'Please — bukhoor.',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'تفضلي، بخور', roman: 'tfaddali, bukhuur', english: 'Please — bukhoor.' },
+        teachingNote: 'Bukhoor offered to a guest is an honour: waft the smoke towards your clothes. In Emirati custom it also means the visit is closing — "ما بعد العود قعود".',
+        choices: [
+          { id: 'a', text: '(Waft the smoke over your clothes) Thank you, uncle. We\'ll take our leave', arabic: 'تسلم يا عمي. يلا، نستأذن', roman: "tislam ya 'ammi. yalla, nista'dhin", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'honoured', next: null, note: 'You took the bukhoor and read what it meant. نستأذن — "we ask your leave" — is how a guest ends a visit gracefully, before the host has to.' },
+          { id: 'b', text: '(Waft the smoke over your clothes) Wow, it smells wonderful', arabic: 'الله! ريحته حلوة وايد', roman: "allaah! riihta hilwa waayid", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'belonging', next: null, note: 'Loving his oud is loving his house, and Salem tells you where he buys it. You stayed on a little past the hint — among family, nobody minds.' },
+          { id: 'c', text: '(Wave the smoke away, coughing)', arabic: '—', roman: '(you wave the smoke away)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'Bukhoor is offered as an honour. Waving it off refuses the honour — if it is too much, let it pass with a thank-you.' },
+        ],
+      },
+      {
+        id: 'scene7-bonus', bonus: true, charName: 'Uncle Salem', charGender: 'male', setting: 'The majlis door — Uncle Salem presses an envelope into your hand',
+        arabic: 'وهذي عيديتك. العيال يقولون لي يدي، وانت بعد',
+        roman: "w-haadhi 'iidiitak. il-'iyaal yguuluun li yiddi, w-inta ba'd",
+        english: "And this is your Eid money. The kids call me Yiddi — and so do you now.",
+        addressesLearner: true,
+        femaleLearner: { arabic: 'وهذي عيديتج. العيال يقولون لي يدي، وانتي بعد', roman: "w-haadhi 'iidiitich. il-'iyaal yguuluun li yiddi, w-inti ba'd", english: "And this is your Eid money. The kids call me Yiddi — and so do you now." },
+        teachingNote: 'Elders give عيدية to the young people they count as their own. يدي is the Emirati "grandpa" — ج→ي again.',
+        choices: [
+          { id: 'a', text: 'May you see many more Eids, Yiddi', arabic: 'عساك من عواده يا يدي', roman: "'asaak min 'uwwaada ya yiddi", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'You used the name he offered and gave the Eid blessing back. The grandchildren cheer.' },
+          { id: 'b', text: 'May God never take you from us', arabic: 'الله لا يحرمنا منك', roman: 'allaah laa yihrimna minnak', score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'الله لا يحرمنا منك — "may God not deprive us of you" — is what grandchildren say to a grandfather. Salem has to look away for a moment.' },
         ],
       },
     ],
     endings: [
       {
-        id: 'adopted-family', min: 22, title: 'Adopted Family', arabic: 'أنت ولدنا', roman: "inta waldna",
-        en: 'You are our child',
-        desc: 'Uncle Rashid declares you family. In Gulf culture, being called "ولدنا" (our child) by an elder is not a figure of speech — it is a formal declaration of belonging. You will never spend another Eid alone.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: [
-          'You returned "عيدكم مبارك" with "وعساكم من عواده" — the traditional follow-up that most non-natives never learn',
-          'You said "بسم الله" before touching the sweets and blessed the household with الله يعطيكم العافية — treating the food as the act of love it was',
-          'You closed with "جزاكم الله خير — أنتم أهلي هنا" — telling Rashid his family filled a gap you actually felt',
-          'Eid is the one day that tests everything: greeting, hospitality, farewell. You passed every stage.',
-        ],
+        id: 'your-own-eidiyya', min: 30, secret: true, requiredFlags: ['GAVE_EIDIYYA', 'BLESSED_THE_TABLE'],
+        title: 'Your Own Eidiyya', arabic: 'العيدية', roman: "il-'iidiyya", en: 'Eid money',
+        desc: 'At the door, Uncle Salem presses an envelope into your hand — your own عيدية, the Eid money elders give the young people of the family. You came with something for his grandchildren, and you ended the meal with الله يديمها نعمة like one of his own. In the Gulf, an elder gives عيدية only to people he counts as family.',
+        color: C.CULTURAL_GOLD, type: 'exceptional',
+        hint: 'Eid belongs to the children — come ready for them. And end the meal with a blessing, not just a thank-you.',
       },
       {
-        id: 'neighbourhood-welcome', min: 13, title: 'Neighbourhood Welcome', arabic: 'أهلاً فيك دايماً', roman: "ahlan fiik daayiman",
-        en: 'Always welcome',
-        desc: 'Rashid tells the neighbours about you. In close-knit Emirati neighbourhoods, word travels fast — you will find doors opening before you even knock.',
-        color: C.JADE2, type: 'success',
-        culturalJourney: [
-          'You returned the greeting in Arabic and committed to the visit instead of hedging',
-          'You accepted the sweets with warmth — refusing hospitality on Eid is culturally impossible',
-          'A genuine farewell sealed the visit — Rashid will remember you at the next celebration',
-        ],
+        id: 'eid-with-the-family', min: 28, route: 'belonging', tier: 'strong',
+        title: 'Eid With the Family', arabic: 'من العايدين', roman: "min il-'aaydiin", en: 'Among those who celebrate',
+        desc: 'There is already a place kept for you in Uncle Salem\'s majlis next Eid, and his grandchildren know your name. You made a fuss of the house, the sweets and the children, and told him that today his family was yours.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Be part of the day: the children, the sweets, and the family you are far from.',
       },
       {
-        id: 'polite-visitor', min: 3, title: 'Polite Visitor', arabic: 'تفضل وقت ما تبي', roman: "tfaddal wagt ma tabi",
-        en: 'Come whenever you like',
-        desc: 'A nice visit, but it felt more like a courtesy call than a connection. Rashid was generous — he always is — but the warmth did not become a bond.',
+        id: 'a-warm-visit', min: 12, route: 'belonging', tier: 'weak',
+        title: 'A Warm Visit', arabic: 'عساكم من عواده', roman: "'asaakum min 'uwwaada", en: 'May you see many more',
+        desc: 'Uncle Salem enjoyed having you, and the children waved you off. A few moments came out awkward, though, so it was a kind visit rather than the start of a tradition.',
+        color: C.JADE2, type: 'mixed',
+        hint: 'Warmth is the right instinct — land the Eid words too, and next year he will expect you.',
+      },
+      {
+        id: 'the-honoured-guest', min: 28, route: 'honoured', tier: 'strong',
+        title: 'The Honoured Guest', arabic: 'الله يطول عمرك', roman: "allaah ytawwil 'umrak", en: 'May God lengthen your life',
+        desc: 'Uncle Salem tells the street about the guest who greeted his father first, blessed the table and knew what the bukhoor meant. In an Emirati home, knowing the customs is how a stranger shows respect — and it is remembered for years.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Honour the house: greet the eldest first, stand for the elders, and read what the bukhoor means.',
+      },
+      {
+        id: 'a-polite-guest', min: 12, route: 'honoured', tier: 'weak',
+        title: 'A Polite Guest', arabic: 'مشكورين', roman: 'mashkuuriin', en: 'Thank you all',
+        desc: 'You were respectful, and Uncle Salem noticed. A couple of customs slipped, though, so you left as a polite guest rather than the one the neighbourhood talks about.',
         color: C.VIOLET2, type: 'mixed',
+        hint: 'Respect is the right instinct — the Eid greeting and the end-of-meal blessing are what make it land.',
       },
       {
-        id: 'missed-blessing', min: 0, title: 'Missed Blessing', arabic: 'الله كريم', roman: "allah kariim",
-        en: 'God is generous',
-        desc: 'Uncle Rashid smiles politely. "الله كريم" (God is generous) is what Gulf Arabs say when something disappointing happens and they choose grace over complaint. He chose grace.',
+        id: 'eid-passes-by', min: 0,
+        title: 'Eid Passes By', arabic: 'الله كريم', roman: 'allaah kariim', en: 'God is generous',
+        desc: 'Uncle Salem smiled and wished you well. But nothing quite landed, and next Eid the invitation goes to someone else. He says الله كريم, and lets it go.',
         color: C.ERROR, type: 'failed',
       },
     ],
@@ -1180,156 +1324,254 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
     ],
   },
 
-  // ── SOCIAL 2: THE ELEVATOR ──────────────────────────────────────────────────
+  // ── SOCIAL 2: THE ELEVATOR ─────────────────────────────────────────────────
+  // Route script (spec 2026-09-14). A Jordanian family — Abu Omar, Umm Omar and
+  // five-year-old Omar — moves into the flat across from yours. They speak
+  // Levantine; the learner answers in Khaleeji. Invitations always come from the
+  // family, never one-on-one, so the scenario works for every learner.
+  //
+  // Destinations: `family` (welcomed like family) and `neighbour` (the one they
+  // count on). Forks at scene3 (meeting Omar) and scene5 (the goodnight).
+  // Hidden: bless Omar through his father (scene3 c — not the top choice) AND
+  // answer تصبح على خير with وانت من أهله (scene5).
+  //
+  // NOT NATIVE-REVIEWED. The family's lines need the Levantine reviewer; the
+  // learner's lines need the Emirati reviewer. Phrase sets reuse library entries.
   'social_elevator': {
     id: 'social_elevator',
     title: 'The Elevator',
-    subtitle: 'Apartment building, evening',
-    kafIntro: "You meet someone in your building elevator. Sami is Jordanian — reserved at first. This is Level 1: short phrases, simple choices. He speaks Levantine, you answer in Gulf Arabic. Noticing the difference is the lesson.",
-    iconName: 'building',
-    estimatedMinutes: 6,
-    phrases: { core: ['el-1', 'el-2', 'el-3', 'el-4', 'core-2'], byEnding: {} },
-    primerPhrases: ['el-1', 'el-3', 'el-4'], // السلام عليكم / تعال على شاي / انت في أي دور؟
+    estimatedMinutes: 7,
+    routes: [
+      { id: 'family', label: 'Welcomed like family' },
+      { id: 'neighbour', label: 'The neighbour they count on' },
+    ],
+    defaultRoute: 'family',
+    phrases: {
+      // السلام عليكم / وعليكم السلام / انت في أي دور؟ / مساء الخير
+      core: ['el-1', 'el-2', 'el-4', 'g5'],
+      byEnding: {
+        // البيت بيتك / صحتين وعافية
+        'like-family': ['h3', 'h5'],
+        'friendly-faces': ['h3', 'h5'],
+        // عطني / أساعد
+        'the-one-they-count-on': ['a6', 'mt-4'],
+        'polite-neighbours': ['a6', 'mt-4'],
+        // تمر — what goes back on the plate
+        'the-plate-comes-back-full': ['f7'],
+      },
+    },
+    primerPhrases: ['el-1', 'el-2', 'el-4'], // السلام عليكم / وعليكم السلام / انت في أي دور؟
     scenes: [
       {
-        id: 'c1', charName: 'Sami', charGender: 'male', setting: 'Elevator — ground floor',
-        arabic: '...',
-        roman: '(he glances up from his phone)',
-        english: 'The elevator doors are closing. Inside, a guy around your age glances up from his phone.',
-        teachingNote: "السلام عليكم is the one greeting that works in every Arabic dialect and every country. The answer is always وعليكم السلام. When you are unsure of anything else, this pair never fails.",
+        id: 'scene1', kind: 'language', charName: 'Abu Omar', charGender: 'male', setting: 'Your building — the elevator doors open on a wall of boxes',
+        arabic: 'السلام عليكم!',
+        roman: "is-salaamu 'alaikum!",
+        english: 'Peace be upon you!',
+        teachingNote: 'السلام عليكم is the same in every dialect, and so is its answer: وعليكم السلام. Leaving it unanswered is noticed everywhere in the Arab world.',
         choices: [
-          { id: 'a', text: 'Peace be upon you', arabic: 'السلام عليكم', roman: "as-salaamu 'alaykum", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: 'His face softens immediately. He straightens up and pockets his phone. This greeting carries weight everywhere — it is never too formal and never too casual.', outcome: 'excellent', next: 'c2' },
-          { id: 'b', text: 'Hey there', arabic: 'هلا', roman: 'hala', score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: 'هلا is the Gulf casual hello — friendly and correct. (Sami would say مرحبا; that is the Levantine one.) He nods back with a small smile and lowers his phone.', outcome: 'good', next: 'c2' },
-          { id: 'c', text: 'Enter without acknowledging', arabic: '—', roman: '(you step in, face the doors, say nothing)', score: -1, impact: { trust: -1, respect: -1, culture: -1 }, note: 'He glances at you, then back at his phone. The elevator hums. Neither of you moves.', outcome: 'bad', next: 'c2' },
+          { id: 'a', text: 'And upon you peace', arabic: 'وعليكم السلام', roman: "w-'alaikum is-salaam", score: 6, impact: { trust: 2, respect: 2, culture: 2 }, outcome: 'excellent', note: 'السلام عليكم has one answer, and you gave it. It works with a Jordanian, an Emirati or anyone else in the building.' },
+          { id: 'b', text: 'Hi — good evening', arabic: 'هلا، مساء الخير', roman: "hala, masaa' il-khair", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Friendly and correct Gulf Arabic. But السلام عليكم is a greeting with its own reply — وعليكم السلام — and he is waiting to hear it.' },
+          { id: 'c', text: '(Nod and look at your phone)', arabic: '—', roman: '(a nod, eyes on your phone)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'A salaam left unanswered is one of the few things that lands badly in every Arab culture. The new neighbours just met you, and this is what they met.' },
         ],
       },
       {
-        id: 'c2', charName: 'Umm Yousef', charGender: 'female', setting: 'Elevator — floor 5, a neighbour and her son step in',
-        arabic: 'يلا حبيبي، قول السلام',
-        roman: "yalla habiibi, guul as-salaam",
-        english: "Come on sweetheart, say salam",
-        teachingNote: "A neighbour nudges her small son to greet you. Leaving any السلام عليكم unanswered is noticed across the whole Arab world — leaving a child's unanswered is noticed more. Sami is watching how you handle it.",
+        id: 'scene2', kind: 'judgement', charName: 'Abu Omar', charGender: 'male', setting: 'The elevator — squeezed between boxes',
+        arabic: 'آسفين عالكراتين، لسا نقلنا هون اليوم',
+        roman: "aasfiin 'al-karaatiin, lissa nagalna hoon il-yoom",
+        english: "Sorry about the boxes — we only moved in here today.",
+        teachingNote: 'لسا is Levantine "just / only" (Gulf: توّنا), and هون is his "here" — yours is هني. Many Jordanian men say ق as g, just like Emiratis.',
         choices: [
-          { id: 'a', text: 'And peace be upon you, champ!', arabic: 'وعليكم السلام يا بطل!', roman: "wa 'alaykum as-salaam ya batal!", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: "يا بطل (champ) to a small boy is exactly the right register — warm, playful, and very Gulf. The boy beams, his mother mouths a thank you, and Sami watches with a slight grin.", outcome: 'excellent', next: 'c3' },
-          { id: 'b', text: 'And peace be upon you', arabic: 'وعليكم السلام', roman: "wa 'alaykum as-salaam", score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: 'Correct and complete — you returned the greeting, which is the part that matters. The boy hides behind his mother\'s leg.', outcome: 'good', next: 'c3' },
-          { id: 'c', text: "Don't respond to the child", arabic: '—', roman: '(you smile faintly and look back at the doors)', score: -1, impact: { trust: -1, respect: -1, culture: -1 }, note: "The boy's face drops. Sami's expression flattens — he noticed you left a child hanging.", outcome: 'bad', next: 'c3' },
+          { id: 'a', text: 'Welcome — you\'ve brightened the building!', arabic: 'نورتوا البناية!', roman: 'nawwartu il-binaaya!', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'family', note: 'نورتوا — "you have lit it up" — is how newcomers are welcomed across the Gulf and the Levant. He will answer منورة بأهلها: "it is bright with its people".' },
+          { id: 'b', text: 'Let me help you with the boxes', arabic: 'خلني أساعدكم في الكراتين', roman: "khallni asaa'idkum fil-karaatiin", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'neighbour', note: 'Picking up a box before being asked is the kind of help people remember for years. خلني — "let me" — offers without making them say yes.' },
+          { id: 'c', text: '(Squeeze past the boxes with a sigh)', arabic: '—', roman: '(a sigh as you squeeze past)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'They apologised, and the sigh told them the apology was needed. First impressions between neighbours last as long as the lease.' },
         ],
       },
       {
-        id: 'c3', charName: 'Sami', charGender: 'male', setting: 'Elevator — floor 9, the neighbour exits',
-        arabic: 'مع السلامة! … طلعنا لحالنا',
-        roman: "ma'a as-salaama! … tili'na la-haalna",
-        english: "Goodbye! … Looks like it's just us now.",
-        teachingNote: "دور (door) is the Gulf word for floor; Sami would say طابق (taabeq). Both are understood everywhere in Dubai — use the Gulf one and you will still be answered in Levantine.",
-        choices: [
-          { id: 'a', text: 'Which floor are you on?', arabic: 'انت في أي دور؟', roman: "inta fi ay door?", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: 'A small question that does real work — it converts standing silently beside someone into a conversation. He looks surprised, then amused, and points at the already-lit 17.', outcome: 'excellent', next: 'c4' },
-          { id: 'b', text: "We're still going up", arabic: 'بعدنا طالعين', roman: "ba'adna taal'iin", score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: 'He laughs softly. A small comment, but it broke the silence.', outcome: 'good', next: 'c4' },
-          { id: 'c', text: 'Wait in silence', arabic: '—', roman: '(you watch the floor numbers: 13… 14… 15…)', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: 'The silence is not hostile — it is just nothing. He goes back to his phone.', outcome: 'neutral', next: 'c4' },
-        ],
-      },
-      {
-        id: 'c4', charName: 'Sami', charGender: 'male', setting: 'Floor 17 — both exit',
-        arabic: 'هون كمان؟ هههه',
-        roman: "hoon kamaan? hahaha",
-        english: 'Here too? Haha',
-        teachingNote: "هون (hoon) is Levantine for 'here' — your Gulf equivalent is هني (hini). And يديد is how جديد (new) comes out in Emirati: the ج softens to a ي.",
-        choices: [
-          { id: 'a', text: 'Haha yes! Are you new here?', arabic: 'هههه إي! انت يديد هني؟', roman: "hahaha ii! inta ydiid hini?", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: "You answered his هون with هني and his جديد with يديد — same words, your accent. He turns to face you properly for the first time.", outcome: 'excellent', next: 'c5' },
-          { id: 'b', text: 'Same floor!', arabic: 'نفس الدور!', roman: 'nafs id-door!', score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: "He grins. It's a small comment but you're engaging.", outcome: 'good', next: 'c5' },
-          { id: 'c', text: 'Exit without engaging', arabic: '—', roman: '(you step out quickly and walk to your door)', score: -1, impact: { trust: -1, respect: -1, culture: -1 }, note: 'He watches you speed-walk down the hallway. Message received.', outcome: 'bad', next: 'c5_cold' },
-        ],
-      },
-      {
-        id: 'c5', charName: 'Sami', charGender: 'male', setting: 'The hallway',
-        arabic: 'أنا سامي بالمناسبة. وإنت؟',
-        roman: "ana sami bil-munasaba. w-inta?",
-        english: "I'm Sami by the way. And you?",
-        teachingNote: "'تشرفنا' (tasharrafna) means 'honored to meet you.' It's slightly formal but widely used when meeting someone for the first time.",
-        choices: [
-          { id: 'a', text: "I'm [name]. Honoured to meet you! Where are you from?", arabic: 'أنا [name]. تشرفنا! من وين انت؟', roman: "ana [name]. tsharrafna! min wayn inta?", score: 3, impact: { trust: 3, respect: 2, culture: 2 }, note: "تشرفنا on a first meeting, then handing the question straight back. من وين is the Gulf form — Sami would say منين, and he will notice you did not borrow it. His whole posture changes.", outcome: 'excellent', next: 'c6', teachingHighlight: "الأردن (il-Urdun) = Jordan. عمّان (Amman) = the capital. Jordanians are one of the largest Arab communities in the UAE." },
-          { id: 'b', text: "I'm [name]. Nice building, this one", arabic: 'أنا [name]. البناية حلوة هني', roman: "ana [name]. il-binaaya hilwa hini", score: 1, impact: { trust: 1, respect: 1, culture: 1 }, note: "Sami nods. Safe topic. He's happy to talk but you haven't gotten personal yet.", outcome: 'good', next: 'c6' },
-          { id: 'c', text: 'Just say your name', arabic: '[name]', roman: '[name]', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Sami repeats it back, testing the pronunciation. He offers nothing more.", outcome: 'neutral', next: 'c6' },
-        ],
-      },
-      {
-        id: 'c5_cold', charName: 'Sami', charGender: 'male', setting: 'The hallway (after cold exit)',
-        arabic: 'أنا سامي. جديد هون',
-        roman: 'ana sami. jdiid hoon',
-        english: "I'm Sami. New here",
-        teachingNote: "Even when a conversation starts cold, one more chance is usually offered. A name exchange costs nothing and can reset the whole dynamic.",
-        choices: [
-          { id: 'a', text: "I'm [name]. Welcome!", arabic: 'أنا [name]. أهلاً فيك!', roman: "ana [name]. ahlan fiik!", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: "Relief crosses Sami's face. He wasn't sure if you were unfriendly or just tired. Now he knows.", outcome: 'excellent', next: 'c6' },
-          { id: 'b', text: 'Just your name', arabic: '[name]', roman: '[name]', score: 0, impact: { trust: 0, respect: 0, culture: 0 }, note: "Sami nods once. He got a name. That's something.", outcome: 'neutral', next: 'c6' },
-        ],
-      },
-      {
-        id: 'c6', charName: 'Sami', charGender: 'male', setting: 'Your doors — across from each other',
-        arabic: 'لا جد؟ قدام بعض؟ هههه',
-        roman: "la jadd? guddaam ba'ad? hahaha",
-        english: 'No way? Across from each other? Haha',
+        id: 'scene3', kind: 'judgement', charName: 'Abu Omar', charGender: 'male', setting: 'The elevator — a small boy peeks out from behind a box',
+        arabic: 'هاد عمر، ابني. عمر، سلم على جارنا!',
+        roman: "haad 'umar, ibni. 'umar, sallim 'ala jaarna!",
+        english: 'This is Omar, my son. Omar, say hello to our neighbour!',
         charDialogue: {
-          warm: { arabic: 'لا جد؟ قدام بعض؟ هههه — يا زلمة انبسطت فيك والله', roman: "la jadd? guddaam ba'ad? hahaha — ya zalame inbasatt fiik wallah", english: "No way? Across from each other? Haha — honestly, it's been good talking to you." },
-          neutral: { arabic: 'لا جد؟ قدام بعض؟ هههه', roman: "la jadd? guddaam ba'ad? hahaha", english: 'No way? Across from each other? Haha' },
-          cold: { arabic: 'قدام بعض. طيب، تصبح على خير.', roman: "guddaam ba'ad. tayyib, tisbah 'ala khayr.", english: "Across from each other. Right — goodnight." },
+          warm: { arabic: 'هاد عمر، ابني، بحب الناس كتير. عمر، سلم على جارنا!', roman: "haad 'umar, ibni, bihibb in-naas ktiir. 'umar, sallim 'ala jaarna!", english: 'This is Omar, my son — he loves people. Omar, say hello to our neighbour!' },
+          neutral: { arabic: 'هاد عمر، ابني. عمر، سلم على جارنا!', roman: "haad 'umar, ibni. 'umar, sallim 'ala jaarna!", english: 'This is Omar, my son. Omar, say hello to our neighbour!' },
+          cold: { arabic: 'عمر، سلم على جارنا', roman: "'umar, sallim 'ala jaarna", english: 'Omar, say hello to the neighbour.' },
         },
-        warmThreshold: 15, coldThreshold: 3,
-        teachingNote: "تعال على شاي is the Gulf 'let's hang out'. Being the one who invites first carries real weight — it says you are willing to go first.",
+        warmThreshold: 9, coldThreshold: 3,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'هاد عمر، ابني. عمر، سلم على جارتنا!',
+          roman: "haad 'umar, ibni. 'umar, sallim 'ala jaaritna!",
+          english: 'This is Omar, my son. Omar, say hello to our neighbour!',
+          charDialogue: {
+            warm: { arabic: 'هاد عمر، ابني، بحب الناس كتير. عمر، سلم على جارتنا!', roman: "haad 'umar, ibni, bihibb in-naas ktiir. 'umar, sallim 'ala jaaritna!", english: 'This is Omar, my son — he loves people. Omar, say hello to our neighbour!' },
+            neutral: { arabic: 'هاد عمر، ابني. عمر، سلم على جارتنا!', roman: "haad 'umar, ibni. 'umar, sallim 'ala jaaritna!", english: 'This is Omar, my son. Omar, say hello to our neighbour!' },
+            cold: { arabic: 'عمر، سلم على جارتنا', roman: "'umar, sallim 'ala jaaritna", english: 'Omar, say hello to the neighbour.' },
+          },
+        },
+        teachingNote: 'هاد is Levantine "this" (Gulf: هذا) and كتير is his وايد. جارنا to a man, جارتنا to a woman.',
+        nextByRoute: { family: 'scene4-family', neighbour: 'scene4-neighbour' },
         choices: [
-          { id: 'a', text: 'Come over for tea sometime!', arabic: 'تعال على شاي يوم من الأيام!', roman: "ta'aal 'ala shaay yoom min al-ayyaam!", score: 3, impact: { trust: 3, respect: 3, culture: 3 }, note: "You invited first. In Gulf social life that is the move that converts a neighbour into a friend — and it costs you nothing but the nerve. Sami breaks into a real smile and points at his door.", outcome: 'excellent' },
-          { id: 'b', text: "If you need anything, I'm right here", arabic: 'إذا تبي شي، أنا هني', roman: "idha tibi shay, ana hini", score: 2, impact: { trust: 2, respect: 2, culture: 2 }, note: "Offering help before being asked is its own kind of invitation. Sami puts his hand on his chest — the classic gesture of thanks.", outcome: 'good' },
-          { id: 'c', text: 'Goodbye!', arabic: 'مع السلامة!', roman: "ma'a as-salaama!", score: 1, impact: { trust: 1, respect: 1, culture: -1 }, note: "⚖️ Friendly and perfectly correct Arabic. But مع السلامة closes a conversation, and the moment called for something that opened one. Sami waves. Two doors close.", outcome: 'neutral' },
-          { id: 'd', text: 'Go inside without saying anything', arabic: '—', roman: '(you unlock your door quickly and step inside)', score: -1, impact: { trust: -1, respect: -1, culture: -1 }, note: "Sami stands in the hallway for a moment, watching your door close.", outcome: 'bad' },
+          { id: 'a', text: 'Hi Omar! How are you, champ?', arabic: 'هلا عمر! شلونك يا بطل؟', roman: "hala 'umar! shloonak ya batal?", score: 7, impact: { trust: 3, respect: 2, culture: 2 }, outcome: 'good', route: 'family', note: 'يا بطل — "champ" — is exactly the register for a shy five-year-old. Omar grins, and his father relaxes.' },
+          { id: 'b', text: 'Hi Omar! Which floor are you on?', arabic: 'هلا عمر! انت في أي دور؟', roman: "hala 'umar! inta fi ay door?", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'neighbour', note: 'Giving a shy boy a job — find the button — is the quickest way past shyness. دور is the Gulf "floor"; his father would say طابق.' },
+          { id: 'c', text: 'God keep him for you', arabic: 'الله يخليه لك', roman: 'allaah ykhalliih lak', score: 5, impact: { trust: 3, respect: 0, culture: 2 }, outcome: 'good', route: 'family', flag: 'BLESSED_OMAR', note: 'الله يخليه لك blesses the child through his father. Parents across the Arab world hear it as the kindest thing a stranger can say.' },
+          { id: 'd', text: '(Ignore the boy and check your phone)', arabic: '—', roman: '(eyes on your phone)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'A child told to greet you is waiting for your answer. Leaving him hanging tells his parents more about you than anything you could say.' },
+        ],
+      },
+      {
+        id: 'scene4-family', kind: 'judgement', charName: 'Umm Omar', charGender: 'female', setting: 'Their flat — coffee among the boxes',
+        arabic: 'تفضل، البيت بيتك. إنت متجوز؟',
+        roman: 'tfaddal, il-beit beitak. inta mitjawwiz?',
+        english: 'Please, make yourself at home. Are you married?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'تفضلي، البيت بيتك. إنتي متجوزة؟', roman: 'tfaddali, il-beit beitik. inti mitjawwze?', english: 'Please, make yourself at home. Are you married?' },
+        teachingNote: 'متجوز is Levantine "married" — Gulf says متزوج. Questions like this are how Arab neighbours get to know you: warmth, not prying.',
+        choices: [
+          { id: 'a', text: 'Not yet — pray for me!', arabic: 'مب بعد، ادعولي!', roman: "mub ba'd, id'uuli!", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'family', next: 'scene5', note: 'Laughing it off with ادعولي — "pray for me" — answers a personal question the way family would. Umm Omar laughs and promises to.' },
+          { id: 'b', text: 'Thank God. And you — do you need anything for the flat?', arabic: 'الحمد لله. وانتو، تحتاجون شي للبيت؟', roman: "il-hamdu lillaah. w-intu, tihtaajuun shay lil-bait?", score: 5, impact: { trust: -1, respect: 3, culture: 3 }, outcome: 'good', route: 'neighbour', next: 'scene5', note: 'A kind offer, and the practical help will be welcome. But you side-stepped her question to make it — she noticed the door close a little.' },
+          { id: 'c', text: 'That\'s a very personal question', arabic: 'هذا سؤال شخصي وايد', roman: "haadha su'aal shakhsi waayid", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'In her world, asking about your family is how she takes an interest in you. Treating it as prying tells her you would rather stay a stranger.' },
+        ],
+      },
+      {
+        id: 'scene4-neighbour', kind: 'judgement', charName: 'Abu Omar', charGender: 'male', setting: 'The hallway — Abu Omar stares at a tangle of cables',
+        arabic: 'والله ما بعرف شو بدنا نعمل بالإنترنت والكهربا هون',
+        roman: "wallah ma ba'rif shu biddna ni'mal bil-internet wil-kahraba hoon",
+        english: "Honestly, I don't know what we have to do about the internet and electricity here.",
+        teachingNote: 'بدنا is Levantine "we need to / we want" — Gulf says نبي. ما بعرف is his ما أعرف.',
+        choices: [
+          { id: 'a', text: 'Easy! Tomorrow I\'ll show you how to register', arabic: 'بسيطة! باكر بوريك شلون تسجل', roman: 'basiita! baachir bawriik shloon tsajjil', score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'neighbour', next: 'scene5', note: 'A promise with a day in it. بوريك — "I will show you" — is the Gulf future, and a neighbour who knows how the building works is gold in week one.' },
+          { id: 'b', text: 'Don\'t worry — neighbours look out for neighbours', arabic: 'ولا يهمك، الجار للجار', roman: 'wala yhimmak, il-jaar lil-jaar', score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'family', next: 'scene5', note: 'الجار للجار — "the neighbour is for the neighbour" — says the help comes with belonging, not a favour to repay.' },
+          { id: 'c', text: 'Call the property company — not my problem', arabic: 'اتصل بشركة العقار، مب شغلي', roman: "ittasil b-sharikat il-'agaar, mub shughli", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: 'scene5', note: 'Technically true, and it shuts the door on day one. Across the Arab world, the neighbour is the first person you are expected to be able to ask.' },
+        ],
+      },
+      {
+        id: 'scene5', kind: 'language', charName: 'Abu Omar', charGender: 'male', setting: 'The hallway — your doors, face to face',
+        arabic: 'يلا، تصبح على خير!',
+        roman: "yalla, tisbah 'ala khair!",
+        english: 'Right then — good night!',
+        charDialogue: {
+          warm: { arabic: 'يلا، تصبح على خير يا جار! نورتنا والله', roman: "yalla, tisbah 'ala khair ya jaar! nawwartna wallah", english: "Right then — good night, neighbour! You've made our day, honestly." },
+          neutral: { arabic: 'يلا، تصبح على خير!', roman: "yalla, tisbah 'ala khair!", english: 'Right then — good night!' },
+          cold: { arabic: 'تصبح على خير', roman: "tisbah 'ala khair", english: 'Good night.' },
+        },
+        warmThreshold: 15, coldThreshold: 5,
+        addressesLearner: true,
+        femaleLearner: {
+          arabic: 'يلا، تصبحي على خير!',
+          roman: "yalla, tisbahi 'ala khair!",
+          english: 'Right then — good night!',
+          charDialogue: {
+            warm: { arabic: 'يلا، تصبحي على خير يا جارة! نورتينا والله', roman: "yalla, tisbahi 'ala khair ya jaara! nawwartiina wallah", english: "Right then — good night, neighbour! You've made our day, honestly." },
+            neutral: { arabic: 'يلا، تصبحي على خير!', roman: "yalla, tisbahi 'ala khair!", english: 'Right then — good night!' },
+            cold: { arabic: 'تصبحي على خير', roman: "tisbahi 'ala khair", english: 'Good night.' },
+          },
+        },
+        teachingNote: 'تصبح على خير — "may you wake to good" — is said at night in every dialect, and it has a set answer: وانت من أهله, "and may you be among its people". To a woman he says تصبحي.',
+        nextByRoute: { family: 'scene6-family', neighbour: 'scene6-neighbour' },
+        choices: [
+          { id: 'a', text: 'And you too', arabic: 'وانت من أهله', roman: 'w-inta min ahla', score: 7, impact: { trust: 2, respect: 2, culture: 3 }, outcome: 'excellent', flag: 'ANSWERED_GOODNIGHT', note: 'A blessing for a blessing. وانت من أهله wishes the good morning straight back — the answer his own family would give him.' },
+          { id: 'b', text: 'Goodbye, see you', arabic: 'مع السلامة، نشوفك', roman: "ma'a is-salaama, nshuufak", score: 3, impact: { trust: 1, respect: 1, culture: 1 }, outcome: 'good', note: 'Friendly and correct. But تصبح على خير has its own reply — وانت من أهله — and it is the one that sounds like home.' },
+          { id: 'c', text: '(Close your door without a word)', arabic: '—', roman: '(your door clicks shut)', score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', note: 'He wished you a good night and heard a lock. Even مع السلامة would have closed the evening kindly.' },
+        ],
+      },
+      {
+        id: 'scene6-family', kind: 'judgement', charName: 'Umm Omar', charGender: 'female', setting: 'The next evening — Umm Omar and Omar at your door with a plate',
+        arabic: 'هاي مقلوبة عملتها إلك. صحتين!',
+        roman: "haay ma'luube 'miltha ilak. sahtein!",
+        english: 'This is maqluba I made for you. Enjoy!',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'هاي مقلوبة عملتها إلك. صحتين!', roman: "haay ma'luube 'miltha ilik. sahtein!", english: 'This is maqluba I made for you. Enjoy!' },
+        teachingNote: 'إلك is Levantine "for you" (Gulf: لك / لج), and صحتين is the "bon appétit" you will hear across the region. A plate of food from a neighbour is a welcome.',
+        choices: [
+          { id: 'a', text: 'Oh wow! Bless your hands, Umm Omar', arabic: 'يا سلام! تسلم يدج يا أم عمر', roman: "ya salaam! tislam yadich ya umm 'umar", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'family', next: null, note: 'تسلم يدج — "bless your hand" — thanks the cook, not just the dish. يدج has the Emirati -ich ending for a woman.' },
+          { id: 'b', text: 'Thank you! And when you travel, I\'ll keep an eye on the flat', arabic: 'تسلمين! وإذا سافرتوا، أنا أنتبه على البيت', roman: "tislamiin! w-idha saafartu, ana antibih 'ala il-bait", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'neighbour', next: null, note: 'You answered food with a promise of help. تسلمين is تسلم for a woman — the Gulf thanks for something handed to you.' },
+          { id: 'c', text: 'No thanks — I don\'t eat food I don\'t know', arabic: 'لا مشكورة، ما آكل أكل ما أعرفه', roman: "laa mashkuura, maa aakil akil maa a'arfa", score: -4, impact: { trust: -2, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'Food brought to your door is the welcome itself. Refusing it refuses the family who cooked it — take the plate, even if you only try a spoonful.' },
+        ],
+      },
+      {
+        id: 'scene6-neighbour', kind: 'judgement', charName: 'Abu Omar', charGender: 'male', setting: 'The next evening — Abu Omar knocks with a suitcase',
+        arabic: 'بدي أسافر أسبوع. بتقدر تنتبه عالشقة؟',
+        roman: "biddi asaafir usbuu'. bti'dar tintibih 'ash-sha''a?",
+        english: 'I have to travel for a week. Could you keep an eye on the flat?',
+        addressesLearner: true,
+        femaleLearner: { arabic: 'بدي أسافر أسبوع. بتقدري تنتبهي عالشقة؟', roman: "biddi asaafir usbuu'. bti'dari tintibhi 'ash-sha''a?", english: 'I have to travel for a week. Could you keep an eye on the flat?' },
+        teachingNote: 'بدي is Levantine "I want / I have to" — Gulf أبي. بتقدر is his تقدر; to a woman, بتقدري.',
+        choices: [
+          { id: 'a', text: 'Of course! Give me your number, and if anything happens I\'ll call', arabic: 'أكيد! عطني رقمك، وأي شي أكلمك', roman: "akiid! 'atni ragmak, w-ay shay akallmak", score: 6, impact: { trust: 1, respect: 3, culture: 2 }, outcome: 'good', route: 'neighbour', next: null, note: 'Straight to the practical: a number and a plan. عطني is the everyday Gulf "give me" — direct, and normal between neighbours.' },
+          { id: 'b', text: 'Of course! Travel with an easy heart', arabic: 'أكيد! سافر وقلبك مرتاح', roman: "akiid! saafir w-galbak mirtaah", score: 6, impact: { trust: 3, respect: 1, culture: 2 }, outcome: 'good', route: 'family', next: null, note: 'سافر وقلبك مرتاح — "go with your heart at rest" — answers the worry, not just the request.' },
+          { id: 'c', text: 'Honestly, I don\'t have time', arabic: 'والله ما عندي وقت', roman: "wallaah maa 'indi wagt", score: -3, impact: { trust: -1, respect: -1, culture: -1 }, outcome: 'bad', next: null, note: 'Watching a door for a week costs a glance on your way out. Saying no tells him not to ask you again — for anything.' },
+        ],
+      },
+      {
+        id: 'scene7-bonus', bonus: true, charName: 'Umm Omar', charGender: 'female', setting: 'A week later — you knock to return Umm Omar\'s plate',
+        arabic: 'أهلين! كيف كانت المقلوبة؟',
+        roman: "ahlein! keif kaanat il-ma'luube?",
+        english: 'Hello! How was the maqluba?',
+        teachingNote: 'Across the Gulf and the Levant, a plate of food never goes back empty. Whatever you return it with, it carries the thanks.',
+        choices: [
+          { id: 'a', text: '(Hand back the plate, full of dates) And a plate never goes back empty', arabic: 'والصحن ما يرجع فاضي', roman: "w-is-sahn maa yirja' faadi", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'Dates on the plate, and the saying to go with them. Umm Omar laughs — the new neighbour knows the rule her own mother taught her.' },
+          { id: 'b', text: '(Hand back the plate with sweets) These are for Omar', arabic: 'هذي حق عمر', roman: "haadhi hagg 'umar", score: 9, impact: { trust: 3, respect: 3, culture: 3 }, outcome: 'excellent', note: 'Filling it for the child makes the return a gift she cannot argue with. Omar is already reaching for the plate.' },
         ],
       },
     ],
     endings: [
       {
-        id: 'the-chai-invitation', min: 30, title: 'The Chai Invitation', arabic: 'تعال على شاي!', roman: "ta'aal 'ala shaay!",
-        en: 'Come for tea!',
-        desc: 'In six floors and one hallway, you went from strangers to neighbours. Sami will knock on your door this weekend with Jordanian mint tea.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: [
-          'You opened with السلام عليكم — the one greeting that works across every Arabic dialect',
-          'You responded to the child\'s greeting with "يا بطل" (champ) — a tiny word that showed warmth and cultural ease',
-          'You asked Sami which floor he was on — a small question that turned an awkward silence into a real conversation',
-          'You invited first — "تعال على شاي" — taking the relationship from corridor to connection',
-        ],
+        id: 'the-plate-comes-back-full', min: 30, secret: true, requiredFlags: ['BLESSED_OMAR', 'ANSWERED_GOODNIGHT'],
+        title: 'A Plate Never Goes Back Empty', arabic: 'الصحن ما يرجع فاضي', roman: "is-sahn maa yirja' faadi", en: 'The plate never goes back empty',
+        desc: 'By the end of the week a plate is travelling between your two doors. You blessed Omar through his father, and you answered a goodnight the way their own family would. Umm Omar sends maqluba; it comes back full. Across one hallway, that is how neighbours become family.',
+        color: C.CULTURAL_GOLD, type: 'exceptional',
+        hint: 'Bless a child through his parents — and answer a goodnight the way family does.',
       },
       {
-        id: 'friendly-neighbour', min: 16, title: 'Friendly Neighbour', arabic: 'جار طيب', roman: 'jaar tayyib',
-        en: 'Good neighbour',
-        desc: "You and Sami will say hi every time you pass each other. He'll hold the elevator for you. It's not a friendship yet — but it's the start of one.",
-        color: C.JADE2, type: 'success',
-        culturalJourney: [
-          'You engaged when it counted — not every moment, but the right moments',
-          'Sami is Jordanian, not Emirati — you navigated a different Arabic dialect naturally',
-          'A foundation was laid. The chai invitation is still possible.',
-        ],
+        id: 'like-family', min: 28, route: 'family', tier: 'strong',
+        title: 'Like Family', arabic: 'من أهل البيت', roman: 'min ahl il-bait', en: 'One of the household',
+        desc: 'Omar knocks on your door to show you his drawings, and there is a place for you at their Friday lunch. You welcomed them warmly, made a fuss of Omar and took their questions as the kindness they were. In the Arab world, the neighbour is family you choose.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Welcome them warmly, make a fuss of Omar, and take the food and the questions as kindness.',
       },
       {
-        id: 'the-hallway-nod', min: 4, title: 'The Hallway Nod', arabic: 'هزة راس في الممر', roman: "hazzat raas fil-mamarr",
-        en: 'Hallway nod',
-        desc: "You and Sami will recognise each other. There'll be an awkward nod when you pass. Neither of you will remember the other's name.",
+        id: 'friendly-faces', min: 12, route: 'family', tier: 'weak',
+        title: 'Friendly Faces', arabic: 'أهلين', roman: 'ahlein', en: 'Hello there',
+        desc: 'The family likes you, and Omar waves when he sees you. A few moments came out awkward, though, so for now it is smiles in the hallway rather than a place at the table.',
+        color: C.JADE2, type: 'mixed',
+        hint: 'Warmth is the right instinct — land the greetings and blessings too, and the door opens wider.',
+      },
+      {
+        id: 'the-one-they-count-on', min: 28, route: 'neighbour', tier: 'strong',
+        title: 'The One They Count On', arabic: 'الجار للجار', roman: 'il-jaar lil-jaar', en: 'Neighbours look out for neighbours',
+        desc: 'Abu Omar leaves you his spare key when he travels, and his number is the first in your phone under "building". You carried boxes, explained how things work here and kept your word. A neighbour who can be counted on is worth more than a good flat.',
+        color: C.JADE_ACCENT, type: 'success',
+        hint: 'Be useful: help with the boxes, show them how things work here, and keep your promises.',
+      },
+      {
+        id: 'polite-neighbours', min: 12, route: 'neighbour', tier: 'weak',
+        title: 'Polite Neighbours', arabic: 'مسا الخير', roman: 'masa il-kheir', en: 'Good evening',
+        desc: 'You are on good terms, and Abu Omar would probably ask you for help. A few exchanges fell flat, though, so for now it is a polite good evening at the lift.',
         color: C.VIOLET2, type: 'mixed',
+        hint: 'Helpfulness is the right instinct — pair it with the greetings they are listening for.',
       },
       {
-        id: 'invisible-neighbours', min: 0, title: 'Invisible Neighbours', arabic: 'جيران ما يعرفون بعض', roman: "jiraan ma ya'rifun ba'ad",
-        en: 'Stranger neighbours',
-        desc: "Two doors, three feet apart, and a wall between you. Sami won't try again. You'll hear his music through the wall and wonder who lives there.",
+        id: 'the-door-across', min: 0,
+        title: 'The Door Across the Hall', arabic: 'جيران وبس', roman: 'jiiraan w-bass', en: 'Just neighbours',
+        desc: 'Two doors, a few steps apart. The family stopped trying after the first evening, and now you hear Omar laughing through the wall without ever having said hello to him.',
         color: C.ERROR, type: 'failed',
       },
     ],
   },
+});
 
+// ─── Onboarding café scripts ─────────────────────────────────────────────────
+// Played by OnboardingScenarioPlayer: two linear scenes and a core phrase. No
+// endings — the ones these carried were never shown anywhere.
+const ONBOARDING_SCRIPTS: Record<'career' | 'social', OnboardingScript> = {
   // ── ONBOARDING: CAFÉ (Career Mode) ────────────────────────────────────────
-  'onboarding-cafe-career': {
+  career: {
     id: 'onboarding-cafe-career',
     title: 'Welcome to the Café',
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'], byEnding: {} },
+    phrases: { core: ['core-5'] },
     scenes: [
       {
         id: 'c1', charName: 'Layla', charGender: 'female', setting: 'Small café — morning',
@@ -1357,40 +1599,17 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
     ],
-    endings: [
-      {
-        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
-        en: 'You\'ve got a mate at the café',
-        desc: 'Layla will remember you. Every time you come in, she\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: ['You opened with a proper greeting', 'You used "law samahti" — the Gulf please, in its feminine form for a female barista', 'You used "mashkura" — the feminine form of thanks, because Layla is female'],
-      },
-      {
-        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
-        en: 'Nice conversation',
-        desc: 'You ordered in Arabic, Layla appreciated the effort. Next time you come in, she\'ll say hello and might chat for a moment.',
-        color: C.JADE2, type: 'success',
-        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
-      },
-      {
-        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
-        en: 'All done',
-        desc: 'You got your coffee. Layla was professional. Next time you come in, it will be a similar interaction.',
-        color: C.VIOLET2, type: 'mixed',
-        culturalJourney: ['You communicated what you needed'],
-      },
-    ],
   },
 
   // ── ONBOARDING: CAFÉ (Social Mode) ────────────────────────────────────────
-  'onboarding-cafe-social': {
+  social: {
     id: 'onboarding-cafe-social',
     title: 'Welcome to the Café',
     subtitle: 'Your first interaction in Gulf Arabic',
     kafIntro: 'Your first moment speaking Gulf Arabic. The barista is warm and unhurried — perfect for your first exchange.',
     iconName: 'coffee',
     estimatedMinutes: 5,
-    phrases: { core: ['e_new1'], byEnding: {} },
+    phrases: { core: ['core-5'] },
     scenes: [
       {
         id: 'c1', charName: 'Omar', charGender: 'male', setting: 'Small café — morning',
@@ -1418,35 +1637,19 @@ export const getScenarioScripts = (C: ThemeColors): Record<string, ScenarioScrip
         ],
       },
     ],
-    endings: [
-      {
-        id: 'youve-got-a-cafe-friend', min: 10, title: 'You\'ve Got a Café Friend', arabic: 'صار لك ربع في المقهى', roman: "saar lak rab' fil-maqha",
-        en: 'You\'ve got a mate at the café',
-        desc: 'Omar will remember you. Every time you come in, he\'ll greet you warmly and ask how you\'re doing. Your first Gulf Arabic conversation turned into a real connection.',
-        color: C.JADE_ACCENT, type: 'exceptional',
-        culturalJourney: ['You opened with a proper greeting', 'You used "law samaht" — the Gulf please, not the textbook من فضلك', 'You used the masculine form of thanks because Omar is male'],
-      },
-      {
-        id: 'pleasant-exchange', min: 5, title: 'Pleasant Exchange', arabic: 'سوالف حلوة', roman: 'sawaalif hilwa',
-        en: 'Nice conversation',
-        desc: 'You ordered in Arabic, Omar appreciated the effort. Next time you come in, he\'ll say hello and might chat for a moment.',
-        color: C.JADE2, type: 'success',
-        culturalJourney: ['You made the effort to speak Arabic', 'The interaction was polite and straightforward'],
-      },
-      {
-        id: 'transaction-complete', min: 0, title: 'Transaction Complete', arabic: 'خلصنا', roman: 'khallasna',
-        en: 'All done',
-        desc: 'You got your coffee. Omar was professional. Next time you come in, it will be a similar interaction.',
-        color: C.VIOLET2, type: 'mixed',
-        culturalJourney: ['You communicated what you needed'],
-      },
-    ],
   },
-});
+};
 
-export function getScenarioScript(id: string, C: ThemeColors, mode?: 'career' | 'social'): ScenarioScript | undefined {
-  if (id === 'onboarding-cafe' && mode) {
-    return getScenarioScripts(C)[`${id}-${mode}`];
-  }
+export function getScenarioScript(id: string, C: ThemeColors): ScenarioScript | undefined {
   return getScenarioScripts(C)[id];
+}
+
+/** The onboarding café for this mode. The catalog carries one `onboarding-cafe` entry; the scripts are per mode. */
+export function getOnboardingScript(mode: 'career' | 'social'): OnboardingScript {
+  return ONBOARDING_SCRIPTS[mode];
+}
+
+/** Both onboarding café scripts, keyed by script id — for the content tests. */
+export function getOnboardingScripts(): Record<string, OnboardingScript> {
+  return Object.fromEntries(Object.values(ONBOARDING_SCRIPTS).map((s) => [s.id, s]));
 }

@@ -112,23 +112,24 @@ export function getTone(
 // never shown during play — that is what keeps the destination non-obvious,
 // where the visible meters alone would give it away.
 
-/** True when the script uses destinations; false for the legacy score ladder. */
-export function isRouteScript(script: ScenarioScript): boolean {
-  return (script.routes?.length ?? 0) > 0;
-}
-
 /**
  * The route this run leans toward: the route tagged most often in
  * choiceHistory; a tie goes to the most recently tagged; no tags at all falls
- * back to `defaultRoute`. Null for a legacy script.
+ * back to `defaultRoute`.
  */
-export function leadingRoute(state: ScenarioState, script: ScenarioScript): string | null {
-  if (!isRouteScript(script)) return null;
+export function leadingRoute(state: ScenarioState, script: ScenarioScript): string {
+  return leadingRouteOf(state.choiceHistory, script);
+}
+
+/** A choice made at a scene — all the route tally needs from a history entry. */
+type ChoiceMade = Pick<ScenarioState['choiceHistory'][number], 'sceneId' | 'choiceId'>;
+
+function leadingRouteOf(picks: readonly ChoiceMade[], script: ScenarioScript): string {
   const sceneById = new Map(script.scenes.map(s => [s.id, s]));
   const count = new Map<string, number>();
   const lastSeen = new Map<string, number>();
 
-  state.choiceHistory.forEach(({ sceneId, choiceId }, i) => {
+  picks.forEach(({ sceneId, choiceId }, i) => {
     const route = sceneById.get(sceneId)?.choices.find(c => c.id === choiceId)?.route;
     if (!route) return;
     count.set(route, (count.get(route) ?? 0) + 1);
@@ -141,7 +142,7 @@ export function leadingRoute(state: ScenarioState, script: ScenarioScript): stri
     const bestN = count.get(best) ?? 0;
     if (n > bestN || (n === bestN && (lastSeen.get(route) ?? -1) > (lastSeen.get(best) ?? -1))) best = route;
   }
-  return best ?? script.defaultRoute ?? null;
+  return best ?? script.defaultRoute;
 }
 
 // ─── resolveNextScene ─────────────────────────────────────────────────────────
@@ -161,17 +162,14 @@ export function resolveNextScene(
 ): string | null {
   if (choice.next !== undefined) return choice.next;
   const idx = script.scenes.findIndex(s => s.id === state.currentSceneId);
-  const fork = script.scenes[idx]?.nextByRoute;
+  if (idx < 0) return null;
+  const fork = script.scenes[idx].nextByRoute;
   if (fork) {
-    const withPending: ScenarioState = {
-      ...state,
-      choiceHistory: [
-        ...state.choiceHistory,
-        { sceneId: state.currentSceneId, choiceId: choice.id, npcId: '', timestamp: '' },
-      ],
-    };
-    const route = leadingRoute(withPending, script);
-    if (route && fork[route]) return fork[route];
+    const route = leadingRouteOf(
+      [...state.choiceHistory, { sceneId: state.currentSceneId, choiceId: choice.id }],
+      script,
+    );
+    if (fork[route]) return fork[route];
   }
   return script.scenes[idx + 1]?.id ?? null;
 }
@@ -225,14 +223,10 @@ export function sceneAfterChoice(
 /**
  * Determines which ending the player earned.
  *
- * Secret endings are checked first (flags AND relationship score).
- *
- * Route scripts: the leading route picks the destination; its strong version
- * if the relationship score clears the strong ending's `min`, its weak version
- * if it clears the weak ending's `min`, otherwise the failure ending.
- *
- * Legacy scripts: standard endings in descending min-score order; falls back
- * to the lowest ending if nothing matches.
+ * Secret endings are checked first (flags AND relationship score). Otherwise
+ * the leading route picks the destination: its strong version if the
+ * relationship score clears the strong ending's `min`, its weak version if it
+ * clears the weak ending's `min`, otherwise the failure ending.
  */
 export function evaluateEnding(
   state: ScenarioState,
@@ -240,34 +234,22 @@ export function evaluateEnding(
 ): ScenarioEnding {
   const score = relationshipScore(state);
 
-  // Check secret endings first
   for (const ending of script.endings.filter(e => e.secret)) {
     const flagsMet = (ending.requiredFlags ?? []).every(f => state.flags.has(f));
     if (flagsMet && score >= ending.min) return ending;
   }
 
-  if (isRouteScript(script)) {
-    const route = leadingRoute(state, script);
-    const open = script.endings.filter(e => !e.secret);
-    const strong = open.find(e => e.route === route && e.tier === 'strong');
-    const weak = open.find(e => e.route === route && e.tier === 'weak');
-    const failure = open.find(e => !e.route);
-    if (!strong || !weak || !failure) {
-      throw new Error(`evaluateEnding: script "${script.id}" needs strong + weak endings for route "${route}" and a failure ending`);
-    }
-    if (score >= strong.min) return strong;
-    if (score >= weak.min) return weak;
-    return failure;
+  const route = leadingRoute(state, script);
+  const open = script.endings.filter(e => !e.secret);
+  const strong = open.find(e => e.route === route && e.tier === 'strong');
+  const weak = open.find(e => e.route === route && e.tier === 'weak');
+  const failure = open.find(e => !e.route);
+  if (!strong || !weak || !failure) {
+    throw new Error(`evaluateEnding: script "${script.id}" needs strong + weak endings for route "${route}" and a failure ending`);
   }
-
-  // Standard endings — highest min wins
-  const standard = [...script.endings]
-    .filter(e => !e.secret)
-    .sort((a, b) => b.min - a.min);
-
-  if (standard.length === 0) throw new Error(`evaluateEnding: script "${script.id}" has no standard endings`);
-
-  return standard.find(e => score >= e.min) ?? standard[standard.length - 1];
+  if (score >= strong.min) return strong;
+  if (score >= weak.min) return weak;
+  return failure;
 }
 
 // ─── Phrases ─────────────────────────────────────────────────────────────────

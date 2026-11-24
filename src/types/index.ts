@@ -230,7 +230,7 @@ export interface ScenarioScene {
   teachingNote?: string;
   choices: ScenarioChoice[];
   bonus?: boolean; // True if this is a bonus scene only shown for secret ending
-  /** Required in route scripts. */
+  /** Required on every decision scene of a ScenarioScript; absent on bonus and onboarding scenes. */
   kind?: SceneKind;
   /**
    * The fork: after this scene, go to the scene for the leading route (counting
@@ -240,6 +240,30 @@ export interface ScenarioScene {
   /** The NPC speaks to the learner in gendered forms here; requires `femaleLearner`. */
   addressesLearner?: boolean;
   femaleLearner?: FemaleLearnerLines;
+}
+
+/**
+ * A scenario's completion record (`completedScenarios`): that it was finished,
+ * with an ending type and a timestamp. Not one run — see ScenarioRunRecord.
+ */
+export interface ScenarioCompletion {
+  endingType: string;
+  date: string;
+}
+
+/**
+ * One completed run of a scenario. Its position in the scenario's history is
+ * the run number. Kept for the learner and for replay metrics (spec 2026-09-14
+ * §2.12; queries in supabase/queries/scenario_metrics.sql).
+ */
+export interface ScenarioRunRecord {
+  endingId: string;
+  endingType: ScenarioEnding['type'];
+  /**
+   * Local calendar day, YYYY-MM-DD. A day, never a timestamp: enough to tell a
+   * replay within 7 days, too coarse to line up against anything else.
+   */
+  on: string;
 }
 
 export interface ScenarioEnding {
@@ -265,7 +289,11 @@ export interface ScenarioEnding {
   hint?: string;
 }
 
-export interface ScenarioScript {
+/**
+ * The onboarding café: two linear scenes played by OnboardingScenarioPlayer.
+ * No endings and no routes — it is a first-contact demo, not a scenario run.
+ */
+export interface OnboardingScript {
   id: string;
   title: string;
   subtitle?: string;  // Setting description (e.g., "Airport → Hotel, nighttime")
@@ -273,16 +301,19 @@ export interface ScenarioScript {
   iconName?: string;  // Icon identifier for the scenario card
   estimatedMinutes?: number;  // Estimated completion time
   scenes: ScenarioScene[];
-  endings: ScenarioEnding[];
-  /**
-   * Declaring routes makes this a route script: destination by route tags,
-   * quality by meters (spec 2026-09-14 §2.1). Scripts without routes still use
-   * the legacy score ladder until they are rewritten.
-   */
-  routes?: ScenarioRoute[];
-  /** Route used when a run reaches the fork or the end without leaning anywhere. */
-  defaultRoute?: string;
+  phrases: Pick<ScenarioPhrases, 'core'>;
+}
+
+/**
+ * A playable scenario: destination by route tags, quality by meters (spec
+ * 2026-09-14 §2.1).
+ */
+export interface ScenarioScript extends OnboardingScript {
   phrases: ScenarioPhrases;
+  endings: ScenarioEnding[];
+  routes: ScenarioRoute[];
+  /** Route used when a run reaches the fork or the end without leaning anywhere. */
+  defaultRoute: string;
   /** Native-speaker reviews of this script's Arabic. Absent = unreviewed. */
   nativeReviews?: NativeReview[];
   // 2-3 phrase IDs from phrases.core previewed as tap-to-hear chips in the
@@ -320,10 +351,13 @@ export type SourceId =
   | 'leung-2024'
   | 'routledge-comprehensive'
   | 'alramsa'
-  | 'ramsa-corpus-2026'
+  | 'ramsa-paper-2026'
   | 'emirati-social-media-2024'
   | 'qafisheh-1977'
   | 'holes-1990'
+  | 'ntelitheos-idrissi-2017'
+  | 'szreder-derrick-2024'
+  | 'wiktionary-gulf-arabic'
   | 'fasih-internal';
 
 /**
