@@ -4,7 +4,7 @@ A Gulf Arabic learning app for non-native professionals living in the UAE. Teach
 
 ## Features
 
-- **Role-play scenarios** — Butterfli-effect dialogues with NPC characters (butterfly-effect dialogues, tokenized responses)
+- **Role-play scenarios** — Branching dialogues with NPC characters where every choice moves trust, respect and culture meters, and those meters decide the NPC's tone and the ending you earn
 - **Spaced-repetition** — Flashcard drills with SRS algorithm for phrase retention
 - **Phrase library** — Categorized, filterable, with Arabic TTS playback
 - **Cultural journal** — Save moments, review insights
@@ -54,7 +54,7 @@ Fasih/
 │   ├── ui/                 # EmptyState, ErrorBoundary, FadeIn
 │   ├── constants/          # Static data
 │   ├── engine/             # Pure business logic (no React)
-│   │   ├── ScenarioEngine.ts
+│   │   ├── scenarioEngine.ts
 │   │   └── __tests__/
 │   ├── hooks/              # Custom React hooks
 │   ├── lib/                # External service helpers
