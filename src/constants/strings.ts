@@ -24,6 +24,7 @@ export const STRINGS = {
     levelIntermediate: 'Intermediate',
     levelAdvanced: 'Advanced',
     home: 'Home',
+    close: 'Close',
     soon: 'Soon',
     begin: 'Begin',
   },
@@ -439,6 +440,7 @@ export const STRINGS = {
     reviewTitle: 'Practise your phrases',
     reviewDue: (count: number) => `${count} phrase${count === 1 ? '' : 's'} due for review`,
     reviewNoneDue: 'Flashcards and quizzes on what you have learned',
+    reviewLocked: (count: number) => `Finish ${count} more scenario${count === 1 ? '' : 's'} to unlock`,
     beginFirstScenario: 'Begin your first scenario',
     // The situations on the Your Confidence card, keyed by situation id.
     situations: {
@@ -524,7 +526,6 @@ export const STRINGS = {
     // describe content that exists and is behind the paywall. Conflating them
     // tells a paying-ready user the scenario doesn't exist.
     startScenario: 'Start scenario',
-    continueScenario: 'Continue',
     playAgain: 'Play again',
     tabAll: 'All',
     tabFavourite: 'Favourite',
@@ -558,7 +559,7 @@ export const STRINGS = {
     chooseYourResponse: 'Choose your response',
     chooseResponse: 'Choose your response',
     retry: 'Retry',
-    home: 'Home',
+    home: 'Done',
     totalScore: (score: number) => `Total Score: ${score}`,
     listenVoice: (gender: string) => `Listen to ${gender === 'female' ? 'her' : 'him'}`,
     listenAndRepeat: 'Say the phrase you just chose out loud.',
@@ -626,6 +627,13 @@ export const STRINGS = {
     },
     tonePreviewWarm: (npc: string) => `${npc} will be more open with you in the next scene`,
     tonePreviewCold: (npc: string) => `${npc} will be more guarded in the next scene`,
+    // Leaving mid-run throws the run away: activeScenarioState is not persisted.
+    leave: {
+      title: 'Leave this scenario?',
+      message: "Your choices in this run won't be saved.",
+      confirm: 'Leave',
+      stay: 'Keep playing',
+    },
     seeFinalResult: 'See Final Result',
     exitScenario: 'Exit scenario',
     playingAudio: 'Playing audio',

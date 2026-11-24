@@ -24,6 +24,7 @@ export default function PracticeRoute() {
       scenariosRequired={FEATURE_UNLOCK_SCENARIO_COUNT}
       featureName={STRINGS.practice.title}
       onGoToScenarios={() => router.replace('/(tabs)/scenarios')}
+      onClose={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
     >
       <PracticeScreen
         onExit={() => router.back()}

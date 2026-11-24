@@ -41,9 +41,13 @@ export default function ScenarioRoute() {
           scenarioId={id as string}
           user={user}
           onExit={() => {
-            // ScenarioPlayer already fires trackScenarioAbandoned itself, with the
-            // real current scene id, before calling this.
-            setShowPlayer(false);
+            // Back to wherever the learner came from (Home or Scenarios), the
+            // same place Android back takes them. This used to flip to the
+            // detail screen, so the X and the result screen's exit landed
+            // somewhere different from the back gesture. ScenarioPlayer handles
+            // the leave confirmation and abandon tracking before calling this.
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
           }}
           onComplete={handleComplete}
           onJournalEntry={handleJournal}
