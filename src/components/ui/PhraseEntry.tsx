@@ -23,6 +23,8 @@ interface PhraseEntryProps {
   onToggleExpand: (id: string) => void;
   onPlay: (phrase: Phrase) => void;
   onToggleSave: (id: string) => void;
+  /** False when no recording exists for this phrase — the play button is not rendered. */
+  canPlay?: boolean;
   /**
    * Screen-specific content for the expanded state — the Library's play-slowly
    * control, unlock badge and CEFR chips live here.
@@ -45,7 +47,7 @@ const ARABIC_SIZE = 28;
  */
 export function PhraseEntry({
   phrase, expanded, saved, playing, first,
-  onToggleExpand, onPlay, onToggleSave, expandedExtra,
+  onToggleExpand, onPlay, onToggleSave, expandedExtra, canPlay = true,
 }: PhraseEntryProps) {
   const { C } = useTheme();
 
@@ -152,14 +154,16 @@ export function PhraseEntry({
             bubble — without this, tapping Play on web also collapses the phrase
             the user just asked to hear. */}
         <View style={styles.actions}>
-          <Pressable
-            onPress={(e) => { e.stopPropagation?.(); onPlay(phrase); }}
-            style={styles.hit}
-            accessibilityRole="button"
-            accessibilityLabel={`${STRINGS.phrases.play}: ${phrase.roman}`}
-          >
-            <Volume2 size={20} strokeWidth={1.5} color={playing ? C.PRIMARY : C.TEXT3} />
-          </Pressable>
+          {canPlay && (
+            <Pressable
+              onPress={(e) => { e.stopPropagation?.(); onPlay(phrase); }}
+              style={styles.hit}
+              accessibilityRole="button"
+              accessibilityLabel={`${STRINGS.phrases.play}: ${phrase.roman}`}
+            >
+              <Volume2 size={20} strokeWidth={1.5} color={playing ? C.PRIMARY : C.TEXT3} />
+            </Pressable>
+          )}
           <Pressable
             onPress={(e) => { e.stopPropagation?.(); onToggleSave(phrase.id); }}
             style={styles.hit}

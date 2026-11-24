@@ -14,7 +14,7 @@ import { useTheme } from '../hooks/useTheme';
 import { EmptyState } from '../components/ui/EmptyState';
 import { PHRASES, PHRASE_CATEGORIES, getCefrColors, CEFR_LABELS, TYPE_LABELS } from '../constants/phrases';
 import { useAppStore } from '../store/useAppStore';
-import { useArabicTTS } from '../hooks/useArabicTTS';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { STRINGS } from '../constants/strings';
 import { getAvailablePatterns } from '../engine/sentenceBuilder';
 import { arabicIncludes } from '../engine/arabic';
@@ -49,11 +49,9 @@ export function PhraseLibrary() {
   const [cat, setCat] = useState<string>(STRINGS.phrases.filterAll);
   const [diff, setDiff] = useState<string>(STRINGS.phrases.filterAll);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { speak, speakSlow } = useArabicTTS();
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const { play: playClip, playSlow: playClipSlow, playingId, hasClip } = usePhraseAudio();
   const [searchFocused, setSearchFocused] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
-  const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const categoryScrollRef = useRef<ScrollView>(null);
   const categoryChipX = useRef<Record<string, number>>({});
 
@@ -82,25 +80,8 @@ export function PhraseLibrary() {
     return matchSearch && matchCat && matchDiff;
   }), [search, cat, diff]);
 
-  const play = useCallback((p: Phrase) => {
-    if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-    setPlayingId(p.id);
-    speak(p.arabic);
-    playTimeoutRef.current = setTimeout(() => setPlayingId(null), 4000);
-  }, [speak]);
-
-  const playSlow = useCallback((p: Phrase) => {
-    if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-    setPlayingId(p.id);
-    speakSlow(p.arabic);
-    playTimeoutRef.current = setTimeout(() => setPlayingId(null), 6000);
-  }, [speakSlow]);
-
-  useEffect(() => {
-    return () => {
-      if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-    };
-  }, []);
+  const play = useCallback((p: Phrase) => playClip(p.id), [playClip]);
+  const playSlow = useCallback((p: Phrase) => playClipSlow(p.id), [playClipSlow]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpanded(prev => prev === id ? null : id);
@@ -142,21 +123,24 @@ export function PhraseLibrary() {
         playing={playingId === p.id}
         onToggleExpand={toggleExpand}
         onPlay={play}
+        canPlay={hasClip(p.id)}
         onToggleSave={toggleSavedPhrase}
         expandedExtra={
           <>
-            <Pressable
-              hitSlop={8}
-              onPress={(e) => { e.stopPropagation?.(); playSlow(p); }}
-              accessibilityRole="button"
-              accessibilityLabel={STRINGS.phrases.playSlowly}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, minHeight: 44 }}
-            >
-              <Snail size={16} strokeWidth={1.5} color={C.PRIMARY} />
-              <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.PRIMARY }}>
-                {STRINGS.phrases.playSlowly}
-              </Text>
-            </Pressable>
+            {hasClip(p.id) && (
+              <Pressable
+                hitSlop={8}
+                onPress={(e) => { e.stopPropagation?.(); playSlow(p); }}
+                accessibilityRole="button"
+                accessibilityLabel={STRINGS.phrases.playSlowly}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm, minHeight: 44 }}
+              >
+                <Snail size={16} strokeWidth={1.5} color={C.PRIMARY} />
+                <Text style={{ fontFamily: FONT_HEADING_SEMI, fontSize: 14, color: C.PRIMARY }}>
+                  {STRINGS.phrases.playSlowly}
+                </Text>
+              </Pressable>
+            )}
 
             {isUnlocked && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACE.sm }}>
@@ -181,7 +165,7 @@ export function PhraseLibrary() {
         }
       />
     );
-  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, C, toggleExpand, play, playSlow, toggleSavedPhrase]);
+  }, [expanded, playingId, savedPhrases, isPhraseUnlocked, C, toggleExpand, play, playSlow, toggleSavedPhrase, hasClip]);
 
 
   // ── Category grid header component ──

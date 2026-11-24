@@ -511,3 +511,36 @@ export interface ScenarioState {
   scenesVisited: Set<string>;
   startedAt: string; // ISO date-time
 }
+
+// ─── Phrase audio ────────────────────────────────────────────────────────────
+
+export type VoiceGender = 'male' | 'female';
+
+/** What `require()` returns for a bundled asset in React Native. */
+export type AudioModule = number;
+
+/**
+ * Where a clip came from. Required on every clip, for the same reason
+ * `Phrase.source` is required on every phrase: a recording presented as Emirati
+ * speech when it is a synthesiser reading MSA is the audio equivalent of a
+ * fabricated citation, and nobody downstream can hear the difference either
+ * (authority rule 5 / §0).
+ */
+export interface AudioProvenance {
+  /** 'human' = a person recorded it. 'synthetic' = any TTS or AI generator. */
+  kind: 'human' | 'synthetic';
+  /** Speaker name for human; `vendor:voice-id` for synthetic. */
+  voice: string;
+  /** ISO date the clip was produced. */
+  recordedAt: string;
+  note?: string;
+}
+
+export interface AudioClip {
+  module: AudioModule;
+  voice: VoiceGender;
+  provenance: AudioProvenance;
+}
+
+/** phraseId → the clips that exist for it. Either voice may be absent. */
+export type AudioManifest = Record<string, Partial<Record<VoiceGender, AudioClip>>>;

@@ -23,7 +23,7 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { PHRASES } from '../constants/phrases';
 import { getFeaturedScenario, getAllScenarios, filterScenariosForLearner } from '../constants/scenarios';
-import { useArabicTTS } from '../hooks/useArabicTTS';
+import { usePhraseAudio } from '../hooks/usePhraseAudio';
 import { STRINGS } from '../constants/strings';
 import { todayISO, addDays } from '../engine/srsEngine';
 import { isStreakAtRisk } from '../engine/streakEngine';
@@ -103,7 +103,7 @@ export function HomeScreenNew({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const dueCount = useMemo(() => getDueReviews().length, [getDueReviews, phraseReviews]);
 
-  const { speak } = useArabicTTS();
+  const { play, hasClip } = usePhraseAudio();
 
   const [streakMood, setStreakMood] = useState<'happy' | 'excited' | 'celebrating'>('happy');
 
@@ -304,7 +304,8 @@ export function HomeScreenNew({
           arabic={phraseOfTheDay.arabic}
           phonetic={phraseOfTheDay.roman}
           english={phraseOfTheDay.english}
-          onPlay={() => speak(phraseOfTheDay.arabic)}
+          onPlay={() => play(phraseOfTheDay.id)}
+          canPlay={hasClip(phraseOfTheDay.id)}
           category={phraseOfTheDay.category}
           onSave={() => toggleSavedPhrase(phraseOfTheDay.id)}
         />

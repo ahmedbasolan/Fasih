@@ -24,6 +24,8 @@ interface DailyPhraseProps {
   onPlay?: () => void;
   onUsed?: () => void;
   onSave?: () => void;
+  /** False when no recording exists for this phrase — the button is not rendered. */
+  canPlay?: boolean;
 }
 
 export function DailyPhrase({
@@ -34,6 +36,7 @@ export function DailyPhrase({
   onPlay,
   onUsed,
   onSave,
+  canPlay = true,
 }: DailyPhraseProps) {
   const { C } = useTheme();
   const [usedToday, setUsedToday] = useState(false);
@@ -201,33 +204,35 @@ export function DailyPhrase({
         {/* Buttons */}
         <View style={styles.buttonsRow}>
           {/* Play Button */}
-          <Pressable
-            onPress={handlePlay}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && { opacity: 0.7 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={STRINGS.home.dailyPhrasePlayA11y}
-          >
-            {playingRipple && (
-              <MotiView
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 12,
-                }}
-                from={{ scale: 1, opacity: 0.3 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ type: 'timing', duration: 600 }}
-              />
-            )}
-            <View style={styles.buttonContent}>
-              <Volume2 size={14} color={C.PRIMARY} />
-              <Text style={styles.buttonText}>{STRINGS.home.dailyPhrasePlay}</Text>
-            </View>
-          </Pressable>
+          {canPlay && (
+            <Pressable
+              onPress={handlePlay}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && { opacity: 0.7 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={STRINGS.home.dailyPhrasePlayA11y}
+            >
+              {playingRipple && (
+                <MotiView
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 12,
+                  }}
+                  from={{ scale: 1, opacity: 0.3 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  transition={{ type: 'timing', duration: 600 }}
+                />
+              )}
+              <View style={styles.buttonContent}>
+                <Volume2 size={14} color={C.PRIMARY} />
+                <Text style={styles.buttonText}>{STRINGS.home.dailyPhrasePlay}</Text>
+              </View>
+            </Pressable>
+          )}
 
           {/* Used Today Button */}
           <Pressable
